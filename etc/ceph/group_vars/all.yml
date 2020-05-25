@@ -1,0 +1,41 @@
+# ceph-ansible group vars
+ceph_origin: repository
+ceph_repository: community
+
+ceph_stable_release: "nautilus"
+monitor_interface: "eno1"
+radosgw_interface: "eno1"
+
+public_network: "10.10.0.0/8"
+
+configure_firewall: false
+
+docker: true
+containerized_deployment: true
+container_binary: "docker"
+ceph_docker_version: "19.03.8"
+docker_pull_timeout: "600s"
+ceph_docker_image_tag: "latest-nautilus"
+
+dashboard_enabled: false
+
+openstack_config: true
+
+openstack_pools:
+  - "{{ openstack_glance_pool }}"
+  - "{{ openstack_cinder_pool }}"
+  - "{{ openstack_cinder_backup_pool }}"
+  - "{{ openstack_nova_pool }}"
+
+openstack_keys:
+  - { name: client.glance, caps: { mon: "profile rbd", osd: "profile rbd pool=volumes, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
+  - { name: client.cinder, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_cinder_pool.name }}, profile rbd pool={{ openstack_nova_pool.name }}, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
+  - { name: client.cinder-backup, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_cinder_backup_pool.name }}"}, mode: "0600" }
+  - { name: client.nova, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_nova_pool.name }}, profile rbd pool={{ openstack_cinder_pool.name }}, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
+
+osd_auto_discovery: true
+
+ceph_conf_overrides:
+  global:
+    osd_pool_default_size: 2
+    osd_pool_default_min_size: 2
