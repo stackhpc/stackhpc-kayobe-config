@@ -13,6 +13,19 @@ openstack_cacert: "/etc/pki/tls/certs/ca-bundle.crt"
 # Enable TLS for RabbitMQ client-server traffic.
 rabbitmq_enable_tls: true
 
+# Use a different VRRP router ID from the old production cloud, since they
+# share VLANs.
+keepalived_virtual_router_id: 52
+
+# Apply IP rules and routes to the external API interface when the VIP becomes
+# active. These cannot be applied statically because if the VIP is not active
+# they are not routable.
+keepalived_virtual_rules:
+  - from {% raw %}{{ kolla_external_vip_address }}{% endraw %} lookup 2
+keepalived_virtual_routes:
+  - 45.129.173.160/29 dev {% raw %}{{ kolla_external_vip_interface }}{% endraw %} table 2
+  - 0.0.0.0/0 via 45.129.173.161 dev {% raw %}{{ kolla_external_vip_interface }}{% endraw %} table 2 onlink
+
 # Enable Glance Ceph backend.
 glance_backend_ceph: "yes"
 

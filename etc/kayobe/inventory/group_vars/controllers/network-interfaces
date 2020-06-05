@@ -1,6 +1,7 @@
 ---
 # List of IP routing tables. Each item should be a dict containing 'id' and
 # 'name' items. These tables will be added to /etc/iproute2/rt_tables.
+# Use a separate routing table for the public API to avoid asymmetric routing.
 network_route_tables:
   - name: public
     id: 2
@@ -8,15 +9,6 @@ network_route_tables:
 admin_interface: ens1f0
 
 public_interface: ens1f1.4
-# Use a separate routing table for the public API to avoid asymmetric routing.
-public_rules:
-  - from 45.129.173.164 lookup 2
-public_routes:
-  - cidr: 45.129.173.160/29
-    table: public
-  - cidr: 0.0.0.0/0
-    gateway: 45.129.173.161
-    table: public
 
 cloud_interface: brcloud
 cloud_bridge_ports: [ens1f1]
