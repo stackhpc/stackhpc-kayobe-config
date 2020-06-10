@@ -19,6 +19,8 @@ ceph_docker_image_tag: "latest-nautilus"
 
 dashboard_enabled: false
 
+osd_pool_default_pg_num: 512
+
 openstack_config: true
 
 openstack_pools:
@@ -26,6 +28,55 @@ openstack_pools:
   - "{{ openstack_cinder_pool }}"
   - "{{ openstack_cinder_backup_pool }}"
   - "{{ openstack_nova_pool }}"
+
+openstack_glance_pool:
+  name: "images"
+  pg_num: "{{ osd_pool_default_pg_num }}"
+  pgp_num: "{{ osd_pool_default_pg_num }}"
+  rule_name: "replicated_rule"
+  type: 1
+  erasure_profile: ""
+  expected_num_objects: ""
+  application: "rbd"
+  size: "{{ osd_pool_default_size }}"
+  min_size: "{{ osd_pool_default_min_size }}"
+  pg_autoscale_mode: False
+openstack_cinder_pool:
+  name: "volumes"
+  pg_num: "{{ osd_pool_default_pg_num }}"
+  pgp_num: "{{ osd_pool_default_pg_num }}"
+  rule_name: "replicated_rule"
+  type: 1
+  erasure_profile: ""
+  expected_num_objects: ""
+  application: "rbd"
+  size: "{{ osd_pool_default_size }}"
+  min_size: "{{ osd_pool_default_min_size }}"
+  pg_autoscale_mode: False
+openstack_nova_pool:
+  name: "vms"
+  pg_num: "{{ osd_pool_default_pg_num }}"
+  pgp_num: "{{ osd_pool_default_pg_num }}"
+  rule_name: "replicated_rule"
+  type: 1
+  erasure_profile: ""
+  expected_num_objects: ""
+  application: "rbd"
+  size: "{{ osd_pool_default_size }}"
+  min_size: "{{ osd_pool_default_min_size }}"
+  pg_autoscale_mode: False
+openstack_cinder_backup_pool:
+  name: "backups"
+  pg_num: "{{ osd_pool_default_pg_num }}"
+  pgp_num: "{{ osd_pool_default_pg_num }}"
+  rule_name: "replicated_rule"
+  type: 1
+  erasure_profile: ""
+  expected_num_objects: ""
+  application: "rbd"
+  size: "{{ osd_pool_default_size }}"
+  min_size: "{{ osd_pool_default_min_size }}"
+  pg_autoscale_mode: False
 
 openstack_keys:
   - { name: client.glance, caps: { mon: "profile rbd", osd: "profile rbd pool=volumes, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
