@@ -5,7 +5,7 @@
 # Network role to network mappings.
 
 # Name of the network used for admin access to the overcloud
-#admin_oc_net_name:
+admin_oc_net_name: admin_oc
 
 # Name of the network used by the seed to manage the bare metal overcloud
 # hosts via their out-of-band management controllers.
@@ -14,7 +14,6 @@
 # Name of the network used by the seed to provision the bare metal overcloud
 # hosts.
 #provision_oc_net_name:
-provision_oc_net_name: admin
 
 # Name of the network used by the overcloud hosts to manage the bare metal
 # compute hosts via their out-of-band management controllers.
@@ -23,11 +22,11 @@ oob_wl_net_name:
 # Name of the network used by the overcloud hosts to provision the bare metal
 # workload hosts.
 #provision_wl_net_name:
-provision_wl_net_name: cloud
+provision_wl_net_name:
 
 # Name of the network used to expose the internal OpenStack API endpoints.
 #internal_net_name:
-internal_net_name: cloud
+internal_net_name: internal
 
 # List of names of networks used to provide external network access via
 # Neutron.
@@ -35,21 +34,19 @@ internal_net_name: cloud
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
 #external_net_names:
-external_net_names: [cloud]
+external_net_names: [external]
 
 # Name of the network used to expose the public OpenStack API endpoints.
 public_net_name: public
 
 # Name of the network used by Neutron to carry tenant overlay network traffic.
-#tunnel_net_name:
+tunnel_net_name: tunnel
 
 # Name of the network used to carry storage data traffic.
-#storage_net_name:
-storage_net_name: cloud
+storage_net_name: storage
 
 # Name of the network used to carry storage management traffic.
-#storage_mgmt_net_name:
-storage_mgmt_net_name: cloud
+storage_mgmt_net_name: storage_mgmt
 
 # Name of the network used to carry ceph storage data traffic.
 #ceph_storage_net_name:
@@ -65,26 +62,63 @@ storage_mgmt_net_name: cloud
 
 # Name of the network used to perform hardware introspection on the bare metal
 # workload hosts.
-#inspection_net_name:
-inspection_net_name: cloud
+inspection_net_name:
 
 # Name of the network used to perform cleaning on the bare metal workload
 # hosts
-#cleaning_net_name:
+cleaning_net_name:
 
 ###############################################################################
 # Network definitions.
 
-cloud_cidr: 10.10.16.0/22
-cloud_allocation_pool_start: 10.10.16.2
-cloud_allocation_pool_end: 10.10.17.254
-cloud_vip_address: 10.10.18.1
+# IP subnet from which site subnets are allocated.
+base_cidr: 10.0.0.0/8
 
+# IP subnet from which real subnets are allocated for this site.
+site_cidr_index: 10
+site_cidr: "{{ base_cidr | ipsubnet(16, site_cidr_index) }}"
+
+# 10.$site.32.0/22
+admin_oc_cidr_index: 8
+admin_oc_cidr: "{{ site_cidr | ipsubnet(22, admin_oc_cidr_index) }}"
+admin_oc_gateway: "{{ admin_oc_cidr | ipaddr('first_usable') }}"
+admin_oc_allocation_pool_start: "{{ admin_oc_cidr | next_nth_usable(2) }}"
+admin_oc_allocation_pool_end: "{{ admin_oc_cidr | ipaddr('last_usable') }}"
+admin_oc_vlan: 100
+
+# 10.$site.36.0/22
+internal_cidr_index: 9
+internal_cidr: "{{ site_cidr | ipsubnet(22, internal_cidr_index) }}"
+internal_vip_address: "{{ internal_cidr | ipaddr('last_usable') }}"
+internal_allocation_pool_start: "{{ internal_cidr | next_nth_usable(2) }}"
+internal_allocation_pool_end: "{{ internal_vip_address | ipmath(-1) }}"
+internal_vlan: 101
+
+# 195.114.30.0/24
 public_fqdn: the.greenedge.cloud
-public_vip_address: 45.129.173.164
+public_vip_address: 195.114.30.254
+public_vlan: 5
 
-admin_cidr: 10.10.0.0/24
-admin_gateway: 10.10.0.1
+# 10.$site.40.0/22
+tunnel_cidr_index: 10
+tunnel_cidr: "{{ site_cidr | ipsubnet(22, tunnel_cidr_index) }}"
+tunnel_allocation_pool_start: "{{ tunnel_cidr | next_nth_usable(2) }}"
+tunnel_allocation_pool_end: "{{ tunnel_cidr | ipaddr('last_usable') }}"
+tunnel_vlan: 102
+
+# 10.$site.44.0/22
+storage_cidr_index: 11
+storage_cidr: "{{ site_cidr | ipsubnet(22, storage_cidr_index) }}"
+storage_allocation_pool_start: "{{ storage_cidr | next_nth_usable(2) }}"
+storage_allocation_pool_end: "{{ storage_cidr | ipaddr('last_usable') }}"
+storage_vlan: 103
+
+# 10.$site.48.0/22
+storage_mgmt_cidr_index: 12
+storage_mgmt_cidr: "{{ site_cidr | ipsubnet(22, storage_mgmt_cidr_index) }}"
+storage_mgmt_allocation_pool_start: "{{ storage_mgmt_cidr | next_nth_usable(2) }}"
+storage_mgmt_allocation_pool_end: "{{ storage_mgmt_cidr | ipaddr('last_usable') }}"
+storage_mgmt_vlan: 104
 
 ###############################################################################
 # Network virtual patch link configuration.

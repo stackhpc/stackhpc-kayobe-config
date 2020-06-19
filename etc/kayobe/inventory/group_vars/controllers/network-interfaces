@@ -6,12 +6,29 @@ network_route_tables:
   - name: public
     id: 2
 
-admin_interface: ens1f0
+bond0_interface: bond0
+bond0_bond_slaves:
+  - enp3s0f0
+  - enp3s0f1
 
-public_interface: ens1f1.4
+bond1_interface: bond1
+bond1_bond_slaves:
+  - enp4s0f0
+  - enp4s0f1
 
-cloud_interface: brcloud
-cloud_bridge_ports: [ens1f1]
+admin_oc_interface: "{{ bond0_interface }}.{{ admin_oc_vlan }}"
+
+internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
+
+external_interface: brbond0
+external_bridge_ports: 
+  - "{{ bond0_interface }}"
+
+public_interface: "{{ external_interface }}.{{ public_vlan }}"
+
+tunnel_interface: "{{ bond0_interface }}.{{ tunnel_vlan }}"
+
+storage_interface: "{{ bond1_interface }}.{{ storage_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
