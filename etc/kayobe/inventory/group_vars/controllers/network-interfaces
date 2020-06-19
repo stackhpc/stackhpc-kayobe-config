@@ -25,6 +25,18 @@ external_bridge_ports:
   - "{{ bond0_interface }}"
 
 public_interface: "{{ external_interface }}.{{ public_vlan }}"
+# Use a separate routing table for the public API to avoid asymmetric routing.
+public_rules:
+  - from {{ public_vip_address }} lookup public
+public_routes:
+  - cidr: 195.114.30.0/24
+    table: public
+  - cidr: 0.0.0.0/0
+    gateway: 195.114.30.1
+    table: public
+    options:
+      - dev {{ public_interface }}
+      - onlink
 
 tunnel_interface: "{{ bond0_interface }}.{{ tunnel_vlan }}"
 
