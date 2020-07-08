@@ -155,7 +155,23 @@ kolla_overcloud_inventory_storage_groups:
 # * groups: A list of kayobe ansible groups to map to this kolla-ansible group.
 # * vars: A dict mapping variable names to values for hosts in this
 #         kolla-ansible group.
-#kolla_overcloud_inventory_top_level_group_map:
+kolla_overcloud_inventory_top_level_group_map:
+  control:
+    groups:
+      - controllers
+  network:
+    groups:
+      - network
+  compute:
+    groups:
+      - core-compute
+      - edge-compute
+  monitoring:
+    groups:
+      - monitoring
+  storage:
+    groups:
+      "{{ kolla_overcloud_inventory_storage_groups }}"
 
 # List of names of top level kolla-ansible groups. Any of these groups which
 # have no hosts mapped to them will be provided with an empty group definition.
