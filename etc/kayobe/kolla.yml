@@ -100,7 +100,13 @@ kolla_tag: "{{ kolla_openstack_release }}-centos8"
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-#kolla_sources:
+kolla_sources:
+  horizon:
+    type: git
+    location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/horizon
+    reference: greenedge/train
+
+kolla_git_pat_token: "{{ lookup('env', 'KOLLA_GIT_PAT_TOKEN') }}"
 
 ###############################################################################
 # Kolla image build configuration.
