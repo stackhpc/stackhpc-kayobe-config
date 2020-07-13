@@ -112,7 +112,12 @@ kolla_git_pat_token: "{{ lookup('env', 'KOLLA_GIT_PAT_TOKEN') }}"
 # Kolla image build configuration.
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
-#kolla_build_blocks:
+kolla_build_blocks:
+  prometheus_server_repository_version: |
+    # Avoid the pain of porting 1.x rules and migrating data to 2.x
+    ARG prometheus_version='2.19.2'
+  prometheus_cadvisor_repository_version: |
+    ENV prometheus_cadvisor_version=0.36.0
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -167,7 +172,7 @@ kolla_overcloud_inventory_top_level_group_map:
       - edge-compute
   monitoring:
     groups:
-      - monitoring
+      - controllers
   storage:
     groups:
       "{{ kolla_overcloud_inventory_storage_groups }}"
@@ -236,7 +241,7 @@ kolla_enable_cinder: true
 #kolla_enable_fluentd:
 #kolla_enable_freezer:
 #kolla_enable_gnocchi:
-#kolla_enable_grafana:
+kolla_enable_grafana: true
 #kolla_enable_haproxy:
 #kolla_enable_heat:
 #kolla_enable_horizon:
@@ -274,7 +279,7 @@ kolla_enable_neutron_agent_ha: true
 #kolla_enable_octavia:
 #kolla_enable_osprofiler:
 #kolla_enable_panko:
-#kolla_enable_prometheus:
+kolla_enable_prometheus: true
 #kolla_enable_qdrouterd:
 #kolla_enable_rally:
 #kolla_enable_sahara:

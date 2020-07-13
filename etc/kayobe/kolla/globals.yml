@@ -1,8 +1,11 @@
 ---
+{% raw %}
 docker_custom_config:
   # Disable IPTables management, since it interferes with packet forwarding
-  # over linux bridges.
-  iptables: false
+  # over linux bridges. It is enabled on the seed for the registry and image
+  # building.
+  iptables: '{{ "overcloud" not in group_names }}'
+{% endraw %}
 
 # We are using TLS for the registry, so it does not need to be configured as
 # insecure.
