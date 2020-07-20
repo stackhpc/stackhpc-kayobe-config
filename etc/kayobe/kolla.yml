@@ -11,11 +11,11 @@
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-#kolla_source_url:
+kolla_source_url: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/kolla
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-#kolla_source_version:
+kolla_source_version: greenedge/train
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -37,7 +37,7 @@
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-kolla_ansible_source_url: https://greenedge@dev.azure.com/greenedge/cloud/_git/kolla-ansible
+kolla_ansible_source_url: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/kolla-ansible
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
@@ -105,6 +105,14 @@ kolla_sources:
     type: git
     location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/horizon
     reference: greenedge/train
+  masakari-base:
+    type: git
+    location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/masakari
+    reference: greenedge/train
+  masakari-monitors:
+    type: git
+    location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/masakari-monitors
+    reference: greenedge/train
 
 kolla_git_pat_token: "{{ lookup('env', 'KOLLA_GIT_PAT_TOKEN') }}"
 
@@ -113,6 +121,8 @@ kolla_git_pat_token: "{{ lookup('env', 'KOLLA_GIT_PAT_TOKEN') }}"
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
+  masakari_monitors_header: |
+    RUN sed -i -e 's/libvirt-python===.*/libvirt-python===5.10.0/' /requirements/upper-constraints.txt
   prometheus_server_repository_version: |
     # Avoid the pain of porting 1.x rules and migrating data to 2.x
     ARG prometheus_version='2.19.2'
@@ -245,7 +255,7 @@ kolla_enable_grafana: true
 #kolla_enable_haproxy:
 #kolla_enable_heat:
 #kolla_enable_horizon:
-#kolla_enable_influxdb:
+kolla_enable_influxdb: true
 kolla_enable_ironic: false
 #kolla_enable_ironic_ipxe:
 #kolla_enable_ironic_pxe_uefi:
@@ -260,6 +270,7 @@ kolla_enable_ironic: false
 #kolla_enable_manila_backend_cephfs_native:
 #kolla_enable_manila_backend_cephfs_nfs:
 #kolla_enable_mariabackup:
+kolla_enable_masakari: true
 #kolla_enable_mistral:
 #kolla_enable_monasca:
 #kolla_enable_mongodb:
@@ -270,7 +281,7 @@ kolla_enable_neutron_agent_ha: true
 #kolla_enable_neutron_dvr:
 #kolla_enable_neutron_fwaas:
 #kolla_enable_neutron_lbaas:
-#kolla_enable_neutron_provider_networks:
+kolla_enable_neutron_provider_networks: true
 #kolla_enable_neutron_qos:
 #kolla_enable_neutron_segments:
 #kolla_enable_neutron_sriov:

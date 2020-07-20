@@ -1,19 +1,19 @@
 ---
-bond0_interface: bond0
-bond0_bond_slaves:
-  - enp4s0
-bond0_bond_mode: balance-tlb
-
 bond1_interface: bond1
 bond1_bond_slaves:
   - enp5s0
 bond1_bond_mode: balance-tlb
 
-admin_oc_interface: "{{ bond0_interface }}.{{ admin_oc_vlan }}"
+admin_oc_interface: "{{ external_interface }}.{{ admin_oc_vlan }}"
 
-internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
+internal_interface: "{{ external_interface }}.{{ internal_vlan }}"
 
-tunnel_interface: "{{ bond0_interface }}.{{ tunnel_vlan }}"
+external_interface: bond0
+external_bond_slaves:
+  - enp4s0
+external_bond_mode: balance-tlb
+
+tunnel_interface: "{{ external_interface }}.{{ tunnel_vlan }}"
 
 storage_interface: "{{ bond1_interface }}.{{ storage_vlan }}"
 
