@@ -136,8 +136,8 @@ groups:
       summary: "Slow OSD Responses"
       description: "This indicates that some OSD Latencies are above 1s."
   
-  - alert: Network Errors
-    expr: sum by (instance, device) (irate(node_network_receive_drop_total{device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_receive_errs_total{device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_drop_total{device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_errs_total{device=~"(eth|en|bond|ib|mlx|p).*"}[5m])) > 10
+  - alert: Ceph Network Errors
+    expr: sum by (instance, device) (irate(node_network_receive_drop_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_receive_errs_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_drop_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_errs_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m])) > 10
     for: 1m
     labels:
       severity: alert
