@@ -135,16 +135,7 @@ groups:
     annotations:
       summary: "Slow OSD Responses"
       description: "This indicates that some OSD Latencies are above 1s."
-  
-  - alert: Ceph Network Errors
-    expr: sum by (instance, device) (irate(node_network_receive_drop_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_receive_errs_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_drop_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m]) + irate(node_network_transmit_errs_total{instance=~"10.10.32..+", device=~"(eth|en|bond|ib|mlx|p).*"}[5m])) > 10
-    for: 1m
-    labels:
-      severity: alert
-    annotations:
-      summary: "Network Errors"
-      description: "This indicates that more than 10 dropped/error packets are seen in a 5m interval"
-  
+
   - alert: Pool Capacity Low
     expr: (ceph_pool_bytes_used / (ceph_pool_bytes_used + ceph_pool_max_avail) * 100 + on (pool_id) group_left (name) (ceph_pool_metadata*0)) > 85
     for: 1m
