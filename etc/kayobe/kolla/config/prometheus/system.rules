@@ -3,6 +3,7 @@
 groups:
 - name: Service
   rules:
+
   - alert: PrometheusTargetServiceDown
     expr: up{job=~".+"} == 0
     for: 1m
@@ -11,8 +12,9 @@ groups:
     annotations:
       summary: "{{ $labels.job }} at {{ $labels.instance }} is down"
       description: "Prometheus target service {{ $labels.job }} at {{ $labels.instance }} is down"
+
   - alert: OpenStackServiceDown
-    expr: {__name__=~"openstack.+_state", job="openstack_exporter"} == 0
+    expr: ({__name__=~"openstack.+_state", job="openstack_exporter"} == 0)
     for: 1m
     labels:
       severity: alert
