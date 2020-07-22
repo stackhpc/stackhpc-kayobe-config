@@ -1,0 +1,128 @@
+global:
+  scrape_interval: 1m
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: kolla
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 10.10.36.2:9093
+            - 10.10.36.3:9093
+      scheme: http
+      timeout: 10s
+      api_version: v1
+rule_files:
+  - /etc/prometheus/system.rules
+scrape_configs:
+  - job_name: prometheus
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9091
+          - 10.10.36.3:9091
+  - job_name: node
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9100
+          - 10.10.36.3:9100
+          - 10.10.36.4:9100
+          - 10.10.36.5:9100
+          - 10.10.36.14:9100
+          - 10.10.36.7:9100
+          - 10.10.36.8:9100
+          - 10.10.36.9:9100
+          - 10.10.36.10:9100
+          - 10.10.36.11:9100
+          - 10.10.36.12:9100
+          - 10.10.36.13:9100
+  - job_name: mysqld
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9104
+          - 10.10.36.3:9104
+  - job_name: haproxy
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9101
+          - 10.10.36.3:9101
+  - job_name: memcached
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9150
+          - 10.10.36.3:9150
+  - job_name: cadvisor
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:18080
+          - 10.10.36.3:18080
+          - 10.10.36.4:18080
+          - 10.10.36.5:18080
+          - 10.10.36.14:18080
+          - 10.10.36.7:18080
+          - 10.10.36.8:18080
+          - 10.10.36.9:18080
+          - 10.10.36.10:18080
+          - 10.10.36.11:18080
+          - 10.10.36.12:18080
+          - 10.10.36.13:18080
+  - job_name: openstack_exporter
+    honor_labels: true
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9198
+          - 10.10.36.3:9198
+  - job_name: elasticsearch_exporter
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - 10.10.36.2:9108
+          - 10.10.36.3:9108
+  - job_name: 'ceph'
+    scrape_interval: 15s
+    honor_labels: true
+    static_configs:
+      - targets:
+          - 10.10.32.7:9283
+          - 10.10.32.8:9283
+        labels:
+          instance: 'ceph_cluster'
