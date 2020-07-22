@@ -1,12 +1,23 @@
 {% raw %}
 
 groups:
+- name: Service
+  rules:
+  - alert: ServiceDown
+    expr: up{job=~".+"} == 0
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "{{ $labels.job }} at {{ $labels.instance }} is down"
+      description: "Openstack service {{ $labels.job }} at {{ $labels.instance }} is down"
+
 - name: Node
   rules:
 
   - alert: LowDiskSpace
     expr: ( ( node_filesystem_free_bytes - node_filesystem_avail_bytes ) / node_filesystem_free_bytes ) * 100 >= 80
-    for: 5m
+    for: 1m
     labels:
       severity: alert
     annotations:
@@ -15,7 +26,7 @@ groups:
 
   - alert: LowMemory
     expr: ( ( node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes ) / node_memory_MemTotal_bytes ) * 100 >= 80
-    for: 5m
+    for: 1m
     labels:
       severity: alert
     annotations:
@@ -24,7 +35,7 @@ groups:
 
   - alert: Overheating
     expr: node_hwmon_temp_celsius >= 100
-    for: 5m
+    for: 1m
     labels:
       severity: alert
     annotations:
@@ -33,7 +44,7 @@ groups:
 
   - alert: InstanceDown
     expr: up{job="node"} == 0
-    for: 5m
+    for: 1m
     labels:
       severity: page
     annotations:
