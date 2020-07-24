@@ -8,7 +8,7 @@ groups:
 
   - alert: BlackboxProbeFailed
     expr: probe_success == 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -17,7 +17,7 @@ groups:
 
   - alert: BlackboxSlowProbe
     expr: avg_over_time(probe_duration_seconds[1m]) > 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -26,7 +26,7 @@ groups:
 
   - alert: BlackboxProbeHttpFailure
     expr: probe_http_status_code <= 199 OR probe_http_status_code >= 400
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -35,7 +35,7 @@ groups:
 
   - alert: BlackboxSslCertificateWillExpireSoon
     expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -44,7 +44,7 @@ groups:
 
   - alert: BlackboxSslCertificateWillExpireSoon
     expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 3
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -53,7 +53,7 @@ groups:
 
   - alert: BlackboxSslCertificateExpired
     expr: probe_ssl_earliest_cert_expiry - time() <= 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -62,7 +62,7 @@ groups:
 
   - alert: BlackboxProbeSlowHttp
     expr: avg_over_time(probe_http_duration_seconds[1m]) > 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -71,7 +71,7 @@ groups:
 
   - alert: BlackboxProbeSlowPing
     expr: avg_over_time(probe_icmp_duration_seconds[1m]) > 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:

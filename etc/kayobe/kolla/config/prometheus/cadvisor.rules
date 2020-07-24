@@ -8,7 +8,7 @@ groups:
 
   - alert: ContainerKilled
     expr: time() - container_last_seen > 60
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -16,8 +16,8 @@ groups:
       description: "A container has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
   - alert: ContainerCpuUsage
-    expr: (sum(rate(container_cpu_usage_seconds_total[3m])) BY (instance, name) * 100) > 300
-    for: 5m
+    expr: (sum(rate(container_cpu_usage_seconds_total[3m])) BY (instance, name) * 100) > 400
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -26,7 +26,7 @@ groups:
 
   - alert: ContainerMemoryUsage
     expr: (sum(container_memory_usage_bytes) BY (instance, name) / sum(container_spec_memory_limit_bytes) BY (instance, name) * 100) > 80 < +Inf
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -35,7 +35,7 @@ groups:
 
   - alert: ContainerVolumeUsage
     expr: (1 - (sum(container_fs_inodes_free) BY (instance) / sum(container_fs_inodes_total) BY (instance)) * 100) > 80
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -44,7 +44,7 @@ groups:
 
   - alert: ContainerVolumeIoUsage
     expr: (sum(container_fs_io_current) BY (instance, name) * 100) > 80
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -53,7 +53,7 @@ groups:
 
   - alert: ContainerHighThrottleRate
     expr: rate(container_cpu_cfs_throttled_seconds_total[3m]) > 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:

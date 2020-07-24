@@ -8,7 +8,7 @@ groups:
 
   - alert: ElasticsearchHeapUsageTooHigh
     expr: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 > 90
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -17,7 +17,7 @@ groups:
 
   - alert: ElasticsearchHeapUsageWarning
     expr: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 > 80
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -26,7 +26,7 @@ groups:
 
   - alert: ElasticsearchDiskSpaceLow
     expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 20
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -35,7 +35,7 @@ groups:
 
   - alert: ElasticsearchDiskOutOfSpace
     expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 10
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -44,7 +44,7 @@ groups:
 
   - alert: ElasticsearchClusterRed
     expr: elasticsearch_cluster_health_status{color="red"} == 1
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -53,7 +53,7 @@ groups:
 
   - alert: ElasticsearchClusterYellow
     expr: elasticsearch_cluster_health_status{color="yellow"} == 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -62,7 +62,7 @@ groups:
 
   - alert: ElasticsearchHealthyNodes
     expr: elasticsearch_cluster_health_number_of_nodes < number_of_nodes
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -71,7 +71,7 @@ groups:
 
   - alert: ElasticsearchHealthyDataNodes
     expr: elasticsearch_cluster_health_number_of_data_nodes < number_of_data_nodes
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -80,7 +80,7 @@ groups:
 
   - alert: ElasticsearchRelocationShards
     expr: elasticsearch_cluster_health_relocating_shards > 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -89,7 +89,7 @@ groups:
 
   - alert: ElasticsearchInitializingShards
     expr: elasticsearch_cluster_health_initializing_shards > 0
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -98,7 +98,7 @@ groups:
 
   - alert: ElasticsearchUnassignedShards
     expr: elasticsearch_cluster_health_unassigned_shards > 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -107,7 +107,7 @@ groups:
 
   - alert: ElasticsearchPendingTasks
     expr: elasticsearch_cluster_health_number_of_pending_tasks > 0
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -116,7 +116,7 @@ groups:
 
   - alert: ElasticsearchNoNewDocuments
     expr: rate(elasticsearch_indices_docs{es_data_node="true"}[10m]) < 1
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:

@@ -8,7 +8,7 @@ groups:
 
   - alert: MysqlDown
     expr: mysql_up == 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -17,7 +17,7 @@ groups:
 
   - alert: MysqlTooManyConnections
     expr: avg by (instance) (max_over_time(mysql_global_status_threads_connected[5m])) / avg by (instance) (mysql_global_variables_max_connections) * 100 > 80
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -26,7 +26,7 @@ groups:
 
   - alert: MysqlHighThreadsRunning
     expr: avg by (instance) (max_over_time(mysql_global_status_threads_running[5m])) / avg by (instance) (mysql_global_variables_max_connections) * 100 > 60
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -35,7 +35,7 @@ groups:
 
   - alert: MysqlSlaveIoThreadNotRunning
     expr: mysql_slave_status_master_server_id > 0 and ON (instance) mysql_slave_status_slave_io_running == 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -44,7 +44,7 @@ groups:
 
   - alert: MysqlSlaveSqlThreadNotRunning
     expr: mysql_slave_status_master_server_id > 0 and ON (instance) mysql_slave_status_slave_sql_running == 0
-    for: 5m
+    for: 1m
     labels:
       severity: critical
     annotations:
@@ -53,7 +53,7 @@ groups:
 
   - alert: MysqlSlaveReplicationLag
     expr: mysql_slave_status_master_server_id > 0 and ON (instance) (mysql_slave_status_seconds_behind_master - mysql_slave_status_sql_delay) > 300
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -62,7 +62,7 @@ groups:
 
   - alert: MysqlSlowQueries
     expr: mysql_global_status_slow_queries > 0
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
@@ -71,7 +71,7 @@ groups:
 
   - alert: MysqlRestarted
     expr: mysql_global_status_uptime < 60
-    for: 5m
+    for: 1m
     labels:
       severity: warning
     annotations:
