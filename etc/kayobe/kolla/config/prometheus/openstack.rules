@@ -2,7 +2,7 @@ groups:
 - name: OpenStack
   rules:
   - alert: OpenStackServiceDown
-    expr: ({__name__=~"openstack.+_state", job="openstack_exporter"} == 0)
+    expr: (sum({__name__=~"openstack.+_state", job="openstack_exporter"} == 0) by (hostname, service))
     for: 1m
     labels:
       severity: alert
