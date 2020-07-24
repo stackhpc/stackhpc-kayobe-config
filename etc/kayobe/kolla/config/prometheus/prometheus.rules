@@ -6,15 +6,6 @@ groups:
 - name: Prometheus
   rules:
 
-  - alert: PrometheusJobMissing
-    expr: absent(up{job="my-job"})
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Prometheus job missing (instance {{ $labels.instance }})"
-      description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
-
   - alert: PrometheusTargetMissing
     expr: up == 0
     for: 5m
