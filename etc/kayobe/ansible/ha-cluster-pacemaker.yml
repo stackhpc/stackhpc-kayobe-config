@@ -1,0 +1,21 @@
+---
+- name: Ensure pacemaker & corosync are deployed
+  become: true
+  hosts: controllers,compute
+  tasks:
+    - import_role:
+        role: OndrejHome.ha-cluster-pacemaker
+      vars:
+        cluster_user_pass: "{{ secrets_hacluster_password }}"
+        cluster_firewall: false
+        cluster_configure_fence_xvm: false
+        cluster_net_iface: "{{ internal_net_name | net_interface }}"
+        cluster_etc_hosts: false
+        cluster_hostname_fact: "ansible_nodename"
+        cluster_is_remote: "{{ 'compute' in group_names }}"
+
+    - name: Disable STONITH
+      pcs_property:
+        name: stonith-enabled
+        value: false
+      run_once: true
