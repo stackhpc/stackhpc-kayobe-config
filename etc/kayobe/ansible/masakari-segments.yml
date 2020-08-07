@@ -1,0 +1,60 @@
+---
+- name: Gather facts for compute hosts
+  hosts: compute
+
+- name: Register Masakari segments and hosts
+  hosts: controllers[0]
+  gather_facts: no
+  vars:
+    venv: "{{ virtualenv_path }}/masakari"
+    # Name of the segment. All hosts are in a single segment currently.
+    masakari_segment: leafcloud
+    # The auto method allows Nova to select which host is used for failover.
+    masakari_recovery_method: auto
+    masakari_service_type: COMPUTE
+    masakari_host_type: COMPUTE
+    masakari_host_control_attributes: SSH
+  tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-masakariclient
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+    
+    - name: Get list of segments
+      command: >
+        {{ venv }}/bin/openstack --os-ha-api-version 1
+        segment list -f json
+      register: segments
+      environment: "{{ openstack_auth_env }}"
+      run_once: true
+      changed_when: false
+    
+    - name: Ensure the segment exists
+      command: >
+        {{ venv }}/bin/openstack --os-ha-api-version 1
+        segment create {{ masakari_segment }} {{ masakari_recovery_method }} {{ masakari_service_type }}
+      environment: "{{ openstack_auth_env }}"
+      run_once: true
+      when: segments.stdout | from_json | selectattr('name', 'equalto', masakari_segment) | list | length == 0
+    
+    - name: Get list of segment hosts
+      command: >
+        {{ venv }}/bin/openstack --os-ha-api-version 1
+        segment host list {{ masakari_segment }} -f json
+      register: segment_hosts
+      environment: "{{ openstack_auth_env }}"
+      run_once: true
+      changed_when: false
+    
+    - name: Ensure the segment host exists
+      command: >
+        {{ venv }}/bin/openstack --os-ha-api-version 1
+        segment host create {{ hostvars[item].ansible_nodename }} {{ masakari_host_type }} {{ masakari_host_control_attributes }} {{ masakari_segment }}
+      environment: "{{ openstack_auth_env }}"
+      with_inventory_hostnames: compute
+      when: segment_hosts.stdout | from_json | selectattr('name', 'equalto', hostvars[item].ansible_nodename) | list | length == 0
