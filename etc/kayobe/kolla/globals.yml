@@ -17,6 +17,9 @@ kolla_copy_ca_into_containers: true
 # CA certificate bundle used by OpenStack services.
 openstack_cacert: "/etc/pki/tls/certs/ca-bundle.crt"
 
+# Name of the OpenStack region for Keystone endpoints.
+#openstack_region_name: europe-nl
+
 # Enable TLS for RabbitMQ client-server traffic.
 rabbitmq_enable_tls: true
 
@@ -33,7 +36,12 @@ cinder_backend_ceph: "yes"
 # Enable Nova Ceph backend.
 nova_backend_ceph: "yes"
 
-cloudkitty_storage_backend: influxdb
-cloudkitty_influxdb_use_ssl: true
-cloudkitty_influxdb_cafile: {{ openstack_cacert }}
-cloudkitty_influxdb_insecure_connections: true
+cloudkitty_storage_backend: elasticsearch
+cloudkitty_collector_backend: gnocchi
+es_heap_size: "8g"
+enable_elasticsearch_curator: "yes"
+elasticsearch_curator_dry_run: "yes"
+elasticsearch_curator_tag: train-centos8
+
+#memcached_connection_limit: "10000"
+memcached_max_memory: "1024"
