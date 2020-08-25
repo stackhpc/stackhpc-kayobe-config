@@ -7,7 +7,7 @@ groups:
   rules:
 
   - alert: ContainerKilled
-    expr: time() - container_last_seen > 60
+    expr: time() - container_last_seen > 61
     for: 5m
     labels:
       severity: warning
@@ -16,22 +16,13 @@ groups:
       description: "A container has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
   - alert: ContainerCpuUsage
-    expr: (sum(rate(container_cpu_usage_seconds_total[3m])) BY (instance, name) * 100) > 800
-    for: 1m
+    expr: (sum(rate(container_cpu_usage_seconds_total[3m])) BY (instance, name) * 100) > 3000
+    for: 2m
     labels:
       severity: warning
     annotations:
       summary: "Container CPU usage (instance {{ $labels.instance }})"
       description: "Container CPU usage is above 300%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
-
-  - alert: ContainerMemoryUsage
-    expr: (sum(container_memory_usage_bytes) BY (instance, name) / sum(container_spec_memory_limit_bytes) BY (instance, name) * 100) > 80 < +Inf
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Container Memory usage (instance {{ $labels.instance }})"
-      description: "Container Memory usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
   - alert: ContainerVolumeUsage
     expr: (1 - (sum(container_fs_inodes_free) BY (instance) / sum(container_fs_inodes_total) BY (instance)) * 100) > 80
