@@ -1,0 +1,34 @@
+---
+- name: Gather facts for compute hosts
+  hosts: compute
+
+- name: Register Nova host aggregates
+  hosts: controllers[0]
+  tasks:
+    - import_role:
+        name: stackhpc.os_host_aggregates
+      vars:
+        os_openstacksdk_install_epel: "{{ dnf_install_epel }}"
+        os_openstacksdk_state: latest
+        os_openstacksdk_upper_constraints_file: "{{ pip_upper_constraints_file }}"
+        os_host_aggregates_venv: "{{ virtualenv_path }}/openstacksdk"
+        os_host_aggregates_auth_type: "{{ openstack_auth_type }}"
+        os_host_aggregates_auth: "{{ openstack_auth }}"
+        os_host_aggregates_interface: "{{ openstack_interface }}"
+        os_host_aggregates: 
+          - name: core-compute
+            hosts: "{{ groups['core-compute'] | map('extract', hostvars, 'ansible_nodename') | list }}"
+            metadata:
+              core: "true"
+          - name: edge-compute
+            hosts: "{{ groups['edge-compute'] | map('extract', hostvars, 'ansible_nodename') | list }}"
+            metadata:
+              core: "false"
+              cpu_weight_multiplier: "{{ edge_weight_multiplier }}"
+              ram_weight_multiplier: "{{ edge_weight_multiplier }}"
+              disk_weight_multiplier: "{{ edge_weight_multiplier }}"
+              # IO ops multiplier should be negative.
+              io_ops_weight_multiplier: "-{{ edge_weight_multiplier }}"
+              soft_affinity_weight_multiplier: "{{ edge_weight_multiplier }}"
+              soft_anti_affinity_weight_multiplier: "{{ edge_weight_multiplier }}"
+        edge_weight_multiplier: "100"
