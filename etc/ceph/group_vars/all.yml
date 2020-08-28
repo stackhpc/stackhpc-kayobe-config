@@ -28,6 +28,7 @@ openstack_pools:
   - "{{ openstack_glance_pool }}"
   - "{{ openstack_cinder_pool }}"
   - "{{ openstack_cinder_backup_pool }}"
+  - "{{ openstack_gnocchi_pool }}"
   - "{{ openstack_nova_pool }}"
 
 openstack_glance_pool:
@@ -78,11 +79,24 @@ openstack_cinder_backup_pool:
   size: "{{ osd_pool_default_size }}"
   min_size: "{{ osd_pool_default_min_size }}"
   pg_autoscale_mode: False
+openstack_gnocchi_pool:
+  name: "metrics"
+  pg_num: "{{ osd_pool_default_pg_num }}"
+  pgp_num: "{{ osd_pool_default_pg_num }}"
+  rule_name: "replicated_rule"
+  type: 1
+  erasure_profile: ""
+  expected_num_objects: ""
+  application: "rbd"
+  size: "{{ osd_pool_default_size }}"
+  min_size: "{{ osd_pool_default_min_size }}"
+  pg_autoscale_mode: False
 
 openstack_keys:
   - { name: client.glance, caps: { mon: "profile rbd", osd: "profile rbd pool=volumes, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
   - { name: client.cinder, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_cinder_pool.name }}, profile rbd pool={{ openstack_nova_pool.name }}, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
   - { name: client.cinder-backup, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_cinder_backup_pool.name }}"}, mode: "0600" }
+  - { name: client.gnocchi, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_gnocchi_pool.name }}"}, mode: "0600", }
   - { name: client.nova, caps: { mon: "profile rbd", osd: "profile rbd pool={{ openstack_nova_pool.name }}, profile rbd pool={{ openstack_cinder_pool.name }}, profile rbd pool={{ openstack_glance_pool.name }}"}, mode: "0600" }
 
 osd_auto_discovery: true
