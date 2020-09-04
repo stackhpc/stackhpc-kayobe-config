@@ -29,7 +29,45 @@ metrics:
       aggregation_method: mean
       resource_type: image
 
+  snapshot.size:
+    unit: MiB
+    factor: 1/1048576
+    groupby:
+      - id
+      - user_id
+      - project_id
+    metadata:
+      - container_format
+      - disk_format
+    extra_args:
+      aggregation_method: mean
+      resource_type: image
+
   volume.size:
+    unit: GiB
+    groupby:
+      - id
+      - user_id
+      - project_id
+    metadata:
+      - volume_type
+    extra_args:
+      aggregation_method: mean
+      resource_type: volume
+
+  volume.backup.size:
+    unit: GiB
+    groupby:
+      - id
+      - user_id
+      - project_id
+    metadata:
+      - volume_type
+    extra_args:
+      aggregation_method: mean
+      resource_type: volume
+
+  volume.snapshot.size:
     unit: GiB
     groupby:
       - id
@@ -47,8 +85,8 @@ metrics:
       - id
       - project_id
       - user_id
-    # Converting B to MB
-    factor: 0.000001
+    # Converting B/s to MB/h
+    factor: 3600/1000000
     metadata:
       - instance_id
     extra_args:
@@ -61,8 +99,8 @@ metrics:
       - id
       - project_id
       - user_id
-    # Converting B to MB
-    factor: 0.000001
+    # Converting B/s to MB/h
+    factor: 3600/1000000
     metadata:
       - instance_id
     extra_args:
@@ -81,15 +119,3 @@ metrics:
     extra_args:
       aggregation_method: mean
       resource_type: network
-
-  radosgw.objects.size:
-    unit: GiB
-    groupby:
-      - id
-      - user_id
-      - project_id
-    factor: 1/1073741824
-    extra_args:
-      aggregation_method: mean
-      resource_type: ceph_account
-
