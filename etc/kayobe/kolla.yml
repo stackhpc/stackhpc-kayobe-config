@@ -105,6 +105,10 @@ kolla_sources:
     type: git
     location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/horizon
     reference: greenedge/train
+  horizon-additions-theme-leafcloud:
+    type: git
+    location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/horizon-theme
+    reference: master
   horizon-plugin-masakari-dashboard:
     type: git
     location: https://greenedge:{{ kolla_git_pat_token }}@dev.azure.com/greenedge/cloud/_git/masakari-dashboard
@@ -129,6 +133,16 @@ kolla_git_pat_token: "{{ lookup('env', 'KOLLA_GIT_PAT_TOKEN') }}"
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
+  horizon_footer: |
+    # Binary images cannot use the additions mechanism.
+    {% raw %}
+    {% if install_type == 'source' %}
+    ADD additions-archive /
+    RUN mkdir -p /etc/openstack-dashboard/themes/leafcloud \
+      && cp -R /additions/horizon-additions-theme-leafcloud-archive-master/* /etc/openstack-dashboard/themes/leafcloud/ \
+      && chown -R horizon: /etc/openstack-dashboard/themes
+    {% endif %}
+    {% endraw %}
   masakari_monitors_header: |
     RUN sed -i -e 's/libvirt-python===.*/libvirt-python===5.10.0/' /requirements/upper-constraints.txt
   prometheus_server_repository_version: |
