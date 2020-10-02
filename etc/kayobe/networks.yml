@@ -75,7 +75,7 @@ cleaning_net_name:
 base_cidr: 10.0.0.0/8
 
 # IP subnet from which real subnets are allocated for this site.
-site_cidr_index: TODO
+site_cidr_index: 11
 site_cidr: "{{ base_cidr | ipsubnet(16, site_cidr_index) }}"
 
 # 10.$site.32.0/22
@@ -84,7 +84,7 @@ admin_oc_cidr: "{{ site_cidr | ipsubnet(22, admin_oc_cidr_index) }}"
 admin_oc_gateway: "{{ admin_oc_cidr | ipaddr('first_usable') }}"
 admin_oc_allocation_pool_start: "{{ admin_oc_cidr | next_nth_usable(2) }}"
 admin_oc_allocation_pool_end: "{{ admin_oc_cidr | ipaddr('last_usable') }}"
-admin_oc_vlan: TODO
+admin_oc_vlan: 200
 
 # 10.$site.36.0/22
 internal_cidr_index: 9
@@ -92,33 +92,33 @@ internal_cidr: "{{ site_cidr | ipsubnet(22, internal_cidr_index) }}"
 internal_vip_address: "{{ internal_cidr | ipaddr('last_usable') }}"
 internal_allocation_pool_start: "{{ internal_cidr | next_nth_usable(2) }}"
 internal_allocation_pool_end: "{{ internal_vip_address | ipmath(-1) }}"
-internal_vlan: TODO
+internal_vlan: 201
 
-# 195.114.30.0/24
-public_fqdn: TODO
-public_vip_address: TODO
-public_vlan: TODO
+# 10.11.52.0/22
+#public_fqdn: TODO
+public_vip_address: 10.11.55.254
+public_vlan: 205
 
 # 10.$site.40.0/22
 tunnel_cidr_index: 10
 tunnel_cidr: "{{ site_cidr | ipsubnet(22, tunnel_cidr_index) }}"
 tunnel_allocation_pool_start: "{{ tunnel_cidr | next_nth_usable(2) }}"
 tunnel_allocation_pool_end: "{{ tunnel_cidr | ipaddr('last_usable') }}"
-tunnel_vlan: TODO
+tunnel_vlan: 202
 
 # 10.$site.44.0/22
 storage_cidr_index: 11
 storage_cidr: "{{ site_cidr | ipsubnet(22, storage_cidr_index) }}"
 storage_allocation_pool_start: "{{ storage_cidr | next_nth_usable(2) }}"
 storage_allocation_pool_end: "{{ storage_cidr | ipaddr('last_usable') }}"
-storage_vlan: TODO
+storage_vlan: 203
 
 # 10.$site.48.0/22
 storage_mgmt_cidr_index: 12
 storage_mgmt_cidr: "{{ site_cidr | ipsubnet(22, storage_mgmt_cidr_index) }}"
 storage_mgmt_allocation_pool_start: "{{ storage_mgmt_cidr | next_nth_usable(2) }}"
 storage_mgmt_allocation_pool_end: "{{ storage_mgmt_cidr | ipaddr('last_usable') }}"
-storage_mgmt_vlan: TODO
+storage_mgmt_vlan: 204
 
 ###############################################################################
 # Network virtual patch link configuration.
