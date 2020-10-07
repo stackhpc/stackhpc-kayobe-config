@@ -1,0 +1,17 @@
+---
+- name: Ensure that the VM configdrive exists
+  hosts: libvirt-hosts
+  vars:
+    image_cache_path: /tmp/libvirt-vm-cache
+    ssh_public_key_path: ~/.ssh/id_rsa.pub
+  tasks:
+    # TODO: Do this in parallel using delegate_to. Had issues with
+    # stackhpc.libvirt-vm accessing facts of the delegate host.
+    - name: Create VMs serially
+      include_tasks: libvirt-vm-single.yml
+      with_items: "{{ groups['libvirt-vms'] }}"
+      loop_control:
+        loop_var: vm_host
+      when: hostvars[vm_host]['hypervisor'] == inventory_hostname
+      vars:
+        vm_configdrive_path: "{{ image_cache_path }}/{{ vm_host }}.iso"

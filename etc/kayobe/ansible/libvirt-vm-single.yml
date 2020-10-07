@@ -1,0 +1,86 @@
+---
+- name: Ensure the image cache directory exists
+  file:
+    path: "{{ image_cache_path }}"
+    state: directory
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+  become: True
+
+- import_role:
+    name: jriguera.configdrive
+  vars:
+    # For now assume the VM OS family is the same as the hypervisor's.
+    configdrive_os_family: "{{ ansible_os_family }}"
+    configdrive_uuid: "{{ vm_host | to_uuid }}"
+    configdrive_fqdn: "{{ vm_host }}"
+    configdrive_name: "{{ vm_host }}"
+    configdrive_ssh_public_key: "{{ lookup('file', ssh_public_key_path) }}"
+    configdrive_config_dir: "{{ image_cache_path }}"
+    configdrive_instance_dir: "{{ configdrive_uuid }}"
+    configdrive_volume_path: "{{ image_cache_path }}"
+    configdrive_config_dir_delete: True
+    configdrive_resolv:
+      domain: "{{ hostvars[vm_host].resolv_domain | default }}"
+      search: "{{ hostvars[vm_host].resolv_search | default }}"
+      dns: "{{ hostvars[vm_host].resolv_nameservers | default([]) }}"
+    configdrive_network_device_list:
+      - device: eth0
+        address: "{{ hostvars[vm_host].vm_ip }}"
+        netmask: "{{ hostvars[vm_host].vm_netmask }}"
+        gateway: "{{ hostvars[vm_host].vm_gateway }}"
+        bootproto: static
+        mtu: 1500
+
+- name: Ensure configdrive is decoded and decompressed
+  shell: >
+      base64 -d {{ image_cache_path }}/{{ vm_host | to_uuid }}.gz
+      | gunzip
+      > {{ vm_configdrive_path }}
+
+- name: Ensure unnecessary files are removed
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ image_cache_path }}/{{ vm_host | to_uuid }}.gz"
+
+- name: Check the size of the configdrive image
+  stat:
+    path: "{{ vm_configdrive_path }}"
+    get_checksum: False
+    get_md5: False
+    mime: False
+  register: stat_result
+
+- import_role:
+    name: stackhpc.libvirt-vm
+  vars:
+    vm_configdrive_volume:
+      name: "{{ vm_host }}-configdrive"
+      pool: "{{ hostvars[vm_host].vm_pool | default('default') }}"
+      # Round size up to next multiple of 4096.
+      capacity: "{{ (stat_result.stat.size + 4095) // 4096 * 4096 }}"
+      device: "cdrom"
+      format: "raw"
+      image: "{{ vm_configdrive_path }}"
+    libvirt_vm_image_cache_path: "{{ image_cache_path }}"
+    libvirt_vms:
+      - name: "{{ vm_host }}"
+        memory_mb: "{{ hostvars[vm_host].vm_memory_mb }}"
+        vcpus: "{{ hostvars[vm_host].vm_vcpus }}"
+        volumes: "{{ hostvars[vm_host].vm_volumes + [vm_configdrive_volume] }}"
+        interfaces:
+          - network: default
+        console_log_enabled: true
+    become: True
+
+- name: Wait for SSH access to the VM
+  local_action:
+    module: wait_for
+    host: "{{ hostvars[vm_host].vm_ip }}"
+    port: 22
+    state: started
+    # NOTE: Ensure we exceed the 5 minute DHCP timeout of the eth0
+    # interface if necessary.
+    timeout: 360
