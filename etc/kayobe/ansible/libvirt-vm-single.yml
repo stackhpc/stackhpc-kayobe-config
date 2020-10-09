@@ -24,13 +24,7 @@
       domain: "{{ hostvars[vm_host].resolv_domain | default }}"
       search: "{{ hostvars[vm_host].resolv_search | default }}"
       dns: "{{ hostvars[vm_host].resolv_nameservers | default([]) }}"
-    configdrive_network_device_list:
-      - device: eth0
-        address: "{{ hostvars[vm_host].vm_ip }}"
-        netmask: "{{ hostvars[vm_host].vm_netmask }}"
-        gateway: "{{ hostvars[vm_host].vm_gateway }}"
-        bootproto: static
-        mtu: 1500
+    configdrive_network_device_list: "{{ hostvars[vm_host].vm_configdrive_network_device_list }}"
 
 - name: Ensure configdrive is decoded and decompressed
   shell: >
@@ -70,15 +64,14 @@
         memory_mb: "{{ hostvars[vm_host].vm_memory_mb }}"
         vcpus: "{{ hostvars[vm_host].vm_vcpus }}"
         volumes: "{{ hostvars[vm_host].vm_volumes + [vm_configdrive_volume] }}"
-        interfaces:
-          - network: default
+        interfaces: "{{ hostvars[vm_host].vm_interfaces }}"
         console_log_enabled: true
     become: True
 
 - name: Wait for SSH access to the VM
   local_action:
     module: wait_for
-    host: "{{ hostvars[vm_host].vm_ip }}"
+    host: "{{ hostvars[vm_host].ansible_host }}"
     port: 22
     state: started
     # NOTE: Ensure we exceed the 5 minute DHCP timeout of the eth0
