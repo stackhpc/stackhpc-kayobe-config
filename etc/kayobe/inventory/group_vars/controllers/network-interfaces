@@ -18,7 +18,7 @@ bond1_bond_slaves:
   - enp4s0f1
 bond1_bond_mode: balance-tlb
 
-admin_oc_interface: "{{ bond0_interface }}.{{ admin_oc_vlan }}"
+admin_oc_interface: "{{ external_interface }}.{{ admin_oc_vlan }}"
 
 internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
 
@@ -42,7 +42,11 @@ public_routes:
 
 tunnel_interface: "{{ bond0_interface }}.{{ tunnel_vlan }}"
 
-storage_interface: "{{ bond1_interface }}.{{ storage_vlan }}"
+brbond1_interface: brbond1
+brbond1_bridge_ports:
+  - "{{ bond1_interface }}"
+
+storage_interface: "{{ brbond1_interface }}.{{ storage_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
