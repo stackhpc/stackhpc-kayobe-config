@@ -1,0 +1,23 @@
+---
+vm_memory_mb: 65536
+vm_vcpus: 8
+
+vm_volumes:
+  - name: "{{ inventory_hostname }}-root"
+    pool: default
+    capacity: 100G
+    format: qcow2
+    image: "{{ vm_image }}"
+  # Use sdb on controllers for Ceph storage data.
+  - type: block
+    dev: /dev/sdb
+    format: raw
+
+vm_image: https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2
+
+vm_interfaces:
+  - network: external
+  - network: brbond1
+
+vm_configdrive_network_device_list:
+  - "{{ admin_oc_net_name | net_configdrive_network_device }}"
