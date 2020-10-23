@@ -1,0 +1,63 @@
+---
+- hosts:
+    - overcloud
+    - localhost
+  become: yes
+  gather_facts: yes
+  vars:
+    user_certs_path: /etc/ssl/certs
+    ca_filename: greenedge.cloud-ca.pem
+    src_ca_path: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/kolla/certificates/ca/{{ ca_filename }}"
+    ca_path:
+      RedHat:
+        6: /usr/local/share/ca-certificates
+        7: /etc/pki/ca-trust/source/anchors
+        8: /etc/pki/ca-trust/source/anchors
+      Debian:
+        7: /usr/local/share/ca-certificates
+        8: /usr/local/share/ca-certificates
+  tasks:
+    - name: Install ca package on RHEL systems
+      yum:
+        name: ca-certificates
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install ca package on Debian systems
+      apt:
+        name: ca-certificates
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Enable dynamic ca configuration on RHEL6
+      shell: /bin/update-ca-trust enable
+      when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+
+    - name: Copy certificate authority to trusted ca path
+      copy:
+        src: "{{ src_ca_path }}"
+        dest: "{{ ca_path[ansible_os_family][ansible_distribution_major_version|int] }}/{{ ca_filename }}"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Update trusted ca debian
+        - Update trusted ca redhat
+
+    - name: Symlink certificate authority to user visible path
+      file:
+        src: "{{ ca_path[ansible_os_family][ansible_distribution_major_version|int] }}/{{ ca_filename }}"
+        dest: "{{ user_certs_path }}/{{ ca_filename }}"
+        owner: root
+        group: root
+        state: link
+
+  handlers:
+    - name: Update trusted ca debian
+      shell: /usr/sbin/update-ca-certificates
+      when: ansible_os_family == "Debian"
+
+    - name: Update trusted ca redhat
+      shell: /bin/update-ca-trust
+      when: ansible_os_family == "RedHat"
