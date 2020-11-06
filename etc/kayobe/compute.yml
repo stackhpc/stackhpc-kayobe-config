@@ -16,8 +16,9 @@
 #compute_default_network_interfaces:
 
 # List of extra networks to which compute nodes are attached.
-compute_extra_network_interfaces:
-  - bond1
+# NOTE: Edge compute node uses all 4 NICs for bond members.
+compute_extra_network_interfaces: >-
+  {{ ['bond1'] + (['maas'] if 'core-compute' in group_names else []) }}
 
 ###############################################################################
 # Compute node BIOS configuration.
