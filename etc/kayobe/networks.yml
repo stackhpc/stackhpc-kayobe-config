@@ -120,6 +120,16 @@ storage_mgmt_allocation_pool_start: "{{ storage_mgmt_cidr | next_nth_usable(2) }
 storage_mgmt_allocation_pool_end: "{{ storage_mgmt_cidr | ipaddr('last_usable') }}"
 storage_mgmt_vlan: 204
 
+# Octavia load balancer management network.
+# 10.$site.56.0/22
+lb_mgmt_cidr_index: 14
+lb_mgmt_cidr: "{{ site_cidr | ipsubnet(22, lb_mgmt_cidr_index) }}"
+lb_mgmt_allocation_pool_start: "{{ lb_mgmt_cidr | next_nth_usable(2) }}"
+lb_mgmt_allocation_pool_end: "{{ lb_mgmt_cidr | next_nth_usable(63) }}"
+lb_mgmt_neutron_allocation_pool_start: "{{ lb_mgmt_cidr | next_nth_usable(64) }}"
+lb_mgmt_neutron_allocation_pool_end: "{{ lb_mgmt_cidr | ipaddr('last_usable') }}"
+lb_mgmt_vlan: 206
+
 # MAAS provisioning network.
 maas_cidr: "10.10.0.0/22"
 
