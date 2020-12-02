@@ -55,3 +55,35 @@ ceph_gnocchi_pool_name: metrics
 
 # Use the chrony daemon running on the host.
 enable_chrony: false
+
+# Octavia Amphora certificates.
+octavia_certs_country: NL
+octavia_certs_state: Amsterdam
+octavia_certs_organization: Leafcloud
+octavia_certs_organizational_unit: cloud
+octavia_certs_server_ca_common_name: server-ca.octavia.leaf.cloud
+octavia_certs_client_ca_common_name: client-ca.octavia.leaf.cloud
+octavia_certs_client_req_common_name: client.octavia.leaf.cloud
+
+# Octavia Amphora flavor.
+octavia_amp_flavor:
+  name: "amphora"
+  is_public: no
+  vcpus: 1
+  ram: 2048
+  disk: 5
+
+# Octavia Amphora network and subnet.
+octavia_amp_network:
+  name: lb-mgmt-net
+  provider_network_type: vlan
+  provider_segmentation_id: "{{ lb_mgmt_vlan }}"
+  provider_physical_network: physnet1
+  external: false
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "{{ lb_mgmt_cidr }}"
+    allocation_pool_start: "{{ lb_mgmt_neutron_allocation_pool_start }}"
+    allocation_pool_end: "{{ lb_mgmt_neutron_allocation_pool_end }}"
+    no_gateway_ip: true
