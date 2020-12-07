@@ -1,0 +1,84 @@
+---
+- name: Build an Octavia Amphora image
+  hosts: seed
+  tasks:
+    - name: Ensure packages are installed
+      become: true
+      vars:
+        packages_for_os_family:
+          RedHat:
+            - debootstrap
+            - qemu-img
+            - git
+            - e2fsprogs
+            - policycoreutils-python-utils
+          Debian:
+            - debootstrap
+            - qemu-utils
+            - git
+            - kpartx
+      package:
+        name: "{{ packages_for_os_family[ansible_os_family] }}"
+      
+    - name: Create a temporary directory
+      tempfile:
+        state: directory
+      register: tempfile_result
+
+    - block:
+        - name: Check whether the image cache directory exists
+          stat:
+            path: "{{ image_cache_path }}"
+            get_md5: False
+            get_checksum: False
+            mime: False
+          register: image_cache_stat
+
+        - name: Ensure the image cache directory exists
+          file:
+            path: "{{ image_cache_path }}"
+            state: directory
+            owner: "{{ ansible_user_uid }}"
+            group: "{{ ansible_user_gid }}"
+          become: true
+          when: >-
+            not image_cache_stat.stat.exists or
+            not image_cache_stat.stat.writeable
+
+        - name: Set path facts
+          vars:
+            work_path: "{{ tempfile_result.path }}"
+          set_fact:
+            src_path: "{{ work_path }}/octavia"
+            venv_path: "{{ work_path }}/venv"
+            work_path: "{{ work_path }}"
+
+        - name: Clone Octavia source code
+          git:
+            depth: 1
+            dest: "{{ src_path }}"
+            repo: "https://opendev.org/openstack/octavia"
+            version: "{{ openstack_branch }}"
+
+        - name: Install diskimage-builder in a virtual environment
+          pip:
+            name: diskimage-builder
+            extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+            virtualenv: "{{ venv_path }}"
+
+        - name: Create the Amphora image
+          shell:
+            cmd: "source {{ venv_path }}/bin/activate && ./diskimage-create.sh"
+            chdir: "{{ src_path }}/diskimage-create"
+          changed_when: true
+
+        - name: Copy image to image store
+          copy:
+            src: "{{ src_path }}/diskimage-create/amphora-x64-haproxy.qcow2"
+            dest: "{{ image_cache_path }}/amphora-x64-haproxy.qcow2"
+            remote_src: true
+      always:
+        - name: Remove temporary files
+          file:
+            path: "{{ work_path }}"
+            state: absent
