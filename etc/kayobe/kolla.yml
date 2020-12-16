@@ -147,6 +147,12 @@ kolla_build_blocks:
       && chown -R horizon: /etc/openstack-dashboard/themes
     {% endif %}
     {% endraw %}
+  magnum_api_footer: |
+    # Tip of stable/ussuri with extra features backported from master
+    RUN pip install -U --no-deps git+https://github.com/stackhpc/magnum@stackhpc/10.0.0.1 -c https://releases.openstack.org/constraints/upper/ussuri
+  magnum_conductor_footer: |
+    # Tip of stable/ussuri with extra features backported from master
+    RUN pip install -U --no-deps git+https://github.com/stackhpc/magnum@stackhpc/10.0.0.1 -c https://releases.openstack.org/constraints/upper/ussuri
   masakari_monitors_header: |
     RUN sed -i -e 's/libvirt-python===.*/libvirt-python===5.10.0/' /requirements/upper-constraints.txt
   prometheus_server_repository_version: |
@@ -344,6 +350,8 @@ kolla_enable_grafana: true
 #kolla_enable_haproxy:
 #kolla_enable_heat:
 #kolla_enable_horizon:
+# NOTE: Currently not exposing magnum dashboard in production.
+kolla_enable_horizon_magnum: false
 #kolla_enable_influxdb:
 kolla_enable_ironic: false
 #kolla_enable_ironic_ipxe:
@@ -352,7 +360,7 @@ kolla_enable_ironic: false
 #kolla_enable_karbor:
 #kolla_enable_keystone:
 #kolla_enable_kuryr:
-#kolla_enable_magnum:
+kolla_enable_magnum: true
 #kolla_enable_manila:
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_hnas:
@@ -439,7 +447,7 @@ kolla_enable_prometheus: true
 # Path to a CA certificate file to use for the OS_CACERT environment variable
 # in admin-openrc.sh file when TLS is enabled, instead of Kolla-Ansible's
 # default.
-#kolla_internal_fqdn_cacert:
+kolla_internal_fqdn_cacert: "/etc/pki/tls/certs/ca-bundle.crt"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
