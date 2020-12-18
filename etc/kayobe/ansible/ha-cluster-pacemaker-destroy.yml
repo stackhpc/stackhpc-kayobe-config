@@ -1,0 +1,33 @@
+---
+- name: Ensure pacemaker & corosync cluster is destroyed
+  become: true
+  hosts: controllers,compute
+  tasks:
+    - import_role:
+        role: ondrejhome.pcs-modules-2
+      vars:
+        cluster_user_pass: "{{ secrets_hacluster_password }}"
+        cluster_firewall: false
+        cluster_configure_fence_xvm: false
+        cluster_net_iface: "{{ internal_net_name | net_interface }}"
+        cluster_etc_hosts: false
+        cluster_hostname_fact: "ansible_nodename"
+        cluster_node_is_remote: "{{ 'compute' in group_names }}"
+
+    #- name: Ensure pacemaker cluster nodes are removed
+    #  pcs_cluster:
+    #    node_list: "{{ ansible_nodename }}"
+    #    cluster_name: "pacemaker"
+    #    allowed_node_changes: "remove"
+    #  run_once: true
+
+    - name: Ensure pacemaker cluster is destroyed
+      pcs_cluster:
+        cluster_name: "pacemaker"
+        state: "absent"
+
+    - name: Ensure pacemaker_remote is stopped
+      service:
+        name: "pacemaker_remote.service"
+        state: stopped
+      ignore_errors: true
