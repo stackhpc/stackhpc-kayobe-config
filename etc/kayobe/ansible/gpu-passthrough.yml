@@ -1,0 +1,122 @@
+---
+- name: Enable GPU passthough
+  hosts: gpu-compute
+  vars:
+    # NVIDIA GeForce RTX 2080 SUPER PCI device IDs
+    vendor_id: "10de"
+    display_id: "1e81"
+    audio_id: "10f8"
+    usba_id: "1ad8"
+    usba_class: "0c0330"
+    usbc_id: "1ad9"
+    usbc_class: "0c8000"
+  tasks:
+    - name: Template dracut config
+      blockinfile:
+        path: /etc/dracut.conf.d/gpu-vfio.conf
+        block: |
+          add_drivers+="vfio vfio_iommu_type1 vfio_pci vfio_virqfd"
+        owner: root
+        group: root
+        mode: 0660
+        create: true
+      become: true
+      notify:
+        - Regenerate initramfs
+        - reboot
+
+    - name: Template udev rules to blacklist GPU usb controllers
+      blockinfile:
+        # We want this to execute as soon as possible
+        path: /etc/udev/rules.d/99-gpu.rules
+        block: |
+          #Remove NVIDIA USB xHCI Host Controller Devices, if present
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x{{ vendor_id }}", ATTR{class}=="0x{{ usba_class }}", ATTR{remove}="1"
+          #Remove NVIDIA USB Type-C UCSI devices, if present
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x{{ vendor_id }}", ATTR{class}=="0x{{ usbc_class }}", ATTR{remove}="1"
+        owner: root
+        group: root
+        mode: 0644
+        create: true
+      become: true
+      notify: reboot
+
+    - name: Add vfio to modules-load.d
+      blockinfile:
+        path: /etc/modules-load.d/vfio.conf
+        block: |
+          vfio
+          vfio_iommu_type1
+          vfio_pci
+          vfio_virqfd
+        owner: root
+        group: root
+        mode: 0664
+        create: true
+      become: true
+      notify: reboot
+
+    - name: Blacklist nouveau
+      blockinfile:
+        path: /etc/modprobe.d/blacklist-nouveau.conf
+        block: |
+          blacklist nouveau
+          options nouveau modeset=0
+        mode: 0664
+        owner: root
+        group: root
+        create: true
+      become: true
+      notify:
+        - reboot
+        - Regenerate initramfs
+
+    - name: Ignore unsupported model specific registers
+      # Occasionally, applications running in the VM may crash unexpectedly,
+      # whereas they would run normally on a physical machine. If, while
+      # running dmesg -wH, you encounter an error mentioning MSR, the reason
+      # for those crashes is that KVM injects a General protection fault (GPF)
+      # when the guest tries to access unsupported Model-specific registers
+      # (MSRs) - this often results in guest applications/OS crashing. A
+      # number of those issues can be solved by passing the ignore_msrs=1
+      # option to the KVM module, which will ignore unimplemented MSRs.
+      # source: https://wiki.archlinux.org/index.php/QEMU
+      blockinfile:
+        path: /etc/modprobe.d/kvm.conf
+        block: |
+          options kvm ignore_msrs=Y
+          # This option is not available in centos 7 as the kernel is too old,
+          # but it can help with dmesg spam in newer kernels (centos8?). Sample
+          # dmesg log message:
+          #  [  +0.000002] kvm [8348]: vcpu0, guest rIP: 0xffffffffb0a767fa ignored rdmsr: 0x619
+          # options kvm report_ignored_msrs=N
+        mode: 0664
+        owner: root
+        group: root
+        create: true
+      become: true
+      notify: reboot
+
+    - name: Add vfio-pci.ids kernel args
+      include_role:
+        name: stackhpc.grubcmdline
+      vars:
+        kernel_cmdline:
+          - intel_iommu=on
+          - iommu=pt
+          - "vfio-pci.ids={{ vendor_id }}:{{ display_id }},{{ vendor_id }}:{{ audio_id }}"
+        kernel_cmdline_remove:
+          - iommu
+          - intel_iommu
+          - vfio-pci.ids
+
+  handlers:
+    - name: Regenerate initramfs
+      shell: |-
+        #!/bin/bash
+        set -eux
+        dracut -v -f /boot/initramfs-$(uname -r).img $(uname -r)
+      become: true
+    - name: reboot
+      reboot:
+        msg: "Rebooting the hypervisor"
