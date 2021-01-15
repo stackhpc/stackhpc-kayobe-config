@@ -1,0 +1,26 @@
+---
+- name: Ensure ha_cluster_exporter container is running 
+  become: true
+  hosts: controllers
+  tasks:
+    - name: Login to docker registry
+      docker_login:
+        registry_url: "{{ docker_registry }}"
+        username: "{{ kolla_docker_registry_username }}"
+        password: "{{ kolla_docker_registry_password }}"
+        reauthorize: yes
+      when:
+        - kolla_docker_registry_username is not none
+        - kolla_docker_registry_password is not none
+
+    - name: Ensure ha_cluster_exporter container is running
+      docker_container:
+        capabilities:
+          - NET_ADMIN
+        detach: true
+        image: "{{ docker_registry }}/leafcloud/ha-cluster-exporter:latest"
+        ipc_mode: host
+        name: ha_cluster_exporter
+        network_mode: host
+        restart_policy: unless-stopped
+        state: started
