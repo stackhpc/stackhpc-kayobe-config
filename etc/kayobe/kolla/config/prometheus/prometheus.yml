@@ -1,1 +1,168 @@
-TODO
+{% raw %}
+global:
+  scrape_interval: 60s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'kolla'
+
+{% if prometheus_alert_rules.files is defined and prometheus_alert_rules.files | length  > 0 %}
+rule_files:
+{% for rule in prometheus_alert_rules.files %}
+  - "/etc/prometheus/{{ rule.path | basename }}"
+{% endfor %}
+{% endif %}
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+{% for host in groups['prometheus'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ prometheus_port }}'
+{% endfor %}
+
+{% if enable_prometheus_node_exporter | bool %}
+  - job_name: node
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-node-exporter'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_node_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_mysqld_exporter | bool %}
+  - job_name: mysqld
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-mysqld-exporter'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_mysqld_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_haproxy_exporter | bool %}
+  - job_name: haproxy
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-haproxy-exporter'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_haproxy_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_memcached_exporter | bool %}
+  - job_name: memcached
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-memcached-exporter'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_memcached_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_cadvisor | bool %}
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+{% for host in groups["prometheus-cadvisor"] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_cadvisor_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_ceph_mgr_exporter | bool %}
+  - job_name: ceph_mgr_exporter
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for exporter in prometheus_ceph_mgr_exporter_endpoints %}
+        - '{{ exporter }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_openstack_exporter | bool %}
+  - job_name: openstack_exporter
+    scrape_interval: {{ prometheus_openstack_exporter_interval }}
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for host in groups["prometheus-openstack-exporter"] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_openstack_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_elasticsearch_exporter | bool %}
+  - job_name: elasticsearch_exporter
+    scrape_interval: {{ prometheus_elasticsearch_exporter_interval }}
+    static_configs:
+      - targets:
+{% for host in groups["prometheus-elasticsearch-exporter"] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_elasticsearch_exporter_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% if enable_prometheus_blackbox_exporter | bool and prometheus_blackbox_exporter_endpoints | length > 0 | bool %}
+  - job_name: blackbox_exporter
+    metrics_path: /probe
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for target in prometheus_blackbox_exporter_endpoints %}
+        - '{{ target }}'
+{% endfor %}
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: service
+        replacement: ${1}
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: __param_module
+        replacement: ${2}
+      - source_labels: [__param_module]
+        target_label: module
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: __param_target
+        replacement: ${3}
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: '{{ api_interface_address | put_address_in_context('url') }}:{{ prometheus_blackbox_exporter_port }}'
+{% endif %}
+
+{# The following scrape configs are customised from the upstream Kolla Ansible template. #}
+
+  - job_name: 'ceph'
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for exporter in prometheus_ceph_mgr_exporter_endpoints %}
+        - '{{ exporter }}'
+{% endfor %}
+        labels:
+          instance: 'ceph_cluster'
+
+  - job_name: 'hardware-monitoring'
+    scrape_interval: 1s
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for exporter in prometheus_hardware_monitoring_exporter_endpoints %}
+        - '{{ exporter }}'
+{% endfor %}
+
+  - job_name: ha-cluster
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for host in groups["control"] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:9664'
+{% endfor %}
+
+{% if enable_prometheus_alertmanager | bool %}
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+{% for host in groups["prometheus-alertmanager"] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{{ hostvars[host]['prometheus_alertmanager_port'] }}'
+{% endfor %}
+{% endif %}
+{% endraw %}
