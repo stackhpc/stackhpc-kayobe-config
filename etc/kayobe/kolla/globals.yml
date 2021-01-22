@@ -95,3 +95,11 @@ octavia_amp_network:
 # autohealer to communicate with OpenStack.
 # NOTE: This exposes us to https://nvd.nist.gov/vuln/detail/CVE-2016-7404
 enable_cluster_user_trust: true
+
+prometheus_ceph_mgr_exporter_endpoints:
+{% for host in groups['storage'] %}
+  - {{ 'admin_oc' | net_ip(host) ~ ':9283' }}
+{% endfor %}
+
+prometheus_hardware_monitoring_exporter_endpoints:
+  - 195.114.30.117:9091
