@@ -1,0 +1,15 @@
+{% raw %}
+
+groups:
+- name: HA-Cluster
+  rules:
+  - alert: HAClusterNodeOffline
+    expr: min(ha_cluster_pacemaker_nodes{status="online"}) by (node) == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "HACluster node offline (node {{ $labels.node }})"
+      description: "HA Cluster node offline\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+{% endraw %}
