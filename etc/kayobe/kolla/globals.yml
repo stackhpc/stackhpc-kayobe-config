@@ -103,3 +103,12 @@ prometheus_ceph_mgr_exporter_endpoints:
   - 10.10.32.8:9283
 prometheus_hardware_monitoring_exporter_endpoints:
   - 195.114.30.117:9091
+
+nova_ks_user_roles:
+  # Assign the key-manager:migrator role to the nova user in the service
+  # project. This is required for Masakari failover operations with encrypted
+  # volumes, since the nova user is used by Masakari to perform evacuation of
+  # instances.
+  - user: nova
+    project: service
+    role: key-manager:operator
