@@ -114,3 +114,11 @@ nova_ks_user_roles:
   - user: nova
     project: service
     role: key-manager:operator
+
+# Enable Ceph RadosGW.
+enable_ceph_rgw: true
+ceph_rgw_hosts:
+{% for host in groups['storage'] %}
+  - {{ 'storage' | net_ip(host) }}:8080
+{% endfor %}
+ceph_rgw_account_in_url: true
