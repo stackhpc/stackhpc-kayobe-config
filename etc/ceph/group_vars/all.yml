@@ -105,3 +105,27 @@ ceph_conf_overrides:
   global:
     osd_pool_default_size: 2
     osd_pool_default_min_size: 2
+  "client.rgw.{{ hostvars[inventory_hostname]['ansible_hostname'] }}.rgw0":
+    "rgw keystone api version": "3"
+    "rgw keystone url": "{{ rgw_keystone_url }}"
+    "rgw keystone admin user": "ceph_rgw"
+    "rgw keystone admin password": "{{ rgw_keystone_password }}"
+    "rgw keystone admin project": "service"
+    "rgw keystone admin domain": "default"
+    "rgw keystone accepted roles": "Member, _member_, admin"
+    "rgw keystone token cache size": "10000"
+    "rgw keystone revocation interval": "900"
+    "rgw keystone verify ssl": "false"
+    "rgw s3 auth use keystone": "true"
+    "rgw swift account in url": "true"
+
+rgw_keystone_url: "https://10.11.55.254:5000"
+
+rgw_keystone_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  32653865303463623434353831666236646333343635356335313836626136656163636161666362
+  6134633633316164616531366361663632666531376265320a633431656136393266623836633833
+  33343162643434396330663765353763386633306432616162373136663839386231633534363635
+  3930343436383635370a656466373463343861343163336636316236343138323333323131643162
+  31336337643937653033363561396165383263623339353838643330316561306432643866383265
+  6231353531343165333535386464323034323033633734343535
