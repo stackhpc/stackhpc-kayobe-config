@@ -56,6 +56,23 @@ gpu-edge-compute
 [storage]
 civil-sole
 
+# NOTE: Not using the standard 'storage' group for the original two Ceph nodes
+# currently, since this would cause Kayobe to configure them during a 'kayobe
+# overcloud host configure', and they are currently externally managed. This
+# can be changed at a later date if we decide to manage these hosts via Kayobe.
+[ceph-storage]
+rich-molly
+deep-hippo
+
+[ceph-storage:children]
+storage
+
+[ceph-mgr:children]
+ceph-storage
+
+[ceph-rgw:children]
+ceph-storage
+
 [baremetal-compute]
 # Add baremetal compute nodes here if required.
 
