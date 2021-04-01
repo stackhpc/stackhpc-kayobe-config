@@ -99,7 +99,7 @@ octavia_amp_network:
 enable_cluster_user_trust: true
 
 prometheus_ceph_mgr_exporter_endpoints:
-{% for host in groups['storage'] %}
+{% for host in groups['ceph-mgr'] %}
   - {{ 'admin_oc' | net_ip(host) ~ ':9283' }}
 {% endfor %}
 
@@ -118,3 +118,11 @@ nova_ks_user_roles:
   - user: nova
     project: service
     role: key-manager:operator
+
+# Enable Ceph RadosGW.
+enable_ceph_rgw: true
+ceph_rgw_hosts:
+{% for host in groups['ceph-rgw'] %}
+  - {{ 'storage' | net_ip(host) }}:8080
+{% endfor %}
+ceph_rgw_account_in_url: true
