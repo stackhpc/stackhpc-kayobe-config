@@ -88,9 +88,9 @@ kolla_docker_registry_password: "{{ secrets_docker_registry_password }}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
-# Apply a -centos8 suffix to the image tag.
-# NOTE: This should be removed when upgrading to Ussuri.
-kolla_tag: "{{ kolla_openstack_release }}-centos8"
+# Tag built images with <release>-<date>-<time>.
+# Currently need to check /var/log/kolla-build.log to find out the tag!
+kolla_tag: "{{ kolla_openstack_release }}-{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
 
 # Dict mapping names of sources to their definitions for
 # kolla_install_type=source. See kolla.common.config for details.
