@@ -34,4 +34,12 @@
                 path: "{{ old_swapfile }}"
                 state: absent
           when: old_swapfile_stat.stat.exists
+
+        - name: Manage swap file entry in fstab.
+          mount:
+            name: none
+            src: "{{ old_swapfile }}"
+            fstype: swap
+            opts: sw
+            state: absent
       when: disable_old_swapfile | bool
