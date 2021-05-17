@@ -1,0 +1,45 @@
+---
+- name: Ensure swap is configured
+  hosts: compute
+  vars:
+    old_swapfile: "/swap.img"
+    # Set to True to disable the /swap.img swapfile. This may take a long time.
+    disable_old_swapfile: False
+  become: true
+  tasks:
+    - import_role:
+        name: geerlingguy.swap
+      vars:
+        swap_file_path: /swapfile
+        # Allow 20% of memory on computes, 10% everywhere else.
+        memory_swap_ratio: "{{ 5 if 'compute' in group_names else 10 }}"
+        swap_file_size_mb: "{{ ansible_facts.memtotal_mb // (memory_swap_ratio | int) }}"
+        # Reduce swappiness from Linux default of 60. 10 seems to be in use on
+        # computes already.
+        swap_swappiness: '10'
+
+    - block:
+        - name: Check for {{ old_swapfile }} swapfile
+          stat:
+            path: "{{ old_swapfile }}"
+          register: old_swapfile_stat
+
+        - block:
+            - name: Disable {{ old_swapfile }} swapfile
+              command:
+                cmd: "swapoff {{ old_swapfile }}"
+
+            - name: Ensure {{ old_swapfile }} doesn't exist
+              file:
+                path: "{{ old_swapfile }}"
+                state: absent
+          when: old_swapfile_stat.stat.exists
+
+        - name: Manage swap file entry in fstab.
+          mount:
+            name: none
+            src: "{{ old_swapfile }}"
+            fstype: swap
+            opts: sw
+            state: absent
+      when: disable_old_swapfile | bool
