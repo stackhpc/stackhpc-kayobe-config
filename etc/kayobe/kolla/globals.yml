@@ -99,9 +99,10 @@ octavia_amp_network:
 enable_cluster_user_trust: true
 
 prometheus_ceph_mgr_exporter_endpoints:
-  - 10.10.32.7:9283
-  - 10.10.32.8:9283
-  - 10.10.32.30:9283
+{% for host in groups['ceph-mgr'] %}
+  - {{ 'admin_oc' | net_ip(host) ~ ':9283' }}
+{% endfor %}
+
 prometheus_hardware_monitoring_exporter_endpoints:
   - 195.114.30.117:9091
 
@@ -118,6 +119,15 @@ nova_ks_user_roles:
   - user: nova
     project: service
     role: key-manager:operator
+
+# Enable Ceph RadosGW.
+# NOTE: Disabled in production for now, until we decide to expose it.
+enable_ceph_rgw: false
+ceph_rgw_hosts:
+{% for host in groups['ceph-rgw'] %}
+  - {{ 'storage' | net_ip(host) }}:8080
+{% endfor %}
+ceph_rgw_account_in_url: true
 
 # Container image tags.
 # Specifying tags allows us to control the version of each container image.
