@@ -1,0 +1,36 @@
+---
+- hosts: monitoring
+  gather_facts: false
+  tasks:
+   - copy:
+       src: "{{playbook_dir}}/dockerfiles/redfish-exporter.Dockerfile"
+       dest: /opt/kayobe/images/redfish-exporter.Dockerfile
+
+   - copy:
+       dest: /etc/kolla/prometheus-server/redfish-exporter.yml
+       content: |-
+         ---
+         hosts:
+           default:
+             username: "{{ ipmi_username }}"
+             password: "{{ ipmi_password }}"
+       mode: "0770"
+     become: true
+
+   - docker_image:
+      name: redfish-exporter
+      build:
+        dockerfile: redfish-exporter.Dockerfile
+        pull: false
+        path: /opt/kayobe/images/
+      source: build
+     become: true
+
+   - docker_container:
+       name: redfish-exporter
+       image: redfish-exporter
+       command: ./main --config.file /redfish-exporter.yml
+       volumes: /etc/kolla/prometheus-server/redfish-exporter.yml:/redfish-exporter.yml:ro
+       network_mode : host
+       restart_policy: unless-stopped
+     become: true

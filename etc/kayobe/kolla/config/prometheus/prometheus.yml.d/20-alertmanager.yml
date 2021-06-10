@@ -1,0 +1,9 @@
+{% raw %}
+scrape_configs:
+  - job_name: alertmanager
+    static_configs:
+      - targets:
+{% for host in groups['monitoring'] %}
+        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:9093'
+{% endfor %}
+{% endraw %}

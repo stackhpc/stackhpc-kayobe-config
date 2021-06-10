@@ -1,0 +1,36 @@
+---
+- name: Converge caso and SSM containers
+  hosts: monitoring
+  vars:
+    pip_install_packages:
+      - name: docker
+    ssm_image: "stfc/ssm"
+    ssm_sender_enabled: true
+    ssm_outgoing_volume: caso_ssm_outgoing
+    ssm_protocol: "AMS"
+    ssm_auto_broker: false
+    ams_host: msg-devel.argo.grnet.gr
+    ams_destination: "IRIS-cloud"
+    ams_project: "accounting"
+    ams_token: "{{ secrets_apel_ams_token }}"
+
+  pre_tasks:
+    - name: install dependencies
+      package:
+        name: "{{ item }}"
+      with_items:
+        - git
+
+    - name: Include secrets
+      include_vars:
+        file: '../secrets.yml'
+
+  roles:
+#    - geerlingguy.pip
+#    - geerlingguy.docker
+    - role: stackhpc.ssm
+      vars:
+        ssm_action: build
+    - role: stackhpc.ssm
+      vars:
+        ssm_action: deploy

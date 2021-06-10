@@ -1,2 +1,106 @@
 ---
 # Add extra Kolla global configuration here.
+
+# Tell kolla to use the extra volume in this location
+nova_instance_datadir_volume: '/var/lib/nova'
+
+# Ceph integration, without nova having rbd backend
+cinder_backend_ceph: "{{ scientific_openstack_trait_ceph }}"
+
+# Make glance use a file backend
+glance_backend_swift: "no"
+glance_file_backend: "yes"
+
+# Enable CADF notifications in Keystone
+enable_cadf_notifications: "yes"
+
+# add route to ceph-rgw group in haproxy
+enable_ceph_rgw: "{{ scientific_openstack_trait_ceph }}"
+# Produce a list of radosgw endpoints e.g ['192.168.1.4:6780']
+ceph_rgw_hosts: "{{ groups['ceph-rgw'] | default([]) | map('extract', hostvars, 'ansible_host') | select('defined') | map('regex_replace', '^(.*)$', '\\1:6780') | list  }}"
+
+# Projects to extracts metrics from with cASO
+#caso_projects:
+#  - iris
+#  - iris-euclid
+caso_messengers:
+  - caso.messenger.logstash.LogstashMessenger
+  - caso.messenger.ssm.SSMMessengerV04
+caso_site_name: "CHANGE_ME_CASO_SITE_NAME"
+
+# Designate (DNSaaS) configuration
+designate_backend: "bind9"
+designate_ns_record: "CHANGEME_DESIGNATE_NS_RECORD"
+
+# Container image tags.
+# These should be allowed to change independently, as services are updated.
+barbican_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+bifrost_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+caso_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+cron_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+ceph_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+cinder_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+chrony_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+designate_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+elasticsearch_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+elasticsearch_curator_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+fluentd_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+glance_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+grafana_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+haproxy_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+heat_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+horizon_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+influxdb_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+ironic_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+iscsid_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+kafka_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+keepalived_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+keystone_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+kibana_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+kolla_toolbox_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+logstash_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+octavia_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+magnum_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+manila_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+mariadb_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+memcached_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+monasca_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+monasca_notification_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+monasca_persister_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+neutron_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+nova_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+openvswitch_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+placement_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_server_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_mtail_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_elasticsearch_exporter_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_libvirt_exporter_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+prometheus_jiralert_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+rabbitmq_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+storm_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+zookeeper_tag: "11.0.0.2-2{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
+
+# Default size causes ES to fall over very easily
+es_heap_size: "24g"
+# Look after elasticserach indexes, as required
+enable_elasticsearch_curator: true
+# Close index after 30 days
+elasticsearch_curator_soft_retention_period_days: 30
+# Hard delete index after around 3 years
+elasticsearch_curator_hard_retention_period_days: 1100
+
+# Takes longer than the default 10 seconds, we poll every 1m
+prometheus_openstack_exporter_timeout: 30s
+
+# Needed to launch VM instances in aio environment without nested virt
+nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
+
+# Increase the default prometheus retention period
+prometheus_cmdline_extras: '--storage.tsdb.retention.time=90d --storage.tsdb.retention.size=50GB'
+
+# Reduce the kolla-ansible token expiry default from one day to one hour
+fernet_token_expiry: 3600
+
+# Custom exporters
+enable_prometheus_libvirt_exporter: True

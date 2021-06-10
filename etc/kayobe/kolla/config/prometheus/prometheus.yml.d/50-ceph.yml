@@ -1,0 +1,13 @@
+{% if groups.get('ceph_mon') %}
+scrape_configs:
+  - job_name: ceph
+    static_configs:
+{% for host in groups['ceph_mon'] %}
+      - targets:
+          - '{{ hostvars[host]["ansible_host"] }}:9283'
+        labels:
+          server: '{{ host }}'
+{% endfor %}
+    scrape_interval: 1m
+    scrape_timeout: 30s
+{% endif %}

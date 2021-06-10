@@ -1,0 +1,16 @@
+{% raw %}
+keystone_identity_providers:
+  - name: "openstack"
+    openstack_domain: "Default"
+    protocol: "openid"
+    identifier: "http://10.60.210.1:8080/auth/realms/openstack"
+    public_name: "Authenticate via keycloak"
+    attribute_mapping: "attribute_mapping_keycloak_openstack"
+    metadata_folder: "{{ node_custom_config }}/keystone/identity-metadata"
+    certificate_file: "{{ node_custom_config }}/keystone/identity-certificate.pem"
+keystone_identity_mappings:
+  - name: "attribute_mapping_keycloak_openstack"
+    file: "{{ node_custom_config }}/keystone/identity-mappings.json"
+{% endraw %}
+
+enable_keystone_federation: true
