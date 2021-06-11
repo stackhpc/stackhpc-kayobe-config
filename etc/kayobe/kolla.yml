@@ -84,7 +84,7 @@ kolla_docker_namespace: scientific-openstack/infrastructure/kayobe-config
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: 11.0.0.2-2
+kolla_openstack_release: 11.0.0.2-3
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -108,10 +108,10 @@ kolla_openstack_release: 11.0.0.2-2
 kolla_build_blocks:
   neutron_server_footer: |
     # Adds experimental batching support
-    RUN pip3 install --prefix /usr git+https://github.com/stackhpc/networking-generic-switch@stackhpc/victoria-batching -c https://releases.openstack.org/constraints/upper/victoria
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/networking-generic-switch@stackhpc/victoria-batching -c https://releases.openstack.org/constraints/upper/victoria
   nova_base_footer: |
     # Fix up for ironic ha bugs
-    RUN pip3 install -U --prefix /usr --no-deps git+https://github.com/stackhpc/nova.git@stackhpc/victora-ironic-rebalance  -c https://releases.openstack.org/constraints/upper/victoria
+    RUN /var/lib/kolla/venv/bin/pip  install -U --prefix /var/lib/kolla/venv --no-deps git+https://github.com/stackhpc/nova.git@stackhpc/victora-ironic-rebalance  -c https://releases.openstack.org/constraints/upper/victoria
   prometheus_server_repository_version: |
     # Avoid the pain of porting 1.x rules and migrating data to 2.x
     ARG prometheus_version='2.26.0'
@@ -119,11 +119,11 @@ kolla_build_blocks:
     ENV prometheus_cadvisor_version=0.39.0
   ironic_inspector_footer: |
     # Install our custom inspector plugins.
-    RUN pip3 install --prefix /usr git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.2.0
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.2.0
   magnum_api_footer: |
-    RUN pip3 install -U --no-deps --prefix /usr git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
+    RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
   magnum_conductor_footer: |
-    RUN pip3 install -U --no-deps --prefix /usr git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
+    RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
