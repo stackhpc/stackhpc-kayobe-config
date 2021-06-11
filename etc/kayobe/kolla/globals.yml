@@ -82,7 +82,12 @@ storm_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 zookeeper_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 
 # Default size causes ES to fall over very easily
+{% if scientific_openstack_trait_all_in_one %}
+es_heap_size: 8g
+{% else %}
 es_heap_size: "24g"
+{% endif %}
+
 # Look after elasticserach indexes, as required
 enable_elasticsearch_curator: true
 # Close index after 30 days
