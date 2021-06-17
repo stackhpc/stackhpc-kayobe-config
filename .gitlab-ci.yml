@@ -54,60 +54,6 @@ build-kayobe:
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE:latest
 
-build-rally:
-  extends:
-    - .tags
-  image: docker:stable
-  rules:
-    - when: always
-  services:
-    - name: docker:dind
-      command: ["--mtu=1450"]
-  stage: build
-  script:
-    - cd .automation/docker/rally
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $RALLY_DOCKER_IMAGE:latest || true
-    - docker build --cache-from $RALLY_DOCKER_IMAGE:latest --tag $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA --tag $RALLY_DOCKER_IMAGE:latest .
-    - docker push $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
-    - docker push $RALLY_DOCKER_IMAGE:latest
-
-overcloud service deploy:
-  extends:
-    - .tags
-    - .environment
-  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  stage: run
-  rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
-  script:
-    - .automation/pipeline/overcloud-service-deploy.sh
-
-overcloud host configure:
-  extends:
-    - .tags
-    - .environment
-  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  stage: run
-  rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
-  script:
-    - .automation/pipeline/overcloud-host-configure.sh
-
-overcloud deployment image build:
-  extends:
-    - .tags
-    - .environment
-  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  stage: run
-  rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
-  script:
-    - .automation/pipeline/overcloud-deployment-image-build.sh
-
 kolla diff:
   extends:
     - .tags
@@ -122,24 +68,15 @@ kolla diff:
     expose_as: 'kayobe config diff'
     paths: ['./kayobe-config-diff.txt']
 
+kayobe:
+  trigger:
+    include: .gitlab/kayobe.yml
+    strategy: depend
+
 tempest:
-  extends:
-    - .tempest-tags
-  variables:
-     GIT_SUBMODULE_STRATEGY: normal
-  image: $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
-  stage: run
+  trigger:
+    include: .gitlab/tempest.yml
+    strategy: depend
   rules:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
-  script:
-    - .automation/pipeline/tempest.sh
-    - mkdir ${CI_PROJECT_DIR}/artifacts
-    - cp /home/rally/artifacts/* ${CI_PROJECT_DIR}/artifacts
-  artifacts:
-    when: always
-    paths:
-      - artifacts/rally-junit.xml
-      - artifacts/rally-verify-report.html
-    reports:
-      junit: artifacts/rally-junit.xml
