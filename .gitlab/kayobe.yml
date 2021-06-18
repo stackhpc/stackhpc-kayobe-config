@@ -36,3 +36,14 @@ overcloud deployment image build:
   script:
     - .automation/pipeline/overcloud-deployment-image-build.sh
 
+overcloud container image build:
+  extends:
+    - .tags
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    # FIXME: Only building caso to save time when testing
+    - .automation/pipeline/overcloud-container-image-build.sh caso -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD -e ansible_become=true
