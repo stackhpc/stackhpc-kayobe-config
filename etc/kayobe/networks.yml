@@ -85,6 +85,7 @@ admin_oc_gateway: "{{ admin_oc_cidr | ipaddr('first_usable') }}"
 admin_oc_allocation_pool_start: "{{ admin_oc_cidr | next_nth_usable(2) }}"
 admin_oc_allocation_pool_end: "{{ admin_oc_cidr | ipaddr('last_usable') }}"
 admin_oc_vlan: 200
+admin_oc_zone: admin_oc
 
 # 10.$site.36.0/22
 internal_cidr_index: 9
@@ -93,6 +94,7 @@ internal_vip_address: "{{ internal_cidr | ipaddr('last_usable') }}"
 internal_allocation_pool_start: "{{ internal_cidr | next_nth_usable(2) }}"
 internal_allocation_pool_end: "{{ internal_vip_address | ipmath(-1) }}"
 internal_vlan: 201
+internal_zone: internal
 
 # 10.11.52.0/22
 #public_fqdn: TODO
@@ -100,6 +102,7 @@ public_vip_address: 10.11.55.254
 # VIP address used by HAProxy for RadosGW.
 public_rgw_vip_address: 10.11.55.253
 public_vlan: 205
+public_zone: public
 
 # 10.$site.40.0/22
 tunnel_cidr_index: 10
@@ -107,6 +110,7 @@ tunnel_cidr: "{{ site_cidr | ipsubnet(22, tunnel_cidr_index) }}"
 tunnel_allocation_pool_start: "{{ tunnel_cidr | next_nth_usable(2) }}"
 tunnel_allocation_pool_end: "{{ tunnel_cidr | ipaddr('last_usable') }}"
 tunnel_vlan: 202
+tunnel_zone: tunnel
 
 # 10.$site.44.0/22
 storage_cidr_index: 11
@@ -114,6 +118,7 @@ storage_cidr: "{{ site_cidr | ipsubnet(22, storage_cidr_index) }}"
 storage_allocation_pool_start: "{{ storage_cidr | next_nth_usable(2) }}"
 storage_allocation_pool_end: "{{ storage_cidr | ipaddr('last_usable') }}"
 storage_vlan: 203
+storage_zone: storage
 
 # 10.$site.48.0/22
 storage_mgmt_cidr_index: 12
@@ -121,6 +126,7 @@ storage_mgmt_cidr: "{{ site_cidr | ipsubnet(22, storage_mgmt_cidr_index) }}"
 storage_mgmt_allocation_pool_start: "{{ storage_mgmt_cidr | next_nth_usable(2) }}"
 storage_mgmt_allocation_pool_end: "{{ storage_mgmt_cidr | ipaddr('last_usable') }}"
 storage_mgmt_vlan: 204
+storage_mgmt_zone: storage
 
 # Octavia load balancer management network.
 # 10.$site.56.0/22
@@ -131,6 +137,7 @@ lb_mgmt_allocation_pool_end: "{{ lb_mgmt_cidr | next_nth_usable(63) }}"
 lb_mgmt_neutron_allocation_pool_start: "{{ lb_mgmt_cidr | next_nth_usable(64) }}"
 lb_mgmt_neutron_allocation_pool_end: "{{ lb_mgmt_cidr | ipaddr('last_usable') }}"
 lb_mgmt_vlan: 206
+lb_mgmt_zone: lb_mgmt
 
 # MAAS provisioning network.
 maas_cidr: "10.10.0.0/22"
