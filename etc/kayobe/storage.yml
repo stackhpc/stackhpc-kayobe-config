@@ -132,10 +132,12 @@ storage_lvm_groups: []
 # Storage node firewalld configuration.
 
 # Whether to install and enable firewalld.
-#storage_firewalld_enabled:
+storage_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-#storage_firewalld_zones:
+storage_firewalld_zones:
+  - zone: admin_oc
+  - zone: storage
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
@@ -147,7 +149,29 @@ storage_lvm_groups: []
 # - offline: true
 # - permanent: true
 # - state: enabled
-#storage_firewalld_rules:
+storage_firewalld_rules:
+  # Disable default rules in internal zone.
+  - service: dhcpv6-client
+    state: disabled
+    zone: internal
+  - service: samba-client
+    state: disabled
+    zone: internal
+  - service: ssh
+    state: disabled
+    zone: internal
+  # Disable default rules in public zone.
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
+  # admin_oc zone
+  - service: ssh
+    zone: admin_oc
+  - port: 9283/tcp
+    zone: admin_oc
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
