@@ -10,6 +10,7 @@ overcloud service deploy:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
   script:
+    - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/overcloud-service-deploy.sh
 
 overcloud host configure:
@@ -22,6 +23,7 @@ overcloud host configure:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
   script:
+    - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/overcloud-host-configure.sh
 
 overcloud deployment image build:
@@ -34,6 +36,7 @@ overcloud deployment image build:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
   script:
+    - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/overcloud-deployment-image-build.sh
 
 overcloud container image build:
@@ -45,6 +48,7 @@ overcloud container image build:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
   script:
+    - !reference [.prelude_kayobe_setup, script]
     # FIXME: Only building caso to save time when testing
     - .automation/pipeline/overcloud-container-image-build.sh caso -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD
     - mkdir ${CI_PROJECT_DIR}/artifacts
