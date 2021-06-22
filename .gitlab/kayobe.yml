@@ -47,3 +47,5 @@ overcloud container image build:
   script:
     # FIXME: Only building caso to save time when testing
     - .automation/pipeline/overcloud-container-image-build.sh caso -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD -e ansible_become=true
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /var/log/kolla-build.log ${CI_PROJECT_DIR}/artifacts/
