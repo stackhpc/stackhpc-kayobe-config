@@ -5,6 +5,17 @@
   vars:
     ipa_image_name: "ipa"
     ipa_image_force_rebuild: true
+    ipa_images:
+    - "{{ ipa_image_name }}.kernel"
+    - "{{ ipa_image_name }}.initramfs"
+    gitlab_project: "{{ lookup('env', 'CI_PROJECT_ID') }}"
+    gitlab_job_token: "{{ lookup('env', 'CI_JOB_TOKEN') }}"
+    gitlab_private_token: "{{ lookup('env', 'GITLAB_TOKEN) }}"
+    gitlab_api_v4_url: "{{ lookup('env', 'CI_API_V4_URL') }}"
+    gitlab_header_private_token: "{{ (gitlab_private_token != '') | ternary({'PRIVATE-TOKEN': gitlab_private_token}, {}) }}"
+    gitlab_header_job_token: "{{ (gitlab_job_token != '') | ternary({'JOB-TOKEN': gitlab_job_token}, {}) }}"
+    gitlab_auth_headers: "{{ gitlab_header_private_token | combine(gitlab_header_job_token) }}"
+    version: "{{ ansible_date_time.iso8601_basic_short }}"
   tasks:
     - name: Ensure libgcrypt is updated
       package:
@@ -32,3 +43,25 @@
         os_images_git_elements: "{{ ipa_build_dib_git_elements }}"
         os_images_upload: False
         os_images_force_rebuild: "{{ ipa_image_force_rebuild }}"
+
+    - name: Upload files to generic package registry
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/{{ gitlab_project }}/packages/generic/ironic-python-agent/{{ version }}/{{ item }}"
+        method: PUT
+        src: "{{ image_cache_path }}/{{ ipa_image_name }}/{{ item }}"
+        # Set 30 minute timeout for large files
+        timeout: "{{ 60 * 30 }}" # seconds
+        headers: "{{ gitlab_auth_headers }}"
+        status_code: 201
+      with_items: "{{ ipa_images }}"
+
+    - name: Upload logs to generic package registry
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/{{ gitlab_project }}/packages/generic/ironic-python-agent/{{ version }}/{{ item }}"
+        method: PUT
+        src: "/opt/kayobe/images/ipa/{{ item }}"
+        headers: "{{ gitlab_auth_headers }}"
+        status_code: 201
+      with_items:
+        - ipa.stdout
+        - ipa.stderr
