@@ -10,18 +10,18 @@ admin_oc_interface: "eth0.{{ admin_oc_vlan }}"
 
 internal_interface: "eth0.{{ internal_vlan }}"
 
-public_interface: "eth1.{{ public_vlan }}"
-# Use a separate routing table for the public API to avoid asymmetric routing.
-public_rules:
-  - from {{ public_rgw_vip_address }} lookup public
-public_routes:
+public2_interface: "eth1.{{ public2_vlan }}"
+# Use a separate routing table for the public2 API to avoid asymmetric routing.
+public2_rules:
+  - from 10.11.52.0/22 lookup public
+public2_routes:
   - cidr: 10.11.52.0/22
     table: public
   - cidr: 0.0.0.0/0
     gateway: 10.11.52.1
     table: public
     options:
-      - dev {{ public_interface }}
+      - dev {{ public2_interface }}
       - onlink
 
 storage_interface: "eth1.{{ storage_vlan }}"
