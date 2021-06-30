@@ -122,10 +122,11 @@ nova_ks_user_roles:
 
 # Enable Ceph RadosGW.
 enable_ceph_rgw: true
-ceph_rgw_hosts:
-{% for host in groups['ceph-rgw'] %}
-  - {{ 'storage' | net_ip(host) }}:8080
-{% endfor %}
+# Use the ceph-ansible deployed HAProxy load balancer.
+enable_ceph_rgw_loadbalancer: false
+ceph_rgw_internal_fqdn: "{{ public2_rgw_fqdn }}"
+ceph_rgw_external_fqdn: "{{ public2_rgw_fqdn }}"
+ceph_rgw_port: 443
 ceph_rgw_account_in_url: true
 
 # Container image tags.

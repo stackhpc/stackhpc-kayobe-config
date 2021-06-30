@@ -18,7 +18,9 @@ storage_bootstrap_user: centos
 
 # List of extra networks to which storage nodes are attached.
 # NOTE: No maas network for Ceph nodes in staging as they are VMs.
-#storage_extra_network_interfaces:
+storage_extra_network_interfaces:
+  # Expose HAProxy on the public2 network for RadosGW.
+ - public2
 
 # Whether this host requires access to Ceph networks.
 #storage_needs_ceph_network:
@@ -123,6 +125,51 @@ storage_lvm_groups: []
 # List of users to create. This should be in a format accepted by the
 # singleplatform-eng.users role.
 #storage_users:
+
+###############################################################################
+# Storage node firewalld configuration.
+
+# Whether to install and enable firewalld.
+storage_firewalld_enabled: true
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+storage_firewalld_zones:
+  - zone: admin_oc
+  - zone: storage
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+#storage_firewalld_default_zone:
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+storage_firewalld_rules:
+  # Disable default rules in internal zone.
+  - service: dhcpv6-client
+    state: disabled
+    zone: internal
+  - service: samba-client
+    state: disabled
+    zone: internal
+  - service: ssh
+    state: disabled
+    zone: internal
+  # Disable default rules in public zone.
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
+  # admin_oc zone
+  - service: ssh
+    zone: admin_oc
+  - port: 9283/tcp
+    zone: admin_oc
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
