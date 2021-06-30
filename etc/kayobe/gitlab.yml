@@ -1,0 +1,26 @@
+---
+###############################################################################
+# Gitlab configuration
+
+# Kayobe config Project ID. Defaults to scientific openstack.
+gitlab_kayobe_config_project_id: "{{ lookup('env', 'CI_PROJECT_ID') | default('25160749', true) }}"
+
+# CI auth token. Mutually exclusive with gitlab_private_token.
+gitlab_job_token: "{{ lookup('env', 'CI_JOB_TOKEN') }}"
+
+# Personal Access token. Mutually exclusive with gitlab_job_token.
+gitlab_private_token: "{{ lookup('env', 'GITLAB_TOKEN') }}"
+
+# Gitlab API endpoint
+gitlab_api_v4_url: "{{ lookup('env', 'CI_API_V4_URL') | default('https://gitlab.com/api/v4',true) }}"
+
+# Partial auth headers. Internal detail so we can support gitlab_private_token and gitlab_job_token.
+gitlab_header_private_token: "{{ (gitlab_private_token != '') | ternary({'PRIVATE-TOKEN': gitlab_private_token}, {}) }}"
+gitlab_header_job_token: "{{ (gitlab_job_token != '') | ternary({'JOB-TOKEN': gitlab_job_token}, {}) }}"
+
+# Auth headers
+gitlab_auth_headers: "{{ gitlab_header_private_token | combine(gitlab_header_job_token) }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
