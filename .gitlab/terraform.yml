@@ -1,6 +1,6 @@
 include:
   - .gitlab/prelude.yml
-  - template: Terraform.gitlab-ci.yml
+  - template: Terraform/Base.latest.gitlab-ci.yml
 
 before_script:
   - |
@@ -11,3 +11,32 @@ variables:
   TF_STATE_NAME: default
   TF_CACHE_KEY: default
   TF_ROOT: terraform
+
+stages:
+  - init
+  - validate
+  - build
+  - deploy
+
+init:
+  extends:
+    - .terraform-tags 
+    - .init
+
+validate:
+  extends: 
+    - .terraform-tags
+    - .validate
+
+build:
+  extends:
+    - terraform-tags
+    - .build
+
+deploy:
+  extends: 
+    - terraform-tags
+    - .deploy
+  dependencies:
+    - build
+
