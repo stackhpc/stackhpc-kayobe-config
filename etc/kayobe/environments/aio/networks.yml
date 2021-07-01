@@ -100,11 +100,11 @@ aio_inspection_allocation_pool_start: 192.168.33.128
 aio_inspection_allocation_pool_end: 192.168.33.254
 aio_vip_address: 192.168.33.2
 
-public_cidr: "{{ aio_public_cidr }}"
-public_gateway: "{{ aio_public_gateway }}"
+public_cidr: "{{ terraform_state.outputs.access_cidr.value | mandatory('Failed to detect CIDR from terraform state') }}"
+public_gateway: "{{ terraform_state.outputs.access_gw.value | mandatory('Failed to detect gateway from terraform state') }}"
 public_allocation_pool_start: 0.0.0.0
 public_allocation_pool_end: 0.0.0.0
-public_vip_address: "{{ aio_public_address }}"
+public_vip_address: "{{ terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
 # FIXME: This is referenced in kolla globals
 public_net_fqdn: "{{ public_vip_address }}"
 
