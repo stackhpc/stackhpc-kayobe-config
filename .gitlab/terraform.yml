@@ -19,7 +19,7 @@ before_script:
   - |
     . "$TERRAFORM_OPENRC"
 
-variables:
+.variables:
   TF_STATE_NAME: $CI_ENVIRONMENT_SLUG
   TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG
   TF_ROOT: terraform
@@ -34,23 +34,27 @@ init:
   extends:
     - .terraform-tags
     - .environment
+    - .variables
     - .init
 
 validate:
   extends:
     - .terraform-tags
+    - .variables
     - .environment
     - .validate
 
 build:
   extends:
     - .terraform-tags
+    - .variables
     - .environment
     - .build
 
 deploy:
   extends:
     - .terraform-tags
+    - .variables
     - .environment
     - .deploy-custom
   dependencies:
