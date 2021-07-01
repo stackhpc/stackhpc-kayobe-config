@@ -7,26 +7,17 @@ include:
 
 # Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
 # to remove restriction where it will only deploy on the
-# default branch. Do not shadow the existing key as the
-# linter will pick up the original version.
-.deploy-override:
+# default branch.
+.deploy: &deploy
   stage: deploy
   script:
     - cd ${TF_ROOT}
     - gitlab-terraform apply
-  rules:
-    # NOTE: Can't use .rules here as we also want when:manual
-    - if: '$CI_ENVIRONMENT_NAME == "aio"'
-      #=~ /^aio/
-      when: manual
+  when: manual
 
 before_script:
   - |
     . "$TERRAFORM_OPENRC"
-
-.rules:
-  rules:
-    - if: '$CI_ENVIRONMENT_NAME == "aio"'
 
 variables:
   TF_STATE_NAME: $CI_ENVIRONMENT_SLUG
@@ -43,29 +34,25 @@ init:
   extends:
     - .terraform-tags
     - .environment
-    - .rules
     - .init
 
 validate:
   extends:
     - .terraform-tags
     - .environment
-    - .rules
     - .validate
 
 build:
   extends:
     - .terraform-tags
     - .environment
-    - .rules
     - .build
 
 deploy:
   extends:
-    # NOTE: Not inheriting rules as we also want when:manual.
     - .terraform-tags
     - .environment
-    - .deploy-override
+    - .deploy
   dependencies:
     - build
 
