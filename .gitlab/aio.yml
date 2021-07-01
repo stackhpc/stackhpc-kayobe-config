@@ -34,6 +34,7 @@ stages:
   - validate
   - build
   - deploy
+  - configure
 
 init:
   extends:
@@ -82,3 +83,14 @@ destroy:
   environment:
     action: stop
   when: manual
+
+configure:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: configure
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-host-configure.sh
+    - .automation/pipeline/overcloud-service-deploy.sh
