@@ -13,7 +13,10 @@ include:
   script:
     - cd ${TF_ROOT}
     - gitlab-terraform apply
-  when: manual
+  rules:
+    # NOTE: Can't use .rules here as we also want when:manual
+    - if: $CI_ENVIRONMENT_NAME =~ /^aio/
+      when: manual
 
 before_script:
   - |
@@ -57,9 +60,9 @@ build:
 
 deploy:
   extends:
+    # NOTE: Not inheriting rules as we also want when:manual.
     - .terraform-tags
     - .environment
-    - .rules
     - .deploy
   dependencies:
     - build
