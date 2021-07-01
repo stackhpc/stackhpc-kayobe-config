@@ -7,8 +7,9 @@ include:
 
 # Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
 # to remove restriction where it will only deploy on the
-# default branch.
-.deploy:
+# default branch. Do not shadow the existing key as the
+# linter will pick up the original version.
+.deploy-override:
   stage: deploy
   script:
     - cd ${TF_ROOT}
@@ -63,7 +64,7 @@ deploy:
     # NOTE: Not inheriting rules as we also want when:manual.
     - .terraform-tags
     - .environment
-    - .deploy
+    - .deploy-override
   dependencies:
     - build
 
