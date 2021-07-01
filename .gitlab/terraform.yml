@@ -19,7 +19,7 @@ before_script:
   - |
     . "$TERRAFORM_OPENRC"
 
-workflow:
+.rules:
   rules:
     - if: $CI_ENVIRONMENT_NAME =~ /^aio/
 
@@ -38,24 +38,28 @@ init:
   extends:
     - .terraform-tags
     - .environment
+    - .rules
     - .init
 
 validate:
   extends:
     - .terraform-tags
     - .environment
+    - .rules
     - .validate
 
 build:
   extends:
     - .terraform-tags
     - .environment
+    - .rules
     - .build
 
 deploy:
   extends:
     - .terraform-tags
     - .environment
+    - .rules
     - .deploy
   dependencies:
     - build
