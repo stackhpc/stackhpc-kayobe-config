@@ -21,8 +21,8 @@ before_script:
 
 .variables:
   variables:
-    TF_STATE_NAME: $CI_ENVIRONMENT_SLUG
-    TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG
+    TF_STATE_NAME: $CI_ENVIRONMENT_NAME
+    TF_CACHE_KEY: $CI_ENVIRONMENT_NAME
     TF_ROOT: terraform
 
 stages:
@@ -41,22 +41,22 @@ init:
 validate:
   extends:
     - .terraform-tags
-    - .variables
     - .environment
+    - .variables
     - .validate
 
 build:
   extends:
     - .terraform-tags
-    - .variables
     - .environment
+    - .variables
     - .build
 
 deploy:
   extends:
     - .terraform-tags
-    - .variables
     - .environment
+    - .variables
     - .deploy-custom
   dependencies:
     - build
