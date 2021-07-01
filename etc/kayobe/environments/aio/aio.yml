@@ -7,7 +7,7 @@ disable_selinux_do_reboot: false
 # FIXME: Submit a cleaner method upstream?
 ip_allocation_filename: /dev/null
 
-terraform_state_name: "{{ lookup('env', 'CI_ENVIRONMENT_SLUG') | default('aio', true) }}"
+terraform_state_name: "{{ lookup('env', 'CI_ENVIRONMENT_NAME') | default('aio', true) }}"
 terraform_state_url: "{{ [gitlab_api_v4_url, 'projects', gitlab_kayobe_config_project_id, 'terraform/state', terraform_state_name] | join('/') }}"
 terraform_state: "{{ lookup('url', terraform_state_url,  headers=gitlab_auth_headers, split_lines=False) | from_json }}"
 
