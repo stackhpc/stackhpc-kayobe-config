@@ -25,6 +25,10 @@ before_script:
     TF_CACHE_KEY: $CI_ENVIRONMENT_NAME
     TF_ROOT: terraform
 
+.environment-extras:
+  environment:
+    on_stop: destroy
+
 stages:
   - init
   - validate
@@ -35,6 +39,7 @@ init:
   extends:
     - .terraform-tags
     - .environment
+    - .environment-extras
     - .variables
     - .init
 
@@ -42,6 +47,7 @@ validate:
   extends:
     - .terraform-tags
     - .environment
+    - .environment-extras
     - .variables
     - .validate
 
@@ -49,6 +55,7 @@ build:
   extends:
     - .terraform-tags
     - .environment
+    - .environment-extras
     - .variables
     - .build
 
@@ -56,6 +63,7 @@ deploy:
   extends:
     - .terraform-tags
     - .environment
+    - .environment-extras
     - .variables
     - .deploy-custom
   dependencies:
@@ -66,6 +74,7 @@ destroy:
   extends:
   - .terraform-tags
   - .environment
+  - .environment-extras
   - .variables
   script:
     - cd ${TF_ROOT}
