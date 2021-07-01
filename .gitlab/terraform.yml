@@ -5,14 +5,23 @@ include:
   - .gitlab/prelude.yml
   - template: Terraform/Base.latest.gitlab-ci.yml
 
+# Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
+# to remove restriction where it will only deploy on the
+# default branch.
+.deploy: &deploy
+  stage: deploy
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform apply
+  when: manual
+
 before_script:
   - |
     . "$TERRAFORM_OPENRC"
 
 variables:
-  #TODO: set these from environment
-  TF_STATE_NAME: default
-  TF_CACHE_KEY: default
+  TF_STATE_NAME: $CI_ENVIRONMENT_SLUG
+  TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG
   TF_ROOT: terraform
 
 stages:
@@ -23,22 +32,26 @@ stages:
 
 init:
   extends:
-    - .terraform-tags 
+    - .terraform-tags
+    - .environment
     - .init
 
 validate:
-  extends: 
+  extends:
     - .terraform-tags
+    - .environment
     - .validate
 
 build:
   extends:
     - .terraform-tags
+    - .environment
     - .build
 
 deploy:
-  extends: 
+  extends:
     - .terraform-tags
+    - .environment
     - .deploy
   dependencies:
     - build
