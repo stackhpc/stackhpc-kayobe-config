@@ -61,3 +61,15 @@ deploy:
   dependencies:
     - build
 
+destroy:
+  stage: deploy
+  extends:
+  - .terraform-tags
+  - .environment
+  - .variables
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform destroy
+  environment:
+    action: stop
+  when: manual
