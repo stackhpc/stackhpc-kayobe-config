@@ -1,22 +1,22 @@
 include: .gitlab/prelude.yml
 
-build-rally:
-  extends:
-    - .tags
-  image: docker:stable
-  rules:
-    - when: always
-  services:
-    - name: docker:dind
-      command: ["--mtu=1450"]
-  stage: build
-  script:
-    - cd .automation/docker/rally
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $RALLY_DOCKER_IMAGE:latest || true
-    - docker build --cache-from $RALLY_DOCKER_IMAGE:latest --tag $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA --tag $RALLY_DOCKER_IMAGE:latest .
-    - docker push $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
-    - docker push $RALLY_DOCKER_IMAGE:latest
+# build-rally:
+#   extends:
+#     - .tags
+#   image: docker:stable
+#   rules:
+#     - when: always
+#   services:
+#     - name: docker:dind
+#       command: ["--mtu=1450"]
+#   stage: build
+#   script:
+#     - cd .automation/docker/rally
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#     - docker pull $RALLY_DOCKER_IMAGE:latest || true
+#     - docker build --cache-from $RALLY_DOCKER_IMAGE:latest --tag $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA --tag $RALLY_DOCKER_IMAGE:latest .
+#     - docker push $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
+#     - docker push $RALLY_DOCKER_IMAGE:latest
 
 tempest:
   extends:
@@ -24,7 +24,7 @@ tempest:
     - .tempest-tags
   variables:
      GIT_SUBMODULE_STRATEGY: normal
-  image: $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: run
   script:
     - .automation/pipeline/tempest.sh
@@ -35,5 +35,8 @@ tempest:
     paths:
       - artifacts/rally-junit.xml
       - artifacts/rally-verify-report.html
+      - artifacts/stderr.log
+      - artifacts/stdout.log
+      - artifacts/tempest.log
     reports:
       junit: artifacts/rally-junit.xml
