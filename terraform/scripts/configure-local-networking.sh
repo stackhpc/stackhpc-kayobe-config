@@ -3,6 +3,16 @@
 # IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
 public_ip="10.0.2.1"
 
+# IP addresses on the all-in-one Kayobe cloud network.
+# These IP addresses map to those statically configured in
+# etc/kayobe/network-allocation.yml and etc/kayobe/networks.yml.
+controller_vip=192.168.33.2
+
+# Forward the following ports to the controller.
+# 80: Horizon
+# 6080: VNC console
+forwarded_ports="80 6080"
+
 sudo ip l add breth1 type bridge
 sudo ip l set breth1 up
 sudo ip a add 192.168.33.3/24 dev breth1
@@ -14,6 +24,11 @@ iface=$(ip route | awk '$1 == "default" {print $5; exit}')
 
 #sudo iptables -A POSTROUTING -t nat -o $iface -j MASQUERADE
 sudo sysctl -w net.ipv4.conf.all.forwarding=1
+
+# Install iptables.
+if $(which dnf >/dev/null 2>&1); then
+    sudo dnf -y install iptables
+fi
 
 # Configure port forwarding from the hypervisor to the Horizon GUI on the
 # controller.
