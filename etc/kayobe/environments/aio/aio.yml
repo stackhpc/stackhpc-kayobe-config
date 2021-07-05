@@ -10,8 +10,10 @@ ip_allocation_filename: /dev/null
 terraform_state_name: "{{ lookup('env', 'CI_ENVIRONMENT_NAME') | default('aio', true) }}"
 terraform_state_url: "{{ [gitlab_api_v4_url, 'projects', gitlab_kayobe_config_project_id, 'terraform/state', terraform_state_name] | join('/') }}"
 terraform_state_curl: "curl -u '{{ gitlab_auth_username }}:{{ gitlab_auth_password }}' {{ terraform_state_url }} 2>/dev/null"
+
 # Use pipe until ansible>2.10 which adds support for force_basic_auth
-terraform_state: "{{ lookup('pipe', terraform_state_curl) | from_json }}"
+# These are not cached: https://github.com/ansible/ansible/issues/9623
+terraform_state: "{{ lookup('cached', 'pipe', terraform_state_curl) | from_json }}"
 
 # Instead of using network-allocation.yml. Dynamically template from terraform state.
 aio_ips:
