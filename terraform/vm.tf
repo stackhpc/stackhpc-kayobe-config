@@ -1,4 +1,9 @@
 
+variable "ssh_private_key" {
+   type = string
+   default = "~/.ssh/id_rsa"
+}
+
 data "openstack_networking_subnet_v2" "network" {
   name = "ilab"
 }
@@ -6,7 +11,7 @@ data "openstack_networking_subnet_v2" "network" {
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name            = "kayobe-aio"
   image_name      = "CentOS-8-GenericCloud-8.3.2011-20201204.2.x86_64"
-  flavor_name     = "optimised.v1.large"
+  flavor_name     = "optimised.v1.medium"
   key_pair        = "ilab_sclt100"
   config_drive    = true
   user_data        = file("templates/userdata.cfg.tpl")
@@ -22,7 +27,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
       type     = "ssh"
       host     = self.access_ip_v4
       user     = "centos"
-      private_key = file("~/.ssh/id_rsa")
+      private_key = file(var.ssh_private_key)
     }
   }
 
@@ -35,7 +40,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
       type     = "ssh"
       host     = self.access_ip_v4
       user     = "centos"
-      private_key = file("~/.ssh/id_rsa")
+      private_key = file(var.ssh_private_key)
     }
 
   }

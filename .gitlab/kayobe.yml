@@ -1,0 +1,72 @@
+include: .gitlab/prelude.yml
+
+overcloud service deploy:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-service-deploy.sh
+
+overcloud host configure:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-host-configure.sh
+
+overcloud deployment image build:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-deployment-image-build.sh
+
+overcloud container image build:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /var/log/kolla-build.log ${CI_PROJECT_DIR}/artifacts/
+  artifacts:
+    when: always
+    paths:
+      - artifacts/kolla-build.log
+
+overcloud container image pull:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED
+      when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-container-image-pull.sh

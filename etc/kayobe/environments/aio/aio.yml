@@ -1,3 +1,29 @@
 ---
 # NOTE(wszumski): This wipes out our bridge. Permissive mode is fine...
 disable_selinux_do_reboot: false
+
+# Disable ip-allocation. We will be templating the addresses from
+# terraform outputs.
+# FIXME: Submit a cleaner method upstream?
+ip_allocation_filename: /dev/null
+
+terraform_state_name: "{{ lookup('env', 'CI_ENVIRONMENT_NAME') | default('aio', true) }}"
+terraform_state_url: "{{ [gitlab_api_v4_url, 'projects', gitlab_kayobe_config_project_id, 'terraform/state', terraform_state_name] | join('/') }}"
+terraform_state_curl: "curl -u '{{ gitlab_auth_username }}:{{ gitlab_auth_password }}' {{ terraform_state_url }} 2>/dev/null"
+
+# Use pipe until ansible>2.10 which adds support for force_basic_auth
+# These are not cached: https://github.com/ansible/ansible/issues/9623
+terraform_state: "{{ lookup('cached', 'pipe', terraform_state_curl) | from_json }}"
+
+# Instead of using network-allocation.yml. Dynamically template from terraform state.
+aio_ips:
+  controller0: 192.168.33.3
+  seed0: 192.168.33.3
+
+admin_ips:
+  controller0: "{{ terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
+  seed0: "{{ terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
+
+# Credentials for the private docker registry. Check secrets.yml for details.
+kolla_docker_registry_username: "{{ secrets_kolla_docker_registry_username }}"
+kolla_docker_registry_password: "{{ secrets_kolla_docker_registry_password }}"
