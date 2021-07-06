@@ -10,8 +10,6 @@ KAYOBE_PIP_INSTALL_ARGS=""
 # Train: For Ensure the image cache directory exists which looks up USER in environment
 export USER=stack
 
-KAYOBE_ENVIRONMENT=${KAYOBE_ENVIRONMENT:-}
-
 # NOTE: could dynamically switch this based on environment
 KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
 
