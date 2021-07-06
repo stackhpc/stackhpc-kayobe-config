@@ -54,6 +54,10 @@ overcloud:
   trigger:
     include: .gitlab/overcloud.yml
     strategy: depend
+  rules:
+    - if: '$KAYOBE_ENVIRONMENT == "builder"'
+      when: never
+    - when: always
 
 tempest:
   stage: run
@@ -61,6 +65,8 @@ tempest:
     include: .gitlab/tempest.yml
     strategy: depend
   rules:
+    - if: '$KAYOBE_ENVIRONMENT == "builder"'
+      when: never
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
 
@@ -70,4 +76,4 @@ build:
     include: .gitlab/build.yml
     strategy: depend
   rules:
-    - if: '$GITLAB_ENVIRONMENT == "builder"'
+    - if: '$KAYOBE_ENVIRONMENT == "builder"'
