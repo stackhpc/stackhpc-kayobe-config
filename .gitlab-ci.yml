@@ -3,6 +3,7 @@ include: .gitlab/prelude.yml
 
 build kayobe:
   extends:
+    - .environment-prepare
     - .tags
   image: docker:stable
   rules:
@@ -22,10 +23,14 @@ build kayobe:
 
 kolla diff:
   extends:
+    - .environment-prepare
     - .tags
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: run
   rules:
+    - if: '$CI_MERGE_REQUEST_ID && $GITLAB_ENVIRONMENT == "builder"'
+      variables:
+        KAYOBE_ENVIRONMENT: aio
     - if: $CI_MERGE_REQUEST_ID
   script:
     - .automation/pipeline/config-diff.sh origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
@@ -42,10 +47,10 @@ all-in-one:
   rules:
     - if: '$CI_COMMIT_BRANCH =~ /^dev\//'
 
-kayobe:
+overcloud:
   stage: run
   trigger:
-    include: .gitlab/kayobe.yml
+    include: .gitlab/overcloud.yml
     strategy: depend
 
 tempest:
@@ -57,8 +62,10 @@ tempest:
     - if: $CI_COMMIT_REF_PROTECTED
       when: manual
 
-kayobe custom playbooks:
+build:
   stage: run
   trigger:
-    include: .gitlab/kayobe-custom-playbooks.yml
+    include: .gitlab/build.yml
     strategy: depend
+  rules:
+    - if: '$GITLAB_ENVIRONMENT == "builder"'
