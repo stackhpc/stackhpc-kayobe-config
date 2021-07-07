@@ -14,7 +14,7 @@ build kayobe:
   stage: build
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA || true
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA && exit 0 || true
     # Set up ssh-agent to login into private kayobe repo
     # - .automation/utils/kayobe-automation-ssh-agent
     # If we've already built it, save some time and don't build it again
