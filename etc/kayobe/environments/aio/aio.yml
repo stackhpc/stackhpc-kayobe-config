@@ -21,8 +21,11 @@ aio_ips:
   seed0: 192.168.33.3
 
 admin_ips:
-  controller0: "{{ terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
-  seed0: "{{ terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
+  # We need a valid value for the config diff. Ideally, we'd use a flag to make
+  # the behaviour conditional on whether it was a config diff and then use:
+  # | mandatory('Failed to detect IP from terraform state')
+  controller0: "{{ terraform_state.outputs.access_ip_v4.value | default('192.168.0.1') }}"
+  seed0: "{{ terraform_state.outputs.access_ip_v4.value | default('192.168.0.1') }}"
 
 # Credentials for the private docker registry. Check secrets.yml for details.
 kolla_docker_registry_username: "{{ secrets_kolla_docker_registry_username }}"
