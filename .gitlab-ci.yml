@@ -49,6 +49,19 @@ all-in-one:
   rules:
     - if: '$KAYOBE_ENVIRONMENT == "aio"'
 
+Test all-in-one:
+  stage: run
+  trigger:
+    include: .gitlab/end-to-end.yml
+    strategy: depend
+  rules:
+    - if: '$CI_MERGE_REQUEST_ID && $GITLAB_ENVIRONMENT == "builder"'
+      variables:
+        # Do config-diff on the AIO
+        GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_NAME
+        KAYOBE_ENVIRONMENT: aio
+    - when: never
+
 overcloud:
   stage: run
   trigger:

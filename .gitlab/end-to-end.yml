@@ -1,0 +1,104 @@
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Terraform.gitlab-ci.yml
+# with minor modifications
+
+include:
+  - .gitlab/prelude.yml
+  - template: Terraform/Base.latest.gitlab-ci.yml
+
+# Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
+# to remove restriction where it will only deploy on the
+# default branch.
+.deploy-custom:
+  stage: deploy
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform apply
+
+before_script:
+  - |
+    mkdir ~/.ssh || true
+    chmod 700 ~/.ssh
+    echo "$KAYOBE_AUTOMATION_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa.terraform
+    chmod 600 ~/.ssh/id_rsa.terraform
+    export TF_VAR_ssh_private_key=~/.ssh/id_rsa.terraform
+    . "$TERRAFORM_OPENRC"
+
+.variables:
+  variables:
+    TF_STATE_NAME: $CI_ENVIRONMENT_NAME
+    TF_CACHE_KEY: $CI_ENVIRONMENT_NAME
+    TF_ROOT: terraform
+
+.environment-extras:
+  environment:
+    on_stop: destroy
+
+stages:
+  - init
+  - validate
+  - build
+  - deploy
+  - configure
+
+init:
+  extends:
+    - .terraform-tags
+    - .environment-prepare
+    - .environment-extras
+    - .variables
+    - .init
+
+validate:
+  extends:
+    - .terraform-tags
+    - .environment-prepare
+    - .environment-extras
+    - .variables
+    - .validate
+
+build:
+  extends:
+    - .terraform-tags
+    - .environment-prepare
+    - .environment-extras
+    - .variables
+    - .build
+
+deploy:
+  extends:
+    - .terraform-tags
+    - .environment
+    - .environment-extras
+    - .variables
+    - .deploy-custom
+  allow_failure: false
+  dependencies:
+    - build
+
+destroy:
+  stage: deploy
+  extends:
+  - .terraform-tags
+  - .environment
+  - .environment-extras
+  - .variables
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform destroy
+  environment:
+    action: stop
+  when: manual
+
+configure:
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: configure
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-host-configure.sh
+    - .automation/pipeline/overcloud-service-deploy.sh
+    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+  dependencies:
+    - deploy
