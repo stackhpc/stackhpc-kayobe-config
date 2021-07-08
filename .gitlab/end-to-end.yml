@@ -5,6 +5,10 @@ include:
   - .gitlab/prelude.yml
   - template: Terraform/Base.latest.gitlab-ci.yml
 
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
 # Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
 # to remove restriction where it will only deploy on the
 # default branch.
@@ -23,13 +27,15 @@ before_script:
     export TF_VAR_ssh_private_key=~/.ssh/id_rsa.terraform
     . "$TERRAFORM_OPENRC"
 
-.variables:
+.job-overrides:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
+.terraform-extras:
   variables:
     TF_STATE_NAME: $CI_ENVIRONMENT_NAME
     TF_CACHE_KEY: $CI_ENVIRONMENT_NAME
     TF_ROOT: terraform
-
-.environment-extras:
   environment:
     on_stop: destroy
 
@@ -44,32 +50,32 @@ init:
   extends:
     - .terraform-tags
     - .environment-prepare
-    - .environment-extras
-    - .variables
+    - .terraform-extras
+    - .job-overrides
     - .init
 
 validate:
   extends:
     - .terraform-tags
     - .environment-prepare
-    - .environment-extras
-    - .variables
+    - .terraform-extras
+    - .job-overrides
     - .validate
 
 build:
   extends:
     - .terraform-tags
     - .environment-prepare
-    - .environment-extras
-    - .variables
+    - .terraform-extras
+    - .job-overrides
     - .build
 
 deploy:
   extends:
     - .terraform-tags
     - .environment
-    - .environment-extras
-    - .variables
+    - .terraform-extras
+    - .job-overrides
     - .deploy-custom
   allow_failure: false
   dependencies:
@@ -80,8 +86,8 @@ destroy:
   extends:
   - .terraform-tags
   - .environment
-  - .environment-extras
-  - .variables
+  - .terraform-extras
+  - .job-overrides
   script:
     - cd ${TF_ROOT}
     - gitlab-terraform destroy
@@ -93,6 +99,7 @@ configure:
   extends:
     - .tags
     - .environment
+    - .job-overrides
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: configure
   script:
