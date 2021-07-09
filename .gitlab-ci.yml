@@ -1,6 +1,14 @@
 
 include: .gitlab/prelude.yml
 
+# TODO:
+# - Use https://docs.gitlab.com/ee/ci/environments/#deployment-tier-of-environments
+#   instead of environment names
+#     - NOTE: This variable is not available in rules, but we can use a variable
+#       in a similar way to KAYOBE_ENVIRONMENT, see:
+#       https://gitlab.com/gitlab-org/gitlab/-/issues/35315
+#     - We might want to allow service deploy to happen in PR to staging but not main?
+
 build kayobe:
   extends:
     - .environment-prepare
@@ -28,7 +36,7 @@ kolla diff:
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: run
   rules:
-    - if: '$CI_MERGE_REQUEST_ID && $GITLAB_ENVIRONMENT == "builder"'
+    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         # Do config-diff on the AIO
         GITLAB_ENVIRONMENT: aio
@@ -55,7 +63,7 @@ test:
     include: .gitlab/end-to-end.yml
     strategy: depend
   rules:
-    - if: '$CI_MERGE_REQUEST_ID && $GITLAB_ENVIRONMENT == "builder"'
+    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         # Do config-diff on the AIO
         GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_NAME
@@ -70,6 +78,8 @@ overcloud:
   rules:
     - if: '$KAYOBE_ENVIRONMENT == "builder"'
       when: never
+    - if: '$CI_COMMIT_REF_PROTECTED != "true" && KAYOBE_ENVIRONMENT != "aio"'
+      when: never
     - when: always
 
 tempest:
@@ -80,8 +90,9 @@ tempest:
   rules:
     - if: '$KAYOBE_ENVIRONMENT == "builder"'
       when: never
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
+    - if: '$CI_COMMIT_REF_PROTECTED != "true" && KAYOBE_ENVIRONMENT != "aio"'
+      when: never
+    - when: always
 
 build:
   stage: run
@@ -89,6 +100,4 @@ build:
     include: .gitlab/build.yml
     strategy: depend
   rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: never
-    - if: '$KAYOBE_ENVIRONMENT == "builder"'
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'

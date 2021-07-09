@@ -7,8 +7,7 @@ Build IPA:
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: run
   rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
+    - when: manual
   script:
     - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-ipa.yml
@@ -27,8 +26,7 @@ Build Containers:
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: run
   rules:
-    - if: $CI_COMMIT_REF_PROTECTED
-      when: manual
+    - when: manual
   script:
     - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD
