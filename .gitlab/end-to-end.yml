@@ -96,14 +96,27 @@ configure:
 
 tempest:
   extends:
-    - .tags
-    - .environment
+    - .environment-prepare
+    - .tempest-tags
     - .job-overrides
+  variables:
+     GIT_SUBMODULE_STRATEGY: normal
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: test
   script:
-    - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/tempest.sh
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp $HOME/tempest-artifacts/* ${CI_PROJECT_DIR}/artifacts
+  artifacts:
+    when: always
+    paths:
+      - artifacts/rally-junit.xml
+      - artifacts/rally-verify-report.html
+      - artifacts/stderr.log
+      - artifacts/stdout.log
+      - artifacts/tempest.log
+    reports:
+      junit: artifacts/rally-junit.xml
 
 destroy:
   stage: destroy
