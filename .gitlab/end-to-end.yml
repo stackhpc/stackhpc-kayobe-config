@@ -43,6 +43,7 @@ stages:
   - build
   - deploy
   - configure
+  - test
   - destroy
 
 init:
@@ -92,8 +93,17 @@ configure:
     - .automation/pipeline/overcloud-host-configure.sh
     - .automation/pipeline/overcloud-service-deploy.sh
     - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
-  dependencies:
-    - deploy
+
+tempest:
+  extends:
+    - .tags
+    - .environment
+    - .job-overrides
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: test
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/tempest.sh
 
 destroy:
   stage: destroy
@@ -107,5 +117,5 @@ destroy:
   environment:
     action: stop
   dependencies:
-    - configure
+    - deploy
   when: always
