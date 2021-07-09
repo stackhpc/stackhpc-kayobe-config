@@ -107,6 +107,10 @@ tempest:
     - .automation/pipeline/tempest.sh
     - mkdir ${CI_PROJECT_DIR}/artifacts
     - cp $HOME/tempest-artifacts/* ${CI_PROJECT_DIR}/artifacts
+    # Exit with non-zero exit code if any tests failed. Otherwise
+    # the job will pass.
+    - test $(wc -l < ${CI_PROJECT_DIR}/artifacts/failed-tests) -lt 1
+  allow_failure: false
   artifacts:
     when: always
     paths:
