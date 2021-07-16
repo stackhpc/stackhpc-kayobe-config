@@ -5,7 +5,7 @@ variable "ssh_private_key" {
 }
 
 data "openstack_networking_subnet_v2" "network" {
-  name = "stackhpc-ipv4-geneve"
+  name = "stackhpc-ipv4-geneve-subnet"
 }
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
@@ -16,7 +16,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   config_drive    = true
   user_data        = file("templates/userdata.cfg.tpl")
   network {
-    name = data.openstack_networking_subnet_v2.network.name
+    name = "stackhpc-ipv4-geneve"
   }
 
   provisioner "file" {
