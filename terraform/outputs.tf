@@ -9,3 +9,7 @@ output "access_cidr" {
 output "access_gw" {
   value = data.openstack_networking_subnet_v2.network.gateway_ip
 }
+
+output "access_interface" {
+  value = "ens3"
+}

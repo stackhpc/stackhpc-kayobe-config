@@ -15,6 +15,7 @@ terraform_state_curl: "curl -u '{{ gitlab_auth_username }}:{{ gitlab_auth_passwo
 # These are not cached: https://github.com/ansible/ansible/issues/9623
 terraform_state: "{{ lookup('cached', 'pipe', terraform_state_curl) | from_json }}"
 terraform_access_ip: "{{ '192.168.0.1' if lookup('env', 'KAYOBE_AUTOMATION_CONFIG_DIFF') | bool else terraform_state.outputs.access_ip_v4.value | mandatory('Failed to detect IP from terraform state') }}"
+terraform_access_interface: "{{ 'eth0' if lookup('env', 'KAYOBE_AUTOMATION_CONFIG_DIFF') | bool else terraform_state.outputs.access_interface | mandatory('Failed to detect access interface from terraform state') }}"
 
 # Instead of using network-allocation.yml. Dynamically template from terraform state.
 aio_ips:
