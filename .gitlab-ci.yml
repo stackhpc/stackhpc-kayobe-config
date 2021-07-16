@@ -56,6 +56,8 @@ all-in-one:
     strategy: depend
   rules:
     - if: '$KAYOBE_ENVIRONMENT == "aio"'
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
 
 test:
   stage: run
@@ -80,6 +82,8 @@ overcloud:
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
       when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
     - when: always
 
 tempest:
@@ -91,6 +95,8 @@ tempest:
     - if: '$KAYOBE_ENVIRONMENT == "builder"'
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
       when: never
     - when: manual
 
