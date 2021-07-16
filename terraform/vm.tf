@@ -5,18 +5,18 @@ variable "ssh_private_key" {
 }
 
 data "openstack_networking_subnet_v2" "network" {
-  name = "ilab"
+  name = "stackhpc-ipv4-geneve-subnet"
 }
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name            = "kayobe-aio"
-  image_name      = "CentOS-8-GenericCloud-8.3.2011-20201204.2.x86_64"
-  flavor_name     = "optimised.v1.medium"
-  key_pair        = "ilab_sclt100"
+  image_name      = "CentOS8.3-cloud"
+  flavor_name     = "general.v1.large"
+  key_pair        = "gitlab-runner"
   config_drive    = true
   user_data        = file("templates/userdata.cfg.tpl")
   network {
-    name = data.openstack_networking_subnet_v2.network.name
+    name = "stackhpc-ipv4-geneve"
   }
 
   provisioner "file" {
@@ -35,7 +35,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   inline = [
       "sudo bash /home/centos/configure-local-networking.sh"
    ]
-  
+
     connection {
       type     = "ssh"
       host     = self.access_ip_v4

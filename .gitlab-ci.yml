@@ -12,13 +12,13 @@ include: .gitlab/prelude.yml
 build kayobe:
   extends:
     - .environment-prepare
-    - .tags
+    - .dind-tags
   image: docker:stable
   rules:
     - when: always
   services:
     - name: docker:dind
-      command: ["--mtu=1450"]
+      command: ["--mtu=1400"]
   stage: build
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -55,6 +55,8 @@ all-in-one:
     include: .gitlab/aio.yml
     strategy: depend
   rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
     - if: '$KAYOBE_ENVIRONMENT == "aio"'
 
 test:
@@ -80,6 +82,8 @@ overcloud:
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
       when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
     - when: always
 
 tempest:
@@ -92,7 +96,9 @@ tempest:
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
       when: never
-    - when: always
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - when: manual
 
 build:
   stage: run
