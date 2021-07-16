@@ -25,6 +25,9 @@ tempest:
   variables:
      GIT_SUBMODULE_STRATEGY: normal
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - when: always
   stage: run
   script:
     - .automation/pipeline/tempest.sh
