@@ -13,6 +13,7 @@
       - ipa.stdout
       - ipa.stderr
     version: "{{ ansible_date_time.iso8601_basic_short }}"
+    ipa_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | default(false, true) | bool }}"
   tasks:
     - name: Ensure libgcrypt is updated
       package:
@@ -57,3 +58,4 @@
         headers: "{{ gitlab_auth_headers }}"
         status_code: 201
       loop: "{{ ipa_images + ipa_checksums + ipa_logs }}"
+      when: ipa_push_image
