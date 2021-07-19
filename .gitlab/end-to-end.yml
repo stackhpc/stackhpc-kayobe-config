@@ -132,6 +132,7 @@ destroy:
   script:
     - cd ${TF_ROOT}
     - gitlab-terraform destroy
+    - curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}"
   environment:
     action: stop
   dependencies:
