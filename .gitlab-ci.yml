@@ -10,6 +10,7 @@ include: .gitlab/prelude.yml
 #     - We might want to allow service deploy to happen in PR to staging but not main?
 
 build kayobe:
+  resource_group: $CI_COMMIT_SHA
   extends:
     - .environment-prepare
     - .dind-tags
@@ -51,6 +52,7 @@ kolla diff:
 
 all-in-one:
   stage: run
+  resource_group: $GITLAB_ENVIRONMENT
   trigger:
     include: .gitlab/aio.yml
     strategy: depend
@@ -88,6 +90,7 @@ overcloud:
 
 tempest:
   stage: run
+  resource_group: $GITLAB_ENVIRONMENT
   trigger:
     include: .gitlab/tempest.yml
     strategy: depend
@@ -102,6 +105,7 @@ tempest:
 
 build:
   stage: run
+  resource_group: $KAYOBE_ENVIRONMENT
   trigger:
     include: .gitlab/build.yml
     strategy: depend

@@ -1,6 +1,7 @@
 include: .gitlab/prelude.yml
 
 service deploy:
+  resource_group: $GITLAB_ENVIRONMENT
   extends:
     - .tags
     - .environment
@@ -13,6 +14,7 @@ service deploy:
     - .automation/pipeline/overcloud-service-deploy.sh
 
 host configure:
+  resource_group: $GITLAB_ENVIRONMENT
   extends:
     - .tags
     - .environment
@@ -25,6 +27,7 @@ host configure:
     - .automation/pipeline/overcloud-host-configure.sh
 
 container image pull:
+  resource_group: $GITLAB_ENVIRONMENT
   extends:
     - .tags
     - .environment-prepare
