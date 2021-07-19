@@ -4,12 +4,17 @@ variable "ssh_private_key" {
    default = "~/.ssh/id_rsa"
 }
 
+variable vm_name {
+  type = string
+  default = "kayobe-aio"
+}
+
 data "openstack_networking_subnet_v2" "network" {
   name = "stackhpc-ipv4-geneve-subnet"
 }
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
-  name            = "kayobe-aio"
+  name            = var.vm_name
   image_name      = "CentOS8.3-cloud"
   flavor_name     = "general.v1.large"
   key_pair        = "gitlab-runner"
