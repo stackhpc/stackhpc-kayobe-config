@@ -14,8 +14,8 @@ terraform_state_curl: "curl -u '{{ gitlab_auth_username }}:{{ gitlab_auth_passwo
 # Use pipe until ansible>2.10 which adds support for force_basic_auth
 # These are not cached: https://github.com/ansible/ansible/issues/9623
 terraform_state: "{{ lookup('cached',  'pipe', terraform_state_curl) | from_json }}"
-terraform_access_ip: "{{ terraform_state.outputs.access_ip_v4.value | default('192.168.0.1') }}"
-terraform_access_interface: "{{ terraform_state.outputs.access_interface.value | default('eth0') }}"
+terraform_state_access_ip: "{{ terraform_state.outputs.access_ip_v4.value | default('192.168.0.1') }}"
+terraform_state_access_interface: "{{ terraform_state.outputs.access_interface.value | default('eth0') }}"
 terraform_state_secondary_drive: "{{ terraform_state.outputs.secondary_drive.value | default(none) }}"
 
 # Instead of using network-allocation.yml. Dynamically template from terraform state.
@@ -27,8 +27,8 @@ admin_ips:
   # We need a valid value for the config diff. Ideally, we'd use a flag to make
   # the behaviour conditional on whether it was a config diff and then use:
   # | mandatory('Failed to detect IP from terraform state')
-  controller0: "{{ terraform_access_ip }}"
-  seed0: "{{ terraform_access_ip }}"
+  controller0: "{{ terraform_state_access_ip }}"
+  seed0: "{{ terraform_state_access_ip }}"
 
 # Credentials for the private docker registry. Check secrets.yml for details.
 kolla_docker_registry_username: "{{ secrets_kolla_docker_registry_username }}"
