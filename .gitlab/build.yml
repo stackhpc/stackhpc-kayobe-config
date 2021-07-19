@@ -9,10 +9,12 @@ Build IPA:
   rules:
     - when: manual
   script:
+    - exit_code=0 || exit_code=$?
     - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-ipa.yml
     - mkdir ${CI_PROJECT_DIR}/artifacts
     - cp /opt/kayobe/images/ipa/ipa.{stdout,stderr} ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; done
   artifacts:
     when: always
     paths:
@@ -28,10 +30,12 @@ Build Containers:
   rules:
     - when: manual
   script:
+    - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
-    - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$HARBOR_REGISTRY_USER -e kolla_docker_registry_password=$HARBOR_REGISTRY_PASSWORD
+    - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$HARBOR_REGISTRY_USER -e kolla_docker_registry_password=$HARBOR_REGISTRY_PASSWORD || exit_code=$?
     - mkdir ${CI_PROJECT_DIR}/artifacts
     - cp /var/log/kolla-build.log ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; done
   artifacts:
     when: always
     paths:
