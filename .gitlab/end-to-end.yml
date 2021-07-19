@@ -38,6 +38,10 @@ before_script:
     TF_ROOT: terraform/vglab-aio
     TF_VAR_vm_name: kayobe-aio-$CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
 
+.kayobe-extras:
+  variables:
+    KAYOBE_AUTOMATION_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+
 stages:
   - init
   - validate
@@ -101,6 +105,7 @@ configure:
     - .tags
     - .environment
     - .job-overrides
+    - .kayobe-extras
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: configure
   script:
@@ -114,6 +119,7 @@ tempest:
     - .environment-prepare
     - .tags
     - .job-overrides
+    - .kayobe-extras
   variables:
      GIT_SUBMODULE_STRATEGY: normal
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
