@@ -3,22 +3,27 @@ variables:
   KAYOBE_ENVIRONMENT: builder
 
 .environment:
-  environment:
+  environment: &dot_environment_environment
     name: $GITLAB_ENVIRONMENT
+  variables: &dot_environment_variables
+    KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME: $CI_ENVIRONMENT_SLUG
 
 .environment-prepare:
   environment:
-    name: $GITLAB_ENVIRONMENT
+    <<: *dot_environment_environment
     action: prepare
+  variables:
+    <<: *dot_environment_variables
 
 .tags:
   tags:
-    - aio
-
-.tempest-tags:
-  tags:
-    - aio
+    - vglab
 
 .terraform-tags:
   tags:
-    - aio
+    - vglab
+
+.dind-tags:
+  tags:
+    - vglab
+    - dind

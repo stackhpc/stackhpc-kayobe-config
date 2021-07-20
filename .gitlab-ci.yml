@@ -10,15 +10,16 @@ include: .gitlab/prelude.yml
 #     - We might want to allow service deploy to happen in PR to staging but not main?
 
 build kayobe:
+  resource_group: $CI_COMMIT_SHA
   extends:
     - .environment-prepare
-    - .tags
+    - .dind-tags
   image: docker:stable
   rules:
     - when: always
   services:
     - name: docker:dind
-      command: ["--mtu=1450"]
+      command: ["--mtu=1400"]
   stage: build
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -51,10 +52,13 @@ kolla diff:
 
 all-in-one:
   stage: run
+  resource_group: $GITLAB_ENVIRONMENT
   trigger:
     include: .gitlab/aio.yml
     strategy: depend
   rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
     - if: '$KAYOBE_ENVIRONMENT == "aio"'
 
 test:
@@ -66,7 +70,7 @@ test:
     - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         # Do config-diff on the AIO
-        GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_NAME
+        GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
         KAYOBE_ENVIRONMENT: aio
     - when: never
 
@@ -80,10 +84,13 @@ overcloud:
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
       when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
     - when: always
 
 tempest:
   stage: run
+  resource_group: $GITLAB_ENVIRONMENT
   trigger:
     include: .gitlab/tempest.yml
     strategy: depend
@@ -92,10 +99,13 @@ tempest:
       when: never
     - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
       when: never
-    - when: always
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - when: manual
 
 build:
   stage: run
+  resource_group: $KAYOBE_ENVIRONMENT
   trigger:
     include: .gitlab/build.yml
     strategy: depend

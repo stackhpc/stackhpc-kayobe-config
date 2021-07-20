@@ -33,9 +33,14 @@ before_script:
 
 .terraform-extras:
   variables:
-    TF_STATE_NAME: $CI_ENVIRONMENT_SLUG
-    TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG
-    TF_ROOT: terraform
+    TF_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+    TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+    TF_ROOT: terraform/vglab-aio
+    TF_VAR_vm_name: kayobe-aio-$CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+
+.kayobe-extras:
+  variables:
+    KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
 
 stages:
   - init
@@ -81,11 +86,26 @@ deploy:
   dependencies:
     - build
 
+manual cleanup:
+  stage: deploy
+  extends:
+    - .terraform-tags
+    - .environment
+    - .terraform-extras
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform destroy
+    - 'curl -u "gitlab-ci-token:$CI_JOB_TOKEN" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}"'
+  environment:
+    action: stop
+  when: manual
+
 configure:
   extends:
     - .tags
     - .environment
     - .job-overrides
+    - .kayobe-extras
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: configure
   script:
@@ -97,8 +117,9 @@ configure:
 tempest:
   extends:
     - .environment-prepare
-    - .tempest-tags
+    - .tags
     - .job-overrides
+    - .kayobe-extras
   variables:
      GIT_SUBMODULE_STRATEGY: normal
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
@@ -131,6 +152,7 @@ destroy:
   script:
     - cd ${TF_ROOT}
     - gitlab-terraform destroy
+    - 'curl -u "gitlab-ci-token:$CI_JOB_TOKEN" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}"'
   environment:
     action: stop
   dependencies:
