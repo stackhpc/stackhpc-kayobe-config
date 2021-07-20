@@ -30,7 +30,13 @@ Build Containers:
     - .tags
     - .environment-prepare
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  resource_group: "$KAYOBE_ENVIRONMENT/kolla-containers"
+  # NOTE(wszumski): As we are using docker-in-docker, multiple pipelines running
+  # on the same runner can clobber images from an existing run. We therefore
+  # only allow one build at a time. Better solutions:
+  # - buildah
+  # - Run image build in dedicated VM so that docker daemon is isolated
+  # - Limit concurrency to one per runner
+  resource_group: "kolla-containers"
   stage: run
   rules:
     - if: $CI_MERGE_REQUEST_ID
