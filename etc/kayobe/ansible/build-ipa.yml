@@ -13,6 +13,7 @@
       - ipa.stdout
       - ipa.stderr
     version: "{{ ansible_date_time.iso8601_basic_short }}"
+    ipa_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | default(false, true) | bool }}"
   tasks:
     - name: Ensure libgcrypt is updated
       package:
@@ -45,7 +46,7 @@
       vars:
         directory: "{{ image_cache_path }}/{{ ipa_image_name }}"
       command: echo sha256sum {{ directory }}/{{ item[0] }} > {{ directory }}/{{ item[1] }}
-      loop: "{{ ipa_images | zip(ipa_checksums) }}"
+      loop: "{{ ipa_images | zip(ipa_checksums) | list }}"
 
     - name: Upload files to generic package registry
       uri:
@@ -57,3 +58,4 @@
         headers: "{{ gitlab_auth_headers }}"
         status_code: 201
       loop: "{{ ipa_images + ipa_checksums + ipa_logs }}"
+      when: ipa_push_image
