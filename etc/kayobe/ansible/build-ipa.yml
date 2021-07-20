@@ -46,7 +46,7 @@
       vars:
         directory: "{{ image_cache_path }}/{{ ipa_image_name }}"
       command: echo sha256sum {{ directory }}/{{ item[0] }} > {{ directory }}/{{ item[1] }}
-      loop: "{{ ipa_images | zip(ipa_checksums) }}"
+      loop: "{{ ipa_images | zip(ipa_checksums) | list }}"
 
     - name: Upload files to generic package registry
       uri:
