@@ -9,26 +9,26 @@ include: .gitlab/prelude.yml
 #       https://gitlab.com/gitlab-org/gitlab/-/issues/35315
 #     - We might want to allow service deploy to happen in PR to staging but not main?
 
-build kayobe:
-  resource_group: $CI_COMMIT_SHA
-  extends:
-    - .environment-prepare
-    - .dind-tags
-  image: docker:stable
-  rules:
-    - when: always
-  services:
-    - name: docker:dind
-      command: ["--mtu=1400"]
-  stage: build
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA && exit 0 || true
-    # Set up ssh-agent to login into private kayobe repo
-    # - .automation/utils/kayobe-automation-ssh-agent
-    # If we've already built it, save some time and don't build it again
-    - DOCKER_BUILDKIT=1 docker build --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -f .automation/docker/kayobe/Dockerfile -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+# build kayobe:
+#   resource_group: $CI_COMMIT_SHA
+#   extends:
+#     - .environment-prepare
+#     - .dind-tags
+#   image: docker:stable
+#   rules:
+#     - when: always
+#   services:
+#     - name: docker:dind
+#       command: ["--mtu=1400"]
+#   stage: build
+#   script:
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#     - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA && exit 0 || true
+#     # Set up ssh-agent to login into private kayobe repo
+#     # - .automation/utils/kayobe-automation-ssh-agent
+#     # If we've already built it, save some time and don't build it again
+#     - DOCKER_BUILDKIT=1 docker build --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -f .automation/docker/kayobe/Dockerfile -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+#     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
 kolla diff:
   extends:
@@ -110,4 +110,6 @@ build:
     strategy: depend
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
+      when: always
     - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+      when: always

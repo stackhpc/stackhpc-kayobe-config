@@ -8,11 +8,12 @@ Build IPA:
   resource_group: "$KAYOBE_ENVIRONMENT/ipa"
   stage: run
   rules:
-    - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
       when: manual
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
+    - if: $CI_MERGE_REQUEST_ID
+      when: always
   script:
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
@@ -40,11 +41,12 @@ Build Containers:
   resource_group: "kolla-containers"
   stage: run
   rules:
-    - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
       when: manual
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: 1
+    - if: $CI_MERGE_REQUEST_ID
+      when: always
   script:
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
