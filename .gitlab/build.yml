@@ -9,7 +9,8 @@ Build IPA:
   stage: run
   rules:
     - if: $CI_MERGE_REQUEST_ID
-    - when: manual
+    - if: $CI_COMMIT_BRANCH
+      when: manual
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
   script:
@@ -40,9 +41,10 @@ Build Containers:
   stage: run
   rules:
     - if: $CI_MERGE_REQUEST_ID
-    - when: manual
+    - if: $CI_COMMIT_BRANCH
+      when: manual
       variables:
-        KAYOBE_AUTOMATION_PUSH_IMAGE: 1
+        KAYOBE_AUTOMATION_PUSH_IMAGE: '1'
   script:
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
