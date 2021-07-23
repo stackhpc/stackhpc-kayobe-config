@@ -35,13 +35,14 @@ controller_network_interfaces: >
 # storage. It will also be used for Docker container and image storage if
 # 'docker_storage_driver' is set to 'devicemapper'. Default is true if
 # 'docker_storage_driver' is set to 'devicemapper', or false otherwise.
-controller_lvm_group_data_enabled: "{{ terraform_state_secondary_drive | length > 0  }}"
+controller_lvm_group_data_enabled: '{{ terraform_state_secondary_drive | length >
+  0  }}'
 
 # List of disks for use by controller LVM data volume group. Default to an
 # invalid value to require configuration.
 #controller_lvm_group_data_disks:
 controller_lvm_group_data_disks:
-  - "{{ terraform_state_secondary_drive }}"
+  - '{{ terraform_state_secondary_drive }}'
 
 # Size of docker volumes LVM backing volume.
 controller_lvm_group_data_lv_docker_volumes_size: 100%VG
@@ -50,10 +51,10 @@ controller_lvm_group_data_lv_docker_volumes_size: 100%VG
 controller_lvm_group_data_lv_docker_volumes:
   # NOTE(wszumski): The key below has been customised
   lvname: docker
-  size: "{{ controller_lvm_group_data_lv_docker_volumes_size }}"
-  create: True
-  filesystem: "{{ controller_lvm_group_data_lv_docker_volumes_fs }}"
-  mount: True
+  size: '{{ controller_lvm_group_data_lv_docker_volumes_size }}'
+  create: true
+  filesystem: '{{ controller_lvm_group_data_lv_docker_volumes_fs }}'
+  mount: true
   # NOTE(wszumski): The key below has been customised so that we can
   # use the lv for docker images as well.
   mntp: /var/lib/docker/

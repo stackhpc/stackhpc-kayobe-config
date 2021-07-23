@@ -1,3 +1,4 @@
+---
 extends: default
 
 rules:
@@ -10,3 +11,17 @@ rules:
   comments:
     require-starting-space: false
   truthy: disable
+  line-length: disable
+
+ignore: |
+  .automation
+  .gitlab
+  etc/kayobe/ansible/roles/
+  # We can't lint files that use jinja
+  etc/kayobe/kolla/config/prometheus/prometheus.yml.d
+  etc/kayobe/kolla/globals.yml
+  etc/kayobe/kolla/config/prometheus/prometheus-alertmanager.yml
+  etc/kayobe/environments/aio/kolla/globals.yml
+  # We can't lint vault encrypted files
+  etc/kayobe/**/passwords.yml
+  etc/kayobe/**/secrets.yml

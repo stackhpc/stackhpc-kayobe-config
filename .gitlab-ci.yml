@@ -1,4 +1,4 @@
-
+---
 include: .gitlab/prelude.yml
 
 # TODO:
@@ -111,3 +111,14 @@ build:
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
     - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+
+lint-yaml:
+  stage: lint
+  image:
+    name: cytopia/yamllint
+    entrypoint: ["/bin/ash", "-c"]
+  script:
+    - yamllint -f colored .
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - when: always
