@@ -15,16 +15,6 @@
 seed
 
 ###############################################################################
-# Infra VM groups.
-
-[hypervisors:children]
-# Group that contains all hypervisors used for infra VMs
-seed-hypervisor
-
-[infra-vms]
-# Empty group to provide declaration of infra-vms group.
-
-###############################################################################
 # Overcloud groups.
 
 [controllers]
@@ -60,7 +50,6 @@ seed
 controllers
 network
 monitoring
-#storage
 compute
 
 [docker-registry:children]
@@ -99,16 +88,19 @@ ctl-switches
 hs-switches
 
 ###############################################################################
-# Ceph groups.
+# Ceph groups
 
 [ceph:children]
-mons
-mgrs
-osds
-rgws
+storage
 
-# Empty groups to provide declaration of groups required for Cephadm.
-[mons]
-[mgrs]
-[osds]
-[rgws]
+[mons:children]
+storage
+
+[mgrs:children]
+storage
+
+[osds:children]
+storage
+
+[rgws:children]
+storage
