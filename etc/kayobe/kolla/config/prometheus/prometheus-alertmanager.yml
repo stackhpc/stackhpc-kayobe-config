@@ -1,0 +1,23 @@
+---
+global:
+  resolve_timeout: 5m
+  smtp_require_tls: true
+  slack_api_url: '{{ secrets_slack_notification_channel_url }}'
+
+route:
+  receiver: 'slack-notifications'
+  group_by: [alertname, datacenter, app]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: 'slack-notifications'
+    slack_configs: {{ '{% raw %}' }}{% raw %}
+    - channel: '#iris-notifications'
+      title: '{{ .GroupLabels.alertname }} alert has triggered'
+      text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+      send_resolved: true
+{% endraw %}{{ '{% endraw %}' }}
+
+templates: []
