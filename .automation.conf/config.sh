@@ -1,8 +1,8 @@
 # Enter config overrides in here
 
-OPENSTACK_SERIES=victoria
-KAYOBE_URI=https://github.com/RSE-Cambridge/kayobe
-KAYOBE_BRANCH=cumulus/victoria
+OPENSTACK_SERIES=wallaby
+KAYOBE_URI=https://github.com/stackhpc/kayobe
+KAYOBE_BRANCH=stackhpc/wallaby
 
 # Don't use upper constraints when installing kayobe
 KAYOBE_PIP_INSTALL_ARGS=""
