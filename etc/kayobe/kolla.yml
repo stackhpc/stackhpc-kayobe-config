@@ -5,17 +5,17 @@
 # Kolla installation.
 
 # Type of Kolla control installation. One of 'binary' or 'source'.
-#kolla_ctl_install_type:
+kolla_ctl_install_type: source
 
 # Path to directory for kolla source code checkout.
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-#kolla_source_url:
+kolla_source_url: https://github.com/RSE-Cambridge/kolla
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-#kolla_source_version:
+kolla_source_version: cumulus/11.0.0.2
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -28,7 +28,7 @@
 
 # Type of Kolla-ansible control installation. One of 'binary' or 'source'.
 # Default is 'source'.
-#kolla_ansible_ctl_install_type:
+kolla_ansible_ctl_install_type: source
 
 # Path to directory for kolla-ansible source code checkout.
 # Default is $KOLLA_SOURCE_PATH, or $PWD/src/kolla-ansible if
@@ -37,11 +37,11 @@
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-#kolla_ansible_source_url:
+kolla_ansible_source_url: https://github.com/RSE-Cambridge/kolla-ansible
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-#kolla_ansible_source_version:
+kolla_ansible_source_version: cumulus/11.0.0.5
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
@@ -66,14 +66,14 @@
 #kolla_base_distro:
 
 # Kolla container image type: binary or source. Default is 'binary'.
-#kolla_install_type:
+kolla_install_type: source
 
 # URL of docker registry to use for Kolla images. Default is not set, in which
 # case Dockerhub will be used.
-#kolla_docker_registry:
+kolla_docker_registry: '{{ docker_registry }}'
 
 # Docker namespace to use for Kolla images. Default is 'kolla'.
-#kolla_docker_namespace:
+kolla_docker_namespace: kolla
 
 # Username to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
@@ -85,7 +85,7 @@
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-#kolla_openstack_release:
+kolla_openstack_release: 11.0.0.2-5
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -106,6 +106,25 @@
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 #kolla_build_blocks:
+kolla_build_blocks:
+  neutron_server_footer: |
+    # Adds experimental batching support
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/networking-generic-switch@stackhpc/victoria-batching -c https://releases.openstack.org/constraints/upper/victoria
+  nova_base_footer: |
+    # Fix up for ironic ha bugs
+    RUN /var/lib/kolla/venv/bin/pip  install -U --prefix /var/lib/kolla/venv --no-deps git+https://github.com/stackhpc/nova.git@stackhpc/victora-ironic-rebalance  -c https://releases.openstack.org/constraints/upper/victoria
+  prometheus_server_repository_version: |
+    # Avoid the pain of porting 1.x rules and migrating data to 2.x
+    ARG prometheus_version='2.26.0'
+  prometheus_cadvisor_repository_version: |
+    ENV prometheus_cadvisor_version=0.39.0
+  ironic_inspector_footer: |
+    # Install our custom inspector plugins.
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.2.0
+  magnum_api_footer: |
+    RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
+  magnum_conductor_footer: |
+    RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -114,6 +133,19 @@
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
 #kolla_build_customizations:
+kolla_build_customizations:
+  keystone_base_packages_append:
+    # Allow custom packages to be installed via pip.
+    # Allow manual install of openidc for federation
+    - jansson-devel
+    - openssl-devel
+    - hiredis
+  neutron_server_packages_append:
+    # Allow custom packages to be installed via pip.
+    - gcc
+    - python3-devel
+    - python3-network-runner.noarch
+    - python3-networking-ansible
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
@@ -161,9 +193,12 @@
 # Custom overcloud inventory containing a mapping from components to top level
 # groups.
 #kolla_overcloud_inventory_custom_components:
+kolla_overcloud_inventory_custom_components: "{{ lookup('template', kayobe_config_path\
+  \ ~ '/kolla/inventory/overcloud-components.j2') }}"
 
 # Custom overcloud inventory containing a mapping from services to components.
-#kolla_overcloud_inventory_custom_services:
+kolla_overcloud_inventory_custom_services: "{{ lookup('template', kayobe_config_path\
+  \ ~ '/kolla/inventory/overcloud-services.j2') }}"
 
 # Full custom overcloud inventory contents. By default this will be the
 # concatenation of the top level, component, and service inventories.
@@ -251,15 +286,17 @@
 # Kolla feature flag configuration.
 
 #kolla_enable_aodh:
-#kolla_enable_barbican:
+kolla_enable_barbican: true
 #kolla_enable_blazar:
+#kolla_enable_cadf_notifications:
+kolla_enable_caso: true
 #kolla_enable_ceilometer:
 #kolla_enable_ceilometer_horizon_policy_file:
 #kolla_enable_ceilometer_ipmi:
 #kolla_enable_cells:
-#kolla_enable_central_logging:
-#kolla_enable_chrony:
-#kolla_enable_cinder:
+kolla_enable_central_logging: true
+kolla_enable_chrony: false
+kolla_enable_cinder: '{{ scientific_openstack_trait_ceph }}'
 #kolla_enable_cinder_backend_hnas_nfs:
 #kolla_enable_cinder_backend_iscsi:
 #kolla_enable_cinder_backend_lvm:
@@ -272,7 +309,7 @@
 #kolla_enable_collectd:
 #kolla_enable_container_healthchecks:
 #kolla_enable_cyborg:
-#kolla_enable_designate:
+kolla_enable_designate: true
 #kolla_enable_destroy_images:
 #kolla_enable_elasticsearch:
 #kolla_enable_elasticsearch_curator:
@@ -285,13 +322,13 @@
 #kolla_enable_glance_image_cache:
 #kolla_enable_gnocchi:
 #kolla_enable_gnocchi_statsd:
-#kolla_enable_grafana:
+kolla_enable_grafana: true
 #kolla_enable_hacluster:
 #kolla_enable_haproxy:
 #kolla_enable_haproxy_memcached:
-#kolla_enable_heat:
+kolla_enable_heat: true
 #kolla_enable_heat_horizon_policy_file:
-#kolla_enable_horizon:
+kolla_enable_horizon: true
 #kolla_enable_horizon_blazar:
 #kolla_enable_horizon_cloudkitty:
 #kolla_enable_horizon_designate:
@@ -315,8 +352,8 @@
 #kolla_enable_horizon_watcher:
 #kolla_enable_horizon_zun:
 #kolla_enable_influxdb:
-#kolla_enable_ironic:
-#kolla_enable_ironic_ipxe:
+kolla_enable_ironic: false
+#kolla_enable_ironic_ipxe: true
 #kolla_enable_ironic_neutron_agent:
 #kolla_enable_ironic_pxe_uefi:
 #kolla_enable_iscsid:
@@ -327,14 +364,14 @@
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
-#kolla_enable_magnum:
-#kolla_enable_manila:
-#kolla_enable_manila_backend_cephfs_native:
+kolla_enable_magnum: true
+kolla_enable_manila: '{{ scientific_openstack_trait_ceph }}'
+kolla_enable_manila_backend_cephfs_native: '{{ scientific_openstack_trait_ceph }}'
 #kolla_enable_manila_backend_cephfs_nfs:
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_glusterfs_nfs:
 #kolla_enable_manila_backend_hnas:
-#kolla_enable_mariabackup:
+kolla_enable_mariabackup: true
 #kolla_enable_mariadb:
 #kolla_enable_masakari:
 #kolla_enable_memcached:
@@ -343,7 +380,7 @@
 #kolla_enable_multipathd:
 #kolla_enable_murano:
 #kolla_enable_neutron:
-#kolla_enable_neutron_agent_ha:
+kolla_enable_neutron_agent_ha: true
 #kolla_enable_neutron_bgp_dragent:
 #kolla_enable_neutron_dvr:
 #kolla_enable_neutron_horizon_policy_file:
@@ -351,7 +388,7 @@
 #kolla_enable_neutron_metering:
 #kolla_enable_neutron_mlnx:
 #kolla_enable_neutron_port_forwarding:
-#kolla_enable_neutron_provider_networks:
+kolla_enable_neutron_provider_networks: true
 #kolla_enable_neutron_qos:
 #kolla_enable_neutron_segments:
 #kolla_enable_neutron_sfc:
@@ -363,7 +400,7 @@
 #kolla_enable_nova_horizon_policy_file:
 #kolla_enable_nova_serialconsole_proxy:
 #kolla_enable_nova_ssh:
-#kolla_enable_octavia:
+kolla_enable_octavia: true
 #kolla_enable_octavia_driver_agent:
 #kolla_enable_openstack_core:
 #kolla_enable_openvswitch:
@@ -373,7 +410,7 @@
 #kolla_enable_ovs_dpdk:
 #kolla_enable_panko:
 #kolla_enable_placement:
-#kolla_enable_prometheus:
+kolla_enable_prometheus: true
 #kolla_enable_prometheus_alertmanager:
 #kolla_enable_prometheus_blackbox_exporter:
 #kolla_enable_prometheus_cadvisor:
@@ -409,6 +446,71 @@
 #kolla_enable_watcher:
 #kolla_enable_zookeeper:
 #kolla_enable_zun:
+###############################################################################
+# Kolla custom config options.
+
+# Override the the list of paths that are searched when looking for kolla custom
+# config. The default is to search the the environment specific path, if such a
+# path exists, and then shared config path. Files in the environment specific
+# directory override those found in the common configuration if the relative
+# path of the file is identical. This behaviour can be adjusted using the
+# configuration options below. For example, it is possible to merge yaml files
+# with the kolla_openstack_custom_config_merge_yml_globs variable.
+#kolla_extra_config_paths:
+
+# Default value for kolla_openstack_custom_config_include_globs.
+#kolla_openstack_custom_config_include_globs_default:
+
+# Extra items to add to kolla_openstack_custom_config_include_globs_default
+# to produce kolla_openstack_custom_config_include_globs.
+#kolla_openstack_custom_config_include_globs_extra:
+
+# List of dictionaries with the following keys:
+#   glob: a glob pattern. Any files matching this pattern will be copied to the
+#         the kolla custom config directory
+#   enabled: boolean to disable the glob.
+#kolla_openstack_custom_config_include_globs:
+
+# Default value for kolla_openstack_custom_config_template_exclude_globs.
+#kolla_openstack_custom_config_template_exclude_globs_default:
+
+# Extra items to add to kolla_openstack_custom_config_template_exclude_globs_default
+# to produce kolla_openstack_custom_config_template_exclude_globs.
+#kolla_openstack_custom_config_template_exclude_globs_extra:
+
+# List of globs. Any files matching these globs will not be templated.
+#kolla_openstack_custom_config_template_exclude_globs:
+
+# Default value for openstack_custom_config_merge_ini_globs.
+#kolla_openstack_custom_config_merge_ini_globs_default:
+
+# Extra items to add to kolla_openstack_custom_config_merge_ini_globs_default
+# to produce openstack_custom_config_merge_ini_globs.
+#kolla_openstack_custom_config_merge_ini_globs_extra:
+
+# List of dictionaries with following keys:
+#   glob: A glob pattern. Any files matching this pattern will be merged using
+#         the merge_configs filter.
+# E.g:
+#   kolla_openstack_custom_config_merge_ini_globs:
+#     - glob: "**/*.ini"
+#kolla_openstack_custom_config_merge_ini_globs:
+
+# Default value for openstack_custom_config_merge_yml_globs.
+#kolla_openstack_custom_config_merge_yml_globs_default:
+
+# Extra items to add to kolla_openstack_custom_config_merge_yml_globs_default
+# to produce openstack_custom_config_merge_yml_globs.
+#kolla_openstack_custom_config_merge_yml_globs_extra:
+
+# List of dictionaries with following keys:
+#   glob: A glob pattern. Any files matching this pattern will be merged using
+#         the merge_yaml ansible filter.
+# E.g:
+# kolla_openstack_custom_config_merge_yml_globs:
+#   - glob: "**/*.yml"
+#     merge_lists: false
+#kolla_openstack_custom_config_merge_yml_globs:
 
 ###############################################################################
 # Passwords and credentials.

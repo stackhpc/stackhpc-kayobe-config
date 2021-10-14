@@ -1,0 +1,15 @@
+{% raw %}
+
+groups:
+- name: Redfish
+  rules:
+  - alert: RedfishChassisNotHealthy
+    expr: avg_over_time(redfish_chassis_health[10m]) != 1
+    for: 5m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Server {{ $labels.server }} has a problem"
+      description: "Redish reports server {{ $labels.server }} as no longer healthy"
+
+{% endraw %}

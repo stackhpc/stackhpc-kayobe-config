@@ -34,3 +34,19 @@ All this and more, automated from top to bottom using Ansible.
 * Source: https://opendev.org/openstack/kayobe
 * Bugs: https://storyboard.openstack.org/#!/project/openstack/kayobe-config
 * IRC: #openstack-kolla
+
+Configuration Diff
+------------------
+
+To test what changes your config change will create on disk, you
+can use the following configuration diff tool.
+
+While typically it is executed using gitlab ci, you can do it
+manually by first building a docker file for the current kayobe
+version::
+    cd .automation/docker/kayobe/
+    docker build . -t kayobe
+
+Then you can run this, to diff your current code against the target branch,
+which in this case is cumulus/train-preprod::
+    RUN_LOCAL_DOCKER_IMAGE=kayobe .automation/run-local.sh .automation/pipeline/config-diff.sh cumulus/train-preprod -- --env KAYOBE_VAULT_PASSWORD=$(< ~/.ansible-vault-password)

@@ -1,0 +1,40 @@
+include: .gitlab/prelude.yml
+
+service deploy:
+  resource_group: $GITLAB_ENVIRONMENT
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-service-deploy.sh
+
+host configure:
+  resource_group: $GITLAB_ENVIRONMENT
+  extends:
+    - .tags
+    - .environment
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-host-configure.sh
+
+container image pull:
+  resource_group: $GITLAB_ENVIRONMENT
+  extends:
+    - .tags
+    - .environment-prepare
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: run
+  rules:
+    - when: manual
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-container-image-pull.sh

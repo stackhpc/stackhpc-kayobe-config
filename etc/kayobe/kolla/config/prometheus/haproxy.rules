@@ -1,0 +1,36 @@
+# Taken from https://awesome-prometheus-alerts.grep.to/rules
+
+{% raw %}
+
+groups:
+- name: HAProxy
+  rules:
+
+  - alert: HaproxyDown
+    expr: haproxy_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "HAProxy down (instance {{ $labels.instance }})"
+      description: "HAProxy down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HaproxyBackendDown
+    expr: haproxy_backend_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "HAProxy backend down (instance {{ $labels.instance }})"
+      description: "HAProxy backend is down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HaproxyServerDown
+    expr: haproxy_server_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "HAProxy server down (instance {{ $labels.instance }})"
+      description: "HAProxy server is down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+{% endraw %}

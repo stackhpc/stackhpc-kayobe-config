@@ -1,0 +1,208 @@
+# Taken from https://awesome-prometheus-alerts.grep.to/rules and https://github.com/ceph/ceph-ansible/blob/master/roles/ceph-prometheus/files/ceph_dashboard.yml
+
+{% raw %}
+
+groups:
+- name: Ceph
+  rules:
+
+  - alert: CephMonitorClockSkew
+    expr: abs(ceph_monitor_clock_skew_seconds) > 0.2
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph monitor clock skew (instance {{ $labels.instance }})"
+      description: "Ceph monitor clock skew detected. Please check ntp and hardware clock settings\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephMonitorLowSpace
+    expr: ceph_monitor_avail_percent < 10
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph monitor low space (instance {{ $labels.instance }})"
+      description: "Ceph monitor storage is low.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephHighOsdLatency
+    expr: ceph_osd_perf_apply_latency_seconds > 10
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph high OSD latency (instance {{ $labels.instance }})"
+      description: "Ceph Object Storage Daemon latetncy is high. Please check if it doesn't stuck in weird state.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephOsdLowSpace
+    expr: ceph_osd_utilization > 90
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph OSD low space (instance {{ $labels.instance }})"
+      description: "Ceph Object Storage Daemon is going out of space. Please add more disks.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephOsdReweighted
+    expr: ceph_osd_weight < 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph OSD reweighted (instance {{ $labels.instance }})"
+      description: "Ceph Object Storage Daemon take ttoo much time to resize.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgDown
+    expr: ceph_pg_down > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Ceph PG down (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are down. Please ensure that all the data are available.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgIncomplete
+    expr: ceph_pg_incomplete > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Ceph PG incomplete (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are incomplete. Please ensure that all the data are available.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgInconsistant
+    expr: ceph_pg_inconsistent > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph PG inconsistant (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are inconsitent. Data is available but inconsistent across nodes.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgActivationLong
+    expr: ceph_pg_activating > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph PG activation long (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are too long to activate.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgBackfillFull
+    expr: ceph_pg_backfill_toofull > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Ceph PG backfill full (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are located on full Object Storage Daemon on cluster. Those PGs can be unavailable shortly. Please check OSDs, change weight or reconfigure CRUSH rules.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: CephPgUnavailable
+    expr: (ceph_pg_total - ceph_pg_active > 0)
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Ceph PG unavailable (instance {{ $labels.instance }})"
+      description: "Some Ceph placement groups are unavailable.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: Ceph Health Warning
+    expr: ceph_health_status == 1
+    for: 1m
+    labels:
+      severity: alerts
+    annotations:
+      summary: "Ceph Health Warning"
+      description: "Overall Ceph Health"
+
+  - alert: Ceph Health Error
+    expr: ceph_health_status > 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Ceph Health Error"
+      description: "The Ceph cluster health is in an error state"
+
+  - alert: Disk(s) Near Full
+    expr: (ceph_osd_stat_bytes_used / ceph_osd_stat_bytes) * 100 > 85
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Disk(s) Near Full"
+      description: "This shows how many disks are at or above 85% full. Performance may degrade beyond this threshold on filestore (XFS) backed OSD's."
+
+  - alert: OSD(s) Down
+    expr: ceph_osd_up < 0.5
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "OSD(s) Down"
+      description: "This indicates that one or more OSDs is currently marked down in the cluster."
+
+  - alert: OSD Host(s) Down
+    expr: count by(instance) (ceph_disk_occupation * on(ceph_daemon) group_right(instance) ceph_osd_up == 0) - count by(instance) (ceph_disk_occupation) == 0
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "OSD Host(s) Down"
+      description: "This indicates that one or more OSD hosts is currently down in the cluster."
+
+  - alert: PG(s) Stuck
+    expr: max(ceph_osd_numpg) > scalar(ceph_pg_active)
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "PG(s) Stuck"
+      description: "This indicates there are pg's in a stuck state, manual intervention needed to resolve."
+
+# With only 5 hosts, this always fails, oops.
+#  - alert: OSD Host Loss Check
+#    expr: max(sum(ceph_osd_stat_bytes - ceph_osd_stat_bytes_used)) * 0.9 < scalar(max(sum by (instance) (ceph_osd_stat_bytes + on (ceph_daemon) group_left (instance) (ceph_disk_occupation*0))))
+#    for: 1m
+#    labels:
+#      severity: alert
+#    annotations:
+#      summary: "OSD Host Loss Check"
+#      description: "This indicates that the cluster @ 90% full is not enough to support the loss of the largest OSD host."
+
+  - alert: Slow OSD Responses
+    expr: ((irate(node_disk_read_time_seconds_total[5m]) / clamp_min(irate(node_disk_reads_completed_total[5m]), 1) + irate(node_disk_write_time_seconds_total[5m]) / clamp_min(irate(node_disk_writes_completed_total[5m]), 1)) and on (instance, device) ceph_disk_occupation) > 1
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Slow OSD Responses"
+      description: "This indicates that some OSD Latencies are above 1s."
+
+  - alert: Pool Capacity Low
+    expr: (ceph_pool_bytes_used / (ceph_pool_bytes_used + ceph_pool_max_avail) * 100 + on (pool_id) group_left (name) (ceph_pool_metadata*0)) > 85
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Pool Capacity Low"
+      description: "This indicates a low capacity in a pool."
+
+  - alert: MON(s) Down
+    expr: ceph_mon_quorum_status != 1
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "MON(s) down"
+      description: "This indicates that one or more MON(s) is down."
+
+  - alert: OSD(s) with High PG Count
+    expr: ceph_osd_numpg > 275
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "OSD(s) with High PG Count"
+      description: "This indicates there are some OSDs with high PG count (275+)."
+
+{% endraw %}

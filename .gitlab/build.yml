@@ -1,0 +1,58 @@
+include: .gitlab/prelude.yml
+
+Build IPA:
+  extends:
+    - .ipa-tags
+    - .environment-prepare
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  resource_group: "$KAYOBE_ENVIRONMENT/ipa"
+  stage: run
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      variables:
+        KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
+  script:
+    - exit_code=0
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-ipa.yml || exit_code=$?
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /opt/kayobe/images/ipa/ipa.{stdout,stderr} ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; fi
+  artifacts:
+    when: always
+    paths:
+      - artifacts/ipa.stdout
+      - artifacts/ipa.stderr
+
+Build Containers:
+  extends:
+    - .kolla-container-tags
+    - .environment-prepare
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  # NOTE(wszumski): As we are using docker-in-docker, multiple pipelines running
+  # on the same runner can clobber images from an existing run. We therefore
+  # only allow one build at a time. Better solutions:
+  # - buildah
+  # - Run image build in dedicated VM so that docker daemon is isolated
+  # - Limit concurrency to one per runner
+  resource_group: "kolla-containers"
+  stage: run
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      variables:
+        KAYOBE_AUTOMATION_PUSH_IMAGE: '1'
+  script:
+    - exit_code=0
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$HARBOR_REGISTRY_USER -e kolla_docker_registry_password=$HARBOR_REGISTRY_PASSWORD || exit_code=$?
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /var/log/kolla-build.log ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; fi
+  artifacts:
+    when: always
+    paths:
+      - artifacts/kolla-build.log

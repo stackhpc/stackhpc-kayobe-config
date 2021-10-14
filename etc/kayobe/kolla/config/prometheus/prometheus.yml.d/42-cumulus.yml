@@ -1,0 +1,21 @@
+{% if groups.get('cumulus') %}
+scrape_configs:
+  - job_name: cumulus
+    static_configs:
+{% for host in groups.get('cumulus', []) %}
+      - targets:
+          - '{{ hostvars[host]["ansible_host"] }}:9100'
+        labels:
+          server: '{{ host }}'
+          switch: 'cumulus'
+{% endfor %}
+    #params:
+    #  collect[]:
+    #    - netdev
+    #    - cpu
+    #    - meminfo
+    #    - infiniband
+    #    - cpufreq
+    scrape_interval: 1m
+    scrape_timeout: 30s
+{% endif %}
