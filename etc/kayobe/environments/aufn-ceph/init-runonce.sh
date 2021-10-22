@@ -8,8 +8,7 @@ fi
 ~/os-venv/bin/pip install -U pip
 ~/os-venv/bin/pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/master
 
-parent="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-init_runonce=$parent/../../../../../kolla-ansible/tools/init-runonce
+init_runonce=$KOLLA_SOURCE_PATH/tools/init-runonce
 if [[ ! -f $init_runonce ]]; then
   echo "Unable to find kolla-ansible repo"
   exit 1

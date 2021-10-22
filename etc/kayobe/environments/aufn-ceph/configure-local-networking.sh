@@ -61,6 +61,11 @@ done
 sudo iptables -A POSTROUTING -t nat -o $iface -j MASQUERADE
 sudo sysctl -w net.ipv4.conf.all.forwarding=1
 
+# FIXME: IP MASQUERADE from control plane fails without this on Ubuntu.
+if ! $(which dnf >/dev/null 2>&1); then
+    echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-iptables
+fi
+
 # Configure port forwarding from the hypervisor to the Horizon GUI on the
 # controller.
 sudo iptables -A FORWARD -i $iface -o brprov -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
