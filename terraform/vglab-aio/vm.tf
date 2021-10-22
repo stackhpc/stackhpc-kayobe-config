@@ -10,7 +10,7 @@ variable vm_name {
 }
 
 data "openstack_images_image_v2" "image" {
-  name        = "CentOS8.3-cloud"
+  name        = "CentOS-stream8-20210903"
   most_recent = true
 }
 
