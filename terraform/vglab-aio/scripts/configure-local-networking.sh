@@ -45,3 +45,6 @@ done
 if ! sudo ip a show dev breth1 | grep $public_ip/24 >/dev/null 2>&1; then
   sudo ip a add $public_ip/24 dev breth1
 fi
+
+# This prevents network.service from restarting correctly.
+sudo killall dhclient
