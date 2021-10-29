@@ -3,7 +3,7 @@
 
 include:
   - .gitlab/prelude.yml
-  - template: Terraform/Base.latest.gitlab-ci.yml
+  - remote: https://gitlab.com/gitlab-org/gitlab/-/raw/a36e00c1b8a42bf22280734cd21cd26c8323ba43/lib/gitlab/ci/templates/Terraform/Base.latest.gitlab-ci.yml
 
 workflow:
   rules:
@@ -43,7 +43,6 @@ before_script:
     KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
 
 stages:
-  - init
   - validate
   - build
   - deploy
@@ -51,21 +50,13 @@ stages:
   - test
   - destroy
 
-init:
-  extends:
-    - .terraform-tags
-    - .environment-prepare
-    - .terraform-extras
-    - .job-overrides
-    - .init
-
 validate:
   extends:
     - .terraform-tags
     - .environment-prepare
     - .terraform-extras
     - .job-overrides
-    - .validate
+    - .terraform:validate
 
 build:
   extends:
@@ -73,7 +64,7 @@ build:
     - .environment-prepare
     - .terraform-extras
     - .job-overrides
-    - .build
+    - .terraform:build
 
 deploy:
   extends:
