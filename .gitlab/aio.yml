@@ -3,7 +3,7 @@
 
 include:
   - .gitlab/prelude.yml
-  - template: Terraform/Base.latest.gitlab-ci.yml
+  - remote: https://gitlab.com/gitlab-org/gitlab/-/raw/a36e00c1b8a42bf22280734cd21cd26c8323ba43/lib/gitlab/ci/templates/Terraform/Base.latest.gitlab-ci.yml
 
 # Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
 # to remove restriction where it will only deploy on the
@@ -36,19 +36,10 @@ before_script:
     on_stop: destroy
 
 stages:
-  - init
   - validate
   - build
   - deploy
   - configure
-
-init:
-  extends:
-    - .terraform-tags
-    - .environment-prepare
-    - .environment-extras
-    - .variables
-    - .init
 
 validate:
   extends:
@@ -56,7 +47,7 @@ validate:
     - .environment-prepare
     - .environment-extras
     - .variables
-    - .validate
+    - .terraform:validate
 
 build:
   extends:
@@ -64,7 +55,7 @@ build:
     - .environment-prepare
     - .environment-extras
     - .variables
-    - .build
+    - .terraform:build
 
 deploy:
   extends:

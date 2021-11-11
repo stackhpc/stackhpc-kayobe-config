@@ -11,5 +11,5 @@ output "access_gw" {
 }
 
 output "access_interface" {
-  value = "ens3"
+  value = "eth0"
 }

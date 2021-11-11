@@ -1,14 +1,7 @@
 # Enter config overrides in here
 
-OPENSTACK_SERIES=wallaby
 KAYOBE_URI=https://github.com/stackhpc/kayobe
-KAYOBE_BRANCH=stackhpc/wallaby
-
-# Don't use upper constraints when installing kayobe
-KAYOBE_PIP_INSTALL_ARGS=""
-
-# Train: For Ensure the image cache directory exists which looks up USER in environment
-export USER=stack
+KAYOBE_BRANCH=scientific-openstack/wallaby
 
 # See: https://github.com/stackhpc/docker-rally/blob/master/bin/rally-verify-wrapper.sh for a full list of tempest parameters that can be overriden.
 # You can override tempest parameters like so:
