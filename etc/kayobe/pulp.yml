@@ -13,17 +13,21 @@ pulp_password:
 # Base URL of the StackHPC Pulp service.
 stackhpc_release_pulp_url: "https://ark.stackhpc.com"
 
+# Credentials used to access the StackHPC Ark container image registry.
+stackhpc_release_pulp_username:
+stackhpc_release_pulp_password:
+
+# Client certificates used to access StackHPC Ark repositories.
+# They are trusted by the 'release' cert guard's CA.
+stackhpc_release_pulp_client_cert: "{{ lookup('file', 'certs/ark.stackhpc.com/client-cert.pem') | trim }}"
+stackhpc_release_pulp_client_key: "{{ lookup('file', 'certs/ark.stackhpc.com/client-key.pem') | trim }}"
+
 
 ###############################################################################
 # RPMs
 
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
-
-# Client certificates used to access ark.stackhpc.com repositories.
-# They are trusted by the 'development' cert guard's CA.
-stackhpc_release_pulp_client_cert: "{{ lookup('file', 'certs/ark.stackhpc.com/client-cert.pem') | trim }}"
-stackhpc_release_pulp_client_key: "{{ lookup('file', 'certs/ark.stackhpc.com/client-key.pem') | trim }}"
 
 # Content comes in from release repositories, via pinned repo versions.
 
@@ -151,3 +155,162 @@ stackhpc_pulp_distribution_rpm_production:
     base_path: "docker-ce/centos/8/x86_64/stable/production"
     distribution: "docker-ce-for-centos-8-staging"
     state: present
+
+
+###############################################################################
+# Containers
+
+# URL of the StackHPC Pulp service's container image registry.
+stackhpc_release_pulp_registry_url: "{{ stackhpc_release_pulp_url }}"
+
+# List of all image names.
+stackhpc_pulp_images:
+  - barbican-api
+  - barbican-base
+  - barbican-keystone-listener
+  - barbican-worker
+  - base
+  - bifrost-base
+  - bifrost-deploy
+  - cinder-api
+  - cinder-backup
+  - cinder-base
+  - cinder-scheduler
+  - cinder-volume
+  - cloudkitty-api
+  - cloudkitty-base
+  - cloudkitty-processor
+  - cron
+  - designate-api
+  - designate-backend-bind9
+  - designate-base
+  - designate-central
+  - designate-mdns
+  - designate-producer
+  - designate-sink
+  - designate-worker
+  - dnsmasq
+  - elasticsearch
+  - elasticsearch-curator
+  - fluentd
+  - glance-api
+  - glance-base
+  - grafana
+  - haproxy
+  - heat-api
+  - heat-api-cfn
+  - heat-base
+  - heat-engine
+  - horizon
+  - influxdb
+  - ironic-api
+  - ironic-base
+  - ironic-conductor
+  - ironic-inspector
+  - ironic-neutron-agent
+  - ironic-pxe
+  - iscsid
+  - keepalived
+  - keystone
+  - keystone-base
+  - keystone-fernet
+  - keystone-ssh
+  - kibana
+  - kolla-toolbox
+  - magnum-api
+  - magnum-base
+  - magnum-conductor
+  - manila-api
+  - manila-base
+  - manila-data
+  - manila-scheduler
+  - manila-share
+  - mariadb-base
+  - mariadb-clustercheck
+  - mariadb-server
+  - memcached
+  - neutron-base
+  - neutron-dhcp-agent
+  - neutron-l3-agent
+  - neutron-metadata-agent
+  - neutron-openvswitch-agent
+  - neutron-server
+  - nova-api
+  - nova-base
+  - nova-compute
+  - nova-compute-ironic
+  - nova-conductor
+  - nova-libvirt
+  - nova-novncproxy
+  - nova-scheduler
+  - nova-serialproxy
+  - nova-ssh
+  - octavia-api
+  - octavia-base
+  - octavia-driver-agent
+  - octavia-health-manager
+  - octavia-housekeeping
+  - octavia-worker
+  - openstack-base
+  - openvswitch-base
+  - openvswitch-db-server
+  - openvswitch-netcontrold
+  - openvswitch-vswitchd
+  - ovn-base
+  - ovn-controller
+  - ovn-nb-db-server
+  - ovn-northd
+  - ovn-sb-db-server
+  - placement-api
+  - placement-base
+  - prometheus-alertmanager
+  - prometheus-base
+  - prometheus-blackbox-exporter
+  - prometheus-cadvisor
+  - prometheus-elasticsearch-exporter
+  - prometheus-haproxy-exporter
+  # FIXME: Not built.
+  # - prometheus-libvirt-exporter
+  - prometheus-memcached-exporter
+  - prometheus-mtail
+  - prometheus-mysqld-exporter
+  - prometheus-node-exporter
+  - prometheus-openstack-exporter
+  - prometheus-server
+  - prometheus-v2-server
+  - rabbitmq
+  - redis
+  - redis-base
+  - redis-sentinel
+
+# Common parameters for container image repositories.
+stackhpc_pulp_repository_container_repos_common:
+  url: "{{ stackhpc_release_pulp_registry_url }}"
+  policy: on_demand
+  remote_username: "{{ stackhpc_release_pulp_username }}"
+  remote_password: "{{ stackhpc_release_pulp_password }}"
+  state: present
+
+# List of container image repositories.
+stackhpc_pulp_repository_container_repos: >-
+  {%- set repos = [] -%}
+  {%- for image in stackhpc_pulp_images -%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
+  {%- set repo = {"name": image_repo} -%}
+  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_common | combine(repo)) -%}
+  {%- endfor -%}
+  {{ repos }}
+
+# Common parameters for container image distributions.
+stackhpc_pulp_distribution_container_common:
+  state: present
+
+# List of container image distributions.
+stackhpc_pulp_distribution_container: >-
+  {%- set distributions = [] -%}
+  {%- for image in stackhpc_pulp_images -%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
+  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
+  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_common | combine(distribution)) -%}
+  {%- endfor -%}
+  {{ distributions }}
