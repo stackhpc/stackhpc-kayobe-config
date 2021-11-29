@@ -35,11 +35,41 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
-#dnf_custom_repos:
+dnf_custom_repos:
+  appstream:
+    baseurl: "{{ stackhpc_repo_centos_stream_appstream_url }}"
+    description: "CentOS Stream $releasever - AppStream"
+    file: CentOS-Stream-AppStream
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  baseos:
+    baseurl: "{{ stackhpc_repo_centos_stream_baseos_url }}"
+    description: "CentOS Stream $releasever - BaseOS"
+    file: CentOS-Stream-BaseOS
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  extras:
+    baseurl: "{{ stackhpc_repo_centos_stream_extras_url }}"
+    description: "CentOS Stream $releasever - Extras"
+    file: CentOS-Stream-Extras
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  epel:
+    baseurl: "{{ stackhpc_repo_epel_url }}"
+    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    file: epel
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+    gpgcheck: yes
+  epel-modular:
+    baseurl: "{{ stackhpc_repo_epel_modular_url }}"
+    description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
+    file: epel-modular
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+    gpgcheck: yes
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'true'.
-#dnf_install_epel:
+dnf_install_epel: false
 
 ###############################################################################
 # DNF Automatic configuration.
