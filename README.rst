@@ -26,7 +26,8 @@ configuration. It currently provides the following:
 This configuration defines two `Pulp distributions
 <https://docs.pulpproject.org/pulpcore/workflows/promotion.html>`__ for
 packages, ``development`` and ``production``. This allows packages to be
-updated and tested before rolling out to production.
+updated and tested in a development or staging environment before rolling them
+out to production.
 
 Configuration
 =============
@@ -52,18 +53,27 @@ The distribution name for the environment should be configured as either
 Usage
 =====
 
-The following custom playbooks are provided in ``etc/kayobe/ansible/``:
-
-* ``pulp-repo-sync.yml``: Synchronise package repositories in local Pulp with
-  Ark.
-* ``pulp-repo-publish.yml``: Publish synced package repositories under the
-  ``development`` distribution.
-* ``pulp-repo-promote.yml``: Promote the ``development`` distribution content
-  to the ``production`` distribution.
-
-See the Kayobe `custom playbook documentation
+Several custom playbooks are provided in ``etc/kayobe/ansible/``.  See the
+Kayobe `custom playbook documentation
 <https://docs.openstack.org/kayobe/victoria/custom-ansible-playbooks.html>`__
 for information on how to run them.
+
+* ``pulp-repo-sync.yml``: Pull packages from Ark to the local Pulp. This will
+  create a new repository version (snapshot) for each repository in the local
+  Pulp server when new packages are available. The new packages will not be
+  available to cloud nodes until they have been published.
+* ``pulp-repo-publish.yml``: Publish synchronised packages to the
+  ``development`` distribution in the local Pulp. This will make synchronised
+  packages available to cloud nodes using the ``development`` distribution
+  (typically a development or staging environment). The new packages will not
+  be available to cloud nodes using the ``production`` distribution until they
+  have been promoted.
+* ``pulp-repo-promote.yml``: Promote packages in the ``development``
+  distribution to the ``production`` distribution in the local Pulp. This will
+  make all packages currently available to cloud nodes using the
+  ``development`` distribution also available to cloud nodes using the
+  ``production`` distribution. Typically this would be done only once the new
+  packages have been validated in a development or staging environment.
 
 Resources
 =========
