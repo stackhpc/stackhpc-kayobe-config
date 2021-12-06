@@ -29,6 +29,37 @@ packages, ``development`` and ``production``. This allows packages to be
 updated and tested in a development or staging environment before rolling them
 out to production.
 
+How to consume this configuration
+=================================
+
+This configuration is not a complete Kayobe configuration, rather it should be
+treated as a base, in place of the `upstream kayobe-config
+<https://opendev.org/openstack/kayobe-config>`__. Indeed, this repository is
+based on the upstream kayobe-config, with some opinionated configuration
+changes applied.
+
+New deployments
+---------------
+
+If starting a new deployment, clone this repository as the starting point for
+your configuration.
+
+.. code-block:: console
+
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/victoria
+
+Existing deployments
+--------------------
+
+If migrating an existing deployment to StackHPC Kayobe configuration, you will
+need to merge the changes in this repository into your repository.
+
+.. code-block:: console
+
+   git remote add stackhpc https://github.com/stackhpc/stackhpc-kayobe-config
+   git fetch stackhpc
+   git merge stackhpc/stackhpc/victoria
+
 Configuration
 =============
 
