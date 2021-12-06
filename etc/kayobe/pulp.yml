@@ -1,0 +1,153 @@
+---
+###############################################################################
+# Local Pulp access credentials
+
+pulp_url: http://localhost:8080
+pulp_username: admin
+pulp_password:
+
+
+###############################################################################
+# StackHPC Pulp server
+
+# Base URL of the StackHPC Pulp service.
+stackhpc_release_pulp_url: "https://ark.stackhpc.com"
+
+
+###############################################################################
+# RPMs
+
+# Content URL of the StackHPC Pulp service.
+stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
+
+# Client certificates used to access ark.stackhpc.com repositories.
+# They are trusted by the 'development' cert guard's CA.
+stackhpc_release_pulp_client_cert: "{{ lookup('file', 'certs/ark.stackhpc.com/client-cert.pem') | trim }}"
+stackhpc_release_pulp_client_key: "{{ lookup('file', 'certs/ark.stackhpc.com/client-key.pem') | trim }}"
+
+# Content comes in from release repositories, via pinned repo versions.
+
+stackhpc_pulp_repository_rpm_repos:
+  # Base CentOS 8 Stream repositories
+  - name: CentOS Stream 8 - AppStream
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/AppStream/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_appstream_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+  - name: CentOS Stream 8 - BaseOS
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+  - name: CentOS Stream 8 - Extras
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+
+  # EPEL repositories
+  - name: Extra Packages for Enterprise Linux 8 - x86_64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Everything/x86_64/{{ stackhpc_pulp_repo_epel_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_content_only
+    state: present
+  - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+
+  # Third-party repositories
+  - name: Docker CE for CentOS 8
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/8/x86_64/stable/{{ stackhpc_pulp_repo_docker_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+
+# Publication format is a subset of distribution.
+stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_development }}"
+
+# Content is made available at well-known distribution names for development,
+# production.
+
+# Development tracks the release repositories.
+stackhpc_pulp_distribution_rpm_development:
+  # Base CentOS 8 Stream repositories
+  - name: "centos-stream-8-appstream-development"
+    repository: CentOS Stream 8 - AppStream
+    base_path: "centos/8-stream/AppStream/x86_64/os/development"
+    state: present
+  - name: "centos-stream-8-baseos-development"
+    repository: CentOS Stream 8 - BaseOS
+    base_path: "centos/8-stream/BaseOS/x86_64/os/development"
+    state: present
+  - name: "centos-stream-8-extras-development"
+    repository: CentOS Stream 8 - Extras
+    base_path: "centos/8-stream/extras/x86_64/os/development"
+    state: present
+
+  # EPEL repositories
+  - name: "extra-packages-for-enterprise-linux-8-x86_64-development"
+    repository: Extra Packages for Enterprise Linux 8 - x86_64
+    base_path: "epel/8/Everything/x86_64/development"
+    state: present
+  - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
+    repository: Extra Packages for Enterprise Linux Modular 8 - x86_64
+    base_path: "epel/8/Modular/x86_64/development"
+    state: present
+
+  # Third-party repositories
+  - name: "docker-ce-for-centos-8-development"
+    repository: Docker CE for CentOS 8
+    base_path: "docker-ce/centos/8/x86_64/stable/development"
+    state: present
+
+# Development gets promoted to production.
+stackhpc_pulp_distribution_rpm_production:
+  # Base CentOS 8 Stream repositories
+  - name: "centos-stream-8-baseos-production"
+    repository: CentOS Stream 8 - BaseOS
+    base_path: "centos/8-stream/BaseOS/x86_64/os/production"
+    distribution: "centos-stream-8-baseos-staging"
+    state: present
+  - name: "centos-stream-8-appstream-production"
+    repository: CentOS Stream 8 - AppStream
+    base_path: "centos/8-stream/AppStream/x86_64/os/production"
+    distribution: "centos-stream-8-appstream-staging"
+    state: present
+  - name: "centos-stream-8-extras-production"
+    repository: CentOS Stream 8 - Extras
+    base_path: "centos/8-stream/extras/x86_64/os/production"
+    distribution: "centos-stream-8-extras-staging"
+    state: present
+
+  # EPEL repositories
+  - name: "extra-packages-for-enterprise-linux-8-x86_64-production"
+    repository: Extra Packages for Enterprise Linux 8 - x86_64
+    base_path: "epel/8/Everything/x86_64/production"
+    distribution: "extra-packages-for-enterprise-linux-8-x86_64-staging"
+    state: present
+  - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-production"
+    repository: Extra Packages for Enterprise Linux Modular 8 - x86_64
+    base_path: "epel/8/Modular/x86_64/production"
+    distribution: "extra-packages-for-enterprise-linux-modular-8-x86_64-staging"
+    state: present
+
+  # Third-party repositories
+  - name: "docker-ce-for-centos-8-production"
+    repository: Docker CE for CentOS 8
+    base_path: "docker-ce/centos/8/x86_64/stable/production"
+    distribution: "docker-ce-for-centos-8-staging"
+    state: present
