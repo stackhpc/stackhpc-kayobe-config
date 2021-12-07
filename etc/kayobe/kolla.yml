@@ -11,11 +11,11 @@
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-#kolla_source_url:
+kolla_source_url: "{{ stackhpc_kolla_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-#kolla_source_version:
+kolla_source_version: "{{ stackhpc_kolla_source_version }}"
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -37,11 +37,11 @@
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-#kolla_ansible_source_url:
+kolla_ansible_source_url: "{{ stackhpc_kolla_ansible_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-#kolla_ansible_source_version:
+kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
@@ -99,7 +99,20 @@ kolla_openstack_release: wallaby-20211122T135752
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-#kolla_sources:
+kolla_sources:
+  bifrost-base:
+    type: git
+    location: "{{ kolla_bifrost_source_url }}"
+    reference: "{{ kolla_bifrost_source_version }}"
+  ironic-inspector-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.1.2
+  magnum-base:
+    type: git
+    location: https://github.com/stackhpc/magnum.git
+    reference: stackhpc/wallaby
 
 ###############################################################################
 # Kolla image build configuration.
@@ -168,20 +181,10 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
 
-  ironic_inspector_footer: |
-    # Install our custom inspector plugins.
-    RUN pip3 install git+https://github.com/stackhpc/stackhpc-inspector-plugins.git@1.1.2 \
-        -c https://releases.openstack.org/constraints/upper/wallaby
-  magnum_api_footer: |
-    # Install StackHPC release of Magnum.
-    RUN pip3 install git+https://github.com/stackhpc/magnum.git@stackhpc/wallaby \
-        -c https://releases.openstack.org/constraints/upper/wallaby
-  magnum_conductor_footer: |
-    # Install StackHPC release of Magnum.
-    RUN pip3 install git+https://github.com/stackhpc/magnum.git@stackhpc/wallaby \
-        -c https://releases.openstack.org/constraints/upper/wallaby
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
+  ironic_inspector_header: |
+    ADD additions-archive /
   prometheus_v2_server_repository_version: |
     ARG prometheus_version='2.30.0'
   prometheus_alertmanager_repository_version: |
@@ -206,6 +209,8 @@ kolla_build_blocks:
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
 kolla_build_customizations:
+  ironic_inspector_pip_packages_append:
+    - /additions/*
   ovn_base_packages_override:
     - ovn-2021-21.06.0
   ovn_controller_packages_override:
