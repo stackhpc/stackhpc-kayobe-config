@@ -1,0 +1,13 @@
+{% raw %}
+scrape_configs:
+  - job_name: fluentd
+    static_configs:
+{% for host in (groups['control'] + groups['compute'] + groups['monitoring']) %}
+      - targets:
+          - "{{ host }}:24224"
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endraw %}
