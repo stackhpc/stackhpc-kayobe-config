@@ -38,6 +38,11 @@ treated as a base, in place of the `upstream kayobe-config
 based on the upstream kayobe-config, with some opinionated configuration
 changes applied.
 
+Since this repository makes changes to the base configuration, it works best
+when used with Kayobe's `multiple environments
+<https://docs.openstack.org/kayobe/latest/multiple-environments.html>`__
+feature.
+
 New deployments
 ---------------
 
