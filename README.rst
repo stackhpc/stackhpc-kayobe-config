@@ -70,13 +70,19 @@ Configuration
 =============
 
 The URL and credentials of the local Pulp server should be configured in
-``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the password:
+``etc/kayobe/pulp.yml`` in advance of deployment, using Ansible Vault
+to encrypt the password:
 
 .. code-block:: yaml
 
-   pulp_url: <url>
+   pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:8080"
    pulp_username: admin
    pulp_password: <password>
+
+This is used to configure `Basic Auth for the Pulp API
+<https://docs.pulpproject.org/pulpcore/authentication/basic.html#basic>`__.
+Note that ``pulp_username`` is currently unused as only `admin` is supported.
+``pulp_password`` is used to automatically set the admin password.
 
 The container image registry credentials issued by StackHPC should be
 configured in ``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the
