@@ -110,7 +110,7 @@ for information on how to run them.
   (typically a development or staging environment). The new packages will not
   be available to cloud nodes using the ``production`` distribution until they
   have been promoted.
-* ``pulp-repo-promote.yml``: Promote packages in the ``development``
+* ``pulp-repo-promote-production.yml``: Promote packages in the ``development``
   distribution to the ``production`` distribution in the local Pulp. This will
   make all packages currently available to cloud nodes using the
   ``development`` distribution also available to cloud nodes using the
