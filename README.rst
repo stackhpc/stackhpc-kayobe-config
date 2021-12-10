@@ -100,16 +100,6 @@ Usage
 
 The following custom playbooks are provided in ``etc/kayobe/ansible/``:
 
-* ``pulp-repo-sync.yml``: Synchronise package repositories in local Pulp with
-  Ark.
-* ``pulp-repo-publish.yml``: Publish synced package repositories under the
-  ``development`` distribution.
-* ``pulp-repo-promote.yml``: Promote the ``development`` distribution content
-  to the ``production`` distribution.
-* ``pulp-container-sync.yml``: Synchronise container repositories in local Pulp
-  with Ark.
-* ``pulp-container-publish.yml``: Publish synced container repositories.
-
 See the Kayobe `custom playbook documentation
 <https://docs.openstack.org/kayobe/wallaby/custom-ansible-playbooks.html>`__
 for information on how to run them.
@@ -130,6 +120,14 @@ for information on how to run them.
   ``development`` distribution also available to cloud nodes using the
   ``production`` distribution. Typically this would be done only once the new
   packages have been validated in a development or staging environment.
+* ``pulp-container-sync.yml``: Pull container images from Ark to the local
+  Pulp. This will create a new repository version (snapshot) for each
+  repository in the local Pulp server when new image tags are available. The
+  new image tags will not be available to cloud nodes until they have been
+  published.
+* ``pulp-container-publish.yml``: Publish synchronised container images in the
+  local Pulp. This will make synchonised container images available to cloud
+  nodes.
 
 Resources
 =========
