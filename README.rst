@@ -19,6 +19,7 @@ repositories on Ark is controlled via X.509 certificates issued by StackHPC.
 This configuration is a base, and should be merged with any existing Kayobe
 configuration. It currently provides the following:
 
+* Configuration to deploy a local Pulp service
 * Pulp repository definitions for CentOS Stream 8
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
@@ -84,9 +85,14 @@ The distribution name for the environment should be configured as either
 Usage
 =====
 
-Several custom playbooks are provided in ``etc/kayobe/ansible/``.  See the
-Kayobe `custom playbook documentation
-<https://docs.openstack.org/kayobe/victoria/custom-ansible-playbooks.html>`__
+The local Pulp service will be deployed as a `Seed custom container
+<https://docs.openstack.org/kayobe/wallaby/configuration/reference/seed-custom-containers.html>`__
+on next ``kayobe seed service deploy`` or ``kayobe seed service upgrade``.
+
+The following custom playbooks are provided in ``etc/kayobe/ansible/``:
+
+See the Kayobe `custom playbook documentation
+<https://docs.openstack.org/kayobe/wallaby/custom-ansible-playbooks.html>`__
 for information on how to run them.
 
 * ``pulp-repo-sync.yml``: Pull packages from Ark to the local Pulp. This will
