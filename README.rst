@@ -38,6 +38,11 @@ treated as a base, in place of the `upstream kayobe-config
 based on the upstream kayobe-config, with some opinionated configuration
 changes applied.
 
+Since this repository makes changes to the base configuration, it works best
+when used with Kayobe's `multiple environments
+<https://docs.openstack.org/kayobe/latest/multiple-environments.html>`__
+feature.
+
 New deployments
 ---------------
 
@@ -95,16 +100,6 @@ Usage
 
 The following custom playbooks are provided in ``etc/kayobe/ansible/``:
 
-* ``pulp-repo-sync.yml``: Synchronise package repositories in local Pulp with
-  Ark.
-* ``pulp-repo-publish.yml``: Publish synced package repositories under the
-  ``development`` distribution.
-* ``pulp-repo-promote.yml``: Promote the ``development`` distribution content
-  to the ``production`` distribution.
-* ``pulp-container-sync.yml``: Synchronise container repositories in local Pulp
-  with Ark.
-* ``pulp-container-publish.yml``: Publish synced container repositories.
-
 See the Kayobe `custom playbook documentation
 <https://docs.openstack.org/kayobe/wallaby/custom-ansible-playbooks.html>`__
 for information on how to run them.
@@ -119,12 +114,20 @@ for information on how to run them.
   (typically a development or staging environment). The new packages will not
   be available to cloud nodes using the ``production`` distribution until they
   have been promoted.
-* ``pulp-repo-promote.yml``: Promote packages in the ``development``
+* ``pulp-repo-promote-production.yml``: Promote packages in the ``development``
   distribution to the ``production`` distribution in the local Pulp. This will
   make all packages currently available to cloud nodes using the
   ``development`` distribution also available to cloud nodes using the
   ``production`` distribution. Typically this would be done only once the new
   packages have been validated in a development or staging environment.
+* ``pulp-container-sync.yml``: Pull container images from Ark to the local
+  Pulp. This will create a new repository version (snapshot) for each
+  repository in the local Pulp server when new image tags are available. The
+  new image tags will not be available to cloud nodes until they have been
+  published.
+* ``pulp-container-publish.yml``: Publish synchronised container images in the
+  local Pulp. This will make synchonised container images available to cloud
+  nodes.
 
 Resources
 =========
