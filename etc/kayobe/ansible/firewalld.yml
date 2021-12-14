@@ -1,0 +1,190 @@
+---
+- name: Firewalld
+  hosts: controllers
+  become: true
+  tags:
+    - network
+  tasks:
+    - name: Include kolla-ansible variables
+      include_vars: "{{ kolla_ansible_venv }}/share/kolla-ansible/ansible/group_vars/all.yml"
+
+    - name: install firewalld
+      yum:
+        name: firewalld
+        state: present
+
+    - name: "Get default_zone"
+      command: "firewall-offline-cmd --get-default-zone"
+      changed_when: False
+      register: default_zone
+
+    - name: Print default_zone
+      debug:
+        var: default_zone
+
+    - name: "Set default zone"
+      command: "firewall-offline-cmd --set-default-zone trusted"
+      when: default_zone.stdout != "trusted"
+
+    - name: Remove default services from public zone
+      firewalld:
+        zone: "public"
+        state: disabled
+        service: "{{ item }}"
+        permanent: yes
+        offline: yes
+      with_items:
+        - ssh
+        - cockpit
+        - dhcpv6-client
+
+    - name: "drop rule for VIP address"
+      firewalld:
+        zone: trusted
+        rich_rule: rule family="ipv4" priority="-1" destination address="{{ public_net_name | net_vip_address }}" drop
+        permanent: yes
+        state: enabled
+        offline: yes
+
+    - name: "drop rule for public nic address"
+      firewalld:
+        zone: trusted
+        rich_rule: rule family="ipv4" priority="-1" destination address="{{ public_net_name | net_ip }}" drop
+        permanent: yes
+        state: enabled
+        offline: yes
+
+    - name: Add firewall rules for openstack services
+      firewalld:
+        zone: trusted
+        rich_rule: rule family="ipv4" priority="-2" port port="{{ item.port }}" protocol="tcp" destination address="{{ public_net_name | net_vip_address }}" accept
+        permanent: yes
+        state: "{{ 'enabled' if item.when else 'disabled' }}"
+        offline: yes
+      with_items:
+        # horizon80
+        - port: "{{ horizon_port }}"
+          when: "{{ kolla_enable_horizon | bool }}"
+        # horizon443
+        - port: "{% if kolla_enable_tls_external|bool %}443{% else %}{{ horizon_port }}{% endif %}"
+          when: "{{ kolla_enable_horizon | bool }}"
+        # keystone
+        - port: "{{ keystone_public_listen_port }}"
+          when: "{{ kolla_enable_keystone | bool }}"
+        # nova_api
+        - port: "{{ nova_api_listen_port }}"
+          when: "{{ kolla_enable_nova | bool }}"
+        # nova_novnc
+        - port: "{{ nova_novncproxy_listen_port }}"
+          when: "{{ kolla_enable_nova | bool }}"
+        # neutron
+        - port: "{{ neutron_server_listen_port }}"
+          when: "{{ kolla_enable_neutron | bool }}"
+        # cinder
+        - port: "{{ cinder_api_listen_port }}"
+          when: "{{ kolla_enable_cinder | bool }}"
+        # glance
+        - port: "{{ glance_api_listen_port }}"
+          when: "{{ kolla_enable_glance | bool }}"
+        # heat
+        - port: "{{ heat_api_listen_port }}"
+          when: "{{ kolla_enable_heat | bool }}"
+        # heat_cfn
+        - port: "{{ heat_api_cfn_listen_port }}"
+          when: "{{ kolla_enable_heat | bool }}"
+        # octavia
+        - port: "{{ octavia_api_listen_port }}"
+          when: "{{ kolla_enable_octavia | bool }}"
+        # monasca
+        - port: "{{ monasca_api_port }}"
+          when: "{{ kolla_enable_monasca | bool }}"
+        # kibana
+        - port: "{{ kibana_server_port }}"
+          when: "{{ kolla_enable_kibana | bool }}"
+        # placement
+        - port: "{{ placement_api_listen_port }}"
+          when: "{{ kolla_enable_placement | bool }}"
+        # designate
+        - port: "{{ designate_api_listen_port }}"
+          when: "{{ kolla_enable_designate | bool }}"
+        # barbican
+        - port: "{{ barbican_api_listen_port }}"
+          when: "{{ kolla_enable_barbican | bool }}"
+        # magnum
+        - port: "{{ magnum_api_port }}"
+          when: "{{ kolla_enable_magnum | bool }}"
+        # aodh
+        - port: "{{ aodh_api_listen_port }}"
+          when: "{{ kolla_enable_aodh | bool }}"
+        # gnocchi
+        - port: "{{ gnocchi_api_listen_port }}"
+          when: "{{ kolla_enable_gnocchi | bool }}"
+        # ironic_api
+        - port: "{{ ironic_api_listen_port }}"
+          when: "{{ kolla_enable_ironic | bool }}"
+        # ironic_inspector
+        - port: "{{ ironic_inspector_listen_port }}"
+          when: "{{ kolla_enable_ironic | bool }}"
+        # senlin
+        - port: "{{ senlin_api_listen_port }}"
+          when: "{{ kolla_enable_senlin | bool }}"
+        # mistral
+        - port: "{{ mistral_api_port }}"
+          when: "{{ kolla_enable_mistral | bool }}"
+        # panko
+        - port: "{{ panko_api_port }}"
+          when: "{{ kolla_enable_panko | bool }}"
+        # sahara
+        - port: "{{ sahara_api_port }}"
+          when: "{{ kolla_enable_sahara | bool }}"
+        # skydive
+        - port: "{{ skydive_analyzer_port }}"
+          when: "{{ kolla_enable_skydive | bool }}"
+        # blazar
+        - port: "{{ blazar_api_port }}"
+          when: "{{ kolla_enable_blazar | bool }}"
+        # swift
+        - port: "{{ swift_proxy_server_listen_port }}"
+          when: "{{ kolla_enable_swift | bool }}"
+        # cloudkitty
+        - port: "{{ cloudkitty_api_port }}"
+          when: "{{ kolla_enable_cloudkitty | bool }}"
+        # tacker
+        - port: "{{ tacker_server_port }}"
+          when: "{{ kolla_enable_tacker | bool }}"
+        # vitrage
+        - port: "{{ vitrage_api_port }}"
+          when: "{{ kolla_enable_vitrage | bool }}"
+        # trove
+        - port: "{{ trove_api_port }}"
+          when: "{{ kolla_enable_trove | bool }}"
+        # freezer
+        - port: "{{ freezer_api_port }}"
+          when: "{{ kolla_enable_freezer | bool }}"
+        # masakari
+        - port: "{{ masakari_api_port }}"
+          when: "{{ kolla_enable_masakari | bool }}"
+        # manila
+        - port: "{{ manila_api_port }}"
+          when: "{{ kolla_enable_manila | bool }}"
+        # designate 5354 dns axfr
+        - port: 5354
+          when: "{{ kolla_enable_designate | bool }}"
+
+    - name: Add udp firewall rules for openstack services
+      firewalld:
+        zone: trusted
+        rich_rule: rule family="ipv4" priority="-2" port port="{{ item.port }}" protocol="udp" destination address="{{ public_net_name | net_ip }}" accept
+        permanent: yes
+        state: "{{ 'enabled' if item.when else 'disabled' }}"
+        offline: yes
+      with_items:
+        # designate 53
+        - port: "53"
+          when: "{{ kolla_enable_designate | bool }}"
+
+    - name: "Enable firewalld"
+      service:
+        name: firewalld
+        state: restarted
+        enabled: yes
