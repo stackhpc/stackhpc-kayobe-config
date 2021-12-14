@@ -1,5 +1,13 @@
 ---
-- name: Set the pulp api password
+- name: Wait for Pulp to become ready
+  uri:
+    url: "{{ pulp_url }}/pulp/api/v3/status/"
+  register: pulp_status
+  until: pulp_status is success
+  retries: 30
+  delay: 2
+
+- name: Set the Pulp admin password
   become: true
   command: >-
     docker exec -u root {{ seed_containers.pulp.name }}
