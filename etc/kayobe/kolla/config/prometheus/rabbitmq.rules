@@ -13,7 +13,7 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq node down (instance {{ $labels.instance }})"
-      description: "Less than 3 nodes running in RabbitMQ cluster\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Less than 3 nodes running in RabbitMQ cluster"
 
   - alert: RabbitmqDown
     expr: rabbitmq_up == 0
@@ -22,7 +22,7 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq down (instance {{ $labels.instance }})"
-      description: "RabbitMQ node down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "RabbitMQ node down"
 
   - alert: RabbitmqNodeNotDistributed
     expr: erlang_vm_dist_node_state < 3
@@ -31,7 +31,7 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq node not distributed (instance {{ $labels.instance }})"
-      description: "Distribution link state is not 'up'\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Distribution link state is not 'up'"
 
   - alert: RabbitmqClusterDown
     expr: sum(rabbitmq_running) < 3
@@ -40,7 +40,7 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq cluster down (instance {{ $labels.instance }})"
-      description: "Less than 3 nodes running in RabbitMQ cluster\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Less than 3 nodes running in RabbitMQ cluster"
 
   - alert: RabbitmqInstancesDifferentVersions
     expr: count(count(rabbitmq_build_info) by (rabbitmq_version)) > 1
@@ -49,7 +49,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq instances different versions (instance {{ $labels.instance }})"
-      description: "Running different version of Rabbitmq in the same cluster, can lead to failure.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Running different version of Rabbitmq in the same cluster, can lead to failure."
 
   - alert: RabbitmqClusterPartition
     expr: rabbitmq_partitions > 0
@@ -58,7 +58,7 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq cluster partition (instance {{ $labels.instance }})"
-      description: "Cluster partition\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Cluster partition"
 
   - alert: RabbitmqMemoryHigh
     expr: rabbitmq_process_resident_memory_bytes / rabbitmq_resident_memory_limit_bytes * 100 > 90
@@ -67,7 +67,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq memory high (instance {{ $labels.instance }})"
-      description: "A node use more than 90% of allocated RAM\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "A node use more than 90% of allocated RAM"
 
   - alert: RabbitmqOutOfMemory
     expr: rabbitmq_node_mem_used / rabbitmq_node_mem_limit * 100 > 90
@@ -76,7 +76,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq out of memory (instance {{ $labels.instance }})"
-      description: "Memory available for RabbmitMQ is low (< 10%)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Memory available for RabbmitMQ is low (< 10%)"
 
   - alert: RabbitmqFileDescriptorsUsage
     expr: rabbitmq_process_open_fds / rabbitmq_process_max_fds * 100 > 90
@@ -85,7 +85,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq file descriptors usage (instance {{ $labels.instance }})"
-      description: "A node use more than 90% of file descriptors\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "A node use more than 90% of file descriptors"
 
   - alert: RabbitmqTooManyConnections
     expr: rabbitmq_connectionsTotal > 1000
@@ -94,7 +94,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq too many connections (instance {{ $labels.instance }})"
-      description: "RabbitMQ instance has too many connections (> 1000)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "RabbitMQ instance has too many connections (> 1000)"
 
   - alert: RabbitmqTooMuchUnack
     expr: sum(rabbitmq_queue_messages_unacked) BY (queue) > 1000
@@ -103,7 +103,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq too much unack (instance {{ $labels.instance }})"
-      description: "Too much unacknowledged messages\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Too much unacknowledged messages"
 
   - alert: RabbitmqDeadLetterQueueFillingUp
     expr: rabbitmq_queue_messages{queue="my-dead-letter-queue"} > 10
@@ -112,7 +112,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq dead letter queue filling up (instance {{ $labels.instance }})"
-      description: "Dead letter queue is filling up (> 10 msgs)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Dead letter queue is filling up (> 10 msgs)"
 
   - alert: RabbitmqTooMuchConnections
     expr: rabbitmq_connections > 1000
@@ -121,7 +121,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq too much connections (instance {{ $labels.instance }})"
-      description: "The total connections of a node is too high\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "The total connections of a node is too high"
 
   - alert: RabbitmqTooManyMessagesInQueue
     expr: rabbitmq_queue_messages_ready{queue="my-queue"} > 1000
@@ -130,7 +130,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq too many messages in queue (instance {{ $labels.instance }})"
-      description: "Queue is filling up (> 1000 msgs)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Queue is filling up (> 1000 msgs)"
 
   - alert: RabbitmqNoQueueConsumer
     expr: rabbitmq_queue_consumers < 1
@@ -139,7 +139,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq no queue consumer (instance {{ $labels.instance }})"
-      description: "A queue has less than 1 consumer\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "A queue has less than 1 consumer"
 
   - alert: RabbitmqSlowQueueConsuming
     expr: time() - rabbitmq_queue_head_message_timestamp{queue="my-queue"} > 60
@@ -148,7 +148,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq slow queue consuming (instance {{ $labels.instance }})"
-      description: "Queue messages are consumed slowly (> 60s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Queue messages are consumed slowly (> 60s)"
 
   - alert: RabbitmqUnroutableMessages
     expr: increase(rabbitmq_channel_messages_unroutable_returned_total[1m]) > 0 or increase(rabbitmq_channel_messages_unroutable_dropped_total[1m]) > 0
@@ -157,7 +157,7 @@ groups:
       severity: warning
     annotations:
       summary: "Rabbitmq unroutable messages (instance {{ $labels.instance }})"
-      description: "A queue has unroutable messages\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "A queue has unroutable messages"
 
   - alert: RabbitmqNoConsumer
     expr: rabbitmq_queue_consumers == 0
@@ -166,6 +166,6 @@ groups:
       severity: critical
     annotations:
       summary: "Rabbitmq no consumer (instance {{ $labels.instance }})"
-      description: "Queue has no consumer\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Queue has no consumer"
 
 {% endraw %}
