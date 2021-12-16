@@ -6,7 +6,7 @@ global:
 
 route:
   receiver: 'slack-notifications'
-  group_by: [alertname, datacenter, app]
+  group_by: [alertname]
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
@@ -15,8 +15,18 @@ receivers:
   - name: 'slack-notifications'
     slack_configs: {{ '{% raw %}' }}{% raw %}
     - channel: '#iris-notifications'
-      title: '{{ .GroupLabels.alertname }} alert has triggered'
-      text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+      title: |-
+        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+      text: >-
+        {{ range .Alerts -}}
+        *Alert:* {{ .Annotations.summary }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+
+        *Description:* {{ .Annotations.description }}
+
+        *Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+        {{ end }}
       send_resolved: true
 {% endraw %}{{ '{% endraw %}' }}
 
