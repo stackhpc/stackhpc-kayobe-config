@@ -95,7 +95,20 @@
 #     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
 #
-#seed_containers:
+seed_containers:
+  pulp:
+    name: pulp
+    image: pulp/pulp
+    pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
+    tag: "3.16"
+    network_mode: host
+    volumes:
+      - /opt/kayobe/containers/pulp:/etc/pulp
+      - pulp_storage:/var/lib/pulp
+      - pulp_pgsql:/var/lib/pgsql
+      - pulp_containers:/var/lib/containers
+    restart_policy: unless-stopped
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

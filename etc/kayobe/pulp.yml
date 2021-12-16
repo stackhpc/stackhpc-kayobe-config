@@ -2,10 +2,13 @@
 ###############################################################################
 # Local Pulp access credentials
 
-pulp_url: http://localhost:8080
-pulp_username: admin
-pulp_password:
+# Base URL of the local Pulp service.
+# Default uses the seed node's IP on the admin network.
+pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:8080"
 
+# Credentials used to access the local Pulp REST API.
+pulp_username: admin
+pulp_password: "{{ secrets_pulp_password }}"
 
 ###############################################################################
 # StackHPC Pulp server
