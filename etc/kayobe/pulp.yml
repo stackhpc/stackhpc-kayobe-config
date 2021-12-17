@@ -2,10 +2,13 @@
 ###############################################################################
 # Local Pulp access credentials
 
-pulp_url: http://localhost:8080
-pulp_username: admin
-pulp_password:
+# Base URL of the local Pulp service.
+# Default uses the seed node's IP on the admin network.
+pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
 
+# Credentials used to access the local Pulp REST API.
+pulp_username: admin
+pulp_password: "{{ secrets_pulp_password }}"
 
 ###############################################################################
 # StackHPC Pulp server
@@ -118,36 +121,30 @@ stackhpc_pulp_distribution_rpm_development:
 stackhpc_pulp_distribution_rpm_production:
   # Base CentOS 8 Stream repositories
   - name: "centos-stream-8-baseos-production"
-    repository: CentOS Stream 8 - BaseOS
     base_path: "centos/8-stream/BaseOS/x86_64/os/production"
-    distribution: "centos-stream-8-baseos-staging"
+    distribution: "centos-stream-8-baseos-development"
     state: present
   - name: "centos-stream-8-appstream-production"
-    repository: CentOS Stream 8 - AppStream
     base_path: "centos/8-stream/AppStream/x86_64/os/production"
-    distribution: "centos-stream-8-appstream-staging"
+    distribution: "centos-stream-8-appstream-development"
     state: present
   - name: "centos-stream-8-extras-production"
-    repository: CentOS Stream 8 - Extras
     base_path: "centos/8-stream/extras/x86_64/os/production"
-    distribution: "centos-stream-8-extras-staging"
+    distribution: "centos-stream-8-extras-development"
     state: present
 
   # EPEL repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-production"
-    repository: Extra Packages for Enterprise Linux 8 - x86_64
     base_path: "epel/8/Everything/x86_64/production"
-    distribution: "extra-packages-for-enterprise-linux-8-x86_64-staging"
+    distribution: "extra-packages-for-enterprise-linux-8-x86_64-development"
     state: present
   - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-production"
-    repository: Extra Packages for Enterprise Linux Modular 8 - x86_64
     base_path: "epel/8/Modular/x86_64/production"
-    distribution: "extra-packages-for-enterprise-linux-modular-8-x86_64-staging"
+    distribution: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
     state: present
 
   # Third-party repositories
   - name: "docker-ce-for-centos-8-production"
-    repository: Docker CE for CentOS 8
     base_path: "docker-ce/centos/8/x86_64/stable/production"
-    distribution: "docker-ce-for-centos-8-staging"
+    distribution: "docker-ce-for-centos-8-development"
     state: present
