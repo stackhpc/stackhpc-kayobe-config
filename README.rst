@@ -66,6 +66,22 @@ need to merge the changes in this repository into your repository.
    git fetch stackhpc
    git merge stackhpc/stackhpc/wallaby
 
+Updating
+--------
+
+This base configuration will be updated over time, to update repository
+versions, container image tags, and other configuration. Deployments may
+consume these updates by merging in the changes with their local configuration.
+
+.. code-block:: console
+
+   git fetch stackhpc
+   git merge stackhpc/stackhpc/wallaby
+
+The intention is to avoid merge conflicts where possible, but there may be
+cases where this is difficult. We are open to discussion on how best to
+approach this on both sides.
+
 Configuration
 =============
 
