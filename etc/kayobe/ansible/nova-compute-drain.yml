@@ -1,0 +1,71 @@
+---
+- name: Drain a nova compute host of instances
+  hosts: compute
+  gather_facts: yes
+  tags:
+    - nova-compute-drain
+  vars:
+    venv: "{{ virtualenv_path }}/openstack"
+    live_migration_fatal: true
+  tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - block:
+        - name: Query instances
+          command: >
+            {{ venv }}/bin/openstack
+            server list --host {{ ansible_facts.nodename }}
+            --all-projects
+            --status ACTIVE
+            --format json
+          register: instances
+
+        - name: Live migrate instances
+          command: >
+            {{ venv }}/bin/openstack
+            server migrate
+            {{ instance_uuid }}
+            --live-migration
+            --wait
+          loop: "{{ instances.stdout | from_json }}"
+          loop_control:
+            label: "{{ instance_uuid }}"
+          vars:
+            instance_uuid: "{{ item.ID | default }}"
+          register: result
+          failed_when:
+            - live_migration_fatal | bool
+            - result is failed
+
+        - name: Query instances
+          command: >
+            {{ venv }}/bin/openstack
+            server list --host {{ ansible_facts.nodename }}
+            --all-projects
+            --status ACTIVE
+            --format json
+          register: instances
+
+        - name: Fail if there are instances still on the host
+          fail:
+            msg: >
+              Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
+          when:
+            - live_migration_fatal | bool
+            - instances.stdout | from_json | length > 0
+
+      delegate_to: "{{ groups['controllers'][0] }}"
+      environment: "{{ openstack_auth_env }}"
+      when:
+        - "'compute' in group_names"
+        - groups['compute'] | length > 1
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
