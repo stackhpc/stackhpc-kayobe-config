@@ -44,6 +44,10 @@ when used with Kayobe's `multiple environments
 <https://docs.openstack.org/kayobe/latest/multiple-environments.html>`__
 feature.
 
+This configuration should be consumed using the `StackHPC Kayobe fork
+<https://github.com/stackhpc/kayobe/tree/stackhpc/wallaby>`__, which includes
+backported support for Ansible collections.
+
 New deployments
 ---------------
 
