@@ -39,6 +39,10 @@ treated as a base, in place of the `upstream kayobe-config
 based on the upstream kayobe-config, with some opinionated configuration
 changes applied.
 
+This configuration should be consumed using the `StackHPC Kayobe fork
+<https://github.com/stackhpc/kayobe/tree/stackhpc/wallaby>`__, which includes
+backported support for Ansible collections.
+
 New deployments
 ---------------
 
