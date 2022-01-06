@@ -39,6 +39,10 @@ treated as a base, in place of the `upstream kayobe-config
 based on the upstream kayobe-config, with some opinionated configuration
 changes applied.
 
+This configuration should be consumed using the `StackHPC Kayobe fork
+<https://github.com/stackhpc/kayobe/tree/stackhpc/victoria>`__, which includes
+backported support for Ansible collections.
+
 New deployments
 ---------------
 
@@ -91,13 +95,13 @@ Usage
 =====
 
 The local Pulp service will be deployed as a `Seed custom container
-<https://docs.openstack.org/kayobe/wallaby/configuration/reference/seed-custom-containers.html>`__
+<https://docs.openstack.org/kayobe/victoria/configuration/reference/seed-custom-containers.html>`__
 on next ``kayobe seed service deploy`` or ``kayobe seed service upgrade``.
 
 The following custom playbooks are provided in ``etc/kayobe/ansible/``:
 
 See the Kayobe `custom playbook documentation
-<https://docs.openstack.org/kayobe/wallaby/custom-ansible-playbooks.html>`__
+<https://docs.openstack.org/kayobe/victoria/custom-ansible-playbooks.html>`__
 for information on how to run them.
 
 * ``pulp-repo-sync.yml``: Pull packages from Ark to the local Pulp. This will
