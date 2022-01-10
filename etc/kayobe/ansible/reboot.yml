@@ -1,6 +1,7 @@
 ---
 - name: Reboot the host
   hosts: seed-hypervisor:seed:overcloud:infra-vms
+  serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(0) }}"
   tags:
     - reboot
   tasks:
