@@ -57,15 +57,23 @@ dnf_custom_repos:
   epel:
     baseurl: "{{ stackhpc_repo_epel_url }}"
     description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
     file: epel
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
     gpgcheck: yes
   epel-modular:
     baseurl: "{{ stackhpc_repo_epel_modular_url }}"
     description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
     file: epel-modular
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
     gpgcheck: yes
+
+# Whether to enable EPEL repositories. This affects RedHat-based systems only.
+dnf_enable_epel: "{{ dnf_install_epel | bool }}"
+
+# URL of EPEL GPG key.
+dnf_epel_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'true'.
