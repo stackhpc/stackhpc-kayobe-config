@@ -99,7 +99,11 @@ kolla_openstack_release: wallaby-20211213T174142
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-#kolla_sources:
+kolla_sources:
+  magnum-base:
+    type: git
+    location: https://github.com/stackhpc/magnum.git
+    reference: stackhpc/wallaby
 
 ###############################################################################
 # Kolla image build configuration.
@@ -116,10 +120,6 @@ kolla_build_blocks:
   ironic_inspector_footer: |
     # Install our custom inspector plugins.
     RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.2.0
-  # magnum_api_footer: |
-  #   RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
-  # magnum_conductor_footer: |
-  #   RUN /var/lib/kolla/venv/bin/pip  install -U --no-deps --prefix /var/lib/kolla/venv git+https://github.com/stackhpc/magnum@stackhpc/victoria -c https://releases.openstack.org/constraints/upper/victoria
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
   prometheus_v2_server_repository_version: |
