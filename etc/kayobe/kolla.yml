@@ -104,6 +104,17 @@ kolla_sources:
     type: git
     location: "{{ kolla_bifrost_source_url }}"
     reference: "{{ kolla_bifrost_source_version }}"
+  cloudkitty-base:
+    # Backport of NOTNUMBOOL: https://review.opendev.org/c/openstack/cloudkitty/+/774084
+    # Support customising Prometheus queries: https://review.opendev.org/c/openstack/cloudkitty/+/817275
+    type: git
+    location: https://github.com/stackhpc/cloudkitty.git
+    reference: stackhpc/wallaby
+  horizon-plugin-cloudkitty-dashboard:
+    # Fixes CloudKitty pricing panel: https://github.com/stackhpc/cloudkitty-dashboard/pull/1
+    type: git
+    location: https://github.com/stackhpc/cloudkitty-dashboard.git
+    reference: stackhpc/wallaby    
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -181,13 +192,6 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
 
-  cloudkitty_base_footer: |
-    # Backport of NOTNUMBOOL: https://review.opendev.org/c/openstack/cloudkitty/+/774084
-    # Support customising Prometheus queries: https://review.opendev.org/c/openstack/cloudkitty/+/817275
-    RUN pip install git+https://github.com/stackhpc/cloudkitty.git@stackhpc/wallaby
-  horizon_footer: |
-    # Fixes CloudKitty pricing panel: https://github.com/stackhpc/cloudkitty-dashboard/pull/1
-    RUN pip install git+https://github.com/stackhpc/cloudkitty-dashboard.git@stackhpc/wallaby
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
   ironic_inspector_header: |
