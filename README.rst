@@ -134,7 +134,7 @@ The `pulp_cli tool
 pulp installation. Please follow the upstream documentation for installation
 instructions.
 
-pulp_cli tricks
+pulp CLI tricks
 ---------------
 
 Saving credentials
