@@ -129,8 +129,8 @@ for information on how to run them.
 Working with pulp
 =================
 
-The `pulp_cli tool
-<https://docs.pulpproject.org/pulp_cli/>`__ can be used to administer your local
+The `pulp CLI
+<https://docs.pulpproject.org/pulp_cli/>`__  tool can be used to administer your local
 pulp installation. Please follow the upstream documentation for installation
 instructions.
 
