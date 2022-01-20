@@ -126,6 +126,62 @@ for information on how to run them.
   ``production`` distribution. Typically this would be done only once the new
   packages have been validated in a development or staging environment.
 
+Working with pulp
+=================
+
+The `pulp_cli tool
+<https://docs.pulpproject.org/pulp_cli/>`__ can be used to administer your local
+pulp installastion. Please follow the upstream documentation for installation
+instructions.
+
+pulp_cli tricks
+---------------
+
+Saving credentials
+~~~~~~~~~~~~~~~~~~
+
+This is useful to avoid the need to always supply your credentials when running commands
+from the command line:
+
+.. code-block:: console
+
+    (venv-pulp) [stack@seed ~]$ pulp config create --username admin --base-url http://<pulp server>:8080 --password <password>
+
+
+Troubleshoting
+--------------
+
+HTTP Error 400: Bad Request {"name":["This field must be unique."]}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have previously tried to push an image to pulp e.g for local testing, you may
+see this message when you later try to run ``pulp-container-sync.yml``:
+
+.. code-block:: console
+
+    TASK [stackhpc.pulp.pulp_repository : Setup container repositories] *****************************
+    failed: [localhost] (item=stackhpc/centos-source-prometheus-jiralert) => changed=false
+    ansible_loop_var: item
+    item:
+      name: stackhpc/centos-source-prometheus-jiralert
+      policy: on_demand
+      remote_password: password
+      remote_username: username
+      state: present
+      url: https://ark.stackhpc.com
+    msg: 'HTTP Error 400: Bad Request b''{"name":["This field must be unique."]}'''
+
+The issue is that pulp will attempt to create a push repository on demand. This conflicts
+with the on_demand repository under the stackhpc namespace. You can resolve this conflict
+by deleting the push repository using pulp_cli:
+
+.. code-block:: console
+
+    (venv-pulp) [stack@seed ~]$ pulp --base-url https://docker-registry.example.net --username admin --password $PULP_PASSWORD container distribution destroy --name stackhpc/centos-source-prometheus-msteams
+    Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
+    .Done.
+
+
 Resources
 =========
 
