@@ -177,7 +177,7 @@ by deleting the push repository using pulp_cli:
 
 .. code-block:: console
 
-    (venv-pulp) [stack@seed ~]$ pulp --base-url https://docker-registry.example.net --username admin --password $PULP_PASSWORD container distribution destroy --name stackhpc/centos-source-prometheus-msteams
+    (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/centos-source-prometheus-jiralert
     Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
     .Done.
 
