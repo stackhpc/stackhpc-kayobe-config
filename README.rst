@@ -131,7 +131,7 @@ Working with pulp
 
 The `pulp_cli tool
 <https://docs.pulpproject.org/pulp_cli/>`__ can be used to administer your local
-pulp installastion. Please follow the upstream documentation for installation
+pulp installation. Please follow the upstream documentation for installation
 instructions.
 
 pulp_cli tricks
@@ -148,7 +148,7 @@ from the command line:
     (venv-pulp) [stack@seed ~]$ pulp config create --username admin --base-url http://<pulp server>:8080 --password <password>
 
 
-Troubleshoting
+Troubleshooting
 --------------
 
 HTTP Error 400: Bad Request {"name":["This field must be unique."]}
@@ -171,9 +171,11 @@ see this message when you later try to run ``pulp-container-sync.yml``:
       url: https://ark.stackhpc.com
     msg: 'HTTP Error 400: Bad Request b''{"name":["This field must be unique."]}'''
 
-The issue is that pulp will attempt to create a push repository on demand. This conflicts
-with the on_demand repository under the stackhpc namespace. You can resolve this conflict
-by deleting the push repository using pulp_cli:
+The issue is that pushing an image automatically creates a `container-push repository
+<https://docs.pulpproject.org/pulp_container/restapi.html#tag/Repositories:-Container-Push>`__
+which conflicts with the creation of a regular container repository of the same
+name. You can resolve this conflict by deleting the distribution associated 
+with the push repository using the pulp CLI:
 
 .. code-block:: console
 
