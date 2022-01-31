@@ -159,6 +159,64 @@ for information on how to run them.
   local Pulp. This will make synchonised container images available to cloud
   nodes.
 
+Working with pulp
+=================
+
+The `pulp CLI
+<https://docs.pulpproject.org/pulp_cli/>`__  tool can be used to administer your local
+pulp installation. Please follow the upstream documentation for installation
+instructions.
+
+pulp CLI tricks
+---------------
+
+Saving credentials
+~~~~~~~~~~~~~~~~~~
+
+This is useful to avoid the need to always supply your credentials when running commands
+from the command line:
+
+.. code-block:: console
+
+    (venv-pulp) [stack@seed ~]$ pulp config create --username admin --base-url http://<pulp server>:8080 --password <password>
+
+
+Troubleshooting
+--------------
+
+HTTP Error 400: Bad Request {"name":["This field must be unique."]}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have previously tried to push an image to pulp e.g for local testing, you may
+see this message when you later try to run ``pulp-container-sync.yml``:
+
+.. code-block:: console
+
+    TASK [stackhpc.pulp.pulp_repository : Setup container repositories] *****************************
+    failed: [localhost] (item=stackhpc/centos-source-prometheus-jiralert) => changed=false
+    ansible_loop_var: item
+    item:
+      name: stackhpc/centos-source-prometheus-jiralert
+      policy: on_demand
+      remote_password: password
+      remote_username: username
+      state: present
+      url: https://ark.stackhpc.com
+    msg: 'HTTP Error 400: Bad Request b''{"name":["This field must be unique."]}'''
+
+The issue is that pushing an image automatically creates a `container-push repository
+<https://docs.pulpproject.org/pulp_container/restapi.html#tag/Repositories:-Container-Push>`__
+which conflicts with the creation of a regular container repository of the same
+name. You can resolve this conflict by deleting the distribution associated 
+with the push repository using the pulp CLI:
+
+.. code-block:: console
+
+    (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/centos-source-prometheus-jiralert
+    Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
+    .Done.
+
+
 Resources
 =========
 
