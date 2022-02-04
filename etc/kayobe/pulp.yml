@@ -10,6 +10,9 @@ pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
 pulp_username: admin
 pulp_password: "{{ secrets_pulp_password }}"
 
+# Proxy to use when adding remotes
+pulp_proxy_url: "{{ omit }}"
+
 ###############################################################################
 # StackHPC Pulp server
 
@@ -24,7 +27,6 @@ stackhpc_release_pulp_password:
 # They are trusted by the 'release' cert guard's CA.
 stackhpc_release_pulp_client_cert: "{{ lookup('file', 'certs/ark.stackhpc.com/client-cert.pem') | trim }}"
 stackhpc_release_pulp_client_key: "{{ lookup('file', 'certs/ark.stackhpc.com/client-key.pem') | trim }}"
-
 
 ###############################################################################
 # RPMs
@@ -41,6 +43,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
   - name: CentOS Stream 8 - BaseOS
@@ -48,6 +51,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
   - name: CentOS Stream 8 - Extras
@@ -55,6 +59,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
 
@@ -64,6 +69,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_content_only
     state: present
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
@@ -71,6 +77,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
 
@@ -80,6 +87,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
 
@@ -287,6 +295,7 @@ stackhpc_pulp_images:
 stackhpc_pulp_repository_container_repos_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
   policy: on_demand
+  proxy_url: "{{ pulp_proxy_url }}"
   remote_username: "{{ stackhpc_release_pulp_username }}"
   remote_password: "{{ stackhpc_release_pulp_password }}"
   state: present
