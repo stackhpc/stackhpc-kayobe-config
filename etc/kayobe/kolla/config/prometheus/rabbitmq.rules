@@ -25,8 +25,8 @@ groups:
       description: "RabbitMQ node down"
 
   - alert: RabbitmqNodeNotDistributed
-    expr: erlang_vm_dist_node_state < 3
-    for: 0m
+    expr: erlang_vm_dist_node_state{peer!~"rabbitmqcli*"} < 3
+    for: 5m
     labels:
       severity: critical
     annotations:
