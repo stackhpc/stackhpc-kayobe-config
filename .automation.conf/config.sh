@@ -1,8 +1,5 @@
 # Enter config overrides in here
 
-KAYOBE_URI=https://github.com/stackhpc/kayobe
-KAYOBE_BRANCH=scientific-openstack/wallaby
-
 # See: https://github.com/stackhpc/docker-rally/blob/master/bin/rally-verify-wrapper.sh for a full list of tempest parameters that can be overriden.
 # You can override tempest parameters like so:
 export TEMPEST_CONCURRENCY=2
