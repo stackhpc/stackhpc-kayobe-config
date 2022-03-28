@@ -1,0 +1,33 @@
+---
+###############################################################################
+# GPU configuration.
+
+# Flags to enable passthrough
+gpu_passthrough_a100_enabled: false
+
+# GPU model configuration
+gpu_passthrough_a100_product_id: 20b2
+gpu_passthrough_a100_vendor_id: 10de
+gpu_passthrough_a100_alias: gpu-a100-80g
+
+# GPU definitions
+gpu_passthough_definitions:
+  - name: Nvidia A100 XE8545
+    vendor_id: "{{ gpu_passthrough_a100_vendor_id }}"
+    product_id: "{{ gpu_passthrough_a100_product_id }}"
+    # Nova whitelist definition
+    whitelist:
+      vendor_id: "{{ gpu_passthrough_a100_vendor_id }}"
+      product_id: "{{ gpu_passthrough_a100_product_id }}"
+    # Nova alias definition
+    alias:
+      vendor_id: "{{ gpu_passthrough_a100_vendor_id }}"
+      product_id: "{{ gpu_passthrough_a100_product_id }}"
+      name: "{{ gpu_passthrough_a100_alias }}"
+      numa_policy: "preferred"
+      device_type: "type-PF"
+    enabled: "{{ gpu_passthrough_a100_enabled }}"
+
+# Kolla configuration
+gpu_nova_pci_passthrough_whitelist: "{{ gpu_passthough_definitions | selectattr('enabled', 'equalto', true) | selectattr('whitelist', 'defined') | map(attribute='whitelist') | list }}"
+gpu_nova_pci_aliases: "{{ gpu_passthough_definitions | selectattr('enabled', 'equalto', true) | selectattr('alias', 'defined') | map(attribute='alias') | list }}"
