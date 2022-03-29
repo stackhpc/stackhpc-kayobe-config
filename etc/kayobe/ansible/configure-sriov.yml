@@ -1,0 +1,14 @@
+---
+- hosts: sriov
+  vars:
+    ansible_python_interpreter: /usr/bin/python
+    ansible_user: centos
+    sriov_mft_url: https://www.mellanox.com/downloads/MFT/mft-4.15.1-9-x86_64-rpm.tgz
+    sriov_numvfs: 16
+  tasks:
+    - include_role:
+        name: stackhpc.sriov
+  handlers:
+    - name: reboot
+      debug:
+        msg: "Please reboot your hypervisor to continue with the host-configure."
