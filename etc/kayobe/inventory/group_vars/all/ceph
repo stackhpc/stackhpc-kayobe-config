@@ -1,0 +1,123 @@
+---
+# Version definitions
+cephadm_ceph_release: pacific
+cephadm_image: "quay.io/ceph/ceph:v16.2.6"
+
+# Networking
+cephadm_public_interface: "{{ storage_interface }}"
+cephadm_cluster_interface: "{{ storage_mgmt_interface }}"
+cephadm_public_network: "{{ storage_cidr }}"
+cephadm_cluster_network: "{{ storage_mgmt_cidr }}"
+
+# OSD layout specification
+cephadm_osd_spec: |
+  service_type: osd
+  service_id: hdd
+  placement:
+    host_pattern: 'hdd-host-[0-3]'
+  data_devices:
+    rotational: 1
+  db_devices:
+    rotational: 0
+    limit: 2
+  ---
+  service_type: osd
+  service_id: nvme
+  placement:
+    host_pattern: 'nvme-host-[0-2]'
+  data_devices:
+    rotational: 0
+    limit: 1
+  osds_per_device: 2
+  ---
+  service_type: osd
+  service_id: ssd
+  placement:
+    host_pattern: 'ssd-host-[0-3]'
+  data_devices:
+    rotational: 0
+  osds_per_device: 2
+
+cephadm_crush_rules:
+  - name: replicated_hdd
+    bucket_root: default
+    bucket_type: host
+    device_class: hdd
+    rule_type: replicated
+    state: present
+  - name: replicated_ssd
+    bucket_root: default
+    bucket_type: host
+    device_class: ssd
+    rule_type: replicated
+    state: present
+  - name: cephfs_metadata
+    bucket_root: default
+    bucket_type: host
+    device_class: nvme
+    rule_type: replicated
+    state: present
+  - name: ec_ssd
+    rule_type: erasure
+    profile: ec_2_2_ssd
+    state: present
+
+cephadm_ec_profiles:
+  - name: ec_2_2_ssd
+    k: 2
+    m: 2
+    crush_device_class: ssd
+
+cephadm_pools:
+  - name: cephfs_data
+    application: cephfs
+    pool_type: replicated
+    rule_name: replicated_ssd
+    state: present
+  - name: cephfs_data_ec
+    application: cephfs
+    pool_type: erasure
+    erasure_profile: ec_2_2_ssd
+    rule_name: ec_ssd
+    allow_ec_overwrites: true
+    state: present
+  - name: cephfs_metadata
+    application: cephfs
+    pool_type: replicated
+    rule_name: cephfs_metadata
+    state: present
+  - name: images
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: volumes
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_ssd
+    state: present
+  - name: volumes-hdd
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+
+cephadm_keys:
+  - name: client.glance
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=images"
+      mgr: "profile rbd pool=images"
+    state: present
+  - name: client.cinder
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=spinning-volumes, profile rbd pool=flash-volumes, profile rbd pool=flash-ephemeral, profile rbd-read-only pool=images"
+      mgr: "profile rbd pool=spinning-volumes, profile rbd pool=flash-volumes, profile rbd pool=flash-ephemeral"
+  - name: client.manila
+    caps:
+      mon: "allow r"
+      mgr: "allow rw"
+
+# Cluster ID
+cephadm_fsid: 00000000-0000-0000-0000-00000000
