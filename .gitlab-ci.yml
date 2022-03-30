@@ -61,7 +61,7 @@ all-in-one:
       when: never
     - if: '$KAYOBE_ENVIRONMENT == "aio"'
 
-test:
+test-rocky:
   stage: run
   trigger:
     include: .gitlab/end-to-end.yml
@@ -69,9 +69,22 @@ test:
   rules:
     - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
-        # Do config-diff on the AIO
+        GITLAB_ENVIRONMENT: review/rocky/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
+        KAYOBE_ENVIRONMENT: aio-rocky
+        TF_ROOT: terraform/aio-rocky
+    - when: never
+
+test-centos:
+  stage: run
+  trigger:
+    include: .gitlab/end-to-end.yml
+    strategy: depend
+  rules:
+    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
         GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
         KAYOBE_ENVIRONMENT: aio
+        TF_ROOT: terraform/aio
     - when: never
 
 overcloud:

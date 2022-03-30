@@ -1,4 +1,3 @@
-
 variable "ssh_private_key" {
    type = string
    default = "~/.ssh/id_rsa"
@@ -9,23 +8,48 @@ variable vm_name {
   default = "kayobe-aio"
 }
 
+variable aio_vm_image {
+  type = string
+  default = "CentOS-stream8-20210903"
+}
+
+variable aio_vm_keypair {
+  type = string
+  default = "gitlab-runner"
+}
+
+variable aio_vm_flavor {
+  type = string
+  default = "general.v1.large"
+}
+
+variable aio_vm_network {
+  type = string
+  default = "stackhpc-ipv4-geneve"
+}
+
+variable aio_vm_subnet {
+  type = string
+  default = "stackhpc-ipv4-geneve-subnet"
+}
+
 data "openstack_images_image_v2" "image" {
-  name        = "CentOS-stream8-20210903"
+  name        = var.aio_vm_image
   most_recent = true
 }
 
 data "openstack_networking_subnet_v2" "network" {
-  name = "stackhpc-ipv4-geneve-subnet"
+  name = var.aio_vm_subnet
 }
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name            = var.vm_name
-  flavor_name     = "general.v1.large"
-  key_pair        = "gitlab-runner"
+  flavor_name     = var.aio_vm_flavor
+  key_pair        = var.aio_vm_keypair
   config_drive    = true
   user_data        = file("templates/userdata.cfg.tpl")
   network {
-    name = "stackhpc-ipv4-geneve"
+    name = var.aio_vm_network
   }
 
   block_device {
@@ -63,5 +87,3 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
 
   }
 }
-
-
