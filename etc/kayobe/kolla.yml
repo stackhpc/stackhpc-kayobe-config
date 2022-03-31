@@ -169,8 +169,21 @@ kolla_build_blocks:
     ARG mysqld_exporter_version='0.13.0'
   prometheus_blackbox_exporter_repository_version: |
     ARG blackbox_exporter_version='0.19.0'
-  prometheus_openstack_exporter_repository_version: |
+  prometheus_openstack_exporter_install: |
+    ARG prometheus_openstack_exporter_url=https://github.com/stackhpc/openstack-exporter/archive/refs/heads
     ARG prometheus_openstack_exporter_version=aggregates
+    ENV GOPATH=/build
+    RUN rm -f /root/.curlrc \
+        && mkdir /build \
+        && cd /build \
+        && curl -L -o openstack-exporter.tar.gz ${prometheus_openstack_exporter_url}/${prometheus_openstack_exporter_version}.tar.gz  \
+        && tar xvf openstack-exporter.tar.gz \
+        && cd openstack-exporter-${prometheus_openstack_exporter_version} \
+        && make common-build \
+        && mv openstack-exporter-${prometheus_openstack_exporter_version} openstack-exporter \
+        && mkdir /opt/openstack-exporter \
+        && install -m 0755 openstack-exporter /opt/openstack-exporter/ \
+        && rm -rf /build
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
