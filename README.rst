@@ -221,12 +221,12 @@ Environments
 
 The following Kayobe environments are provided with this configuration:
 
-* ``builder``: builds container images
+* ``ci-builder``: builds container images
 
-builder
--------
+ci-builder
+----------
 
-The ``builder`` Kayobe environment is used to build Kolla container images.
+The ``ci-builder`` Kayobe environment is used to build Kolla container images.
 Images are built using package repositories in the StackHPC development Pulp
 service, and pushed there once built.
 
@@ -292,7 +292,7 @@ Ansible control host.
    source bin/activate
    popd
    pushd ~/src/kayobe-config
-   source kayobe-env --environment builder
+   source kayobe-env --environment ci-builder
    kayobe control host bootstrap
 
 Deployment

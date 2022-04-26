@@ -59,13 +59,13 @@ jobs:
       - name: Bootstrap the control host
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment builder &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
       - name: Configure the seed host
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment builder &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host configure
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -73,7 +73,7 @@ jobs:
       - name: Build and push kolla overcloud images
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment builder &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build ${{ github.events.input.regexes }} --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
