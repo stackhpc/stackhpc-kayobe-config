@@ -1,0 +1,72 @@
+---
+###############################################################################
+# Kolla configuration.
+
+# Docker namespace to use for Kolla images. Default is 'kolla'.
+kolla_docker_namespace: stackhpc-dev
+
+# Kolla feature flag configuration.
+kolla_enable_barbican: true
+kolla_enable_central_logging: true
+kolla_enable_cinder: true
+kolla_enable_cloudkitty: true
+kolla_enable_designate: true
+kolla_enable_elasticsearch_curator: true
+kolla_enable_grafana: true
+kolla_enable_influxdb: true
+kolla_enable_ironic: true
+kolla_enable_magnum: true
+kolla_enable_manila: true
+kolla_enable_mariabackup: true
+kolla_enable_neutron_sriov: true
+kolla_enable_octavia: true
+kolla_enable_ovn: true
+kolla_enable_prometheus: true
+kolla_enable_redis: true
+
+###############################################################################
+# Network configuration.
+
+# Don't touch resolv.conf: use Neutron DNS for accessing Pulp server via
+# hostname.
+resolv_is_managed: false
+
+###############################################################################
+# StackHPC configuration.
+
+# Host and port of a package repository mirror.
+# Build against the development Pulp service repositories.
+stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+
+# Build against released Pulp repository versions.
+stackhpc_repo_centos_stream_baseos_version: "{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
+stackhpc_repo_centos_stream_appstream_version: "{{ stackhpc_pulp_repo_centos_stream_8_appstream_version }}"
+stackhpc_repo_centos_stream_extras_version: "{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
+stackhpc_repo_epel_version: "{{ stackhpc_pulp_repo_epel_version }}"
+stackhpc_repo_epel_modular_version: "{{ stackhpc_pulp_repo_epel_modular_version }}"
+stackhpc_repo_docker_version: "{{ stackhpc_pulp_repo_docker_version }}"
+stackhpc_repo_centos_stream_advanced_virtualization_version: "{{ stackhpc_pulp_repo_centos_stream_8_advanced_virtualization_version }}"
+stackhpc_repo_centos_stream_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_8_nfv_openvswitch_version }}"
+stackhpc_repo_centos_stream_openstack_wallaby_version: "{{ stackhpc_pulp_repo_centos_stream_8_openstack_wallaby_version }}"
+stackhpc_repo_centos_stream_powertools_version: "{{ stackhpc_pulp_repo_centos_stream_8_powertools_version }}"
+stackhpc_repo_centos_opstools_version: "{{ stackhpc_pulp_repo_centos_8_opstools_version }}"
+stackhpc_repo_centos_stream_storage_ceph_pacific_version: "{{ stackhpc_pulp_repo_centos_stream_8_storage_ceph_pacific_version }}"
+stackhpc_repo_elasticsearch_logstash_kibana_7_x_version: "{{ stackhpc_pulp_repo_elasticsearch_logstash_kibana_7_x_version }}"
+stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
+stackhpc_repo_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
+stackhpc_repo_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
+stackhpc_repo_treasuredata_4_version: "{{ stackhpc_pulp_repo_treasuredata_4_version }}"
+
+# Host and port of container registry.
+# Push built images to the Ark registry.
+stackhpc_docker_registry: "{{ stackhpc_release_pulp_url | regex_replace('^https?://', '') }}"
+
+# Username and password of container registry.
+stackhpc_docker_registry_username: "release-train-ci"
+stackhpc_docker_registry_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  38356134376436656165303634626531653836366233383531343439646433376334396438373735
+  3135643664353934356237376134623235356137383263300a333165386562396134633534376532
+  34386133383366326639353432386235336132663839333337323739633434613934346462363031
+  3265323831663964360a643962346231386462323236373963633066393736323234303833363535
+  3664
