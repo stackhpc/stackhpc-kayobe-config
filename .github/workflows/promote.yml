@@ -1,0 +1,26 @@
+---
+name: Promote package repositories
+on:
+  push:
+    branches:
+      # NOTE(mgoddard): Keep this list tightly controlled, since we only want
+      # to promote from release branches.
+      - stackhpc/wallaby
+      # FIXME: remove
+      - ci-promote-packages
+jobs:
+  promote:
+    name: Trigger package repository promotion
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger package repository promotion
+        run: |
+          gh workflow run \
+          package-promote.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main \
+          -f kayobe_config_branch=${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
