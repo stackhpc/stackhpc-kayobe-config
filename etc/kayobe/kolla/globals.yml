@@ -1,2 +1,26 @@
 ---
 # Add extra Kolla global configuration here.
+
+# Default size causes ES to fall over very easily
+{% if scientific_openstack_trait_all_in_one %}
+es_heap_size: 8g
+{% else %}
+es_heap_size: "24g"
+{% endif %}
+
+# Needed to launch VM instances in aio environment without nested virt
+nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
+
+# Using gitlab registry with TLS
+docker_registry_insecure: false
+
+{% if scientific_openstack_trait_all_in_one %}
+keepalived_vip_prechecks: false
+% endif %}
+
+{% if scientific_openstack_trait_ovn %}
+neutron_plugin_agent: 'ovn'
+{% endif %}
+
+#FIXME: Need sasl support in kolla https://github.com/stackhpc/kolla/pull/100
+libvirt_enable_sasl: false
