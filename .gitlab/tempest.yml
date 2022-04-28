@@ -1,0 +1,49 @@
+include: .gitlab/prelude.yml
+
+# build-rally:
+#   extends:
+#     - .tags
+#   image: docker:stable
+#   rules:
+#     - when: always
+#   services:
+#     - name: docker:dind
+#       command: ["--mtu=1450"]
+#   stage: build
+#   script:
+#     - cd .automation/docker/rally
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#     - docker pull $RALLY_DOCKER_IMAGE:latest || true
+#     - docker build --cache-from $RALLY_DOCKER_IMAGE:latest --tag $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA --tag $RALLY_DOCKER_IMAGE:latest .
+#     - docker push $RALLY_DOCKER_IMAGE:$CI_COMMIT_SHA
+#     - docker push $RALLY_DOCKER_IMAGE:latest
+
+tempest:
+  extends:
+    - .environment-prepare
+    - .tags
+  variables:
+     GIT_SUBMODULE_STRATEGY: normal
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - when: always
+  stage: run
+  script:
+    # Setting ansible_user is a workaround for:
+    # "Unexpected remote arg: }}@10.0.0.97:/tmp/ansible.0fjk897erally-results/\nrsync error: syntax or usage error (code 1) at main.c(1354) [sender=3.1.3]\n"
+    # See: https://github.com/ansible-collections/ansible.posix/pull/344
+    # See: https://github.com/ansible/ansible/issues/28551
+    - .automation/pipeline/tempest.sh -e ansible_user=stack
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp $HOME/tempest-artifacts/* ${CI_PROJECT_DIR}/artifacts
+  artifacts:
+    when: always
+    paths:
+      - artifacts/rally-junit.xml
+      - artifacts/rally-verify-report.html
+      - artifacts/stderr.log
+      - artifacts/stdout.log
+      - artifacts/tempest.log
+    reports:
+      junit: artifacts/rally-junit.xml

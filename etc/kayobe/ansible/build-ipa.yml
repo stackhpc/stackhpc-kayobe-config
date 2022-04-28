@@ -1,0 +1,75 @@
+---
+- name: Ensure Ironic Python Agent images are built and uploaded
+  hosts: localhost
+  tags:
+    - ipa-build
+  vars:
+    ipa_image_name: ipa
+    ipa_image_force_rebuild: true
+    ipa_images:
+      - '{{ ipa_image_name }}.kernel'
+      - '{{ ipa_image_name }}.initramfs'
+    ipa_checksums: "{{ ipa_images | map('regex_replace', '^(.*)$', '\\1.sha256')\
+      \ | list }}"
+    ipa_logs:
+      - ipa.stdout
+      - ipa.stderr
+    version: '{{ ansible_date_time.iso8601_basic_short }}'
+    ipa_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | default(false,\
+      \ true) | bool }}"
+  tasks:
+    - name: Ensure libgcrypt is updated
+      package:
+        name: libgcrypt
+        state: latest
+      become: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Ensure utilities are installed
+      package:
+        name:
+          - cpio
+          - systemd-udev
+        state: present
+      become: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Ensure Ironic Python Agent images are built
+      include_role:
+        name: stackhpc.os-images
+      vars:
+        os_images_venv: '{{ virtualenv_path }}/ipa-build-dib'
+        os_images_package_state: present
+        os_images_dib_version: '3.14.0'
+        os_images_cache: '{{ image_cache_path }}'
+        os_images_common: ''
+        os_images_list:
+          - name: '{{ ipa_image_name }}'
+            elements: '{{ ipa_build_dib_elements }}'
+            env: '{{ ipa_build_dib_env }}'
+            packages: '{{ ipa_build_dib_packages }}'
+            # Avoid needing to install qemu-img for qcow2 image.
+            type: raw
+        os_images_git_elements: '{{ ipa_build_dib_git_elements }}'
+        os_images_upload: false
+        os_images_force_rebuild: '{{ ipa_image_force_rebuild }}'
+
+    - name: Generate checksums
+      vars:
+        directory: '{{ image_cache_path }}/{{ ipa_image_name }}'
+      shell: sha256sum {{ directory }}/{{ item[0] }} > {{ directory }}/{{
+        item[1] }}
+      loop: '{{ ipa_images | zip(ipa_checksums) | list }}'
+
+    - name: Upload files to generic package registry
+      uri:
+        url: '{{ gitlab_api_v4_url }}/projects/{{ gitlab_kayobe_config_project_id
+          }}/packages/generic/ironic-python-agent/{{ version }}/{{ item }}'
+        method: PUT
+        src: '{{ image_cache_path }}/{{ ipa_image_name }}/{{ item }}'
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+      loop: '{{ ipa_images + ipa_checksums + ipa_logs }}'
+      when: ipa_push_image
