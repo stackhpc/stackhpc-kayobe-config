@@ -26,7 +26,7 @@ gitlab_header_job_token: "{{ (gitlab_job_token != '') | ternary({'JOB-TOKEN': gi
 # with CI_JOB_TOKEN, but not when using a personal access token.
 gitlab_auth_username: gitlab-ci-token
 gitlab_auth_password: "{{ gitlab_job_token | default(gitlab_private_token, true) |\
-  \ mandatory('Please set CI_JOB_TOKEN or GITLAB_TOKEN') }}"
+  \ mandatory }}"
 
 # Auth headers
 gitlab_auth_headers: '{{ gitlab_header_private_token | combine(gitlab_header_job_token)
