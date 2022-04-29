@@ -4,15 +4,25 @@ on:
   workflow_dispatch:
     inputs:
       regexes:
-        description: Space-separated list of regular expressions matching images to build
+        description: Space-separated list of regular expressions matching overcloud images to build
         type: string
         required: false
         default: ""
+      overcloud:
+        description: Build overcloud images?
+        type: boolean
+        required: false
+        default: true
+      seed:
+        description: Build seed images?
+        type: boolean
+        required: false
+        default: false
 
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
-  build:
+  container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
@@ -78,12 +88,49 @@ jobs:
           kayobe overcloud container image build ${{ github.event.input.regexes }} --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.events.input.overcloud
 
-      - name: Get the container image tag
+      - name: Display the overcloud container image tag
         run: |
-          echo "::set-output name=kolla_tag::$(cat ~/kolla_tag)"
-        id: kolla_tag
+          echo "$(cat ~/kolla_tag)"
+        if: github.events.input.overcloud
 
-      - name: Display the container image tag
+      - name: Get built overcloud container images
         run: |
-          echo "${{ steps.kolla_tag.outputs.kolla_tag }}"
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
+        if: github.events.input.overcloud
+
+      - name: Upload overcloud-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Overcloud container images
+          path: overcloud-container-images
+          retention-days: 7
+        if: github.events.input.overcloud
+
+      - name: Build and push kolla seed images
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed container image build --push
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.events.input.seed
+
+      - name: Display the seed container image tag
+        run: |
+          echo "$(cat ~/kolla_tag)"
+        if: github.events.input.seed
+
+      - name: Get built seed container images
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
+        if: github.events.input.seed
+
+      - name: Upload seed-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Seed container images
+          path: seed-container-images
+          retention-days: 7
+        if: github.events.input.seed
