@@ -134,3 +134,25 @@ jobs:
           path: seed-container-images
           retention-days: 7
         if: github.events.input.seed
+
+  sync-container-repositories:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger container image repository sync
+        run: |
+          gh workflow run \
+          container-sync.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
+      - name: Display link to container image repository sync workflows
+        run: |
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
