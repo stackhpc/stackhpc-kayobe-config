@@ -47,3 +47,43 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  bifrost_footer: |
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem stackhpc-inspector-plugins==1.1.1
+#  horizon_footer: |
+#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/logo-splash.svg /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.svg
+#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/favicon.ico /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/logo.svg /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.svg
+  magnum_api_footer: |
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  -U --no-deps git+https://github.com/stackhpc/magnum@10.1.0 -c https://releases.openstack.org/constraints/upper/ussuri
+  magnum_conductor_footer: |
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/magnum@10.1.0 -c https://releases.openstack.org/constraints/upper/ussuri
+  neutron_server_footer: |
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/RSE-Cambridge/networking-generic-switch@cumulus-train-3 -c https://releases.openstack.org/constraints/upper/train
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem etcd3gw
+  prometheus_server_repository_version: |
+    # Avoid the pain of porting 1.x rules and migrating data to 2.x
+    ARG prometheus_version='2.8.0'
+  prometheus_cadvisor_repository_version: |
+    ENV prometheus_cadvisor_version=0.35.0
+  prometheus_libvirt_exporter_version: |
+    ARG prometheus_libvirt_exporter_version=0.1.1.1
+
+# Dict mapping image customization variable names to their values.
+# Each variable takes the form:
+# <image name>_<customization>_<operation>
+# Hyphens in the image name are replaced with underscores. The customization is
+# most commonly packages. The operation should be one of override, append or
+# remove. The value should be a list.
+kolla_build_customizations:
+  bifrost_packages_append:
+    - 'jq'
+  keystone_packages_append:
+    # Allow custom packages to be installed via pip.
+    # Allow manual install of openidc for federation
+    - 'jansson-devel'
+    - 'openssl-devel'
+    - 'hiredis'
+  neutron_server_packages_append:
+    # Allow custom packages to be installed via pip.
+    - 'gcc'
+    - 'python3-devel'
