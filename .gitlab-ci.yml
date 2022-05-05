@@ -59,6 +59,18 @@ build:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
     - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
 
+build-centos-7:
+  stage: run
+  trigger:
+    include: .gitlab/build.yml
+    strategy: depend
+  vars:
+
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        KAYOBE_ENVIRONMENT: builder-centos7
+
 lint-yaml:
   stage: lint
   image:
