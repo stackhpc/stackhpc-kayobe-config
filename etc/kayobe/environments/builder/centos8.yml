@@ -1,2 +1,49 @@
 ---
 kolla_tag_suffix: centos8s
+
+# List of repositories for CentOS Stream.
+stackhpc_centos_stream_repos:
+  - url: "{{ stackhpc_repo_centos_stream_baseos_url }}"
+    file: "CentOS-Stream-BaseOS.repo"
+  - url: "{{ stackhpc_repo_centos_stream_appstream_url }}"
+    file: "CentOS-Stream-AppStream.repo"
+  - url: "{{ stackhpc_repo_centos_stream_extras_url }}"
+    file: "CentOS-Stream-Extras.repo"
+
+# List of repositories for EPEL.
+stackhpc_epel_repos:
+  - url: "{{ stackhpc_repo_epel_url }}"
+    file: "epel.repo"
+  - url: "{{ stackhpc_repo_epel_modular_url }}"
+    file: "epel-modular.repo"
+
+# List of additional CentOS Stream repositories.
+stackhpc_centos_additional_repos:
+  # Snapshots install broken repo file, so hardcode to one that works.
+  - url: "http://mirror.ox.ac.uk/sites/mirror.centos.org/8-stream/storage/x86_64/ceph-nautilus/"
+    file: CentOS-Ceph-Nautilus.repo
+  - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
+    file: "CentOS-Stream-PowerTools.repo"
+  - url: "{{ stackhpc_repo_centos_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
+
+# List of third-party repositories.
+stackhpc_third_party_repos: []
+
+kolla_build_blocks:
+  base_header: |
+    RUN \
+    {% for repo in stackhpc_centos_stream_repos %}
+        sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
+               -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+  base_centos_repo_overrides_post_yum: |
+    {# fixme #}
+        && \
+    {% for repo in stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos %}
+        sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
+               -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
+    {% endfor %}
