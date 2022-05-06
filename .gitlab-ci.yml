@@ -9,6 +9,19 @@ include: .gitlab/prelude.yml
 #       https://gitlab.com/gitlab-org/gitlab/-/issues/35315
 #     - We might want to allow service deploy to happen in PR to staging but not main?
 
+generate version:
+  stage: prepare
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+  script:
+    - date +"%Y%m%d%H%M%S" > version-timestamp
+    - cat version-timestamp
+  artifacts:
+    paths:
+      - version-timestamp
+
 build kayobe:
   resource_group: $CI_COMMIT_SHA
   extends:

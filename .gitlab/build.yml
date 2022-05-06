@@ -46,6 +46,7 @@ Build Containers:
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: '1'
   script:
+    - export KOLLA_IMAGE_VERSION=$(< version-timestamp)
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/overcloud-container-image-build.sh -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD
@@ -77,6 +78,7 @@ Build Bifrost:
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: '1'
   script:
+    - export KOLLA_IMAGE_VERSION=$(< version-timestamp)
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
     - .automation/pipeline/seed-container-image-build.sh -e kolla_docker_registry_username=$CI_REGISTRY_USER -e kolla_docker_registry_password=$CI_REGISTRY_PASSWORD
