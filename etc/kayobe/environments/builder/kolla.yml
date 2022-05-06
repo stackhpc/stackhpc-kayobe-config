@@ -6,7 +6,10 @@
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
-kolla_tag: "{{ openstack_release }}-1{{ kolla_tag_suffix | default('') }}"
+kolla_tag: >-
+        {{ openstack_release }}-{{- lookup('env', 'KOLLA_IMAGE_VERSION ')
+        | default(ansible_facts.date_time.iso8601_basic_short, true) -}}
+        -{{ kolla_tag_suffix | default('') }}
 
 # Docker namespace to use for Kolla images. Default is 'kolla'.
 kolla_docker_namespace: scientific-openstack/infrastructure/kayobe-config
