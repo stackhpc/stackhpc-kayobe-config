@@ -39,6 +39,9 @@ Build Containers:
   # - Limit concurrency to one per runner
   resource_group: "kolla-containers"
   stage: run
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: generate version
   rules:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
@@ -71,6 +74,9 @@ Build Bifrost:
   # - Limit concurrency to one per runner
   resource_group: "kolla-containers"
   stage: run
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: generate version
   rules:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
