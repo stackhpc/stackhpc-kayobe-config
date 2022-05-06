@@ -12,9 +12,7 @@ include: .gitlab/prelude.yml
 generate version:
   stage: prepare
   rules:
-    - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - date +"%Y%m%d%H%M%S" > version-timestamp
     - cat version-timestamp
@@ -68,6 +66,8 @@ build:
   trigger:
     include: .gitlab/build.yml
     strategy: depend
+  dependencies:
+    - generate version
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
 
@@ -76,6 +76,8 @@ build-centos-7:
   trigger:
     include: .gitlab/build.yml
     strategy: depend
+  dependencies:
+    - generate version
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
