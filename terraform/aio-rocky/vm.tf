@@ -8,6 +8,11 @@ variable vm_name {
   default = "kayobe-rocky-aio"
 }
 
+variable boot_from_volume {
+  type = bool
+  default = true
+}
+
 variable aio_rocky_vm_image {
   type = string
   default = "Rocky-8-GenericCloud-8.5-20211114.2.x86_64"
@@ -52,13 +57,16 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     name = var.aio_rocky_vm_network
   }
 
-  block_device {
-    uuid                  = data.openstack_images_image_v2.image.id
-    source_type           = "image"
-    volume_size           = 100
-    boot_index            = 0
-    destination_type      = "volume"
-    delete_on_termination = true
+  dynamic "block_device" {
+      for_each = var.boot_from_volume ? ["create"] : []
+      content {
+        uuid                  = data.openstack_images_image_v2.image.id
+        source_type           = "image"
+        volume_size           = 100
+        boot_index            = 0
+        destination_type      = "volume"
+        delete_on_termination = true
+      }
   }
 
   provisioner "file" {
