@@ -65,8 +65,11 @@ kolla_build_blocks:
     ARG prometheus_version='2.8.0'
   prometheus_cadvisor_repository_version: |
     ENV prometheus_cadvisor_version=0.35.0
-  prometheus_libvirt_exporter_version: |
-    ARG prometheus_libvirt_exporter_version=0.1.1.1
+  ironic_inspector_footer: |
+    # Install our custom inspector plugins.
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  stackhpc-inspector-plugins==1.1.1
+  nova_base_footer: |
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/nova.git@jg-ironic-rebalance -c https://releases.openstack.org/constraints/upper/train
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
