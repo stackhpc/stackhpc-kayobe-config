@@ -49,7 +49,7 @@ data "openstack_networking_subnet_v2" "network" {
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name            = var.vm_name
-  image           = var.aio_rocky_vm_image
+  image_id        = data.openstack_images_image_v2.image.id
   flavor_name     = var.aio_rocky_vm_flavor
   key_pair        = var.aio_rocky_vm_keypair
   config_drive    = true
