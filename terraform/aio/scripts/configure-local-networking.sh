@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo yum -y install psmisc
+
 # IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
 public_ip="10.0.2.1"
 
@@ -26,8 +28,8 @@ iface=$(ip route | awk '$1 == "default" {print $5; exit}')
 sudo sysctl -w net.ipv4.conf.all.forwarding=1
 
 # Install iptables.
-if $(which dnf >/dev/null 2>&1); then
-    sudo dnf -y install iptables
+if $(which yum >/dev/null 2>&1); then
+    sudo yum -y install iptables
 fi
 
 # Configure port forwarding from the hypervisor to the Horizon GUI on the
