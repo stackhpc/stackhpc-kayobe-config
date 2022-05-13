@@ -42,6 +42,19 @@ build kayobe:
     - DOCKER_BUILDKIT=1 docker build --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -f .automation/docker/kayobe/Dockerfile -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
+test-rocky:
+  stage: run
+  trigger:
+    include: .gitlab/end-to-end.yml
+    strategy: depend
+  rules:
+    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        GITLAB_ENVIRONMENT: review/rocky/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
+        KAYOBE_ENVIRONMENT: aio-rocky
+        TF_ROOT: terraform/aio-rocky
+    - when: never
+
 kolla diff:
   extends:
     - .environment-prepare
