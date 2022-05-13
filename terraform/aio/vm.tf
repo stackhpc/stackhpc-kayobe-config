@@ -47,7 +47,7 @@ data "openstack_networking_subnet_v2" "network" {
   name = var.aio_centos7_vm_subnet
 }
 
-resource "openstack_compute_instance_v2" "kayobe-aio_centos7" {
+resource "openstack_compute_instance_v2" "kayobe-aio-centos7" {
   name            = var.vm_name
   image_id        = data.openstack_images_image_v2.image.id
   flavor_name     = var.aio_centos7_vm_flavor
