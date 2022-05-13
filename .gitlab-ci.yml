@@ -55,6 +55,19 @@ test-rocky:
         TF_ROOT: terraform/aio-rocky
     - when: never
 
+test-centos7:
+  stage: run
+  trigger:
+    include: .gitlab/end-to-end.yml
+    strategy: depend
+  rules:
+    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
+        KAYOBE_ENVIRONMENT: aio
+        TF_ROOT: terraform/aio
+    - when: never
+
 kolla diff:
   extends:
     - .environment-prepare
