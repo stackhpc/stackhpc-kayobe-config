@@ -7,6 +7,12 @@
     venv: '{{ virtualenv_path }}/openstack'
   tasks:
     - block:
+        - name: Upgrade pip
+          pip:
+            name: pip
+            virtualenv: '{{ venv }}'
+            state: latest
+
         - name: Install python openstack client
           pip:
             name: python-openstackclient
