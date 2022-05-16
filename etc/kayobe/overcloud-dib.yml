@@ -35,7 +35,9 @@ overcloud_dib_os_release: 8
 #overcloud_dib_elements_default:
 
 # List of additional DIB elements. Default is none.
-#overcloud_dib_elements_extra:
+overcloud_dib_elements_extra:
+  - "dracut-regenerate"
+  - "unmask-tmp"
 
 # List of DIB elements. Default is a combination of
 # overcloud_dib_elements_default and overcloud_dib_elements_extra.
@@ -49,14 +51,128 @@ overcloud_dib_os_release: 8
 #overcloud_dib_env_vars_default:
 
 # DIB additional environment variables. Default is none.
-#overcloud_dib_env_vars_extra:
+overcloud_dib_env_vars_extra:
+  DIB_BLOCK_DEVICE_CONFIG: |
+    - local_loop:
+        name: image0
+        size: 85GiB
+    - partitioning:
+        base: image0
+        label: mbr
+        partitions:
+          - name: lvm_part
+            flags: [boot, primary]
+            # size is relative to the remaining free space, i.e. it is really
+            # 50% of the whole image
+            size: 100%
+            type: '0x8e'
+    - lvm:
+        name: lvm
+        pvs:
+          - name: pv
+            base: lvm_part
+            options: [ "--force" ]
+        vgs:
+          - name: vg
+            base: [ "pv" ]
+            options: [ "--force" ]
+        lvs:
+          - name: lv_root
+            base: vg
+            size: 10G
+          - name: lv_tmp
+            base: vg
+            size: 10G
+          - name: lv_var
+            base: vg
+            size: 20G
+          - name: lv_var_tmp
+            base: vg
+            size: 2G
+          - name: lv_log
+            base: vg
+            size: 20G
+          - name: lv_audit
+            base: vg
+            size: 10G
+          - name: lv_home
+            base: vg
+            size: 10G
+    - mkfs:
+        name: fs_root
+        base: lv_root
+        type: ext4
+        label: fs_root
+        mount:
+          mount_point: /
+          fstab:
+            options: "rw"
+            fsck-passno: 1
+    - mkfs:
+        name: fs_tmp
+        base: lv_tmp
+        type: ext4
+        mount:
+          mount_point: /tmp
+          fstab:
+            options: "rw,noexec,nosuid,nodev"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_var
+        base: lv_var
+        type: ext4
+        mount:
+          mount_point: /var
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_var_tmp
+        base: lv_var_tmp
+        type: ext4
+        mount:
+          mount_point: /var/tmp
+          fstab:
+            options: "rw,noexec,nosuid,nodev"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_log
+        base: lv_log
+        type: ext4
+        mount:
+          mount_point: /var/log
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_audit
+        base: lv_audit
+        type: ext4
+        mount:
+          mount_point: /var/log/audit
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_home
+        base: lv_home
+        type: ext4
+        mount:
+          mount_point: /home
+          fstab:
+            options: "rw,nodev"
+            fsck-passno: 2
+  DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1"
+  DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
+  DIB_RELEASE: "{{ overcloud_dib_os_release }}"
 
 # DIB environment variables. Default is combination of
 # overcloud_dib_env_vars_default and overcloud_dib_env_vars_extra.
 #overcloud_dib_env_vars:
 
 # List of DIB packages to install. Default is to install no extra packages.
-#overcloud_dib_packages:
+overcloud_dib_packages:
+  - lvm2
 
 # List of default git repositories containing Diskimage Builder (DIB) elements.
 # See stackhpc.os-images role for usage. Default is empty.
@@ -64,7 +180,11 @@ overcloud_dib_os_release: 8
 
 # List of additional git repositories containing Diskimage Builder (DIB)
 # elements. See stackhpc.os-images role for usage. Default is empty.
-#overcloud_dib_git_elements_extra:
+overcloud_dib_git_elements_extra:
+  - repo: https://github.com/stackhpc/stackhpc-image-elements
+    local: "{{ source_checkout_path }}/stackhpc-image-elements"
+    elements_path: elements
+    version: master
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
 # stackhpc.os-images role for usage. Default is a combination of
