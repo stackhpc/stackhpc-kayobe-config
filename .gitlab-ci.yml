@@ -11,6 +11,8 @@ include: .gitlab/prelude.yml
 
 generate version:
   stage: prepare
+  extends:
+    - .tags
   rules:
     - if: $CI_MERGE_REQUEST_ID
     - if: $CI_COMMIT_BRANCH
@@ -111,6 +113,8 @@ build-centos-7:
 
 lint-yaml:
   stage: lint
+  extends:
+    - .tags
   image:
     name: cytopia/yamllint
     entrypoint: ["/bin/ash", "-c"]
