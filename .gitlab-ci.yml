@@ -44,6 +44,35 @@ build kayobe:
     - DOCKER_BUILDKIT=1 docker build --cache-from $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -f .automation/docker/kayobe/Dockerfile -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
+overcloud:
+  stage: run
+  trigger:
+    include: .gitlab/overcloud.yml
+    strategy: depend
+  rules:
+    - if: '$KAYOBE_ENVIRONMENT == "builder"'
+      when: never
+    - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - when: always
+
+tempest:
+  stage: run
+  resource_group: $GITLAB_ENVIRONMENT
+  trigger:
+    include: .gitlab/tempest.yml
+    strategy: depend
+  rules:
+    - if: '$KAYOBE_ENVIRONMENT == "builder"'
+      when: never
+    - if: '$CI_COMMIT_REF_PROTECTED != "true" && $KAYOBE_ENVIRONMENT != "aio"'
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - when: manual
+
 test-rocky:
   stage: run
   trigger:
