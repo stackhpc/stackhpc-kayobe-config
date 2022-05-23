@@ -358,8 +358,15 @@ kolla_enable_nova_libvirt_container: "{{ ansible_facts.os_family == 'RedHat' and
 
 # Dictionary containing custom passwords to add or override in the Kolla
 # passwords file.
-kolla_ansible_custom_passwords:
+kolla_ansible_custom_passwords_extra:
   libvirt_sasl_password: "{{ secrets_libvirt_sasl_password }}"
+  docker_registry_password: "{{ kolla_docker_registry_password }}"
+
+# Extend the defaults with the above extra passwords
+# TODO: might be able to drop this in Victoria
+kolla_ansible_custom_passwords: >-
+  {{ kolla_ansible_default_custom_passwords |
+     combine(kolla_ansible_custom_passwords_extra) }}
 
 ###############################################################################
 # TLS certificate bundle management
