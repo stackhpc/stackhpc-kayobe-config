@@ -20,7 +20,7 @@ overcloud_dib_build_host_images: true
 
 # DIB base OS element. Default is {{ 'rocky-container' if os_distribution ==
 # 'rocky' else os_distribution }}.
-overcloud_dib_os_element: rocky-container-pulp
+overcloud_dib_os_element: rocky-container
 
 # DIB image OS release. Default is {{ os_release }}.
 overcloud_dib_os_release: 8
@@ -165,6 +165,8 @@ overcloud_dib_env_vars_extra:
   DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1"
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
+  # Use custom container base file
+  DIB_CONTAINER_FILE: "{{ source_checkout_path }}/stackhpc-image-elements/elements/rocky-container-pulp/containerfiles/8"
 
 # DIB environment variables. Default is combination of
 # overcloud_dib_env_vars_default and overcloud_dib_env_vars_extra.
