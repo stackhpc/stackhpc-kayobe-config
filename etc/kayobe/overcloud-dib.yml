@@ -167,6 +167,11 @@ overcloud_dib_env_vars_extra:
   DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1"
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
+  # Use custom container base file
+  DIB_CONTAINERFILE_DOCKERFILE: "{{ source_checkout_path }}/stackhpc-image-elements/elements/rocky-container-pulp/containerfiles/8"
+
+# Add if you don't have docker:
+# DIB_CONTAINERFILE_RUNTIME: "podman"
 
 # DIB environment variables. Default is combination of
 # overcloud_dib_env_vars_default and overcloud_dib_env_vars_extra.
@@ -186,7 +191,7 @@ overcloud_dib_git_elements_extra:
   - repo: https://github.com/stackhpc/stackhpc-image-elements
     local: "{{ source_checkout_path }}/stackhpc-image-elements"
     elements_path: elements
-    version: master
+    version: johng-rocky-pulp
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
 # stackhpc.os-images role for usage. Default is a combination of
