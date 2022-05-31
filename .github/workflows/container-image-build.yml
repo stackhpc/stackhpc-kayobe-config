@@ -135,6 +135,10 @@ jobs:
           retention-days: 7
         if: github.event.input.seed
 
+      - name: Prune local Kolla container images
+        run: |
+          docker image prune --filter="label=kolla_version"
+
   sync-container-repositories:
     name: Trigger container image repository sync
     needs:
