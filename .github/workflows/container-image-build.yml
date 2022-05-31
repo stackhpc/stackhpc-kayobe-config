@@ -88,17 +88,17 @@ jobs:
           kayobe overcloud container image build ${{ github.event.input.regexes }} --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.events.input.overcloud
+        if: github.event.input.overcloud
 
       - name: Display the overcloud container image tag
         run: |
           echo "$(cat ~/kolla_tag)"
-        if: github.events.input.overcloud
+        if: github.event.input.overcloud
 
       - name: Get built overcloud container images
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
-        if: github.events.input.overcloud
+        if: github.event.input.overcloud
 
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
@@ -106,7 +106,7 @@ jobs:
           name: Overcloud container images
           path: overcloud-container-images
           retention-days: 7
-        if: github.events.input.overcloud
+        if: github.event.input.overcloud
 
       - name: Build and push kolla seed images
         run: |
@@ -115,17 +115,17 @@ jobs:
           kayobe seed container image build --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.events.input.seed
+        if: github.event.input.seed
 
       - name: Display the seed container image tag
         run: |
           echo "$(cat ~/kolla_tag)"
-        if: github.events.input.seed
+        if: github.event.input.seed
 
       - name: Get built seed container images
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
-        if: github.events.input.seed
+        if: github.event.input.seed
 
       - name: Upload seed-container-images artifact
         uses: actions/upload-artifact@v3
@@ -133,7 +133,7 @@ jobs:
           name: Seed container images
           path: seed-container-images
           retention-days: 7
-        if: github.events.input.seed
+        if: github.event.input.seed
 
   sync-container-repositories:
     name: Trigger container image repository sync
