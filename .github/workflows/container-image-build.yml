@@ -4,16 +4,27 @@ on:
   workflow_dispatch:
     inputs:
       regexes:
-        description: Space-separated list of regular expressions matching images to build
+        description: Space-separated list of regular expressions matching overcloud images to build
         type: string
         required: false
         default: ""
+      overcloud:
+        description: Build overcloud images?
+        type: boolean
+        required: false
+        default: true
+      seed:
+        description: Build seed images?
+        type: boolean
+        required: false
+        default: false
 
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
-  build:
+  container-image-build:
     name: Build Kolla container images
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
     steps:
       - uses: actions/checkout@v3
@@ -74,15 +85,74 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build ${{ github.event.input.regexes }} --push
+          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.event.inputs.overcloud
 
-      - name: Get the container image tag
+      - name: Display the overcloud container image tag
         run: |
-          echo "::set-output name=kolla_tag::$(cat ~/kolla_tag)"
-        id: kolla_tag
+          echo "$(cat ~/kolla_tag)"
+        if: github.event.inputs.overcloud
 
-      - name: Display the container image tag
+      - name: Get built overcloud container images
         run: |
-          echo "${{ steps.kolla_tag.outputs.kolla_tag }}"
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
+        if: github.event.inputs.overcloud
+
+      - name: Upload overcloud-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Overcloud container images
+          path: overcloud-container-images
+          retention-days: 7
+        if: github.event.inputs.overcloud
+
+      - name: Build and push kolla seed images
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed container image build --push
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.event.inputs.seed
+
+      - name: Display the seed container image tag
+        run: |
+          echo "$(cat ~/kolla_tag)"
+        if: github.event.inputs.seed
+
+      - name: Get built seed container images
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
+        if: github.event.inputs.seed
+
+      - name: Upload seed-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Seed container images
+          path: seed-container-images
+          retention-days: 7
+        if: github.event.inputs.seed
+
+  sync-container-repositories:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger container image repository sync
+        run: |
+          gh workflow run \
+          container-sync.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
+      - name: Display link to container image repository sync workflows
+        run: |
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
