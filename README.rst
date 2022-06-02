@@ -207,7 +207,7 @@ see this message when you later try to run ``pulp-container-sync.yml``:
 The issue is that pushing an image automatically creates a `container-push repository
 <https://docs.pulpproject.org/pulp_container/restapi.html#tag/Repositories:-Container-Push>`__
 which conflicts with the creation of a regular container repository of the same
-name. You can resolve this conflict by deleting the distribution associated 
+name. You can resolve this conflict by deleting the distribution associated
 with the push repository using the pulp CLI:
 
 .. code-block:: console
@@ -246,7 +246,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    mkdir -p src
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
