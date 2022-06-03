@@ -88,17 +88,17 @@ jobs:
           kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.event.inputs.overcloud
+        if: github.event.inputs.overcloud == 'true'
 
       - name: Display the overcloud container image tag
         run: |
           echo "$(cat ~/kolla_tag)"
-        if: github.event.inputs.overcloud
+        if: github.event.inputs.overcloud == 'true'
 
       - name: Get built overcloud container images
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
-        if: github.event.inputs.overcloud
+        if: github.event.inputs.overcloud == 'true'
 
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
@@ -106,7 +106,7 @@ jobs:
           name: Overcloud container images
           path: overcloud-container-images
           retention-days: 7
-        if: github.event.inputs.overcloud
+        if: github.event.inputs.overcloud == 'true'
 
       - name: Build and push kolla seed images
         run: |
@@ -115,17 +115,17 @@ jobs:
           kayobe seed container image build --push
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.event.inputs.seed
+        if: github.event.inputs.seed == 'true'
 
       - name: Display the seed container image tag
         run: |
           echo "$(cat ~/kolla_tag)"
-        if: github.event.inputs.seed
+        if: github.event.inputs.seed == 'true'
 
       - name: Get built seed container images
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
-        if: github.event.inputs.seed
+        if: github.event.inputs.seed == 'true'
 
       - name: Upload seed-container-images artifact
         uses: actions/upload-artifact@v3
@@ -133,7 +133,7 @@ jobs:
           name: Seed container images
           path: seed-container-images
           retention-days: 7
-        if: github.event.inputs.seed
+        if: github.event.inputs.seed == 'true'
 
       - name: Prune local Kolla container images
         run: |
