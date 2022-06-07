@@ -108,7 +108,7 @@ kolla_sources:
   barbican-base:
     type: git
     location: "https://github.com/stackhpc/barbican.git"
-    reference: stackhpc/wallaby
+    reference: stackhpc/xena
   bifrost-base:
     type: git
     location: "{{ kolla_bifrost_source_url }}"
@@ -116,11 +116,11 @@ kolla_sources:
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/wallaby
+    reference: stackhpc/xena
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/wallaby
+    reference: stackhpc/xena
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -129,11 +129,11 @@ kolla_sources:
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/wallaby
+    reference: stackhpc/xena
   neutron-base-plugin-networking-generic-switch:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/wallaby
+    reference: stackhpc/xena
 
 ###############################################################################
 # Kolla image build configuration.
@@ -158,14 +158,16 @@ stackhpc_epel_repos:
 stackhpc_centos_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_advanced_virtualization_url }}"
     file: "CentOS-Advanced-Virtualization.repo"
+  - url: "{{ stackhpc_repo_centos_stream_nfv_extras_url }}"
+    file: "CentOS-NFV-extras.repo"
   - url: "{{ stackhpc_repo_centos_stream_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
-  - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
-    file: "CentOS-OpenStack-wallaby.repo"
+  - url: "{{ stackhpc_repo_centos_stream_openstack_xena_url }}"
+    file: "CentOS-OpenStack-xena.repo"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ stackhpc_repo_centos_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
 
@@ -175,6 +177,8 @@ stackhpc_third_party_repos:
     file: "elasticsearch.repo"
   - url: "{{ stackhpc_repo_grafana_url }}"
     file: "grafana.repo"
+  - url: "{{ stackhpc_repo_mariadb_10_5_centos8_url }}"
+    file: "mariadb.repo"
   - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
   - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
@@ -231,6 +235,8 @@ kolla_build_blocks:
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
 kolla_build_customizations:
+  base_yum_repo_files_remove:
+    - proxysql.repo
   ironic_inspector_pip_packages_append:
     - /additions/*
   ovn_base_packages_override:
