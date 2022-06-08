@@ -47,7 +47,7 @@ resource "openstack_compute_keypair_v2" "keypair" {
 }
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
-  name         = var.vm_name
+  name         = var.aio_vm_name
   flavor_name  = var.aio_vm_flavor
   key_pair     = var.aio_vm_keypair
   config_drive = true
