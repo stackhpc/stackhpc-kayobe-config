@@ -1,0 +1,27 @@
+---
+- name: Extend LVM
+  gather_facts: no
+  hosts: overcloud
+  tags:
+    - lvm
+  vars:
+    ansible_user: centos
+  tasks:
+    - name: Grow LVM partition
+      vars:
+        device: "{{ item.device | regex_search('(.*)([0-9]+)', '\\1') | first }}"
+        partition: "{{ item.device | regex_search('(.*)([0-9]+)', '\\2') | first }}"
+      raw: "sudo growpart {{ device }} {{ partition }}"
+      register: growpart
+      failed_when:
+        - "growpart.rc != 0"
+        - "'NOCHANGE' not in growpart.stdout"
+      loop: "{{ lvm_extend_pvs | default([]) }}"
+      when:
+        - item.growpart | default(false)
+
+    - name: Resize PV
+      vars:
+        pv: "{{ item.name | default(item.device) }}"
+      raw: "sudo pvresize {{ pv }}"
+      loop: "{{ lvm_extend_pvs | default([]) }}"
