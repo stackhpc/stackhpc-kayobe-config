@@ -2,6 +2,12 @@
 
 set -e
 
+# WORKAROUND: internal DNS missing from SMS lab.
+cat << EOF | sudo tee -a /etc/hosts
+10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
+10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+EOF
+
 # IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
 public_ip="10.0.2.1"
 
