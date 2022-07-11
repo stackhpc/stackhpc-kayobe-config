@@ -55,6 +55,18 @@ stackhpc_pulp_repository_deb_repos:
     mirror: true
     state: present
 
+  # Ubuntu Cloud Archive (UCA) repositories
+  - name: Ubuntu Cloud Archive
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    architectures: amd64
+    components: main
+    distributions: focal-updates/wallaby
+    mirror: true
+    state: present
+
   # Third-party repositories
   - name: Docker CE for Ubuntu
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
@@ -87,6 +99,13 @@ stackhpc_pulp_distribution_deb_development:
     mode: verbatim
     state: present
 
+  # Ubuntu Cloud Archive (UCA) repositories
+  - name: "ubuntu-cloud-archive-development"
+    repository: Ubuntu Cloud Archive
+    base_path: "ubuntu-cloud-archive/development"
+    mode: verbatim
+    state: present
+
   # Third-party repositories
   - name: "docker-ce-for-ubuntu-development"
     repository: Docker CE for Ubuntu
@@ -105,6 +124,13 @@ stackhpc_pulp_distribution_deb_production:
   - name: "ubuntu-focal-security-production"
     repository: Ubuntu focal security
     base_path: "ubuntu/focal-security/production"
+    mode: verbatim
+    state: present
+
+  # Ubuntu Cloud Archive (UCA) repositories
+  - name: "ubuntu-cloud-archive-production"
+    repository: Ubuntu Cloud Archive
+    base_path: "ubuntu-cloud-archive/production"
     mode: verbatim
     state: present
 
