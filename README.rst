@@ -230,7 +230,7 @@ ci-aio
 Prerequisites
 ^^^^^^^^^^^^^
 
-* a CentOS Stream 8 host
+* a CentOS Stream 8 or Ubuntu Focal 20.04 host
 * access to the local Pulp server
 
 Setup
@@ -329,7 +329,7 @@ service, and pushed there once built.
 Prerequisites
 ^^^^^^^^^^^^^
 
-* a CentOS Stream 8 host
+* a CentOS Stream 8 or Ubuntu Focal 20.04 host
 * access to the local Pulp server
 
 Setup
