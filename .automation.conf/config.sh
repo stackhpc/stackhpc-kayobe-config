@@ -9,8 +9,12 @@ export TEMPEST_CONCURRENCY=2
 KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest.overrides.conf"
 
 if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
-  # NOTE: could dynamically switch this based on environment
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}-${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}.overrides.conf"
+
+  # Check if loadlist specific overrides exist, if not fallback to environment overrides.
+  if [ ! -e "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" ]; then
+      KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
+  fi
 
   if [ "$KAYOBE_ENVIRONMENT" == "aio" ]; then
     # Seem to get servers failing to spawn with higher concurrency
@@ -18,4 +22,4 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   fi
 fi
 
-KAYOBE_AUTOMATION_CONFIG_DIFF_INJECT_FACTS=true
+KAYOBE_AUTOMATION_CONFIG_DIFF_INJECT_FACTS=1
