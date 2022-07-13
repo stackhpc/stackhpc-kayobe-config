@@ -26,10 +26,10 @@ kolla_build_blocks:
   nova_base_footer: |
     RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/nova.git@jg-ironic-rebalance-sync-2022-05-12 -c https://releases.openstack.org/constraints/upper/train
   manila_share_footer: |
-    RUN dnf erase -y ceph-common.x86_64 libbabeltrace.x86_64 libcephfs2.x86_64 librados2.x86_64 libradosstriper1.x86_64 librbd1.x86_64 librgw2.x86_64 lttng-ust.x86_64 python2-prettytable.noarch python-ceph-argparse.x86_64 python-cephfs.x86_64 python-rados.x86_64 python-rbd.x86_64 python-rgw.x86_64 userspace-rcu.x86_64 || true
-    RUN dnf erase -y centos-release-ceph-nautilus
-    RUN dnf install -y centos-release-ceph-luminous
-    RUN dnf install -y ceph-common.x86_64 libbabeltrace.x86_64 libcephfs2.x86_64 librados2.x86_64 libradosstriper1.x86_64 librbd1.x86_64 librgw2.x86_64 lttng-ust.x86_64 python-cephfs.x86_64 python-logutils.noarch python-rados.x86_64 python-rbd.x86_64 python-rgw.x86_64 userspace-rcu.x86_64
+    RUN yum erase -y ceph-common.x86_64 libbabeltrace.x86_64 libcephfs2.x86_64 librados2.x86_64 libradosstriper1.x86_64 librbd1.x86_64 librgw2.x86_64 lttng-ust.x86_64 python2-prettytable.noarch python-ceph-argparse.x86_64 python-cephfs.x86_64 python-rados.x86_64 python-rbd.x86_64 python-rgw.x86_64 userspace-rcu.x86_64 || true
+    RUN yum erase -y centos-release-ceph-nautilus
+    RUN yum install -y centos-release-ceph-luminous
+    RUN yum install -y ceph-common.x86_64 libbabeltrace.x86_64 libcephfs2.x86_64 librados2.x86_64 libradosstriper1.x86_64 librbd1.x86_64 librgw2.x86_64 lttng-ust.x86_64 python-cephfs.x86_64 python-logutils.noarch python-rados.x86_64 python-rbd.x86_64 python-rgw.x86_64 userspace-rcu.x86_64
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
