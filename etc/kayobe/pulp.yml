@@ -31,6 +31,9 @@ stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content
 ###############################################################################
 # Debs
 
+# Whether to sync Ubuntu packages.
+stackhpc_pulp_sync_ubuntu_focal: "{{ os_distribution == 'ubuntu' }}"
+
 stackhpc_pulp_repository_deb_repos:
   # Base Ubuntu Focal repositories
   - name: Ubuntu focal
@@ -43,6 +46,7 @@ stackhpc_pulp_repository_deb_repos:
     distributions: focal focal-updates focal-backports
     mirror: true
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   - name: Ubuntu focal security
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/focal-security/{{ stackhpc_pulp_repo_ubuntu_focal_security_version }}"
@@ -54,6 +58,7 @@ stackhpc_pulp_repository_deb_repos:
     distributions: focal-security
     mirror: true
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Ubuntu Cloud Archive (UCA) repositories
   - name: Ubuntu Cloud Archive
@@ -66,6 +71,7 @@ stackhpc_pulp_repository_deb_repos:
     distributions: focal-updates/wallaby
     mirror: true
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Third-party repositories
   - name: Docker CE for Ubuntu
@@ -78,6 +84,7 @@ stackhpc_pulp_repository_deb_repos:
     components: stable
     mirror: true
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -93,11 +100,13 @@ stackhpc_pulp_distribution_deb_development:
     base_path: "ubuntu/focal/development"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
   - name: "ubuntu-focal-security-development"
     repository: Ubuntu focal security
     base_path: "ubuntu/focal-security/development"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Ubuntu Cloud Archive (UCA) repositories
   - name: "ubuntu-cloud-archive-development"
@@ -105,6 +114,7 @@ stackhpc_pulp_distribution_deb_development:
     base_path: "ubuntu-cloud-archive/development"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-ubuntu-development"
@@ -112,6 +122,7 @@ stackhpc_pulp_distribution_deb_development:
     base_path: "docker-ce/ubuntu/development"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_deb_production:
@@ -121,11 +132,13 @@ stackhpc_pulp_distribution_deb_production:
     base_path: "ubuntu/focal/production"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
   - name: "ubuntu-focal-security-production"
     repository: Ubuntu focal security
     base_path: "ubuntu/focal-security/production"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Ubuntu Cloud Archive (UCA) repositories
   - name: "ubuntu-cloud-archive-production"
@@ -133,6 +146,7 @@ stackhpc_pulp_distribution_deb_production:
     base_path: "ubuntu-cloud-archive/production"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-ubuntu-production"
@@ -140,11 +154,15 @@ stackhpc_pulp_distribution_deb_production:
     base_path: "docker-ce/ubuntu/production"
     mode: verbatim
     state: present
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
 ###############################################################################
 # RPMs
 
 # Content comes in from release repositories, via pinned repo versions.
+
+# Whether to sync CentOS Stream 8 packages.
+stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
 stackhpc_pulp_repository_rpm_repos:
   # Base CentOS 8 Stream repositories
@@ -155,6 +173,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: CentOS Stream 8 - BaseOS
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
@@ -162,6 +181,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: CentOS Stream 8 - Extras
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
@@ -169,6 +189,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # EPEL repositories
   - name: Extra Packages for Enterprise Linux 8 - x86_64
@@ -178,6 +199,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_content_only
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
@@ -185,6 +207,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # Third-party repositories
   - name: Docker CE for CentOS 8
@@ -194,6 +217,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_development }}"
@@ -208,30 +232,36 @@ stackhpc_pulp_distribution_rpm_development:
     repository: CentOS Stream 8 - AppStream
     base_path: "centos/8-stream/AppStream/x86_64/os/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "centos-stream-8-baseos-development"
     repository: CentOS Stream 8 - BaseOS
     base_path: "centos/8-stream/BaseOS/x86_64/os/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "centos-stream-8-extras-development"
     repository: CentOS Stream 8 - Extras
     base_path: "centos/8-stream/extras/x86_64/os/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # EPEL repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-development"
     repository: Extra Packages for Enterprise Linux 8 - x86_64
     base_path: "epel/8/Everything/x86_64/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
     repository: Extra Packages for Enterprise Linux Modular 8 - x86_64
     base_path: "epel/8/Modular/x86_64/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-centos-8-development"
     repository: Docker CE for CentOS 8
     base_path: "docker-ce/centos/8/x86_64/stable/development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_rpm_production:
@@ -240,30 +270,36 @@ stackhpc_pulp_distribution_rpm_production:
     base_path: "centos/8-stream/BaseOS/x86_64/os/production"
     distribution: "centos-stream-8-baseos-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "centos-stream-8-appstream-production"
     base_path: "centos/8-stream/AppStream/x86_64/os/production"
     distribution: "centos-stream-8-appstream-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "centos-stream-8-extras-production"
     base_path: "centos/8-stream/extras/x86_64/os/production"
     distribution: "centos-stream-8-extras-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # EPEL repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-production"
     base_path: "epel/8/Everything/x86_64/production"
     distribution: "extra-packages-for-enterprise-linux-8-x86_64-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-production"
     base_path: "epel/8/Modular/x86_64/production"
     distribution: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-centos-8-production"
     base_path: "docker-ce/centos/8/x86_64/stable/production"
     distribution: "docker-ce-for-centos-8-development"
     state: present
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
 ###############################################################################
 # Containers
