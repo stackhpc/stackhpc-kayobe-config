@@ -105,6 +105,21 @@ seed_pulp_container:
       - pulp_containers:/var/lib/containers
     restart_policy: unless-stopped
 
+# Seed container running a Squid caching proxy. This can be used to proxy
+# HTTP(S) requests from control plane hosts.
+seed_squid_container_enabled: false
+
+seed_squid_container:
+  squid:
+    image: stackhpc/squid
+    pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
+    tag: "4.15"
+    network_mode: host
+    volumes:
+      - squid_spool:/var/spool/squid
+      - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
+      - /var/log/squid:/var/log/squid
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -115,7 +130,8 @@ seed_pulp_container:
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
 #
 seed_containers: >-
-  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {}) }}
+  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
+        | combine(seed_squid_container if seed_squid_container_enabled | bool else {}) }}
 
 ###############################################################################
 # Seed node firewalld configuration.
