@@ -86,18 +86,13 @@
 ###############################################################################
 # Seed node additional containers configuration
 
-# Dict of container images to start
-# Example:
-# seed_containers:
-#   squid:
-#     name: "squid"
-#     image: "stackhpc/squid:3.5.20-1"
-#     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
-#     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
-#
-seed_containers:
+# Seed container running a "Pulp in one" service.
+# https://pulpproject.org/pulp-in-one-container/
+# This can be used as a package mirror, and container image registry.
+seed_pulp_container_enabled: true
+
+seed_pulp_container:
   pulp:
-    name: pulp
     image: pulp/pulp
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
@@ -109,6 +104,34 @@ seed_containers:
       - pulp_pgsql:/var/lib/pgsql
       - pulp_containers:/var/lib/containers
     restart_policy: unless-stopped
+
+# Seed container running a Squid caching proxy. This can be used to proxy
+# HTTP(S) requests from control plane hosts.
+seed_squid_container_enabled: false
+
+seed_squid_container:
+  squid:
+    image: stackhpc/squid
+    pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
+    tag: "4.15"
+    network_mode: host
+    volumes:
+      - squid_spool:/var/spool/squid
+      - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
+      - /var/log/squid:/var/log/squid
+
+# Dict of container images to start
+# Example:
+# seed_containers:
+#   squid:
+#     name: "squid"
+#     image: "stackhpc/squid:3.5.20-1"
+#     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
+#     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
+#
+seed_containers: >-
+  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
+        | combine(seed_squid_container if seed_squid_container_enabled | bool else {}) }}
 
 ###############################################################################
 # Seed node firewalld configuration.
