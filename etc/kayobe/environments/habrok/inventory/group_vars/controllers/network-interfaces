@@ -1,0 +1,37 @@
+---
+###############################################################################
+# Network interface definitions for the controller group.
+
+external_net_names:
+  - external
+
+provision_oc_interface: "eth0"
+
+mgmt_interface: "{{ provision_oc_interface }}.{{ mgmt_vlan }}"
+
+provision_wl_interface: "{{ brbond0_interface }}.{{ provision_wl_vlan }}"
+
+bond0_interface: "bond0"
+# NOTE: bond_slaves in group_vars/ceph-*/network-interfaces
+bond0_bond_miimon: 100
+bond0_bond_mode: "802.3ad"
+bond0_bond_lacp_rate: "fast"
+bond0_bond_xmit_hash_policy: "layer3+4"
+bond0_mtu: 9000
+
+internal_interface: "bond0.{{ internal_vlan }}"
+
+external_interface: "brbond0"
+external_bridge_ports:
+  - "bond0"
+
+public_interface: "bond0.{{ public_vlan }}"
+public_gateway: TODO
+
+storage_interface: "bond0.{{ storage_vlan }}"
+
+tunnel_interface: "bond0.{{ tunnel_vlan }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
