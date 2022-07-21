@@ -5,7 +5,7 @@ variable "ssh_private_key" {
 
 variable vm_name {
   type = string
-  default = "kayobe-aio-centos7"
+  default = "kayobe-aio-stream8"
 }
 
 variable boot_from_volume {
@@ -13,49 +13,49 @@ variable boot_from_volume {
   default = true
 }
 
-variable aio_centos7_vm_image {
+variable aio_stream8_vm_image {
   type = string
-  default = "CentOS7.9"
+  default = "CentOS-stream8"
 }
 
-variable aio_centos7_vm_keypair {
+variable aio_stream8_vm_keypair {
   type = string
   default = "gitlab-runner"
 }
 
-variable aio_centos7_vm_flavor {
+variable aio_stream8_vm_flavor {
   type = string
   default = "general.v1.large"
 }
 
-variable aio_centos7_vm_network {
+variable aio_stream8_vm_network {
   type = string
   default = "stackhpc-ipv4-geneve"
 }
 
-variable aio_centos7_vm_subnet {
+variable aio_stream8_vm_subnet {
   type = string
   default = "stackhpc-ipv4-geneve-subnet"
 }
 
 data "openstack_images_image_v2" "image" {
-  name        = var.aio_centos7_vm_image
+  name        = var.aio_stream8_vm_image
   most_recent = true
 }
 
 data "openstack_networking_subnet_v2" "network" {
-  name = var.aio_centos7_vm_subnet
+  name = var.aio_stream8_vm_subnet
 }
 
-resource "openstack_compute_instance_v2" "kayobe-aio-centos7" {
+resource "openstack_compute_instance_v2" "kayobe-aio-stream8" {
   name            = var.vm_name
   image_id        = data.openstack_images_image_v2.image.id
-  flavor_name     = var.aio_centos7_vm_flavor
-  key_pair        = var.aio_centos7_vm_keypair
+  flavor_name     = var.aio_stream8_vm_flavor
+  key_pair        = var.aio_stream8_vm_keypair
   config_drive    = true
   user_data        = file("templates/userdata.cfg.tpl")
   network {
-    name = var.aio_centos7_vm_network
+    name = var.aio_stream8_vm_network
   }
 
   dynamic "block_device" {

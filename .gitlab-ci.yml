@@ -86,19 +86,6 @@ test-rocky:
         TF_ROOT: terraform/aio-rocky
     - when: never
 
-test-centos7:
-  stage: run
-  trigger:
-    include: .gitlab/end-to-end.yml
-    strategy: depend
-  rules:
-    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
-      variables:
-        GITLAB_ENVIRONMENT: review/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
-        KAYOBE_ENVIRONMENT: aio
-        TF_ROOT: terraform/aio
-    - when: never
-
 kolla diff:
   extends:
     - .environment-prepare
@@ -127,17 +114,6 @@ build:
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
-        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-
-build-centos-7:
-  stage: run
-  trigger:
-    include: .gitlab/build.yml
-    strategy: depend
-  rules:
-    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
-      variables:
-        KAYOBE_ENVIRONMENT: builder-centos7
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 lint-yaml:

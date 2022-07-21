@@ -1,5 +1,5 @@
 output "access_ip_v4" {
-   value = openstack_compute_instance_v2.kayobe-aio-centos7.access_ip_v4
+   value = openstack_compute_instance_v2.kayobe-aio-stream8.access_ip_v4
 }
 
 output "access_cidr" {
