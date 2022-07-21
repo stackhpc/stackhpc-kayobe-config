@@ -1,57 +1,179 @@
 ---
-- name: Drain a nova compute host of instances
+- name: Query nova compute host for list of instances
   hosts: compute
   gather_facts: yes
   tags:
     - nova-compute-drain
   vars:
+    controller_host: "{{ groups['controllers'][0] }}"
     venv: "{{ virtualenv_path }}/openstack"
-    live_migration_fatal: true
   tasks:
-    - name: Set up openstack cli virtualenv
+    - name: Initiate openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - pip
+          - setuptools
+        state: latest
+        virtualenv_command: /usr/bin/python3.6 -m venv
+      run_once: true
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+
+    - name: Install openstack CLI tools in virtualenv
       pip:
         virtualenv: "{{ venv }}"
         name:
           - python-openstackclient
-        state: latest
-        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
       run_once: true
-      delegate_to: "{{ groups['controllers'][0] }}"
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
 
     - block:
         - name: Query instances
           command: >
             {{ venv }}/bin/openstack
-            server list --host {{ ansible_facts.nodename }}
+            server list --host {{ ansible_facts.fqdn }}
             --all-projects
-            --status ACTIVE
             --format json
-          register: instances
+          register: instances_result
 
-        - name: Live migrate instances
+        - name: Set fact container lists of [host, instance_info]
+          # This makes it easier to build the inventory below
+          set_fact:
+            instances: "{{ [] | zip_longest(instances_result.stdout | from_json, fillvalue=inventory_hostname) | list }}"
+
+        - name: Build inventory
+          add_host:
+            name: "{{ instance_uuid }}"
+            groups:
+              - openstack_instances
+              - "instance_status_{{ instance_status }}"
+            instance_name: "{{ item.1.Name }}"
+            hypervisor: "{{ hypervisor }}"
+            ansible_connection: local
+            ansible_python_interpreter: "{{ ansible_playbook_python }}"
+          loop: "{{ ansible_play_hosts | map('extract', hostvars, 'instances') | flatten(levels=1) |  list }}"
+          loop_control:
+            label: "{{ instance_uuid }}"
+          vars:
+            hypervisor: "{{ item.0 }}"
+            instance_uuid: "{{ item.1.ID | default }}"
+            instance_status: "{{ item.1.Status }}"
+
+      delegate_to: "{{ groups['controllers'][0] }}"
+      environment: "{{ openstack_auth_env }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+
+- name: Drain a nova compute host of ACTIVE instances
+  hosts: instance_status_ACTIVE
+  gather_facts: false
+  serial: 5
+  tags:
+    - nova-compute-drain
+  vars:
+    controller_host: "{{ groups['controllers'][0] }}"
+    venv: "{{ virtualenv_path }}/openstack"
+  tasks:
+    - block:
+        - name: Live migrate instance
           command: >
             {{ venv }}/bin/openstack
             --os-compute-api-version 2.25
             server migrate
-            {{ instance_uuid }}
+            {{ inventory_hostname }}
             --live-migration
             --wait
-          loop: "{{ instances.stdout | from_json }}"
-          loop_control:
-            label: "{{ instance_uuid }}"
-          vars:
-            instance_uuid: "{{ item.ID | default }}"
           register: result
-          failed_when:
-            - live_migration_fatal | bool
-            - result is failed
 
+      delegate_to: "{{ groups['controllers'][0] }}"
+      environment: "{{ openstack_auth_env }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      rescue:
+        - set_fact:
+            failure_result: "{{ result }}"
+        - group_by:
+            key: instance_migration_failed
+
+- name: Drain a nova compute host of SHUTOFF instances
+  hosts: instance_status_SHUTOFF
+  gather_facts: false
+  serial: 5
+  vars:
+    controller_host: "{{ groups['controllers'][0] }}"
+    venv: "{{ virtualenv_path }}/openstack"
+  tasks:
+    - block:
+        - name: Cold migrate instance
+          command: >
+            {{ venv }}/bin/openstack
+            --os-compute-api-version 2.25
+            server migrate
+            {{ inventory_hostname }}
+            --wait
+          register: result
+
+        - name: Wait for VERIFY_RESIZE
+          command: >
+            {{ venv }}/bin/openstack server show {{ inventory_hostname }} -f value -c status
+          register: result
+          until: result.stdout == 'VERIFY_RESIZE'
+          retries: 10
+          delay: 30
+
+        - name: Confirm resize
+          command: >
+            {{ venv }}/bin/openstack server migrate confirm {{ inventory_hostname }}
+
+        - name: Wait for SHUTOFF
+          command: >
+            {{ venv }}/bin/openstack server show {{ inventory_hostname }} -f value -c status
+          register: result
+          until: result.stdout == 'SHUTOFF'
+          retries: 10
+          delay: 30
+
+      delegate_to: "{{ groups['controllers'][0] }}"
+      environment: "{{ openstack_auth_env }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      rescue:
+        - set_fact:
+            failure_result: "{{ result }}"
+        - group_by:
+            key: instance_migration_failed
+
+- name: Fail any hosts that failed to migrate
+  hosts: instance_migration_failed
+  tasks:
+    - name: Explictly fail when migration failed
+      fail:
+        msg: "{{ failure_result }}"
+
+- name: Check compute host is empty
+  hosts: compute
+  gather_facts: yes
+  tags:
+    - nova-compute-drain
+  vars:
+    controller_host: "{{ groups['controllers'][0] }}"
+    venv: "{{ virtualenv_path }}/openstack"
+  tasks:
+    - block:
         - name: Query instances
           command: >
             {{ venv }}/bin/openstack
-            server list --host {{ ansible_facts.nodename }}
+            server list --host {{ ansible_facts.fqdn }}
             --all-projects
-            --status ACTIVE
             --format json
           register: instances
 
@@ -60,13 +182,9 @@
             msg: >
               Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
           when:
-            - live_migration_fatal | bool
             - instances.stdout | from_json | length > 0
 
       delegate_to: "{{ groups['controllers'][0] }}"
       environment: "{{ openstack_auth_env }}"
-      when:
-        - "'compute' in group_names"
-        - groups['compute'] | length > 1
       vars:
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
