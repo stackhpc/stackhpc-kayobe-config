@@ -7,7 +7,7 @@
 #storage_bootstrap_user:
 
 ###############################################################################
-# Network interface attachments.
+# Storage network interface configuration.
 
 # List of networks to which storage nodes are attached.
 #storage_network_interfaces:
@@ -17,11 +17,6 @@
 
 # List of extra networks to which storage nodes are attached.
 #storage_extra_network_interfaces:
-
-# Whether this host requires access to Ceph networks.
-#storage_needs_ceph_network:
-
-#storage_needs_ceph_mgmt_network:
 
 # Whether this host requires access to Swift networks.
 #storage_needs_swift_network:
@@ -65,6 +60,12 @@
 #storage_mdadm_arrays:
 
 ###############################################################################
+# Storage node encryption configuration.
+
+# List of block devices to encrypt. See stackhpc.luks role for format.
+#storage_luks_devices:
+
+###############################################################################
 # Storage node LVM configuration.
 
 # List of storage volume groups. See mrlesmithjr.manage-lvm role for
@@ -78,6 +79,13 @@
 # Additional list of storage volume groups. See mrlesmithjr.manage-lvm role
 # for format.
 #storage_lvm_groups_extra:
+
+# Whether a 'data' LVM volume group should exist on storage hosts. By default
+# this contains a 'docker-volumes' logical volume for Docker volume storage. It
+# will also be used for Docker container and image storage if
+# 'docker_storage_driver' is set to 'devicemapper'. Default is true if
+# 'docker_storage_driver' is set to 'devicemapper', or false otherwise.
+#storage_lvm_group_data_enabled:
 
 # Storage LVM volume group for data. See mrlesmithjr.manage-lvm role for
 # format.
@@ -98,16 +106,6 @@
 
 # Filesystem for docker volumes LVM backing volume. ext4 allows for shrinking.
 #storage_lvm_group_data_lv_docker_volumes_fs:
-
-###############################################################################
-# Storage node Ceph configuration.
-
-# List of Ceph disks.
-# The format is a list of dict like :
-# - { osd: "/dev/sdb", journal: "/dev/sdc" }
-# - { osd: "/dev/sdd" }
-# Journal variable is not mandatory.
-#storage_ceph_disks:
 
 ###############################################################################
 # Storage node sysctl configuration.
