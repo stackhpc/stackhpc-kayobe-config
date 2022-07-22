@@ -161,7 +161,7 @@ stackhpc_pulp_distribution_rpm_production:
 stackhpc_release_pulp_registry_url: "{{ stackhpc_release_pulp_url }}"
 
 # List of all image names.
-stackhpc_pulp_images:
+stackhpc_pulp_images_kolla:
   - barbican-api
   - barbican-base
   - barbican-keystone-listener
@@ -282,33 +282,64 @@ stackhpc_pulp_images:
   - redis-sentinel
 
 # Common parameters for container image repositories.
-stackhpc_pulp_repository_container_repos_common:
+stackhpc_pulp_repository_container_repos_kolla_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
   policy: on_demand
   remote_username: "{{ stackhpc_release_pulp_username }}"
   remote_password: "{{ stackhpc_release_pulp_password }}"
   state: present
+  required: true
 
-# List of container image repositories.
-stackhpc_pulp_repository_container_repos: >-
+# List of Kolla container image repositories.
+stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
-  {%- for image in stackhpc_pulp_images -%}
+  {%- for image in stackhpc_pulp_images_kolla -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set repo = {"name": image_repo} -%}
-  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_common | combine(repo)) -%}
+  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
   {%- endfor -%}
   {{ repos }}
 
-# Common parameters for container image distributions.
-stackhpc_pulp_distribution_container_common:
+# Common parameters for Kolla container image distributions.
+stackhpc_pulp_distribution_container_kolla_common:
   state: present
+  required: true
+
+# List of Kolla container image distributions.
+stackhpc_pulp_distribution_container_kolla: >-
+  {%- set distributions = [] -%}
+  {%- for image in stackhpc_pulp_images_kolla -%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
+  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
+  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
+  {%- endfor -%}
+  {{ distributions }}
+
+# Whether to sync Ceph container images.
+stackhpc_sync_ceph_images: false
+
+# List of Ceph container image repositories.
+stackhpc_pulp_repository_container_repos_ceph:
+  - name: "ceph/ceph"
+    url: "https://quay.io"
+    policy: on_demand
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+
+# List of Ceph container image distributions.
+stackhpc_pulp_distribution_container_ceph:
+  - name: ceph
+    repository: ceph/ceph
+    base_path: ceph/ceph
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+
+# List of container image repositories.
+stackhpc_pulp_repository_container_repos: >-
+  {{ (stackhpc_pulp_repository_container_repos_kolla +
+      stackhpc_pulp_repository_container_repos_ceph) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
-  {%- set distributions = [] -%}
-  {%- for image in stackhpc_pulp_images -%}
-  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
-  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
-  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_common | combine(distribution)) -%}
-  {%- endfor -%}
-  {{ distributions }}
+  {{ (stackhpc_pulp_distribution_container_kolla +
+      stackhpc_pulp_distribution_container_ceph) | selectattr('required') }}
