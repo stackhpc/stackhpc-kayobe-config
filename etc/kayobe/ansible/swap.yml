@@ -7,6 +7,11 @@
     swap_device: "/dev/rootvg/lv_swap"
   become: true
   tasks:
+    - name: Ensure swap filesystem is present
+      filesystem:
+        fstype: "swap"
+        dev: "{{ swap_device }}"
+
     - name: Ensure swap device present in fstab
       mount:
         name: "none"
