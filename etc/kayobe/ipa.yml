@@ -5,7 +5,7 @@
 # Ironic Python Agent (IPA) image build configuration.
 
 # Whether to build IPA images from source.
-#ipa_build_images:
+ipa_build_images: true
 
 # URL of IPA source repository.
 #ipa_build_source_url:
@@ -26,7 +26,9 @@
 
 # List of additional Diskimage Builder (DIB) elements to use when building IPA
 # images. Default is none.
-#ipa_build_dib_elements_extra:
+ipa_build_dib_elements_extra:
+  - devuser
+  - extra-hardware
 
 # List of Diskimage Builder (DIB) elements to use when building IPA images.
 # Default is combination of ipa_build_dib_elements_default and
@@ -39,7 +41,9 @@
 
 # Dictionary of additional environment variables to provide to Diskimage
 # Builder (DIB) during IPA image build.
-#ipa_build_dib_env_extra:
+ipa_build_dib_env_extra:
+  DIB_DEV_USER_PASSWORD: "{{ secrets_ipa_devuser_password }}"
+  DIB_DEV_USER_PWDLESS_SUDO: "yes"
 
 # Dictionary of environment variables to provide to Diskimage Builder (DIB)
 # during IPA image build.

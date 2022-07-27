@@ -1,0 +1,26 @@
+---
+- name: Configure swap
+  hosts: overcloud
+  tags:
+    - swap
+  vars:
+    swap_device: "/dev/rootvg/lv_swap"
+  become: true
+  tasks:
+    - name: Ensure swap filesystem is present
+      filesystem:
+        fstype: "swap"
+        dev: "{{ swap_device }}"
+
+    - name: Ensure swap device present in fstab
+      mount:
+        name: "none"
+        src: "{{ swap_device }}"
+        fstype: "swap"
+        state: "present"
+
+    # It does no harm to run this when swap is already active
+    - name: Enable swap devices
+      command: "/sbin/swapon -a"
+      when:
+        - ansible_facts.swaptotal_mb == 0
