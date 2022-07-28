@@ -56,3 +56,45 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 
 # List of Cephx keys. See stackhpc.cephadm.keys role for format.
 #cephadm_keys:
+
+###############################################################################
+# Kolla Ceph auto-configuration.
+
+# List of Kolla Ansible services that require Ceph configuration files.
+kolla_ceph_services:
+  - name: cinder-backup
+    keys:
+      - client.cinder
+      - client.cinder-backup
+    required: "{{ kolla_ceph_cinder_backup_required | bool }}"
+  - name: cinder-volume
+    keys:
+      - client.cinder
+    required: "{{ kolla_ceph_cinder_volume_required | bool }}"
+  - name: glance
+    keys:
+      - client.glance
+    required: "{{ kolla_ceph_glance_required | bool }}"
+  - name: manila
+    keys:
+      - client.manila
+    required: "{{ kolla_ceph_manila_required | bool }}"
+  - name: nova
+    keys:
+      - client.cinder
+    required: "{{ kolla_ceph_nova_required | bool }}"
+
+# Whether to generate Ceph configuration for Cinder volume.
+kolla_ceph_cinder_volume_required: "{{ kolla_enable_cinder | bool }}"
+
+# Whether to generate Ceph configuration for Cinder backup.
+kolla_ceph_cinder_backup_required: "{{ kolla_enable_cinder_backup | default(false) | bool }}"
+
+# Whether to generate Ceph configuration for Glance.
+kolla_ceph_glance_required: "{{ kolla_enable_glance | bool }}"
+
+# Whether to generate Ceph configuration for Manila.
+kolla_ceph_manila_required: "{{ kolla_enable_manila | bool }}"
+
+# Whether to generate Ceph configuration for Nova.
+kolla_ceph_nova_required: "{{ kolla_enable_nova | bool }}"
