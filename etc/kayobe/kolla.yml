@@ -227,23 +227,6 @@ kolla_build_blocks:
     RUN grafana-cli plugins install vonage-status-panel
   ironic_inspector_header: |
     ADD additions-archive /
-  prometheus_v2_server_repository_version: |
-    ARG prometheus_version='2.35.0'
-  prometheus_alertmanager_repository_version: |
-    ARG prometheus_alertmanager_version='0.24.0'
-  prometheus_cadvisor_repository_version: |
-    ARG prometheus_cadvisor_version='0.40.0'
-    ARG prometheus_cadvisor_sha256sum='8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0'
-  node_exporter_repository_version: |
-    ARG node_exporter_version='1.3.1'
-  prometheus_memcached_exporter_repository_version: |
-    ARG memcached_exporter_version='0.9.0'
-  haproxy_exporter_repository_version: |
-    ARG haproxy_exporter_version='0.13.0'
-  mysqld_exporter_repository_version: |
-    ARG mysqld_exporter_version='0.13.0'
-  prometheus_blackbox_exporter_repository_version: |
-    ARG blackbox_exporter_version='0.19.0'
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -285,6 +268,18 @@ kolla_build_customizations_ubuntu: {}
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
 kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
+
+# Dict mapping Kolla Dockerfile ARG names to their values.
+kolla_build_args:
+  blackbox_exporter_version: "0.19.0"
+  haproxy_exporter_version: "0.13.0"
+  memcached_exporter_version: "0.9.0"
+  mysqld_exporter_version: "0.13.0"
+  node_exporter_version: "1.3.1"
+  prometheus_version: "2.35.0"
+  prometheus_alertmanager_version: "0.24.0"
+  prometheus_cadvisor_sha256sum: "8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0"
+  prometheus_cadvisor_version: "0.40.0"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
