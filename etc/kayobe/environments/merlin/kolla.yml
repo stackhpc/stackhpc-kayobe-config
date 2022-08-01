@@ -167,3 +167,31 @@ kolla_enable_prometheus: "yes"
 #kolla_enable_watcher:
 #kolla_enable_zookeeper:
 #kolla_enable_zun:
+
+# Custom overcloud inventory containing a mapping from services to components.
+kolla_overcloud_inventory_custom_services: "{{ lookup('template', kayobe_env_config_path ~ '/kolla/inventory/overcloud-services.j2') }}"
+
+# Dict mapping from kolla-ansible groups to kayobe groups and variables. Each
+# item is a dict with the following items:
+# * groups: A list of kayobe ansible groups to map to this kolla-ansible group.
+# * vars: A dict mapping variable names to values for hosts in this
+#         kolla-ansible group.
+kolla_overcloud_inventory_top_level_group_map:
+  control:
+    groups:
+      - controllers
+  network:
+    groups:
+      - network
+  compute:
+    groups:
+      - compute
+  extra_dhcp_agent:
+    groups:
+      - extra_dhcp_agent
+  monitoring:
+    groups:
+      - monitoring
+  storage:
+    groups:
+      "{{ kolla_overcloud_inventory_storage_groups }}"
