@@ -192,9 +192,18 @@ stackhpc_third_party_repos:
   - url: "{{ stackhpc_repo_treasuredata_4_url }}"
     file: "td.repo"
 
+# List of repositories for Ubuntu focal.
+stackhpc_ubuntu_focal_repos:
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
+  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/wallaby main"
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
+    {% if kolla_base_distro == 'centos' %}
     RUN \
     {% for repo in stackhpc_centos_stream_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
@@ -202,7 +211,7 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
-
+    {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
@@ -211,7 +220,13 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
-
+  base_ubuntu_package_sources_list: |
+    RUN \
+        rm -f /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_focal_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
   ironic_inspector_header: |
@@ -240,11 +255,13 @@ kolla_build_blocks:
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations:
-  base_yum_repo_files_remove:
-    - proxysql.repo
+kolla_build_customizations_common:
   ironic_inspector_pip_packages_append:
     - /additions/*
+
+kolla_build_customizations_centos:
+  base_yum_repo_files_remove:
+    - proxysql.repo
   ovn_base_packages_override:
     - ovn-2021-21.12.0
   ovn_controller_packages_override:
@@ -262,6 +279,16 @@ kolla_build_customizations:
     - python3-netifaces
     - python3-openvswitch2.16
     - tcpdump
+
+kolla_build_customizations_ubuntu: {}
+
+# Dict mapping image customization variable names to their values.
+# Each variable takes the form:
+# <image name>_<customization>_<operation>
+# Hyphens in the image name must be replaced with underscores. The
+# customization is most commonly packages. The operation should be one of
+# override, append or remove. The value should be a list.
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
