@@ -15,9 +15,6 @@ rabbitmq_remove_ha_all_policy: true
 # Needed to launch VM instances in aio environment without nested virt
 nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
 
-# Using gitlab registry with TLS
-docker_registry_insecure: false
-
 {% if scientific_openstack_trait_all_in_one %}
 keepalived_vip_prechecks: false
 {% endif %}
@@ -28,34 +25,16 @@ neutron_plugin_agent: 'ovn'
 
 libvirt_enable_sasl: true
 
-{% raw %}
-# These are copied from the baremetal role.
-docker_yum_baseurl_default: "{{ docker_yum_url }}/$releasever/$basearch/stable"
-docker_yum_gpgkey_default: "{{ docker_yum_url }}/gpg"
-{% endraw %}
-
-docker_yum_baseurl_redhat8: "{{ stackhpc_repo_docker_url }}"
-docker_yum_gpgkey_redhat8: "https://download.docker.com/linux/centos/gpg"
-
-{% raw %}
-docker_yum_base_url: "{{ lookup('vars', 'docker_yum_baseurl_' ~ ansible_facts.os_family | lower ~ ansible_facts.distribution_major_version, default=docker_yum_baseurl_default) }}"
-docker_yum_gpgkey: "{{ lookup('vars', 'docker_yum_gpgkey_' ~ ansible_facts.os_family | lower ~ ansible_facts.distribution_major_version, default=docker_yum_gpgkey_default) }}"
-{% endraw %}
+docker_yum_baseurl: "{{ stackhpc_repo_docker_url }}"
+docker_yum_gpgkey: "https://download.docker.com/linux/centos/gpg"
 
 # Disable kolla managed NTP clients
 enable_chrony: false
 enable_host_ntp: false
-
-# OpenStack Train: CentOS 7 to Rocky Linux 8 compatability
-rabbitmq_use_3_7_24_on_centos7: true
-elasticsearch_use_v6: true
-kibana_use_v6: true
 
 # This is templated on localhost, so use raw tags.
 enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version | int == 7 }}{% endraw %}"
 
 # Custom container image tags.
 # These should be allowed to change independently, as services are updated.
-# Always use centos8s Magnum as ussuri build on centos 7 is broken:
-# # INFO:kolla.common.utils.magnum-api:ESC[91mERROR: Package 'magnum' requires a different Python: 2.7.5 not in '>=3.6'
-magnum_tag: "{{ kolla_openstack_release }}-centos8s"
+# If there are no custom images this comment serves as a placeholder.
