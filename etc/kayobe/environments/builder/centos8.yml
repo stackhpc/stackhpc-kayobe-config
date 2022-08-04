@@ -48,17 +48,9 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
   bifrost_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem stackhpc-inspector-plugins==1.1.1
-#  horizon_footer: |
-#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/logo-splash.svg /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.svg
-#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/favicon.ico /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-#    ADD https://object.vss.cloud.cam.ac.uk/swift/v1/AUTH_4a8139220b424e7d810a3cf364a89ee2/arcus-images/logo.svg /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.svg
-  magnum_api_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  -U --no-deps git+https://github.com/stackhpc/magnum@10.1.0 -c https://releases.openstack.org/constraints/upper/ussuri
-  magnum_conductor_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/magnum@10.1.0 -c https://releases.openstack.org/constraints/upper/ussuri
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem stackhpc-inspector-plugins==1.3.0
   neutron_server_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/RSE-Cambridge/networking-generic-switch@cumulus-train-3 -c https://releases.openstack.org/constraints/upper/train
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/RSE-Cambridge/networking-generic-switch@cumulus-ussuri -c https://releases.openstack.org/constraints/upper/ussuri
     RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem etcd3gw
   prometheus_server_repository_version: |
     # Avoid the pain of porting 1.x rules and migrating data to 2.x
@@ -67,9 +59,9 @@ kolla_build_blocks:
     ENV prometheus_cadvisor_version=0.35.0
   ironic_inspector_footer: |
     # Install our custom inspector plugins.
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  stackhpc-inspector-plugins==1.1.1
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  stackhpc-inspector-plugins==1.3.0
   nova_base_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/nova.git@jg-ironic-rebalance-sync-2022-05-12 -c https://releases.openstack.org/constraints/upper/train
+    RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/nova.git@scientific-openstack/ussuri -c https://releases.openstack.org/constraints/upper/ussuri
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
