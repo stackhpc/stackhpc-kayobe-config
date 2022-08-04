@@ -87,6 +87,7 @@ tempest-octavia:
     - if: $CI_MERGE_REQUEST_ID
       when: never
     - when: manual
+      if: '$FEATURE_ENABLE_TEMPEST_OCTAVIA == "true"'
       variables:
         KAYOBE_AUTOMATION_TEMPEST_LOADLIST: octavia
 
@@ -104,6 +105,7 @@ tempest-baremetal:
     - if: $CI_MERGE_REQUEST_ID
       when: never
     - when: manual
+      if: '$FEATURE_ENABLE_TEMPEST_BAREMETAL == "true"'
       variables:
         KAYOBE_AUTOMATION_TEMPEST_LOADLIST: baremetal
 
@@ -113,7 +115,7 @@ test-rocky:
     include: .gitlab/end-to-end.yml
     strategy: depend
   rules:
-    - if: '$CI_MERGE_REQUEST_ID && $KAYOBE_ENVIRONMENT == "builder"'
+    - if: '$CI_MERGE_REQUEST_ID && ($KAYOBE_ENVIRONMENT == "builder" || $FEATURE_ENABLE_END_TO_END == "true")'
       variables:
         GITLAB_ENVIRONMENT: review/rocky/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
         KAYOBE_ENVIRONMENT: aio-rocky
