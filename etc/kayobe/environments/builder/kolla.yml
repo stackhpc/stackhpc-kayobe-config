@@ -63,7 +63,7 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
   bifrost_footer: |
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/stackhpc/stackhpc-inspector-plugins@stackhpc-inspector-plugins==1.3.0
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.3.0
   neutron_server_footer: |
     RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem git+https://github.com/RSE-Cambridge/networking-generic-switch@cumulus-ussuri -c https://releases.openstack.org/constraints/upper/ussuri
     RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem etcd3gw
@@ -74,7 +74,7 @@ kolla_build_blocks:
     ENV prometheus_cadvisor_version=0.35.0
   ironic_inspector_footer: |
     # Install our custom inspector plugins.
-    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  git+https://github.com/stackhpc/stackhpc-inspector-plugins@stackhpc-inspector-plugins==1.3.0
+    RUN /var/lib/kolla/venv/bin/pip install --cert /etc/pki/tls/cert.pem  git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.3.0
   nova_base_footer: |
     RUN /var/lib/kolla/venv/bin/pip install --prefix /var/lib/kolla/venv --cert /etc/pki/tls/cert.pem -U --no-deps git+https://github.com/stackhpc/nova.git@scientific-openstack/ussuri -c https://releases.openstack.org/constraints/upper/ussuri
 
