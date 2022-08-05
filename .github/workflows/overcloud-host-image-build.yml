@@ -118,6 +118,12 @@ jobs:
           retention-days: 7
         if: inputs.rocky
 
+      # FIXME: Need EPEL on CentOS for debootstrap. It is disabled by default.
+      # Do this via config?
+      - name: Enable EPEL repository
+        run: |
+          sudo dnf config-manager --set-enabled epel
+
       - name: Build a Ubuntu Focal 20.04 overcloud host image
         run: |
           source venvs/kayobe/bin/activate &&
