@@ -32,14 +32,14 @@ jobs:
 
   build-kayobe-image:
     name: Build Kayobe Image
-    uses: ./.github/workflows/build-kayobe-image.yml
+    uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   all-in-one-ovs:
     name: aio (OVS)
     needs:
       - build-kayobe-image
-    uses: ./.github/workflows/all-in-one.yml
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovs
@@ -51,7 +51,7 @@ jobs:
     name: aio (OVN)
     needs:
       - build-kayobe-image
-    uses: ./.github/workflows/all-in-one.yml
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovn
