@@ -62,8 +62,21 @@ overcloud_dib_env_vars_extra:
         size: 85GiB
     - partitioning:
         base: image0
-        label: mbr
+        label: gpt
         partitions:
+          - name: ESP
+            type: EF00
+            size: 16MiB
+            mkfs:
+              type: vfat
+              mount:
+                mount_point: /boot/efi
+                fstab:
+                  options: "defaults"
+                  fsck-passno: 1
+          - name: BSP
+            type: 'EF02'
+            size: 8MiB
           - name: lvm_part
             flags: [boot, primary]
             # size is relative to the remaining free space, i.e. it is really
@@ -169,6 +182,7 @@ overcloud_dib_env_vars_extra:
   DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1"
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
+  DIB_BLOCK_DEVICE: efi
   # Use custom container base file
   DIB_CONTAINERFILE_DOCKERFILE: "{{ source_checkout_path }}/stackhpc-image-elements/elements/rocky-container-pulp/8.6-pulp-mofed"
 
