@@ -37,6 +37,9 @@ overcloud_dib_os_release: 8
 # List of additional DIB elements. Default is none.
 overcloud_dib_elements_extra:
   - "dracut-regenerate"
+  - "cloud-init-datasources"
+  - "enable-serial-console"
+  - "block-device-efi"
   - "unmask-tmp"
   - "openssh-server"
   - "cloud-init"
@@ -78,9 +81,8 @@ overcloud_dib_env_vars_extra:
             type: 'EF02'
             size: 8MiB
           - name: lvm_part
-            flags: [boot, primary]
-            # size is relative to the remaining free space, i.e. it is really
-            # 50% of the whole image
+            flags: [boot]
+            # size is relative to the remaining free space
             size: 100%
             type: '0x8e'
     - lvm:
@@ -179,12 +181,23 @@ overcloud_dib_env_vars_extra:
           fstab:
             options: "rw,nodev"
             fsck-passno: 2
-  DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1"
+  DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1 rd.auto"
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
   DIB_BLOCK_DEVICE: efi
+  DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: |
+    - name: crypt
+      packages:
+        - cryptsetup
+    - name: lvm
+      packages:
+        - lvm2
+    - name: mdraid
+      packages:
+        - mdraid
   # Use custom container base file
   DIB_CONTAINERFILE_DOCKERFILE: "{{ source_checkout_path }}/stackhpc-image-elements/elements/rocky-container-pulp/8.6-pulp-mofed"
+  YUM: dnf
 
 # Add if you don't have docker:
 # DIB_CONTAINERFILE_RUNTIME: "podman"
@@ -196,6 +209,8 @@ overcloud_dib_env_vars_extra:
 # List of DIB packages to install. Default is to install no extra packages.
 overcloud_dib_packages:
   - lvm2
+  - logrotate
+  - net-tools
 
 # List of default git repositories containing Diskimage Builder (DIB) elements.
 # See stackhpc.os-images role for usage. Default is empty.
@@ -207,7 +222,7 @@ overcloud_dib_git_elements_extra:
   - repo: https://github.com/stackhpc/stackhpc-image-elements
     local: "{{ source_checkout_path }}/stackhpc-image-elements"
     elements_path: elements
-    version: johng-rocky-ofed
+    version: will/rocky-container
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
 # stackhpc.os-images role for usage. Default is a combination of
