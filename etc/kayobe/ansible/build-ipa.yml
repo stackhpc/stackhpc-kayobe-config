@@ -14,7 +14,7 @@
     ipa_logs:
       - ipa.stdout
       - ipa.stderr
-    version: '{{ ansible_date_time.iso8601_basic_short }}'
+    version: '{{ openstack_release }}-{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
     ipa_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | default(false,\
       \ true) | bool }}"
   tasks:
