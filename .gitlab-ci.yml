@@ -115,7 +115,7 @@ test-rocky:
     include: .gitlab/end-to-end.yml
     strategy: depend
   rules:
-    - if: '$CI_MERGE_REQUEST_ID && ($KAYOBE_ENVIRONMENT == "builder" || $FEATURE_ENABLE_END_TO_END == "true")'
+    - if: '$CI_MERGE_REQUEST_ID && ($KAYOBE_ENVIRONMENT == "builder" || $FEATURE_ENABLE_TEMPEST_END_TO_END == "true")'
       variables:
         GITLAB_ENVIRONMENT: review/rocky/$CI_COMMIT_REF_SLUG/$CI_COMMIT_SHA
         KAYOBE_ENVIRONMENT: aio-rocky
@@ -149,6 +149,9 @@ build:
     strategy: depend
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
       variables:
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
