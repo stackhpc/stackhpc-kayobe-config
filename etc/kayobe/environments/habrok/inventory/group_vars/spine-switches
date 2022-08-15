@@ -1,0 +1,116 @@
+---
+###############################################################################
+# Helper variables.
+
+# BGP Autonomous System Number
+switch_bgp_asn: 65100
+
+# BGP router ID is per-switch.
+switch_bgp_ip_index: "{{ -1 * switch_rack | int }}"
+switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_ip_index | string) | ipaddr('address') }}"
+
+###############################################################################
+# Global configuration.
+
+switch_config_nested:
+  - "{{ switch_config_hostname }}"
+  - "{{ switch_config_mgmt }}"
+  - "{{ switch_config_spanning_tree }}"
+  - "{{ switch_config_bfd }}"
+  - "{{ switch_config_mtu }}"
+  - "{{ switch_config_overlay_routing_profile }}"
+  - "{{ switch_config_bgp_router }}"
+  - "{{ switch_config_underlay_bgp_neighbours | flatten }}"
+  - "{{ switch_config_overlay_bgp_neighbours | flatten }}"
+  - "{{ switch_config_vrf }}"
+
+switch_config_vrf: []
+  # TODO: Router between internal and baremetal provisioning networks
+  #- ip vrf baremetal-provisioning
+
+###############################################################################
+# Interface configuration.
+
+# Interface configuration. Dict mapping switch interface names to configuration
+# dicts. Each dict contains a description item and a 'config' item which should
+# contain a list of per-interface configuration.
+switch_interface_config_ethernet:
+  "Ethernet 1/1/30:1":
+    description: downlink to hb-sw-mgmt01-h0{% if switch_rack | int == 3 %}1{% else %}5{% endif %}
+    config: "{{ switch_interface_config_mgmt_downlink }}"
+  "Ethernet 1/1/30:2":
+    description: downlink to hb-sw-mgmt01-h0{% if switch_rack | int == 3 %}2{% else %}6{% endif %}
+    config: "{{ switch_interface_config_mgmt_downlink }}"
+  "Ethernet 1/1/30:3":
+    description: downlink to hb-sw-mgmt01-h0{% if switch_rack | int == 3 %}3{% else %}7{% endif %}
+    config: "{{ switch_interface_config_mgmt_downlink }}"
+  "Ethernet 1/1/30:4":
+    description: downlink to hb-sw-mgmt01-h0{% if switch_rack | int == 3 %}4{% else %}8{% endif %}
+    config: "{{ switch_interface_config_mgmt_downlink }}"
+  "Ethernet 1/1/31":
+    description: uplink
+    config: "{{ switch_interface_config_uplink }}"
+  "Ethernet 1/1/32":
+    description: uplink
+    config: "{{ switch_interface_config_uplink }}"
+
+switch_interface_config_fabric:
+  "Ethernet 1/1/1":
+    description: downstream to hb-sw-leaf01-h01
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h01']) }}"
+  "Ethernet 1/1/2":
+    description: downstream to hb-sw-leaf02-h01
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h01']) }}"
+  "Ethernet 1/1/3":
+    description: downstream to hb-sw-leaf01-h03
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h03']) }}"
+  "Ethernet 1/1/4":
+    description: downstream to hb-sw-leaf02-h03
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h03']) }}"
+  "Ethernet 1/1/5":
+    description: downstream to hb-sw-leaf01-h04
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h04']) }}"
+  "Ethernet 1/1/6":
+    description: downstream to hb-sw-leaf02-h04
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h04']) }}"
+  "Ethernet 1/1/7":
+    description: downstream to hb-sw-leaf01-h05
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h05']) }}"
+  "Ethernet 1/1/8":
+    description: downstream to hb-sw-leaf02-h05
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h05']) }}"
+  "Ethernet 1/1/9":
+    description: downstream to hb-sw-leaf01-h07
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h07']) }}"
+  "Ethernet 1/1/10":
+    description: downstream to hb-sw-leaf02-h07
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h07']) }}"
+
+###############################################################################
+# Interface variables and templates.
+
+# Downlink to managment switches
+switch_interface_config_mgmt_downlink:
+  - no shutdown
+  - mtu 9216
+  - switchport mode trunk
+  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
+
+# TODO: Uplink to core
+switch_interface_config_uplink: []
+
+# Trunk between spines
+switch_interface_config_spine_peerlink:
+  - no shutdown
+  - mtu 9216
+  - switchport mode trunk
+  - switchport trunk allowed vlan {{ switch_spine_peerlink_trunk_vlans | unique | join(',') }}
+
+# VLANs to trunk on the peer link between spines
+switch_spine_trunk_peerlink_vlans:
+ - "{{ provision_wl_net_name | net_vlan }}"
+ - "{{ provision_oc_net_name | net_vlan }}"
+ - "{{ oob_oc_net_name | net_vlan }}"
+ - "{{ oob_wl_net_name | net_vlan }}"
+
+###############################################################################

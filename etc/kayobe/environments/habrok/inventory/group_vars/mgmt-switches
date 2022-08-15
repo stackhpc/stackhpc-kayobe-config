@@ -1,0 +1,66 @@
+---
+###############################################################################
+# Global configuration.
+
+switch_config_nested:
+  - "{{ switch_config_hostname }}"
+  - "{{ switch_config_mgmt }}"
+  - "{{ switch_config_spanning_tree }}"
+  - "{{ switch_config_bfd }}"
+  - "{{ switch_config_mtu }}"
+
+switch_config_mtu:
+  - default mtu 1532
+
+###############################################################################
+# Interface configuration.
+
+switch_interface_config_vlans_template: |-
+  vlan {{ provision_oc_net_name | net_vlan }}:
+    description: overcloud provisioning
+    config:
+      - no shutdown
+  vlan {{ provision_wl_net_name | net_vlan }}:
+    description: workload provisioning
+    config:
+      - no shutdown
+  vlan {{ oob_oc_net_name | net_vlan }}:
+    description: overcloud iDRAC
+    config:
+      - no shutdown
+  vlan {{ oob_wl_net_name | net_vlan }}:
+    description: workload iDRAC
+    config:
+      - no shutdown
+
+switch_interface_config_ethernet:
+  TenGigabitEthernet 1/52:
+    description: Uplink
+    config: "{{ switch_interface_config_uplink }}"
+
+###############################################################################
+# Interface variables and templates.
+
+# Overcloud iDRAC/provisioning ports
+switch_interface_config_overcloud_idrac:
+  - no shutdown
+  - spanning-tree port type edge
+  - switchport mode trunk
+  - switchport access vlan {{ provision_oc_net_name | net_vlan }}
+  - switchport trunk allowed vlan {{ oob_oc_net_name | net_vlan }}
+
+# Workload iDRAC/provisioning ports
+switch_interface_config_workload_idrac:
+  - no shutdown
+  - spanning-tree port type edge
+  - switchport mode trunk
+  # Ironic will manage the provisioning VLAN membership.
+  - switchport trunk allowed vlan {{ oob_wl_net_name | net_vlan }}
+
+# Uplink VLT
+switch_interface_config_uplink:
+  - no shutdown
+  - mtu 9216
+  #- vlt-port-channel 128
+  - switchport mode trunk
+  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}

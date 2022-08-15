@@ -1,0 +1,272 @@
+---
+###############################################################################
+# Helper variables.
+
+# BGP Autonomous System Number shared per leaf-pair
+switch_bgp_range_start: 65000
+switch_bgp_asn: "{{ switch_bgp_range_start + switch_rack | int }}"
+
+# VXLAN VTEP IP address shared per leaf-pair.
+switch_tunnel_index: "{{ switch_rack }}"
+switch_tunnel_ip: "{{ switch_tunnel_cidr | ipaddr(switch_tunnel_index) | ipaddr('address') }}"
+
+# BGP router ID is per-switch.
+switch_bgp_index: "{{ (switch_rack | int * 2) + switch_rack_index | int }}"
+switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_index) | ipaddr('address') }}"
+
+# L3 fabric underlay IPs
+# Each leaf is connected to each spine in a point to point /31 subnet
+# To determine the index of the /31 subnet within the fabric supernet:
+# SUBNET_INDEX = 2 * (2 * RACK - 1) + (RACK_INDEX - 1) + SPINE_INDEX
+# Where:
+#   RACK = rack number, 1-8
+#   RACK_INDEX = index of switch within rack, 1-2
+#   SPINE_INDEX = index of spine, 0-1
+# The first IP address of the subnet is calculated as follows:
+# FIRST_IP = FABRIC_CIDR + 2 * SUBNET_INDEX
+# The leaf switches have the first IP address in each /31, spines have the second.
+switch_fabric_ips: >-
+  {%- set ips = {} -%}
+  {%- for host in switch_bgp_neighbours -%}
+  {%- set spine_index = loop.index0 -%}
+  {%- set subnet_index = 2 * (2 * (switch_rack | int - 1) + switch_rack_index | int - 1) + spine_index -%}
+  {%- set ip = switch_fabric_cidr | ipsubnet(31, subnet_index) | ipaddr(0) | ipaddr('address') -%}
+  {%- set _ = ips.update({host: ip}) -%}
+  {%- endfor -%}
+  {{ ips }}
+
+# IP fabric leaf peer connection. One IP per leaf switch.
+switch_fabric_peer_index: "{{ -2 * switch_rack | int + (0 if switch_is_rack_primary else 1) }}"
+switch_fabric_peer_ip: "{{ switch_fabric_cidr | ipaddr(switch_fabric_peer_index) | ipaddr('address') }}"
+
+###############################################################################
+# Global configuration.
+
+switch_config_nested:
+  - "{{ switch_config_hostname }}"
+  - "{{ switch_config_mgmt }}"
+  - "{{ switch_config_spanning_tree }}"
+  - "{{ switch_config_bfd }}"
+  - "{{ switch_config_mtu }}"
+  - "{{ switch_config_overlay_routing_profile }}"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_bgp_router }}"
+  - "{{ switch_config_underlay_bgp_neighbours | flatten }}"
+  - "{{ switch_config_underlay_bgp_neighbour_vlt_peer }}"
+  - "{{ switch_config_overlay_bgp_neighbours | flatten }}"
+  - "{{ switch_config_evpn }}"
+  - "{{ switch_config_vlt }}"
+  - "{{ switch_config_ufd_template | from_yaml }}"
+
+# Network Virtualisation Edge (NVE) for VXLANs
+switch_config_nve:
+  - nve
+  - source-interface loopback0
+  - exit
+
+# VXLAN virtual networks
+switch_config_vxlans_template: |
+  {% for network in [internal_net_name, public_net_name, tunnel_net_name, storage_net_name, storage_mgmt_net_name] %}
+  {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
+  {% endfor %}
+
+# VXLAN network
+switch_config_vxlan_template: |
+  - virtual-network {vni}
+  - vxlan-vni {vni}
+  - exit
+  - exit
+
+# EVPN
+switch_config_evpn:
+  - evpn
+  # Automatically assign EVPN EVIs.
+  - auto-evi
+  - exit
+
+switch_config_vlt:
+  # VLT
+  - vlt domain {{ switch_rack }}
+  - primary-priority {{ 1 if switch_is_rack_primary else 2 }}
+  # VLT MAC must begin with 02, 06:, 0A:, or 0E.
+  # Leaf pairs should use the same MAC, so seed with the rack ID.
+  - vlt-mac {{ '02' | random_mac(seed=99 * switch_rack) }}
+  - delay-restore 120
+  - discovery-interface 1/1/55
+  - discovery-interface 1/1/56
+  - backup destination {{ 'switch_mgmt' | net_ip(inventory_hostname=switch_peer) }}
+  - exit
+
+# Uplink Failure Detection (UFD)
+switch_config_ufd_template: |
+  - uplink-state-group 1
+  # Add VLTs as upstreams
+  {% for interface, config in switch_interface_config.items() %}
+  {% if config.config | select('match', 'vlt-port-channel') | list | length > 0 %}
+  - upstream {{ interface }}
+  {% endif %}
+  {% endfor %}
+  # Add L3 fabric links as downstreams
+  {% for interface in switch_interface_config_fabric %}
+  - downstream {{ interface }}
+  {% endfor %}
+  - enable
+  - exit
+
+###############################################################################
+# Interface configuration.
+
+# Interface configuration. Dict mapping switch interface names to configuration
+# dicts. Each dict contains a description item and a 'config' item which should
+# contain a list of per-interface configuration.
+switch_interface_config_ethernet: "{{ switch_interface_config_ethernet_template | from_yaml }}"
+switch_interface_config_ethernet_template: |
+  "{{ switch_vlti_interface_1 }}":
+    description: VLTi
+    config: {{ switch_interface_config_vlti }}
+  "{{ switch_vlti_interface_2 }}":
+    description: VLTi
+    config: {{ switch_interface_config_vlti }}
+
+switch_interface_config_fabric: "{{ switch_interface_config_fabric_links_template | from_yaml }}"
+switch_interface_config_fabric_links_template: |
+  "{{ switch_fabric_interface_1 }}":
+    description: upstream to hb-sw-spine01-h03
+    config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
+  "{{ switch_fabric_interface_2 }}":
+    description: upstream to hb-sw-spine01-h04
+    config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h04']) | from_yaml }}
+
+# Most leaf switches are S5248s, while those in rack 7 are S5232, and use a slightly different interface range.
+switch_fabric_interface_1: "Ethernet 1/1/{{ 29 if switch_rack | int == 7 else 49 }}"
+switch_fabric_interface_2: "Ethernet 1/1/{{ 30 if switch_rack | int == 7 else 51 }}"
+switch_vlti_interface_1: "Ethernet 1/1/{{ 31 if switch_rack | int == 7 else 55 }}"
+switch_vlti_interface_2: "Ethernet 1/1/{{ 32 if switch_rack | int == 7 else 56 }}"
+
+###############################################################################
+# Interface variables and templates.
+
+# Member of a port-channel (also used for VLTi links)
+switch_interface_config_lag_member_edge_template: |-
+  - no shutdown
+  - channel-group %(channel)s mode active
+  - lacp port-priority {{ switch_priority }}
+  - no switchport
+  - mtu 9216
+  - flowcontrol receive %(flowcontrol)s
+  - flowcontrol transmit %(flowcontrol)s
+
+# Ethernet interface configuration
+switch_interface_config_eth_template: |
+  - no shutdown
+  - mtu 9216
+  - spanning-tree port type edge
+  - switchport mode trunk
+  - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
+  - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+
+# Virtual Link Trunking (VLT) interface configuration
+switch_interface_config_vlt_template: |-
+  - no shutdown
+  - mtu 9216
+  - vlt-port-channel %(channel)s
+  - spanning-tree port type edge
+  - switchport mode trunk
+  - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
+  - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+
+# VLT inter-switch links
+switch_interface_config_vlti:
+  - no shutdown
+  - no switchport
+
+# OpenStack Controller port channel configuration
+switch_interface_config_controller_template: |-
+  {{ switch_interface_config_vlt_template }}
+  - switchport trunk allowed vlan {{ switch_controller_trunk_vlans | unique | join(',') }}
+
+switch_interface_config_hypervisor_data_template: |-
+  {{ switch_interface_config_eth_template }}
+  - switchport trunk allowed vlan {{ switch_hypervisor_data_trunk_vlans | unique | join(',') }}
+
+# OpenStack hypervisor data interface configuration
+switch_interface_config_hypervisor_data: "{{ switch_interface_config_hypervisor_data_template | from_yaml }}"
+
+switch_interface_config_hypervisor_storage_template: |-
+  {{ switch_interface_config_eth_template }}
+  - switchport trunk allowed vlan {{ switch_hypervisor_storage_trunk_vlans | unique | join(',') }}
+
+# OpenStack hypervisor storage interface configuration
+switch_interface_config_hypervisor_storage: "{{ switch_interface_config_hypervisor_storage_template | from_yaml }}"
+
+# OpenStack baremetal compute configuration
+switch_interface_config_baremetal:
+  - no shutdown
+  - mtu 9216
+  - spanning-tree port type edge
+  - switchport mode access
+  - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
+  - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+
+# Ceph monitor interface configuration
+switch_interface_config_ceph_mon_template: |-
+  {{ switch_interface_config_vlt_template }}
+  - switchport trunk allowed vlan {{ switch_ceph_mon_trunk_vlans | unique | join(',') }}
+
+# Ceph OSD interface configuration
+switch_interface_config_ceph_osd_template: |-
+  {{ switch_interface_config_vlt_template }}
+  - switchport trunk allowed vlan {{ switch_ceph_osd_trunk_vlans | unique | join(',') }}
+
+# Proxmox interface configuration
+# TODO
+switch_interface_config_proxmox: []
+
+# Lustre MDS interface configuration
+# TODO
+switch_interface_config_mds: []
+
+# Lustre OSS interface configuration
+# TODO
+switch_interface_config_oss: []
+
+# Lustre Robinhood interface configuration
+# TODO
+switch_interface_config_robinhood: []
+
+# VLANs to trunk to controllers
+switch_controller_trunk_vlans:
+  - "{{ oob_wl_net_name | net_vlan }}"
+  - "{{ provision_wl_net_name | net_vlan }}"
+  - "{{ internal_net_name | net_vlan }}"
+  - "{{ public_net_name | net_vlan }}"
+  - "{{ storage_net_name | net_vlan }}"
+  - "{{ tunnel_net_name | net_vlan }}"
+  # TODO: Provider & tenant VLANs?
+
+# VLANs to trunk to compute data interface
+switch_hypervisor_data_trunk_vlans:
+  - "{{ internal_net_name | net_vlan }}"
+  - "{{ public_net_name | net_vlan }}"
+  - "{{ tunnel_net_name | net_vlan }}"
+  # TODO: Tenant VLANs
+
+# VLANs to trunk to compute storage interface
+switch_hypervisor_storage_trunk_vlans:
+  - "{{ storage_net_name | net_vlan }}"
+  # TODO: Provider VLANs
+
+# VLANs to trunk to Ceph monitor interface
+switch_ceph_mon_trunk_vlans:
+  - "{{ internal_net_name | net_vlan }}"
+  - "{{ storage_net_name | net_vlan }}"
+  - "{{ storage_mgmt_net_name | net_vlan }}"
+
+# VLANs to trunk to Ceph OSD interface
+switch_ceph_osd_trunk_vlans:
+  - "{{ internal_net_name | net_vlan }}"
+  - "{{ storage_net_name | net_vlan }}"
+  - "{{ storage_mgmt_net_name | net_vlan }}"
+
+###############################################################################
