@@ -52,20 +52,6 @@
         # which does not have r+x access.
         ansible_python_interpreter: /usr/bin/python3
 
-    - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
-      blockinfile:
-        path: "/etc/ossec-init.conf"
-        state: present
-        owner: root
-        group: ossec
-        block: |
-          HTTPS_PROXY={{ http_proxy }}
-          HTTP_PROXY={{ http_proxy }}
-        backup: yes
-      when: http_proxy is defined
-      notify:
-        - Restart wazuh
-
     - name: Check for elasticsearch performance analyser
       command:
         cmd: /usr/share/elasticsearch/bin/elasticsearch-plugin list
@@ -137,6 +123,7 @@
         -nhnv -icl
         -h {{ elasticsearch_network_host }}
       run_once: true
+      when: wazuh_tls | bool
 
     - name: Restart elasticsearch
       service:
