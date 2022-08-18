@@ -31,7 +31,11 @@
 # List of Diskimage Builder (DIB) elements to use when building IPA images.
 # Default is combination of ipa_build_dib_elements_default and
 # ipa_build_dib_elements_extra.
-#ipa_build_dib_elements:
+ipa_build_dib_elements_extra:
+  # Switch to extra-hardware in wallaby
+  - "ipa-extra-hardware"
+  - "disable-selinux"
+  - "stable-interface-names"
 
 # Dictionary of default environment variables to provide to Diskimage Builder
 # (DIB) during IPA image build.
@@ -39,7 +43,13 @@
 
 # Dictionary of additional environment variables to provide to Diskimage
 # Builder (DIB) during IPA image build.
-#ipa_build_dib_env_extra:
+ipa_build_dib_env_extra:
+  YUM: dnf
+  DIB_RELEASE: "8-stream"
+  # NOTE: These REPOREFS are set in victoria.
+  DIB_REPOREF_requirements: "{{ openstack_branch }}"
+  DIB_REPOREF_ironic_python_agent: "{{ ipa_build_source_version }}"
+  DIB_REPOREF_ironic_lib: "{{ ipa_build_source_version }}"
 
 # Dictionary of environment variables to provide to Diskimage Builder (DIB)
 # during IPA image build.
@@ -52,6 +62,11 @@
 # List of additional git repositories containing Diskimage Builder (DIB)
 # elements. See stackhpc.os-images role for usage. Default is empty.
 #ipa_build_dib_git_elements_extra:
+ipa_build_dib_git_elements_extra:
+  - repo: "https://github.com/stackhpc/stackhpc-image-elements"
+    local: "{{ source_checkout_path }}/stackhpc-image-elements"
+    version: "master"
+    elements_path: "elements"
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
 # stackhpc.os-images role for usage. Default is a combination of
@@ -60,6 +75,9 @@
 
 # List of DIB packages to install. Default is none.
 #ipa_build_dib_packages:
+ipa_build_dib_packages:
+  - jq
+  - sysstat
 
 # Upper constraints file for installing packages in the virtual environment
 # used for building IPA images. Building IPA images with the master branch of
