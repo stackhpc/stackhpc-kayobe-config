@@ -13,9 +13,23 @@ variable boot_from_volume {
   default = true
 }
 
-variable aio_rocky_vm_image {
+variable "gitlab_token" {
   type = string
-  default = "Rocky-8-GenericCloud-8.5-20211114.2.x86_64"
+}
+
+variable "rocky_image_version" {
+  type = string
+  default = "train-20220811T152056-2e632cf"
+}
+
+variable "use_local_image" {
+  type = bool
+  default = false
+}
+
+variable aio_rocky_vm_user {
+  type = string
+  default = "cloud-user"
 }
 
 variable aio_rocky_vm_keypair {
@@ -38,9 +52,31 @@ variable aio_rocky_vm_subnet {
   default = "stackhpc-ipv4-geneve-subnet"
 }
 
-data "openstack_images_image_v2" "image" {
-  name        = var.aio_rocky_vm_image
+variable aio_rocky_interface {
+  type = string
+  default = "ens3"
+}
+
+resource "openstack_images_image_v2" "rocky_image" {
+  # TODO. Don't upload if already exists
+  count = var.use_local_image ? 0 : 1
+  name             = "rocky-linux-${var.rocky_image_version}"
+  image_source_url = "https://gitlab.com/api/v4/projects/25160749/packages/generic/rocky-linux/${var.rocky_image_version}/rocky-linux-${var.rocky_image_version}.qcow2"
+  container_format = "bare"
+  disk_format      = "qcow2"
+  image_source_username = "gitlab-ci-token"
+  image_source_password  = var.gitlab_token
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+data "openstack_images_image_v2" "rocky_image" {
+  name  = var.use_local_image ? var.rocky_image_version : "rocky-linux-${var.rocky_image_version}"
   most_recent = true
+  depends_on = [
+    openstack_images_image_v2.rocky_image
+  ]
 }
 
 data "openstack_networking_subnet_v2" "network" {
@@ -49,7 +85,7 @@ data "openstack_networking_subnet_v2" "network" {
 
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name            = var.vm_name
-  image_id        = data.openstack_images_image_v2.image.id
+  image_id        = data.openstack_images_image_v2.rocky_image.id
   flavor_name     = var.aio_rocky_vm_flavor
   key_pair        = var.aio_rocky_vm_keypair
   config_drive    = true
@@ -61,7 +97,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   dynamic "block_device" {
       for_each = var.boot_from_volume ? ["create"] : []
       content {
-        uuid                  = data.openstack_images_image_v2.image.id
+        uuid                  = data.openstack_images_image_v2.rocky_image.id
         source_type           = "image"
         volume_size           = 100
         boot_index            = 0
@@ -70,29 +106,18 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
       }
   }
 
-  provisioner "file" {
-    source      = "scripts/configure-local-networking.sh"
-    destination = "/home/rocky/configure-local-networking.sh"
-
-    connection {
-      type     = "ssh"
-      host     = self.access_ip_v4
-      user     = "rocky"
-      private_key = file(var.ssh_private_key)
-    }
-  }
-
   provisioner "remote-exec" {
   inline = [
-      "sudo bash /home/rocky/configure-local-networking.sh"
-   ]
-
-    connection {
+      "echo SSH online"
+  ]
+  connection {
       type     = "ssh"
       host     = self.access_ip_v4
-      user     = "rocky"
+      user     = var.aio_rocky_vm_user
       private_key = file(var.ssh_private_key)
+      # /tmp is noexec
+      script_path = "/home/${var.aio_rocky_vm_user}/check-ssh-online"
     }
-
   }
+
 }

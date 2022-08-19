@@ -16,7 +16,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
       KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
   fi
 
-  if [ "$KAYOBE_ENVIRONMENT" == "aio" ]; then
+  if [ "$KAYOBE_ENVIRONMENT" == "aio" ] || [ "$KAYOBE_ENVIRONMENT" == "aio-rocky" ]; then
     # Seem to get servers failing to spawn with higher concurrency
     export TEMPEST_CONCURRENCY=1
   fi
