@@ -1,0 +1,234 @@
+---
+# This reusable workflow deploys a VM on a cloud using Terraform, then deploys
+# OpenStack in the VM via Kayobe. Tempest is then used to test the cloud.
+
+name: All in one
+
+on:
+  workflow_call:
+    inputs:
+      kayobe_image:
+        description: Kayobe container image
+        type: string
+        required: true
+      neutron_plugin:
+        description: Neutron ML2 plugin
+        type: string
+        required: true
+      vm_image:
+        description: Image for the all-in-one VM
+        type: string
+        default: CentOS-stream8
+      vm_flavor:
+        description: Flavor for the all-in-one VM
+        type: string
+        default: general.v1.medium
+      vm_network:
+        description: Network for the all-in-one VM
+        type: string
+        default: stackhpc-release
+      vm_subnet:
+        description: Subnet for the all-in-one VM
+        type: string
+        default: stackhpc-release-subnet
+      OS_CLOUD:
+        description: Name of cloud in clouds.yaml
+        type: string
+        required: true
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+      CLOUDS_YAML:
+        required: true
+      OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+
+jobs:
+  # NOTE: Runner needs unzip and nodejs packages.
+  all-in-one:
+    name: All in one
+    runs-on: [self-hosted, stackhpc-kayobe-config-aio]
+    permissions: {}
+    env:
+      KAYOBE_ENVIRONMENT: ci-aio
+      KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+      KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+           submodules: true
+
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_private_key = "id_rsa"
+          ssh_public_key = "id_rsa.pub"
+          aio_vm_name = "${{ env.VM_NAME }}"
+          aio_vm_image = "${{ env.VM_IMAGE }}"
+          aio_vm_keypair = "${{ env.VM_KEYPAIR }}"
+          aio_vm_flavor = "${{ env.VM_FLAVOR }}"
+          aio_vm_network = "${{ env.VM_NETWORK }}"
+          aio_vm_subnet = "${{ env.VM_SUBNET }}"
+          EOF
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
+          VM_IMAGE: ${{ inputs.vm_image }}
+          VM_KEYPAIR: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
+          VM_FLAVOR: ${{ inputs.vm_flavor }}
+          VM_NETWORK: ${{ inputs.vm_network }}
+          VM_SUBNET: ${{ inputs.vm_subnet }}
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-networks.yml
+
+          admin_oc_net_name: admin
+          admin_cidr: "{{ access_cidr.value }}"
+          admin_allocation_pool_start: 0.0.0.0
+          admin_allocation_pool_end: 0.0.0.0
+          admin_gateway: "{{ access_gw.value }}"
+          admin_bootproto: dhcp
+          admin_ips:
+            controller0: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write Terraform network interface config
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/controllers/tf-network-interfaces
+          admin_interface: "{{ access_interface.value }}"
+          EOF
+
+      - name: Write all-in-one scenario config
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
+          ---
+          kolla_enable_ovn: ${{ env.ENABLE_OVN }}
+          EOF
+        env:
+          ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
+
+      # https://renehernandez.io/snippets/multiline-strings-as-a-job-output-in-github-actions/
+      - name: Set SSH key output
+        id: ssh_key
+        run: |
+          ssh_key="$(cat terraform/aio/id_rsa)"
+          ssh_key="${ssh_key//'%'/'%25'}"
+          ssh_key="${ssh_key//$'\n'/'%0A'}"
+          ssh_key="${ssh_key//$'\r'/'%0D'}"
+          echo "::add-mask::$ssh_key"
+          echo "::set-output name=ssh_key::$ssh_key"
+
+      # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
+      - name: Pull latest Kayobe image
+        run: |
+          sudo docker image pull $KAYOBE_IMAGE
+
+      - name: Host configure
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Service deploy
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Configure aio resources
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Tempest tests
+        run: |
+          mkdir -p tempest-artifacts
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Upload test result artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: tempest-results-${{ inputs.neutron_plugin }}
+          path: tempest-artifacts/*
+
+      - name: Fail if any Tempest tests failed
+        run: |
+          test $(wc -l < tempest-artifacts/failed-tests) -lt 1
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: always()
