@@ -10,7 +10,7 @@
     ansible_become: true
     overcloud_host_image_force_rebuild: True
     overcloud_host_image_push: False
-    version: '{{ openstack_release }}-{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
+    version: '{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
     overcloud_host_image_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | \
                                        default(false, true) | bool }}"
   tasks:
@@ -46,6 +46,7 @@
       loop: '{{ overcloud_dib_host_images }}'
       loop_control:
         loop_var: image
+        label: "{{ image.name }}"
 
     - name: Upload image to generic package registry
       uri:
@@ -62,6 +63,7 @@
       loop: '{{ overcloud_dib_host_images }}'
       loop_control:
         loop_var: image
+        label: "{{ image.name }}"
       when: overcloud_host_image_push_image
 
     - name: Upload checksum to generic package registry
@@ -79,6 +81,7 @@
       loop: '{{ overcloud_dib_host_images }}'
       loop_control:
         loop_var: image
+        label: "{{ image.name }}"
       when: overcloud_host_image_push_image
 
     - name: Upload build logs to generic package registry (stdout)
@@ -96,6 +99,7 @@
       loop: '{{ overcloud_dib_host_images }}'
       loop_control:
         loop_var: image
+        label: "{{ image.name }}"
       when: overcloud_host_image_push_image
 
     - name: Upload build logs to generic package registry (stdout)
@@ -113,4 +117,5 @@
       loop: '{{ overcloud_dib_host_images }}'
       loop_control:
         loop_var: image
+        label: "{{ image.name }}"
       when: overcloud_host_image_push_image
