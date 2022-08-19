@@ -211,13 +211,16 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
-  base_ubuntu_package_sources_list: |
-    RUN \
-        rm -f /etc/apt/sources.list && \
-    {% for repo in stackhpc_ubuntu_focal_repos %}
-        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
-    {% endif %}
-    {% endfor %}
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # base_ubuntu_package_sources_list: |
+  #   RUN \
+  #       rm -f /etc/apt/sources.list && \
+  #   {% for repo in stackhpc_ubuntu_focal_repos %}
+  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+  #   {% endif %}
+  #   {% endfor %}
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
   ironic_inspector_header: |
