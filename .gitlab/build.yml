@@ -13,6 +13,9 @@ Build IPA:
       when: manual
       variables:
         KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
+        # Default plugin prints loop item on failure that
+        # may contain devuser password.
+        ANSIBLE_STDOUT_CALLBACK: unixy
   script:
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
@@ -38,6 +41,9 @@ Build Rocky Image:
     - if: $CI_COMMIT_BRANCH
       when: manual
       variables:
+        # Default plugin prints loop item on failure that
+        # may contain devuser password.
+        ANSIBLE_STDOUT_CALLBACK: unixy
         KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
   script:
     - exit_code=0
