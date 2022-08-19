@@ -1,6 +1,15 @@
 ---
+# Custom playbook to configure a swap device. This may be used as a
+# post-overcloud host configure hook.
+#
+# Variables:
+# * swap_group: Host pattern against which to target the playbook. Default is
+#               'overcloud'.
+# * swap_device: Name of the swap device to configure. Default is
+#                '/dev/rootvg/lv_swap'.
+
 - name: Configure swap
-  hosts: overcloud
+  hosts: "{{ swap_group | default('overcloud') }}"
   tags:
     - swap
   vars:
