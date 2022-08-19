@@ -17,21 +17,13 @@
 # * filename: name of a file in /etc/apt/apt.conf.d/ in which to write the
 #   configuration
 # Default is an empty list.
-apt_config:
-  # NOTE: Currently the Pulp verbatim publisher does not sync translation
-  # files, which results in apt update failing. Disable translations until this
-  # is resolved.
-  - content: |
-      Acquire::Languages "none";
-    filename: 99no-languages
+#apt_config:
 
 # List of apt keys. Each item is a dict containing the following keys:
 # * url: URL of key
 # * filename: Name of a file in which to store the downloaded key
 # Default is an empty list.
-apt_keys:
-  - url: "https://download.docker.com/linux/ubuntu/gpg"
-    filename: docker.asc
+#apt_keys:
 
 # A list of Apt repositories.
 # * types: whitespace-separated list of repository types, e.g. deb or deb-src
@@ -46,22 +38,12 @@ apt_keys:
 # * architecture: whitespace-separated list of architectures that will be used
 #   (optional, default is unset)
 # Default is an empty list.
-apt_repositories:
-  - url: "{{ stackhpc_repo_ubuntu_focal_url }}"
-    suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
-    components: main restricted universe multiverse
-  - url: "{{ stackhpc_repo_ubuntu_focal_security_url }}"
-    suites: "{{ ansible_facts.distribution_release }}-security"
-    components: main restricted universe multiverse
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_url }}"
-    suites: "{{ ansible_facts.distribution_release }}"
-    components: stable
-    signed_by: docker.asc
+#apt_repositories:
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
 # Default is false.
-apt_disable_sources_list: true
+#apt_disable_sources_list:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
