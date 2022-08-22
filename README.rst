@@ -238,6 +238,13 @@ Setup
 
 Access the host via SSH.
 
+Install package dependencies. On Ubuntu:
+
+.. code-block:: console
+
+   sudo apt update
+   sudo apt install python3-virtualenv
+
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
 .. code-block:: console
@@ -246,7 +253,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    mkdir -p src
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
@@ -337,6 +344,13 @@ Setup
 
 Access the host via SSH.
 
+Install package dependencies. On Ubuntu:
+
+.. code-block:: console
+
+   sudo apt update
+   sudo apt install python3-virtualenv
+
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
 .. code-block:: console
@@ -345,7 +359,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    mkdir -p src
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/wallaby kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
