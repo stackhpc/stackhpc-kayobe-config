@@ -70,29 +70,16 @@ resource "openstack_compute_instance_v2" "kayobe-aio-stream8" {
       }
   }
 
-  provisioner "file" {
-    source      = "scripts/configure-local-networking.sh"
-    destination = "/home/centos/configure-local-networking.sh"
-
-    connection {
-      type     = "ssh"
-      host     = self.access_ip_v4
-      user     = "centos"
-      private_key = file(var.ssh_private_key)
-    }
-  }
-
   provisioner "remote-exec" {
-  inline = [
-      "sudo bash /home/centos/configure-local-networking.sh"
-   ]
-
+    inline = [
+        "echo SSH online"
+    ]
     connection {
-      type     = "ssh"
-      host     = self.access_ip_v4
-      user     = "centos"
-      private_key = file(var.ssh_private_key)
+        type     = "ssh"
+        host     = self.access_ip_v4
+        user     = "centos"
+        private_key = file(var.ssh_private_key)
     }
-
   }
+
 }
