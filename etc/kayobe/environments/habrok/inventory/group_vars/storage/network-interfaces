@@ -1,0 +1,23 @@
+---
+###############################################################################
+# Network interface definitions for the compute group.
+
+provision_oc_interface: eth0
+
+bond0_interface: "bond0"
+# NOTE: bond_slaves in group_vars/ceph-*/network-interfaces
+bond0_bond_miimon: 100
+bond0_bond_mode: "802.3ad"
+bond0_bond_lacp_rate: "fast"
+bond0_bond_xmit_hash_policy: "layer3+4"
+bond0_mtu: 9000
+
+internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
+
+storage_interface: "{{ bond0_interface }}.{{ storage_vlan }}"
+
+storage_mgmt_interface: "{{ bond0_interface }}.{{ storage_mgmt_vlan }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

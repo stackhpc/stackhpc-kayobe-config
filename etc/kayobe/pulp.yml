@@ -32,7 +32,10 @@ stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content
 # Debs
 
 # Whether to sync Ubuntu packages.
-stackhpc_pulp_sync_ubuntu_focal: "{{ os_distribution == 'ubuntu' }}"
+# NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+# Ark does not work if the upstream mirror pulls packages (which it does
+# sometimes).
+stackhpc_pulp_sync_ubuntu_focal: false
 
 stackhpc_pulp_repository_deb_repos:
   # Base Ubuntu Focal repositories
@@ -432,6 +435,15 @@ stackhpc_pulp_images_kolla:
   - skydive-analyzer
   - skydive-base
 
+# Whitespace-separated list of regular expressions matching Kolla image names.
+# Usage is similar to kolla-build CLI arguments.
+# Example:
+# kayobe playbook run ... -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
+stackhpc_pulp_images_kolla_filter: ".*"
+
+# Filtered list of Kolla container image names.
+stackhpc_pulp_images_kolla_filtered: "{{ stackhpc_pulp_images_kolla | select('search', '(' ~ stackhpc_pulp_images_kolla_filter.split() | join('|') ~ ')') | list }}"
+
 # Common parameters for container image repositories.
 stackhpc_pulp_repository_container_repos_kolla_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
@@ -444,7 +456,7 @@ stackhpc_pulp_repository_container_repos_kolla_common:
 # List of Kolla container image repositories.
 stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
-  {%- for image in stackhpc_pulp_images_kolla -%}
+  {%- for image in stackhpc_pulp_images_kolla_filtered -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set repo = {"name": image_repo} -%}
   {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
@@ -459,7 +471,7 @@ stackhpc_pulp_distribution_container_kolla_common:
 # List of Kolla container image distributions.
 stackhpc_pulp_distribution_container_kolla: >-
   {%- set distributions = [] -%}
-  {%- for image in stackhpc_pulp_images_kolla -%}
+  {%- for image in stackhpc_pulp_images_kolla_filtered -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
   {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
@@ -467,7 +479,7 @@ stackhpc_pulp_distribution_container_kolla: >-
   {{ distributions }}
 
 # Whether to sync Ceph container images.
-stackhpc_sync_ceph_images: false
+stackhpc_sync_ceph_images: true
 
 # List of Ceph container image repositories.
 stackhpc_pulp_repository_container_repos_ceph:
