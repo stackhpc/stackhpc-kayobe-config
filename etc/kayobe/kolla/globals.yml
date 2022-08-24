@@ -1,11 +1,8 @@
 # yamllint disable-file
 ---
-enable_docker_repo: "{% raw %}{{ ansible_facts.os_family == 'RedHat' }}{% endraw %}"
-
 docker_yum_baseurl: "{{ stackhpc_repo_docker_url }}"
 docker_yum_gpgkey: "https://download.docker.com/linux/{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}/gpg"
 
-{# We are not currently providing container images for Ubuntu in Wallaby. #}
 {% if kolla_base_distro == 'centos' %}
 barbican_tag: wallaby-20220311T133847
 cinder_tag: wallaby-20220309T083940
@@ -27,5 +24,8 @@ prometheus_jiralert_tag: wallaby-20220119T122428
 prometheus_libvirt_exporter_tag: wallaby-20220325T122042
 prometheus_msteams_tag: wallaby-20220119T122428
 prometheus_openstack_exporter_tag: wallaby-20220705T132206
-skydive_tag: wallaby-20220811T091848
+skydive_agent_tag: wallaby-20220817T151053
+skydive_analyzer_tag: wallaby-20220817T151053
+{% else %}
+bifrost_tag: wallaby-20220819T150635
 {% endif %}
