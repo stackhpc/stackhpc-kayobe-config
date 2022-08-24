@@ -40,7 +40,10 @@ stackhpc_overcloud_dib_env_vars:
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_CONTAINERFILE_RUNTIME: "docker"
   DIB_CONTAINERFILE_NETWORK_DRIVER: "host"
-  DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_focal_url if os_distribution == 'ubuntu' else '' }}"
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_focal_url if os_distribution == 'ubuntu' else '' }}"
   DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: "{{ stackhpc_overcloud_dib_dracut_enabled_modules_default_config }}"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
   DIB_SUDOERS_FILENAME: "no-fqdn"
