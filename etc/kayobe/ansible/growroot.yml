@@ -25,14 +25,16 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     # Name of the LVM VG containing the root PV.
     growroot_vg: "vg"
+    # Don't assume facts are present.
+    os_family: "{{ ansible_facts.os_family | default('Debian' if os_distribution == 'ubuntu' else 'RedHat') }}"
 
   tasks:
     - name: Ensure growpart is installed
       package:
-        name: "{% if os_distribution in ['centos', 'rocky'] %}cloud-utils-growpart{% else %}cloud-guest-utils{% endif %}"
+        name: "{% if os_family == 'RedHat' %}cloud-utils-growpart{% else %}cloud-guest-utils{% endif %}"
         state: present
-        cache_valid_time: "{{ apt_cache_valid_time if ansible_facts.os_family == 'Debian' else omit }}"
-        update_cache: "{{ True if ansible_facts.os_family == 'Debian' else omit }}"
+        cache_valid_time: "{{ apt_cache_valid_time if os_family == 'Debian' else omit }}"
+        update_cache: "{{ True if os_family == 'Debian' else omit }}"
       become: True
 
     - name: Get root PV device
