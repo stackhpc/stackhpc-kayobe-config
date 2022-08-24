@@ -1,0 +1,28 @@
+---
+- name: Configure VXLAN
+  hosts: controllers
+  gather_facts: true
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    # We can't assume that a virtualenv exists at this point, so use the system
+    # python interpreter.
+    ansible_python_interpreter: /usr/bin/python3
+    # Work around no known_hosts entry on first boot.
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  tasks:
+    - name: VXLAN Role
+      ansible.builtin.include_role:
+        name: vxlan
+      vars:
+        vxlan_phys_dev: eno1
+        vxlan_interfaces:
+          - device: vxlan10
+            group: 224.0.0.10
+            ipaddr: "{{ '192.168.0.1/24' | ansible.utils.next_nth_usable(host_index) }}"
+            prefix: 24
+      when: host_name == ansible_hostname
+      with_items: "{{ groups['all'] }}"
+      loop_control:
+        loop_var: host_name
+        index_var: host_index
+
