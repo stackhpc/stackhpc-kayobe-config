@@ -1,0 +1,35 @@
+---
+# Custom playbook to configure a swap device. This may be used as a
+# post-overcloud host configure hook.
+#
+# Variables:
+# * swap_group: Host pattern against which to target the playbook.
+# * swap_device: Name of the swap device to configure. Default is
+#                '/dev/rootvg/lv_swap'.
+
+- name: Configure swap
+  hosts: swap_group
+  tags:
+    - swap
+  vars:
+    swap_device: "/dev/vg/lv_swap"
+  become: true
+  tasks:
+    - name: Ensure swap filesystem is present
+      filesystem:
+        fstype: "swap"
+        dev: "{{ swap_device }}"
+
+    - name: Ensure swap device present in fstab
+      mount:
+        name: "none"
+        src: "{{ swap_device }}"
+        fstype: "swap"
+        state: "present"
+
+    # It does no harm to run this when swap is already active
+    - name: Enable swap devices
+      command: "/sbin/swapon -a"
+      when:
+        - ansible_facts.swaptotal_mb == 0
+
