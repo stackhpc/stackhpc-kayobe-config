@@ -1,0 +1,153 @@
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Terraform.gitlab-ci.yml
+# with minor modifications
+
+include:
+  - .gitlab/prelude.yml
+  - remote: https://gitlab.com/gitlab-org/gitlab/-/raw/a36e00c1b8a42bf22280734cd21cd26c8323ba43/lib/gitlab/ci/templates/Terraform/Base.latest.gitlab-ci.yml
+
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
+# Redefine .deploy from Terraform/Base.latest.gitlab-ci.yml
+# to remove restriction where it will only deploy on the
+# default branch.
+.deploy-custom:
+  stage: deploy
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform apply
+
+before_script:
+  - |
+    mkdir ~/.ssh || true
+    chmod 700 ~/.ssh
+    echo "$KAYOBE_AUTOMATION_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa.terraform
+    chmod 600 ~/.ssh/id_rsa.terraform
+    export TF_VAR_ssh_private_key=~/.ssh/id_rsa.terraform
+    . "$TERRAFORM_OPENRC"
+
+.job-overrides:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
+.terraform-extras:
+  variables:
+    TF_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+    TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+    TF_VAR_vm_name: kayobe-aio-$CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+
+.kayobe-extras:
+  variables:
+    KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
+
+stages:
+  - validate
+  - build
+  - deploy
+  - configure
+  - test
+  - destroy
+
+validate:
+  extends:
+    - .terraform-tags
+    - .environment-prepare
+    - .terraform-extras
+    - .job-overrides
+    - .terraform:validate
+
+build:
+  extends:
+    - .terraform-tags
+    - .environment-prepare
+    - .terraform-extras
+    - .job-overrides
+    - .terraform:build
+
+deploy:
+  extends:
+    - .terraform-tags
+    - .environment
+    - .terraform-extras
+    - .job-overrides
+    - .deploy-custom
+  allow_failure: false
+  dependencies:
+    - build
+
+manual cleanup:
+  stage: deploy
+  extends:
+    - .terraform-tags
+    - .environment
+    - .terraform-extras
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform destroy
+    - 'curl -u "gitlab-ci-token:$CI_JOB_TOKEN" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}"'
+  environment:
+    action: stop
+  when: manual
+
+upgrade:
+  extends:
+    - .tags
+    - .environment
+    - .job-overrides
+    - .kayobe-extras
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: configure
+  script:
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/overcloud-host-upgrade.sh
+    - .automation/pipeline/overcloud-service-upgrade.sh
+
+tempest:
+  extends:
+    - .environment-prepare
+    - .tags
+    - .job-overrides
+    - .kayobe-extras
+  variables:
+     GIT_SUBMODULE_STRATEGY: normal
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  stage: test
+  script:
+    # Setting ansible_user is a workaround for:
+    # "Unexpected remote arg: }}@10.0.0.97:/tmp/ansible.0fjk897erally-results/\nrsync error: syntax or usage error (code 1) at main.c(1354) [sender=3.1.3]\n"
+    # See: https://github.com/ansible-collections/ansible.posix/pull/344
+    # See: https://github.com/ansible/ansible/issues/28551
+    - .automation/pipeline/tempest.sh -e ansible_user=stack
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp $HOME/tempest-artifacts/* ${CI_PROJECT_DIR}/artifacts
+    # Exit with non-zero exit code if any tests failed. Otherwise
+    # the job will pass.
+    - test $(wc -l < ${CI_PROJECT_DIR}/artifacts/failed-tests) -lt 1
+  allow_failure: false
+  artifacts:
+    when: always
+    paths:
+      - artifacts/rally-junit.xml
+      - artifacts/rally-verify-report.html
+      - artifacts/stderr.log
+      - artifacts/stdout.log
+      - artifacts/tempest.log
+    reports:
+      junit: artifacts/rally-junit.xml
+
+destroy:
+  stage: destroy
+  extends:
+  - .terraform-tags
+  - .environment
+  - .terraform-extras
+  script:
+    - cd ${TF_ROOT}
+    - gitlab-terraform destroy
+    - 'curl -u "gitlab-ci-token:$CI_JOB_TOKEN" --request DELETE "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}"'
+  environment:
+    action: stop
+  dependencies:
+    - deploy
+  when: always
