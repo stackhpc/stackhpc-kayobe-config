@@ -58,7 +58,7 @@ variable aio_rocky_interface {
 }
 
 locals {
-  hostname = "kayobe-aio-rocky-8"
+  fqdn = "kayobe-aio-rocky-8"
 }
 
 resource "openstack_images_image_v2" "rocky_image" {
@@ -93,7 +93,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   flavor_name     = var.aio_rocky_vm_flavor
   key_pair        = var.aio_rocky_vm_keypair
   config_drive    = true
-  user_data       = templatefile("templates/userdata.cfg.tpl", { hostname = local.hostname })
+  user_data       = templatefile("templates/userdata.cfg.tpl", { fqdn = local.fqdn })
   network {
     name = var.aio_rocky_vm_network
   }

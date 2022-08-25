@@ -3,7 +3,7 @@
 mounts:
   - [/dev/vdb, null]
 
-hostname: ${hostname}
+fqdn: ${fqdn}
 
 write_files:
   - content: |

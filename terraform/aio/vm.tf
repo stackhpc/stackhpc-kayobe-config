@@ -39,7 +39,7 @@ variable aio_stream8_vm_subnet {
 }
 
 locals {
-  hostname = "kayobe-aio-centos-8s'
+  fqdn = "kayobe-aio-centos-8s'
 }
 
 data "openstack_images_image_v2" "image" {
@@ -57,7 +57,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio-stream8" {
   flavor_name     = var.aio_stream8_vm_flavor
   key_pair        = var.aio_stream8_vm_keypair
   config_drive    = true
-  user_data       = templatefile("templates/userdata.cfg.tpl", { hostname = local.hostname })
+  user_data       = templatefile("templates/userdata.cfg.tpl", { fqdn = local.fqdn })
   network {
     name = var.aio_stream8_vm_network
   }
