@@ -43,6 +43,12 @@
       become: True
       changed_when: False
 
+    - name: Fail if root PV device not found
+      fail:
+        msg: >
+          Expected LVM physical volume devices not found in volume group {{ growroot_vg }}
+      when: (pvs.stdout | from_json).report[0].pv | length == 0
+
     - name: Grow partition
       command: "growpart {{ disk }} {{ part_num }}"
       vars:
