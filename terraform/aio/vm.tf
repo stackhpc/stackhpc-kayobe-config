@@ -39,7 +39,7 @@ variable aio_centos7_vm_subnet {
 }
 
 locals {
-  fqdn = "kayobe-aio-centos-8s'
+  fqdn = "kayobe-aio-centos-7'
 }
 
 data "openstack_images_image_v2" "image" {
