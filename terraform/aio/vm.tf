@@ -38,6 +38,10 @@ variable aio_centos7_vm_subnet {
   default = "stackhpc-ipv4-geneve-subnet"
 }
 
+locals {
+  fqdn = "kayobe-aio-centos-8s'
+}
+
 data "openstack_images_image_v2" "image" {
   name        = var.aio_centos7_vm_image
   most_recent = true
@@ -53,7 +57,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio-centos7" {
   flavor_name     = var.aio_centos7_vm_flavor
   key_pair        = var.aio_centos7_vm_keypair
   config_drive    = true
-  user_data        = file("templates/userdata.cfg.tpl")
+  user_data       = templatefile("templates/userdata.cfg.tpl", { fqdn = local.fqdn })
   network {
     name = var.aio_centos7_vm_network
   }

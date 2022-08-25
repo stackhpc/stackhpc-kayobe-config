@@ -57,6 +57,10 @@ variable aio_rocky_interface {
   default = "ens3"
 }
 
+locals {
+  fqdn = "kayobe-aio-rocky-8"
+}
+
 resource "openstack_images_image_v2" "rocky_image" {
   # TODO. Don't upload if already exists
   count = var.use_local_image ? 0 : 1
@@ -89,7 +93,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   flavor_name     = var.aio_rocky_vm_flavor
   key_pair        = var.aio_rocky_vm_keypair
   config_drive    = true
-  user_data        = file("templates/userdata.cfg.tpl")
+  user_data       = templatefile("templates/userdata.cfg.tpl", { fqdn = local.fqdn })
   network {
     name = var.aio_rocky_vm_network
   }
