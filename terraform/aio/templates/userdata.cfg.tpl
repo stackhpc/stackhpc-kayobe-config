@@ -3,6 +3,8 @@
 mounts:
   - [/dev/vdb, null]
 
+hostname: ${hostname}
+
 write_files:
   - content: |
       #!/bin/bash
