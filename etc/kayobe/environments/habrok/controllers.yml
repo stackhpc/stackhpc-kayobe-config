@@ -33,7 +33,14 @@ controller_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
 controller_firewalld_zones:
+  - zone: external
+  - zone: internal
+  - zone: mgmt_wl
+  - zone: provision_oc
+  - zone: provision_wl
   - zone: public
+  - zone: storage
+  - zone: tunnel
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
@@ -46,6 +53,8 @@ controller_firewalld_default_zone: trusted
 # - permanent: true
 # - state: enabled
 controller_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
   - service: dhcpv6-client
     state: disabled
     zone: public
