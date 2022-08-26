@@ -1,4 +1,4 @@
-CONTENT_ORIGIN='http://{{ ansible_facts.fqdn }}'
-ANSIBLE_API_HOSTNAME='http://{{ ansible_facts.fqdn }}'
-ANSIBLE_CONTENT_HOSTNAME='http://{{ ansible_facts.fqdn }}/pulp/content'
+CONTENT_ORIGIN='{{ pulp_url }}'
+ANSIBLE_API_HOSTNAME='{{ pulp_url }}'
+ANSIBLE_CONTENT_HOSTNAME='{{ pulp_url }}/pulp/content'
 TOKEN_AUTH_DISABLED=True
