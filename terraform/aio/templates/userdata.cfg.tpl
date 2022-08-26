@@ -3,6 +3,8 @@
 mounts:
   - [/dev/vdb, null]
 
+fqdn: ${fqdn}
+
 write_files:
   - content: |
       #!/bin/bash
