@@ -3,7 +3,18 @@
 mounts:
   - [/dev/vdb, null]
 
+fqdn: ${fqdn}
+
 write_files:
+  # Make sure the public IP survives a reboot
+  # See: https://access.redhat.com/discussions/4221861
+  # TODO: Addd multiple IP addresses to michael rigart?
+  - content: |
+      DEVICE=breth1:1
+      ONPARENT=on
+      IPADDR=10.0.2.1
+      PREFIX=24
+    path: /etc/sysconfig/network-scripts/ifcfg-breth1:1
   - content: |
       #!/bin/bash
 
