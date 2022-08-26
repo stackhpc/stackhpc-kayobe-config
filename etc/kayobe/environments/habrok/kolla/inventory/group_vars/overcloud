@@ -1,0 +1,8 @@
+---
+# Use a proxy for external Docker image pulls
+docker_http_proxy: "http://172.23.9.249:3128"
+docker_https_proxy: "http://172.23.9.249:3128"
+docker_no_proxy:
+  - "127.0.0.1"
+  - "localhost"
+  - "{{ ('http://' ~ docker_registry) | urlsplit('hostname') if docker_registry else '' }}"
