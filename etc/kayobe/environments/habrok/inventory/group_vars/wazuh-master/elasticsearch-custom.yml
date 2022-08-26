@@ -1,0 +1,73 @@
+---
+# Provides wazuh and filebeat with an alternative to the Open Distro admin user, see:
+# https://documentation.wazuh.com/4.1/installation-guide/open-distro/all-in-one-deployment/all_in_one.html#elasticsearch-users-and-roles
+
+elasticsearch_custom_internal_users: |
+  wazuh_admin:
+    hash: "{{ secrets_wazuh.wazuh_admin_hash }}"
+    reserved: true
+    hidden: false
+    backend_roles: []
+    attributes: {}
+    opendistro_security_roles: []
+    static: false
+  wazuh_user:
+    hash: "{{ secrets_wazuh.wazuh_user_hash }}"
+    reserved: true
+    hidden: false
+    backend_roles: []
+    attributes: {}
+    opendistro_security_roles: []
+    static: false
+elasticsearch_custom_roles: |
+  wazuh_ui_user:
+    reserved: true
+    hidden: false
+    cluster_permissions: []
+    index_permissions:
+    - index_patterns:
+      - "wazuh-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+      - "read"
+    tenant_permissions: []
+    static: false
+  wazuh_ui_admin:
+    reserved: true
+    hidden: false
+    cluster_permissions: []
+    index_permissions:
+    - index_patterns:
+      - "wazuh-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+      - "read"
+      - "delete"
+      - "manage"
+      - "index"
+    tenant_permissions: []
+    static: false
+elasticsearch_custom_roles_mapping: |
+  # Allows kibanaserver to create wazuh indices
+  wazuh_ui_admin:
+    reserved: true
+    hidden: false
+    backend_roles: []
+    hosts: []
+    users:
+    - "wazuh_admin"
+    - "kibanaserver"
+    and_backend_roles: []
+  wazuh_ui_user:
+    reserved: true
+    hidden: false
+    backend_roles: []
+    hosts: []
+    users:
+    - "wazuh_user"
+    and_backend_roles: []
+
