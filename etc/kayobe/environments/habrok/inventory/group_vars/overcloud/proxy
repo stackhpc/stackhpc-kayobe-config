@@ -17,6 +17,14 @@ no_proxy:
   - "localhost"
   - "{{ ('http://' ~ docker_registry) | urlsplit('hostname') if docker_registry else '' }}"
   - "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+  - "{{ kolla_external_fqdn }}"
+  - "{{ kolla_internal_fqdn }}"
+
+# Apt proxy URL for HTTP. Default is empty (no proxy).
+apt_proxy_http: "{{ http_proxy }}"
+
+# Apt proxy URL for HTTPS. Default is {{ apt_proxy_http }}.
+apt_proxy_https: "{{ https_proxy }}"
 
 # PyPI proxy URL (format: http(s)://[user:password@]proxy_name:port)
 pip_proxy: "{{ https_proxy }}"
