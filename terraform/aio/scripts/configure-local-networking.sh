@@ -8,6 +8,11 @@ cat << EOF | sudo tee -a /etc/hosts
 10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 EOF
 
+# WORKAROUND: DNS snooping broken in SMS lab - use neutron DHCP agent.
+cat << EOF | sudo tee /etc/resolv.conf
+nameserver 10.205.0.3
+EOF
+
 # IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
 public_ip="10.0.2.1"
 
