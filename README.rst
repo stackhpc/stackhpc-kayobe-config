@@ -238,12 +238,20 @@ Setup
 
 Access the host via SSH.
 
-Install package dependencies. On Ubuntu:
+Install package dependencies.
+
+On CentOS:
+
+.. code-block:: console
+
+   sudo dnf install -y python3-virtualenv
+
+On Ubuntu:
 
 .. code-block:: console
 
    sudo apt update
-   sudo apt install python3-virtualenv
+   sudo apt install -y python3-virtualenv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
@@ -344,12 +352,20 @@ Setup
 
 Access the host via SSH.
 
-Install package dependencies. On Ubuntu:
+Install package dependencies.
+
+On CentOS:
+
+.. code-block:: console
+
+   sudo dnf install -y python3-virtualenv
+
+On Ubuntu:
 
 .. code-block:: console
 
    sudo apt update
-   sudo apt install python3-virtualenv
+   sudo apt install -y python3-virtualenv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
