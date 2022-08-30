@@ -166,12 +166,15 @@ stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
 # Whether to sync Rocky Linux 8 packages.
 stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' }}"
-stackhpc_pulp_sync_rocky_8_minor_version: "6"
+# Rocky 8 minor version number. Supported values: 6.
+stackhpc_pulp_sync_rocky_8_minor_version: 6
+# Rocky 8 Snapshot versions. The defaults use the appropriate version from
+# pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_sync_rocky_8_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_appstream_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
 stackhpc_pulp_sync_rocky_8_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_baseos_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
 stackhpc_pulp_sync_rocky_8_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_extras_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
 stackhpc_pulp_sync_rocky_8_nfv_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_nfv_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
-stackhpc_pulp_sync_rocky_8_powertools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_baseos_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
+stackhpc_pulp_sync_rocky_8_powertools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_powertools_version' % stackhpc_pulp_sync_rocky_8_minor_version) }}"
 
 # Whether to sync packages common to all RHEL derivatives.
 stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_centos_stream8 }}"
@@ -237,7 +240,7 @@ stackhpc_pulp_repository_rpm_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
   - name: Rocky Linux 8 - PowerTools
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_sync_rocky_8_minor_version }}/PowerTools/x86_64/os/{{ stackhpc_pulp_sync_rocky_8_powertools_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_sync_rocky_8_minor_version }}/PowerTools/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_6_powertools_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
@@ -253,7 +256,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_content_only
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
@@ -261,7 +264,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Third-party repositories
   - name: Docker CE for CentOS 8
@@ -298,7 +301,7 @@ stackhpc_pulp_distribution_rpm_development:
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
-  # Base Rocky 8.6 repositories
+  # Base Rocky 8 repositories
   - name: "rocky-8-appstream-development"
     repository: Rocky Linux 8 - AppStream
     base_path: "rocky/8/AppStream/x86_64/os/development"
