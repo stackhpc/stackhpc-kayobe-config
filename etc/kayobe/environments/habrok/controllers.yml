@@ -5,3 +5,59 @@
 # List of extra networks to which controller nodes are attached.
 controller_extra_network_interfaces:
   - bond0
+
+###############################################################################
+# Controller node LVM configuration.
+
+# List of controller volume groups. See mrlesmithjr.manage-lvm role for
+# format.
+controller_lvm_groups:
+  - "{{ stackhpc_lvm_group_rootvg }}"
+
+###############################################################################
+# Controller node sysctl configuration.
+
+# Dict of sysctl parameters to set.
+controller_sysctl_parameters:
+  # For interpretation of these values, see:
+  # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/performance_tuning_guide/sect-red_hat_enterprise_linux-performance_tuning_guide-configuration_tools-configuring_system_memory_capacity
+  vm.overcommit_ratio: 100
+  vm.overcommit_memory: 2
+  vm.swappiness: 75
+
+###############################################################################
+# Controller node firewalld configuration.
+
+# Whether to install and enable firewalld.
+controller_firewalld_enabled: true
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+controller_firewalld_zones:
+  - zone: external
+  - zone: internal
+  - zone: mgmt_wl
+  - zone: provision_oc
+  - zone: provision_wl
+  - zone: public
+  - zone: storage
+  - zone: tunnel
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+controller_firewalld_default_zone: trusted
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+controller_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
