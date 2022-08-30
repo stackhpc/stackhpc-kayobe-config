@@ -22,6 +22,11 @@
           - "{% if ansible_facts.os_family == 'RedHat' %}libcap{% endif %}"
           - "{% if ansible_facts.os_family == 'RedHat' %}java-11-openjdk-devel{% else %}openjdk-11-jre-headless{% endif %}"
 
+    - name: Ensure acl package is available
+      package:
+        name: acl
+        state: present
+
     - name: Ensure correct ownership of elasticsearch data directory
       file:
         path: "/var/lib/elasticsearch"
@@ -38,6 +43,14 @@
         line: "{{ provision_oc_net_name | net_ip }} {{ wazuh_manager_ip }}"
       become: true
 
+    - name: Ensure correct ownership of elasticsearch data directory
+      file:
+        path: "/var/lib/elasticsearch"
+        mode: "0777"
+        state: directory
+      become: true
+      when: ansible_facts.mounts | selectattr('mount', 'equalto', '/var/lib/elasticsearch') | length > 0
+
     - block:
         - import_role:
             name: "wazuh-ansible/wazuh-ansible/roles/opendistro/opendistro-elasticsearch"
@@ -51,6 +64,16 @@
         # Avoid using the Kayobe virtualenv due to use of become_user: kibana,
         # which does not have r+x access.
         ansible_python_interpreter: /usr/bin/python3
+
+    - name: Change /var/lib/elasticsearch owner
+      file:
+          path: /var/lib/elasticsearch
+          state: directory
+          owner: "elasticsearch"
+          group: "elasticsearch"
+          mode: "0700"
+      become: true
+      when: ansible_facts.mounts | selectattr('mount', 'equalto', '/var/lib/elasticsearch') | length > 0
 
     - name: Check for elasticsearch performance analyser
       command:
