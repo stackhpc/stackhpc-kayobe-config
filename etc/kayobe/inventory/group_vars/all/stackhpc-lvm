@@ -1,0 +1,150 @@
+---
+###############################################################################
+# StackHPC LVM Volume Group (VG) configuration.
+
+# StackHPC rootvg VG.
+# This VG contains a set of LVs that conform to the CIS partition benchmarks.
+# This layout is compatible with the overcloud DIB host image configuration in
+# stackhpc-overcloud-dib.yml. This may be used as an item in one of the
+# *_lvm_groups variables.
+# Example:
+# controller_lvm_groups:
+#   - "{{ stackhpc_lvm_group_rootvg }}"
+stackhpc_lvm_group_rootvg:
+  vgname: rootvg
+  disks: "{{ stackhpc_lvm_group_rootvg_disks }}"
+  create: true
+  lvnames: "{{ stackhpc_lvm_group_rootvg_lvs_default + stackhpc_lvm_group_rootvg_lvs_extra }}"
+
+# List of disks to include in the rootvg VG.
+stackhpc_lvm_group_rootvg_disks:
+  - /dev/disk/by-partlabel/root
+
+# List of default LVs to include in the rootvg VG.
+stackhpc_lvm_group_rootvg_lvs_default:
+  - "{{ stackhpc_lvm_lv_swap }}"
+  - "{{ stackhpc_lvm_lv_root }}"
+  - "{{ stackhpc_lvm_lv_tmp }}"
+  - "{{ stackhpc_lvm_lv_var }}"
+  - "{{ stackhpc_lvm_lv_var_tmp }}"
+  - "{{ stackhpc_lvm_lv_log }}"
+  - "{{ stackhpc_lvm_lv_audit }}"
+  - "{{ stackhpc_lvm_lv_home }}"
+
+# List of extra LVs to include in the rootvg VG.
+stackhpc_lvm_group_rootvg_lvs_extra: []
+
+###############################################################################
+# StackHPC LVM Logical Volume (LV) configuration.
+
+# StackHPC LVM lv_swap LV size.
+stackhpc_lvm_lv_swap_size: 16g
+
+# StackHPC LVM lv_root LV size.
+stackhpc_lvm_lv_root_size: 50g
+
+# StackHPC LVM lv_tmp LV size.
+stackhpc_lvm_lv_tmp_size: 10g
+
+# StackHPC LVM lv_var LV size.
+stackhpc_lvm_lv_var_size: 20g
+
+# StackHPC LVM lv_var_tmp LV size.
+stackhpc_lvm_lv_var_tmp_size: 2g
+
+# StackHPC LVM lv_log LV size.
+stackhpc_lvm_lv_log_size: 20g
+
+# StackHPC LVM lv_audit LV size.
+stackhpc_lvm_lv_audit_size: 10g
+
+# StackHPC LVM lv_home LV size.
+stackhpc_lvm_lv_home_size: 10g
+
+# StackHPC LVM lv_docker LV size.
+stackhpc_lvm_lv_docker_size: 100%FREE
+
+# StackHPC LVM lv_swap LV.
+stackhpc_lvm_lv_swap:
+  lvname: lv_swap
+  size: "{{ stackhpc_lvm_lv_swap_size }}"
+  create: true
+  mount: false
+
+# StackHPC LVM lv_root LV.
+stackhpc_lvm_lv_root:
+  lvname: lv_root
+  size: "{{ stackhpc_lvm_lv_root_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /
+
+# StackHPC LVM lv_tmp LV.
+stackhpc_lvm_lv_tmp:
+  lvname: lv_tmp
+  size: "{{ stackhpc_lvm_lv_tmp_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /tmp
+
+# StackHPC LVM lv_var LV.
+stackhpc_lvm_lv_var:
+  lvname: lv_var
+  size: "{{ stackhpc_lvm_lv_var_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var
+
+# StackHPC LVM lv_var_tmp LV.
+stackhpc_lvm_lv_var_tmp:
+  lvname: lv_var_tmp
+  size: "{{ stackhpc_lvm_lv_var_tmp_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/tmp
+
+# StackHPC LVM lv_log LV.
+stackhpc_lvm_lv_log:
+  lvname: lv_log
+  size: "{{ stackhpc_lvm_lv_log_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/log
+
+# StackHPC LVM lv_audit LV.
+stackhpc_lvm_lv_audit:
+  lvname: lv_audit
+  size: "{{ stackhpc_lvm_lv_audit_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/log/audit
+
+# StackHPC LVM lv_home LV.
+stackhpc_lvm_lv_home:
+  lvname: lv_home
+  size: "{{ stackhpc_lvm_lv_home_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /home
+
+# StackHPC LVM lv_docker LV.
+# NOTE: This is not included in the rootvg by default, but may be added via
+# stackhpc_lvm_group_rootvg_lvs_extra.
+# Example:
+# stackhpc_lvm_group_rootvg_lvs_extra:
+#   - "{{ stackhpc_lvm_lv_docker }}"
+# Alternatively, this may reside in a separate VG.
+stackhpc_lvm_lv_docker:
+  lvname: lv_docker
+  size: "{{ stackhpc_lvm_lv_docker_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/lib/docker
