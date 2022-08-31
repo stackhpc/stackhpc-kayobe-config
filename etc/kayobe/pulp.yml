@@ -32,7 +32,10 @@ stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content
 # Debs
 
 # Whether to sync Ubuntu packages.
-stackhpc_pulp_sync_ubuntu_focal: "{{ os_distribution == 'ubuntu' }}"
+# NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+# Ark does not work if the upstream mirror pulls packages (which it does
+# sometimes).
+stackhpc_pulp_sync_ubuntu_focal: false
 
 stackhpc_pulp_repository_deb_repos:
   # Base Ubuntu Focal repositories
@@ -427,6 +430,9 @@ stackhpc_pulp_images_kolla:
   - redis
   - redis-base
   - redis-sentinel
+  - skydive-agent
+  - skydive-analyzer
+  - skydive-base
 
 # Common parameters for container image repositories.
 stackhpc_pulp_repository_container_repos_kolla_common:

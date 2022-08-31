@@ -167,6 +167,11 @@ jobs:
           echo "::add-mask::$ssh_key"
           echo "::set-output name=ssh_key::$ssh_key"
 
+      # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
+      - name: Pull latest Kayobe image
+        run: |
+          sudo docker image pull $KAYOBE_IMAGE
+
       - name: Host configure
         run: |
           sudo -E docker run -t --rm \
