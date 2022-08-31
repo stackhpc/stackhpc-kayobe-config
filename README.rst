@@ -238,6 +238,21 @@ Setup
 
 Access the host via SSH.
 
+Install package dependencies.
+
+On CentOS:
+
+.. code-block:: console
+
+   sudo dnf install -y python3-virtualenv
+
+On Ubuntu:
+
+.. code-block:: console
+
+   sudo apt update
+   sudo apt install -y python3-virtualenv
+
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
 .. code-block:: console
@@ -246,7 +261,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    mkdir -p src
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
@@ -337,6 +352,21 @@ Setup
 
 Access the host via SSH.
 
+Install package dependencies.
+
+On CentOS:
+
+.. code-block:: console
+
+   sudo dnf install -y python3-virtualenv
+
+On Ubuntu:
+
+.. code-block:: console
+
+   sudo apt update
+   sudo apt install -y python3-virtualenv
+
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
 .. code-block:: console
@@ -345,7 +375,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    mkdir -p src
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
