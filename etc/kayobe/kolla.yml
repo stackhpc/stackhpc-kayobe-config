@@ -111,6 +111,11 @@ kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}yoga-20220831T08
 #     location: https://github.com/openstack/ironic
 #     reference: master
 kolla_sources:
+  bifrost-base-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
@@ -212,13 +217,18 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
-  base_ubuntu_package_sources_list: |
-    RUN \
-        rm -f /etc/apt/sources.list && \
-    {% for repo in stackhpc_ubuntu_focal_repos %}
-        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
-    {% endif %}
-    {% endfor %}
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # base_ubuntu_package_sources_list: |
+  #   RUN \
+  #       rm -f /etc/apt/sources.list && \
+  #   {% for repo in stackhpc_ubuntu_focal_repos %}
+  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+  #   {% endif %}
+  #   {% endfor %}
+  bifrost_base_header: |
+    ADD additions-archive /
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel
   ironic_inspector_header: |
@@ -231,6 +241,8 @@ kolla_build_blocks:
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
 kolla_build_customizations_common:
+  bifrost_base_pip_packages_append:
+    - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
 

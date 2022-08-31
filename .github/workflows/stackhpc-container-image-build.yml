@@ -18,6 +18,14 @@ on:
         type: boolean
         required: false
         default: false
+      distro:
+        description: Container image OS distribution
+        type: choice
+        required: false
+        default: centos
+        options:
+          - centos
+          - ubuntu
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -85,7 +93,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push
+          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push -e kolla_base_distro=${{ inputs.distro }}
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
@@ -112,7 +120,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed container image build --push
+          kayobe seed container image build --push -e kolla_base_distro=${{ inputs.distro }}
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
