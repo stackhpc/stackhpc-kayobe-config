@@ -11,6 +11,10 @@ on:
         description: Kayobe container image
         type: string
         required: true
+      os_distribution:
+        description: Host OS distribution
+        type: string
+        default: centos
       neutron_plugin:
         description: Neutron ML2 plugin
         type: string
@@ -151,10 +155,12 @@ jobs:
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
           ---
+          os_distribution: ${{ env.OS_DISTRIBUTION }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           EOF
         env:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
+          OS_DISTRIBUTION: ${{ inputs.os_distribution }}
 
       # https://renehernandez.io/snippets/multiline-strings-as-a-job-output-in-github-actions/
       - name: Set SSH key output
@@ -171,6 +177,16 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           sudo docker image pull $KAYOBE_IMAGE
+
+      - name: Generate StackHPC kayobe config secrets
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/generate-stackhpc-secrets.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |
