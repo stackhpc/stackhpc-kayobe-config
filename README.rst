@@ -2,7 +2,7 @@
 StackHPC Kayobe Configuration
 =============================
 
-This repository provides a base Kayobe configuration for the Xena release
+This repository provides a base Kayobe configuration for the Yoga release
 of StackHPC OpenStack.
 
 StackHPC release train
@@ -45,7 +45,7 @@ when used with Kayobe's `multiple environments
 feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
-<https://github.com/stackhpc/kayobe/tree/stackhpc/xena>`__, which includes
+<https://github.com/stackhpc/kayobe/tree/stackhpc/yoga>`__, which includes
 backported support for Ansible collections.
 
 New deployments
@@ -56,7 +56,7 @@ your configuration.
 
 .. code-block:: console
 
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/yoga
 
 Existing deployments
 --------------------
@@ -68,7 +68,7 @@ need to merge the changes in this repository into your repository.
 
    git remote add stackhpc https://github.com/stackhpc/stackhpc-kayobe-config
    git fetch stackhpc
-   git merge stackhpc/stackhpc/xena
+   git merge stackhpc/stackhpc/yoga
 
 Updating
 --------
@@ -80,7 +80,7 @@ consume these updates by merging in the changes with their local configuration.
 .. code-block:: console
 
    git fetch stackhpc
-   git merge stackhpc/stackhpc/xena
+   git merge stackhpc/stackhpc/yoga
 
 The intention is to avoid merge conflicts where possible, but there may be
 cases where this is difficult. We are open to discussion on how best to
@@ -125,13 +125,13 @@ Usage
 =====
 
 The local Pulp service will be deployed as a `Seed custom container
-<https://docs.openstack.org/kayobe/xena/configuration/reference/seed-custom-containers.html>`__
+<https://docs.openstack.org/kayobe/yoga/configuration/reference/seed-custom-containers.html>`__
 on next ``kayobe seed service deploy`` or ``kayobe seed service upgrade``.
 
 The following custom playbooks are provided in ``etc/kayobe/ansible/``:
 
 See the Kayobe `custom playbook documentation
-<https://docs.openstack.org/kayobe/xena/custom-ansible-playbooks.html>`__
+<https://docs.openstack.org/kayobe/yoga/custom-ansible-playbooks.html>`__
 for information on how to run them.
 
 * ``pulp-repo-sync.yml``: Pull packages from Ark to the local Pulp. This will
@@ -260,8 +260,8 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    cd
    mkdir -p src
    pushd src
-   git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena kayobe-config
+   git clone https://github.com/stackhpc/kayobe.git -b stackhpc/yoga
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/yoga kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
@@ -374,8 +374,8 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    cd
    mkdir -p src
    pushd src
-   git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena kayobe-config
+   git clone https://github.com/stackhpc/kayobe.git -b stackhpc/yoga
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/yoga kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
@@ -440,7 +440,7 @@ At this point you are ready to build and push some container images.
    kayobe seed container image build --push
    kayobe overcloud container image build --push
 
-The container images are tagged as ``xena-<datetime>``. This Kayobe
+The container images are tagged as ``yoga-<datetime>``. This Kayobe
 configuration includes a hook that writes the tag to ``~/kolla_tag``, since
 it is not always simple to determine which tag was last applied to built
 images.
@@ -452,7 +452,7 @@ tag as the value of the ``kolla_openstack_release`` variable.
 Resources
 =========
 
-* Kayobe documentation: https://docs.openstack.org/kayobe/xena/
+* Kayobe documentation: https://docs.openstack.org/kayobe/yoga/
 * Kayobe source: https://opendev.org/openstack/kayobe
 * Kayobe bugs: https://storyboard.openstack.org/#!/project/openstack/kayobe-config
 * IRC: #openstack-kolla
