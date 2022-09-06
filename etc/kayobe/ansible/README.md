@@ -14,8 +14,8 @@ The collection assumes a set of host and group entries in Ansible's inventory,
 usually in a separate file dedicated to Ceph setup, e.g.
 `$KAYOBE_CONFIG_PATH/inventory/ceph`.
 
-Typically we execpt the follow groups:
-- ceph (parent for all ceph nodes)
+Typically we expect the following groups:
+- ceph (parent for all Ceph nodes)
 - mons
 - mgrs
 - osds
