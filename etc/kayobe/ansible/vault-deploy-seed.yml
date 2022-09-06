@@ -1,0 +1,58 @@
+---
+- name: Deploy Hashicorp Vault on the seed
+  any_errors_fatal: True
+  gather_facts: True
+  hosts: seed
+  vars:
+    consul_bind_interface: "lo"
+    vault_bind_address: "{{ ansible_facts[consul_bind_interface].ipv4.address }}"
+    vault_api_addr: "http://{{ vault_bind_address }}:8200"
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      pip:
+        name: hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Ensure vault directory exists in Kayobe configuration
+      file:
+        path: "{{ kayobe_env_config_path }}/vault/"
+        state: directory
+      delegate_to: localhost
+      run_once: true
+
+    - import_role:
+        name: stackhpc.hashicorp.vault
+      vars:
+        vault_config_dir: "/opt/kayobe/vault"
+        vault_cluster_name: "seed"
+        vault_write_keys_file: true
+        vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"
+        copy_self_signed_ca: false
+
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"
+        name: vault_keys
+
+    - import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      vars:
+        vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
+
+    - import_role:
+        name: stackhpc.hashicorp.vault_backend
+      vars:
+        vault_token: "{{ vault_keys.root_token }}"
+        vault_root_ca_name: "OS-TLS-ROOT"
+        vault_intermediate_ca_name: "OS-TLS-INT"
