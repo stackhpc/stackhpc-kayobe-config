@@ -12,10 +12,6 @@ variable "aio_vm_image" {
   default = "CentOS-stream8"
 }
 
-variable "aio_vm_keypair" {
-  type = string
-}
-
 variable "aio_vm_flavor" {
   type = string
 }
@@ -41,7 +37,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   name         = var.aio_vm_name
   flavor_name  = var.aio_vm_flavor
   config_drive = true
-  user_data    = file("templates/userdata.cfg.tpl")
+  user_data    = templatefile("templates/userdata.cfg.tpl", {ssh_public_key = file(var.ssh_public_key)})
   network {
     name = var.aio_vm_network
   }
