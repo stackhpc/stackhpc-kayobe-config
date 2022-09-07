@@ -176,16 +176,6 @@ jobs:
         run: |
           sudo docker image pull $KAYOBE_IMAGE
 
-      - name: Generate StackHPC kayobe config secrets
-        run: |
-          sudo -E docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/generate-stackhpc-secrets.yml
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-
       - name: Host configure
         run: |
           sudo -E docker run -t --rm \
