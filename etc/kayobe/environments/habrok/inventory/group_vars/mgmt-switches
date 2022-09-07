@@ -16,25 +16,37 @@ switch_config_mtu:
 # Interface configuration.
 
 switch_interface_config_vlans_template: |-
+  vlan {{ public_net_name | net_vlan }}:
+    description: public
+    config:
+      - no shutdown
   vlan {{ provision_oc_net_name | net_vlan }}:
-    description: overcloud provisioning
+    description: overcloud-provisioning
     config:
       - no shutdown
   vlan {{ provision_wl_net_name | net_vlan }}:
-    description: workload provisioning
+    description: workload-provisioning
     config:
       - no shutdown
   vlan {{ oob_oc_net_name | net_vlan }}:
-    description: overcloud iDRAC
+    description: overcloud-iDRAC
     config:
       - no shutdown
   vlan {{ oob_wl_net_name | net_vlan }}:
-    description: workload iDRAC
+    description: workload-iDRAC
+    config:
+      - no shutdown
+  vlan {{ mgmt_lustre_vlan }}:
+    description: lustre-iDRAC
+    config:
+      - no shutdown
+  vlan {{ switch_mgmt_vlan }}:
+    description: switch-management
     config:
       - no shutdown
 
 switch_interface_config_ethernet:
-  TenGigabitEthernet 1/52:
+  Ethernet 1/1/52:
     description: Uplink
     config: "{{ switch_interface_config_uplink }}"
 
@@ -44,23 +56,51 @@ switch_interface_config_ethernet:
 # Overcloud iDRAC/provisioning ports
 switch_interface_config_overcloud_idrac:
   - no shutdown
-  - spanning-tree port type edge
   - switchport mode trunk
   - switchport access vlan {{ provision_oc_net_name | net_vlan }}
   - switchport trunk allowed vlan {{ oob_oc_net_name | net_vlan }}
+  - spanning-tree port type edge
 
 # Workload iDRAC/provisioning ports
 switch_interface_config_workload_idrac:
   - no shutdown
-  - spanning-tree port type edge
+  - flowcontrol receive on
   - switchport mode trunk
   # Ironic will manage the provisioning VLAN membership.
+  - "{% if physical_network_enable_discovery | default(false) | bool %}switchport access vlan {{ provision_wl_net_name | net_vlan }}{% endif %}"
+  - "{% if physical_network_disable_discovery | default(false) | bool %}no switchport access vlan {{ provision_wl_net_name | net_vlan }}{% endif %}"
   - switchport trunk allowed vlan {{ oob_wl_net_name | net_vlan }}
+  - spanning-tree port type edge
+
+# Lustre iDRAC/provisioning ports
+switch_interface_config_lustre_idrac:
+  - no shutdown
+  - flowcontrol receive on
+  - switchport mode access
+  - switchport access vlan {{ mgmt_lustre_vlan }}
+  - spanning-tree port type edge
+
+# Proxmox iDRAC/provisioning ports
+switch_interface_config_proxmox:
+  - no shutdown
+  - flowcontrol receive on
+  - switchport mode trunk
+  - switchport access vlan {{ provision_wl_net_name | net_vlan }}
+  - switchport trunk allowed vlan {{ switch_mgmt_proxmox_trunk_vlans | unique | join(',') }}
+  - spanning-tree port type edge
 
 # Uplink VLT
 switch_interface_config_uplink:
   - no shutdown
   - mtu 9216
-  #- vlt-port-channel 128
+  - flowcontrol receive on
   - switchport mode trunk
   - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
+
+# VLANs to trunk to Proxmox nodes.
+switch_mgmt_proxmox_trunk_vlans:
+  - "{{ public_net_name | net_vlan }}"
+  - "{{ provision_oc_net_name | net_vlan }}"
+  - "{{ oob_oc_net_name | net_vlan }}"
+  - "{{ oob_wl_net_name | net_vlan }}"
+  - "{{ mgmt_lustre_vlan }}"

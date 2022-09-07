@@ -161,20 +161,20 @@ switch_interface_config_lag_member_edge_template: |-
 switch_interface_config_eth_template: |
   - no shutdown
   - mtu 9216
-  - spanning-tree port type edge
   - switchport mode trunk
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+  - spanning-tree port type edge
 
 # Virtual Link Trunking (VLT) interface configuration
 switch_interface_config_vlt_template: |-
   - no shutdown
   - mtu 9216
   - vlt-port-channel %(channel)s
-  - spanning-tree port type edge
   - switchport mode trunk
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+  - spanning-tree port type edge
 
 # VLT inter-switch links
 switch_interface_config_vlti:
@@ -204,10 +204,10 @@ switch_interface_config_hypervisor_storage: "{{ switch_interface_config_hypervis
 switch_interface_config_baremetal:
   - no shutdown
   - mtu 9216
-  - spanning-tree port type edge
   - switchport mode access
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+  - spanning-tree port type edge
 
 # Ceph monitor interface configuration
 switch_interface_config_ceph_mon_template: |-
