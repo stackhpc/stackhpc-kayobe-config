@@ -41,7 +41,7 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
-dnf_custom_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ os_distribution )) }}"
+dnf_custom_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
 
 # Custom repositories shared between all RHEL derivatives.
 dnf_custom_repos_el8:
