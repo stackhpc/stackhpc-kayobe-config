@@ -37,13 +37,13 @@ switch_config_vxlans_template: |
 
 # VXLAN network
 switch_config_vxlan_template: |
+  -
   - virtual-network {vni}
   - vxlan-vni {vni}
-  - exit
-  - exit
 
 # BGP router
 switch_config_bgp_router:
+  -
   - router bgp {{ switch_bgp_asn }}
   # ROUTER-BGP mode
   - router-id {{ switch_bgp_ip }}
@@ -68,6 +68,7 @@ switch_config_underlay_bgp_neighbours_template: |
 
 # Underlay eBGP neigbour
 switch_config_underlay_bgp_neighbour_template: |
+  -
   - router bgp {{ switch_bgp_asn }}
   # ROUTER-BGP mode
   - neighbor {remote_ip}
@@ -91,6 +92,7 @@ switch_config_underlay_bgp_neighbour_template: |
 
 # Underlay iBGP neighbour for the VLT peer
 switch_config_underlay_bgp_neighbour_vlt_peer:
+  -
   - router bgp {{ switch_bgp_asn }}
   # ROUTER-BGP mode
   - neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}
@@ -114,6 +116,7 @@ switch_config_overlay_bgp_neighbours_template: |
 
 # Overlay iBGP neighbour
 switch_config_overlay_bgp_neighbour_template: |
+  -
   - router bgp {{ switch_bgp_asn }}
   # ROUTER-BGP mode
   - neighbor {remote_ip}
@@ -153,18 +156,6 @@ switch_clear_vlans: false
 # Define these VLANs on all switches
 # NOTE: This is a string so we can use jinja templating for the dictionary keys
 switch_interface_config_vlans_template: |-
-  {% if 'leaf-switches' in group_names %}
-  #loopback0:
-  #  description: VXLAN-VTEP
-  #  config:
-  #    - no shutdown
-  #    - ip address {{ switch_tunnel_ip }}/32
-  {% endif %}
-  #loopback1:
-  #  description: BGP Router ID
-  #  config:
-  #    - no shutdown
-  #    - ip address {{ switch_bgp_ip }}/32
   {% if 'spine-switches' in group_names %}
   vlan {{ provision_oc_net_name | net_vlan }}:
     description: overcloud-provisioning
@@ -183,12 +174,16 @@ switch_interface_config_vlans_template: |-
     description: switch-management
     config:
       - no shutdown
-      #- virtual-network {{ 'switch_mgmt' | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ 'switch_mgmt' | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   vlan {{ provision_wl_net_name | net_vlan }}:
     description: workload-provisioning
     config:
       - no shutdown
-      #- virtual-network {{ provision_wl_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ provision_wl_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
       # FIXME
   {% raw %}
       #- ip vrf forwarding baremetal-provisioning
@@ -202,12 +197,16 @@ switch_interface_config_vlans_template: |-
     description: workload-iDRAC
     config:
       - no shutdown
-      #- virtual-network {{ oob_wl_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ oob_wl_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   vlan {{ internal_net_name | net_vlan }}:
     description: internal-API
     config:
       - no shutdown
-      #- virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   # FIXME
   {% if 'spine-switches' in group_names %}
   {% raw %}
@@ -223,25 +222,33 @@ switch_interface_config_vlans_template: |-
     description: public
     config:
       - no shutdown
-      #- virtual-network {{ public_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ public_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   vlan {{ tunnel_net_name | net_vlan }}:
     description: GENEVE-tunnel
     config:
       - no shutdown
       - mtu {{ tunnel_net_name | net_mtu }}
-      #- virtual-network {{ tunnel_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ tunnel_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   vlan {{ storage_net_name | net_vlan }}:
     description: Ceph-storage
     config:
       - no shutdown
       - mtu {{ storage_net_name | net_mtu }}
-      #- virtual-network {{ storage_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ storage_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   vlan {{ storage_mgmt_net_name | net_vlan }}:
     description: Ceph-replication
     config:
       - no shutdown
       - mtu {{ storage_mgmt_net_name | net_mtu }}
-      #- virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
+      - virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
+  {% endif %}
   {% if 'leaf-switches' in group_names %}
   #vlan 4000:
   #  description: BGP-peer

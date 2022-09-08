@@ -50,12 +50,10 @@ switch_config_nested:
   - "{{ switch_config_mtu }}"
   - "{{ switch_config_breakout }}"
   - "{{ switch_config_overlay_routing_profile }}"
-  # VLT configuration is not idempotent - after the initial configuration it fails:
-  #   primary-priority 1
-  #   % Error: Unrecognized command.
-  #- "{{ switch_config_vlt }}"
-  #- "{{ switch_config_nve }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_vlt }}"
+  - "{{ switch_config_loopback0 }}"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   #- "{{ switch_config_bgp_router }}"
   #- "{{ switch_config_underlay_bgp_neighbours | flatten }}"
   #- "{{ switch_config_underlay_bgp_neighbour_vlt_peer }}"
@@ -66,21 +64,38 @@ switch_config_nested:
 # Port breakouts.
 switch_config_breakout: []
 
+# loopback0 VXLAN VTEP interface
+switch_config_loopback0:
+  -
+  - interface loopback0
+  - description VXLAN-VTEP
+  - no shutdown
+  - ip address {{ switch_tunnel_ip }}/32
+
+# loopback1 BGP router ID interface
+switch_config_loopback1:
+  -
+  - interface loopback1
+  - description BGP-Router-ID
+  - no shutdown
+  - ip address {{ switch_bgp_ip }}/32
+
 # Network Virtualisation Edge (NVE) for VXLANs
 switch_config_nve:
+  -
   - nve
   - source-interface loopback0
-  - exit
 
 # EVPN
 switch_config_evpn:
+  -
   - evpn
   # Automatically assign EVPN EVIs.
   - auto-evi
-  - exit
 
 switch_config_vlt:
   # VLT
+  -
   - vlt-domain {{ switch_rack }}
   - primary-priority {{ 1 if switch_is_rack_primary else 2 }}
   # VLT MAC must begin with 02, 06:, 0A:, or 0E.
@@ -90,10 +105,10 @@ switch_config_vlt:
   - discovery-interface {{ switch_vlti_interface_1 }}
   - discovery-interface {{ switch_vlti_interface_2 }}
   - backup destination {{ 'switch_mgmt' | net_ip(inventory_hostname=switch_peer) }}
-  - exit
 
 # Uplink Failure Detection (UFD)
 switch_config_ufd_template: |
+  -
   - uplink-state-group 1
   # Add VLTs as upstreams
   {% for interface, config in switch_interface_config.items() %}
@@ -106,7 +121,6 @@ switch_config_ufd_template: |
   - downstream {{ interface }}
   {% endfor %}
   - enable
-  - exit
 
 ###############################################################################
 # Interface configuration.
