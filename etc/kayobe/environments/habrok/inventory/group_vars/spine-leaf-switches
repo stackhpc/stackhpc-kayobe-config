@@ -137,24 +137,35 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - ip address {{ switch_tunnel_ip }}/32
   {% endif %}
-  loopback1:
-    description: BGP Router ID
-    config:
-      - no shutdown
-      - ip address {{ switch_bgp_ip }}/32
+  #loopback1:
+  #  description: BGP Router ID
+  #  config:
+  #    - no shutdown
+  #    - ip address {{ switch_bgp_ip }}/32
   {% if 'spine-switches' in group_names %}
   vlan {{ provision_oc_net_name | net_vlan }}:
-    description: overcloud provisioning
+    description: overcloud-provisioning
     config:
       - no shutdown
-      - mtu {{ provision_oc_net_name | net_mtu }}
-      - virtual-network {{ provision_oc_net_name | net_vlan + switch_vxlan_offset }}
+  vlan {{ oob_oc_net_name | net_vlan }}:
+    description: overcloud-iDRAC
+    config:
+      - no shutdown
+  vlan {{ 'mgmt_lustre' | net_vlan }}:
+    description: lustre-iDRAC
+    config:
+      - no shutdown
+  {% endif %}
+  vlan {{ 'switch_mgmt' | net_vlan }}:
+    description: switch-management
+    config:
+      - no shutdown
+      #- virtual-network {{ 'switch_mgmt' | net_vlan + switch_vxlan_offset }}
   vlan {{ provision_wl_net_name | net_vlan }}:
-    description: workload provisioning
+    description: workload-provisioning
     config:
       - no shutdown
-      - mtu {{ provision_wl_net_name | net_mtu }}
-      - virtual-network {{ provision_wl_net_name | net_vlan + switch_vxlan_offset }}
+      #- virtual-network {{ provision_wl_net_name | net_vlan + switch_vxlan_offset }}
       # FIXME
   {% raw %}
       #- ip vrf forwarding baremetal-provisioning
@@ -164,25 +175,16 @@ switch_interface_config_vlans_template: |-
       #- authentication simple-text {{ secrets_switch_vrrp_auth }}
       #- virtual-address 10.96.160.253
   {% endraw %}
-  vlan {{ oob_oc_net_name | net_vlan }}:
-    description: overcloud iDRAC
-    config:
-      - no shutdown
-      - mtu {{ oob_oc_net_name | net_mtu }}
-      - virtual-network {{ oob_oc_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ oob_wl_net_name | net_vlan }}:
-    description: workload iDRAC
+    description: workload-iDRAC
     config:
       - no shutdown
-      - mtu {{ oob_wl_net_name | net_mtu }}
-      - virtual-network {{ oob_wl_net_name | net_vlan + switch_vxlan_offset }}
-  {% endif %}
+      #- virtual-network {{ oob_wl_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ internal_net_name | net_vlan }}:
-    description: internal API
+    description: internal-API
     config:
       - no shutdown
-      - mtu {{ internal_net_name | net_mtu }}
-      - virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}
+      #- virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}
   # FIXME
   {% if 'spine-switches' in group_names %}
   {% raw %}
@@ -195,32 +197,31 @@ switch_interface_config_vlans_template: |-
   {% endraw %}
   {% endif %}
   vlan {{ public_net_name | net_vlan }}:
-    description: external
+    description: public
     config:
       - no shutdown
-      - mtu {{ public_net_name | net_mtu }}
-      - virtual-network {{ public_net_name | net_vlan + switch_vxlan_offset }}
+      #- virtual-network {{ public_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
   vlan {{ tunnel_net_name | net_vlan }}:
-    description: GENEVE tunnel
+    description: GENEVE-tunnel
     config:
       - no shutdown
       - mtu {{ tunnel_net_name | net_mtu }}
-      - virtual-network {{ tunnel_net_name | net_vlan + switch_vxlan_offset }}
+      #- virtual-network {{ tunnel_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ storage_net_name | net_vlan }}:
-    description: Ceph storage
+    description: Ceph-storage
     config:
       - no shutdown
       - mtu {{ storage_net_name | net_mtu }}
-      - virtual-network {{ storage_net_name | net_vlan + switch_vxlan_offset }}
+      #- virtual-network {{ storage_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ storage_mgmt_net_name | net_vlan }}:
-    description: Ceph replication
+    description: Ceph-replication
     config:
       - no shutdown
       - mtu {{ storage_mgmt_net_name | net_mtu }}
-      - virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
-  {% if 'leaf-switches' in group_names %}
+      #- virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
   vlan 4000:
-    description: BGP peer
+    description: BGP-peer
     config:
       - no shutdown
       - ip address {{ switch_fabric_peer_ip }}/31
@@ -232,8 +233,8 @@ switch_interface_config_vlans_template: |-
 # L3 fabric link
 switch_interface_config_fabric_template: |
   - no shutdown
-  - no switchport
+  #- no switchport
   - mtu 9216
-  - ip address {ip}
+#  - ip address {ip}
 
 ##############################################################################
