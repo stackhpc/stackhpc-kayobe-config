@@ -217,7 +217,7 @@ def write_storage_port_channel(f, row):
     port_type = get_port_type(row, "storage", False)
     channel = get_port_channel_id(row, "storage")
     f.write(
-f"""  "port channel {channel}":
+f"""  "port-channel {channel}":
     description: {row["nodename"]}
     config: "{{{{ switch_interface_config_{port_type} }}}}"
 """)
@@ -227,7 +227,7 @@ def write_cluster_port_channel(f, row):
     port_type = get_port_type(row, "cluster", False)
     channel = get_port_channel_id(row, "cluster")
     f.write(
-f"""  "port channel {channel}":
+f"""  "port-channel {channel}":
     description: {row["nodename"]}
     config: "{{{{ switch_interface_config_{port_type} }}}}"
 """)
@@ -282,16 +282,6 @@ def main():
             write_preamble(f)
             empty = True
             for _, row in ss_df.iterrows():
-                if empty:
-                    f.write("\n")
-                    empty = False
-                write_storage_if(f, row)
-            for _, row in cs_df.iterrows():
-                if empty:
-                    f.write("\n")
-                    empty = False
-                write_cluster_if(f, row)
-            for _, row in ss_df.iterrows():
                 if is_port_channel(row):
                     if empty:
                         f.write("\n")
@@ -303,6 +293,16 @@ def main():
                         f.write("\n")
                         empty = False
                     write_cluster_port_channel(f, row)
+            for _, row in ss_df.iterrows():
+                if empty:
+                    f.write("\n")
+                    empty = False
+                write_storage_if(f, row)
+            for _, row in cs_df.iterrows():
+                if empty:
+                    f.write("\n")
+                    empty = False
+                write_cluster_if(f, row)
             if empty:
                 f.write(" []\n")
 

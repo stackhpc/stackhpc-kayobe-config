@@ -19,6 +19,29 @@ switch_config_mtu:
 switch_config_overlay_routing_profile:
   - hardware overlay-routing-profile balanced-overlay-routing
 
+switch_config_vxlan_networks:
+  - "{{ provision_wl_net_name }}"
+  - "{{ oob_wl_net_name }}"
+  - "{{ internal_net_name }}"
+  - "{{ public_net_name }}"
+  - "{{ tunnel_net_name }}"
+  - "{{ storage_net_name }}"
+  - "{{ storage_mgmt_net_name }}"
+  - "switch_mgmt"
+
+# VXLAN virtual networks
+switch_config_vxlans_template: |
+  {% for network in switch_config_vxlan_networks %}
+  {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
+  {% endfor %}
+
+# VXLAN network
+switch_config_vxlan_template: |
+  - virtual-network {vni}
+  - vxlan-vni {vni}
+  - exit
+  - exit
+
 # BGP router
 switch_config_bgp_router:
   - router bgp {{ switch_bgp_asn }}
@@ -131,11 +154,11 @@ switch_clear_vlans: false
 # NOTE: This is a string so we can use jinja templating for the dictionary keys
 switch_interface_config_vlans_template: |-
   {% if 'leaf-switches' in group_names %}
-  loopback0:
-    description: VXLAN VTEP
-    config:
-      - no shutdown
-      - ip address {{ switch_tunnel_ip }}/32
+  #loopback0:
+  #  description: VXLAN-VTEP
+  #  config:
+  #    - no shutdown
+  #    - ip address {{ switch_tunnel_ip }}/32
   {% endif %}
   #loopback1:
   #  description: BGP Router ID
@@ -201,7 +224,6 @@ switch_interface_config_vlans_template: |-
     config:
       - no shutdown
       #- virtual-network {{ public_net_name | net_vlan + switch_vxlan_offset }}
-  {% if 'leaf-switches' in group_names %}
   vlan {{ tunnel_net_name | net_vlan }}:
     description: GENEVE-tunnel
     config:
@@ -220,11 +242,12 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - mtu {{ storage_mgmt_net_name | net_mtu }}
       #- virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
-  vlan 4000:
-    description: BGP-peer
-    config:
-      - no shutdown
-      - ip address {{ switch_fabric_peer_ip }}/31
+  {% if 'leaf-switches' in group_names %}
+  #vlan 4000:
+  #  description: BGP-peer
+  #  config:
+  #    - no shutdown
+  #    - ip address {{ switch_fabric_peer_ip }}/31
   {% endif %}
 
 ###############################################################################
@@ -235,6 +258,10 @@ switch_interface_config_fabric_template: |
   - no shutdown
   #- no switchport
   - mtu 9216
-#  - ip address {ip}
+  #- ip address {ip}
+  # FIXME: Remove me:
+  - switchport mode trunk
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_config_vxlan_networks | map('net_vlan') | unique | join(',') }}
 
 ##############################################################################
