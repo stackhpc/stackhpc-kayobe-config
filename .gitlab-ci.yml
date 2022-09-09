@@ -165,8 +165,10 @@ build:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
       variables:
+        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: $KAYOBE_ENVIRONMENT_KOLLA_BUILD
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 build-centos-7:
@@ -177,7 +179,7 @@ build-centos-7:
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
-        KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder-centos7
+        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder-centos7
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 lint-yaml:
