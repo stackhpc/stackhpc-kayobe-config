@@ -165,10 +165,10 @@ build:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder
+        KAYOBE_ENVIRONMENT: builder
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
       variables:
-        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: $KAYOBE_ENVIRONMENT_KOLLA_BUILD
+        KAYOBE_ENVIRONMENT: $KAYOBE_ENVIRONMENT_KOLLA_BUILD
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 build-centos-7:
@@ -179,7 +179,22 @@ build-centos-7:
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
-        _KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder-centos7
+        KAYOBE_ENVIRONMENT: builder-centos7
+        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+dib:
+  stage: run
+  trigger:
+    include: .gitlab/build-dib.yml
+    strategy: depend
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+        KAYOBE_ENVIRONMENT: builder
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
+      variables:
+        KAYOBE_ENVIRONMENT: $KAYOBE_ENVIRONMENT_DIB_BUILD
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 lint-yaml:
