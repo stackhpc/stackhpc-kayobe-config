@@ -37,23 +37,21 @@ switch_config_vxlans_template: |
 
 # VXLAN network
 switch_config_vxlan_template: |
-  -
-  - virtual-network {vni}
-  - vxlan-vni {vni}
+  - "virtual-network {vni}"
+  - " vxlan-vni {vni}"
 
 # BGP router
 switch_config_bgp_router:
-  -
-  - router bgp {{ switch_bgp_asn }}
+  - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
-  - router-id {{ switch_bgp_ip }}
-  - address-family ipv4 unicast
+  - " router-id {{ switch_bgp_ip }}"
+  - " address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
-  - network {{ switch_bgp_cidr }}
-  - redistribute connected
-  - exit
+  - " network {{ switch_bgp_cidr }}"
+  - " redistribute connected"
+  - " exit"
   # ROUTER-BGP mode
-  - exit
+  - " exit"
 
 # Underlay BGP for L3 fabric
 switch_config_underlay_bgp_neighbours: "{{ switch_config_underlay_bgp_neighbours_template | from_yaml }}"
@@ -68,40 +66,38 @@ switch_config_underlay_bgp_neighbours_template: |
 
 # Underlay eBGP neigbour
 switch_config_underlay_bgp_neighbour_template: |
-  -
-  - router bgp {{ switch_bgp_asn }}
+  - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
-  - neighbor {remote_ip}
+  - " neighbor {remote_ip}"
   # ROUTER-BGP-NEIGHBOR mode
-  - remote-as {remote_asn}
-  - address-family ipv4 unicast
+  - " remote-as {remote_asn}"
+  - " address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
   {% if 'leaf-switches' in group_names %}
-  - allowas-in 1
+  - " allowas-in 1"
   {% endif %}
   {% if 'spine-switches' in group_names %}
-  - no sender-side-loop-detection
+  - " no sender-side-loop-detection"
   {% endif %}
-  - exit
-  - no shutdown
-  - exit
+  - " exit"
+  - " no shutdown"
+  - " exit"
   # ROUTER-BGP-NEIGHBOR mode
-  - exit
+  - " exit"
   # ROUTER-BGP mode
-  - exit
+  - " exit"
 
 # Underlay iBGP neighbour for the VLT peer
 switch_config_underlay_bgp_neighbour_vlt_peer:
-  -
-  - router bgp {{ switch_bgp_asn }}
+  - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
-  - neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}
+  - " neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}"
   # ROUTER-BGP-NEIGHBOR mode
-  - remote-as {{ switch_bgp_asn }}
-  - no shutdown
-  - exit
+  - " remote-as {{ switch_bgp_asn }}"
+  - " no shutdown"
+  - " exit"
   # ROUTER-BGP mode
-  - exit
+  - " exit"
 
 # Overlay BGP for VXLANs
 switch_config_overlay_bgp_neighbours: "{{ switch_config_overlay_bgp_neighbours_template | from_yaml }}"
@@ -116,36 +112,35 @@ switch_config_overlay_bgp_neighbours_template: |
 
 # Overlay iBGP neighbour
 switch_config_overlay_bgp_neighbour_template: |
-  -
-  - router bgp {{ switch_bgp_asn }}
+  - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
-  - neighbor {remote_ip}
+  - " neighbor {remote_ip}"
   # ROUTER-BGP-NEIGHBOR mode
-  - remote-as {remote_asn}
-  - update-source loopback1
-  - send-community extended
-  - no shutdown
+  - " remote-as {remote_asn}"
+  - " update-source loopback1"
+  - " send-community extended"
+  - " no shutdown"
   # Optional on VLT deployment:
-  - ebgp-multihop 4
-  - address-family ipv4 unicast
+  - " ebgp-multihop 4"
+  - " address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
-  - no activate
-  - exit
+  - " no activate"
+  - " exit"
   # ROUTER-BGP-NEIGHBOR mode
-  - address-family l2vpn evpn
+  - " address-family l2vpn evpn"
   # ROUTER-BGP-ADDRESS-FAMILY mode
   {% if 'spine-switches' in group_names %}
-  - no sender-side-loop-detection
+  - " no sender-side-loop-detection"
   {% endif %}
-  - activate
+  - " activate"
   {% if 'leaf-switches' in group_names %}
-  - allowas-in 1
+  - " allowas-in 1"
   {% endif %}
-  - exit
+  - " exit"
   # ROUTER-BGP-NEIGHBOR mode
-  - exit
+  - " exit"
   # ROUTER-BGP mode
-  - exit
+  - " exit"
 
 ###############################################################################
 # Interface configuration.
