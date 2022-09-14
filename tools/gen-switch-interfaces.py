@@ -32,7 +32,8 @@ NODE_GROUPS = [
         "name": "controllers",
         "regex": "hb-openstack-controller[0-9]+",
         "networks": {
-            "mgmt": "overcloud_idrac",
+            "mgmt": "overcloud_idrac_dedicated",
+            "provision": "overcloud_provision_dedicated",
             "storage": "controller_template",
             "cluster": "controller_template",
         },
@@ -195,6 +196,15 @@ f"""  "Ethernet 1/{row["idrac-switchport"]}":
 """)
 
 
+def write_provision_if(f, row):
+    port_type = get_port_type(row, "provision")
+    f.write(
+f"""  "Ethernet 1/{row["management-switchport"]}":
+    description: {row["nodename"]}
+    config: "{{{{ switch_interface_config_{port_type} }}}}"
+""")
+
+
 def write_storage_if(f, row):
     port_type = get_port_type(row, "storage")
     f.write(
@@ -251,7 +261,7 @@ def main():
         ms_df = df.query('`idrac-switch` == @ms')
         if parsed_args.switch:
             ms_df = ms_df.query("`idrac-switch` == @parsed_args.switch")
-        columns = ["nodename", "idrac-switchport"]
+        columns = ["nodename", "idrac-switchport", "management-switchport"]
         ms_df = ms_df[columns].dropna().sort_values(by=['idrac-switchport'], key=interface_key)
         path = f"{parsed_args.out_path}/{ms}.yml"
         print("Writing", ms, "interfaces to", path)
@@ -263,6 +273,8 @@ def main():
                     f.write("\n")
                     empty = False
                 write_mgmt_if(f, row)
+                if row['idrac-switchport'] != row['management-switchport']:
+                    write_provision_if(f, row)
             if empty:
                 f.write(" []\n")
 

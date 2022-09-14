@@ -89,6 +89,20 @@ switch_interface_config_proxmox:
   - switchport trunk allowed vlan {{ switch_mgmt_proxmox_trunk_vlans | unique | join(',') }}
   - spanning-tree port type edge
 
+# Overcloud dedicated iDRAC ports
+switch_interface_config_overcloud_idrac_dedicated:
+  - no shutdown
+  - switchport mode access
+  - switchport access vlan {{ oob_oc_net_name | net_vlan }}
+  - spanning-tree port type edge
+
+# Overcloud dedicated provisioning ports
+switch_interface_config_overcloud_provision_dedicated:
+  - no shutdown
+  - switchport mode access
+  - switchport access vlan {{ provision_oc_net_name | net_vlan }}
+  - spanning-tree port type edge
+
 # Uplink VLT
 switch_interface_config_uplink:
   - no shutdown
