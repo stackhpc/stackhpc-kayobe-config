@@ -1,0 +1,31 @@
+---
+- name: Gather facts about DellOS10 switches
+  hosts: switches
+  gather_facts: no
+  vars:
+    # This could be a checkout of https://github.com/rug-cit-hpc/habrok-switches/.
+    switch_config_output_path: "{{ kayobe_config_path }}/../../habrok-switches"
+  tasks:
+    - name: Gather facts about DellOS10 switches
+      dellemc.os10.os10_facts:
+        provider: "{{ switch_dellos_provider }}"
+        gather_subset: all
+      delegate_to: localhost
+
+    - name: Set a fact about the current date time
+      set_fact:
+        datetime: "{{ lookup('pipe', 'date --iso-8601=minutes') }}"
+      run_once: true
+
+    - name: Create a directory for running config
+      file:
+        path: "{{ switch_config_output_path }}/{{ datetime }}"
+        state: directory
+      delegate_to: localhost
+      run_once: true
+
+    - name: Write running config to a local file
+      copy:
+        content: "{{ ansible_facts.net_config }}"
+        dest: "{{ switch_config_output_path }}/{{ datetime }}/{{ inventory_hostname }}"
+      delegate_to: localhost

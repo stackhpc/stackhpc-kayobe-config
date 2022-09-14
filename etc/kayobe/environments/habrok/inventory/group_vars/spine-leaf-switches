@@ -1,0 +1,245 @@
+---
+###############################################################################
+# Helper variables.
+
+# Offset between VXLAN VNI and VLAN ID.
+switch_vxlan_offset: 10000
+
+# List of hosts that are BGP neighbours.
+switch_bgp_neighbours: "{{ (groups['spine-switches' if switch_layer == 'leaf' else 'leaf-switches']) | sort }}"
+
+###############################################################################
+# Global configuration.
+
+# Default MTU
+switch_config_mtu:
+  - default mtu 1532
+
+# Hardware overlay routing profile
+switch_config_overlay_routing_profile:
+  - hardware overlay-routing-profile balanced-overlay-routing
+
+switch_config_vxlan_networks:
+  - "{{ provision_wl_net_name }}"
+  - "{{ oob_wl_net_name }}"
+  - "{{ internal_net_name }}"
+  - "{{ public_net_name }}"
+  - "{{ tunnel_net_name }}"
+  - "{{ storage_net_name }}"
+  - "{{ storage_mgmt_net_name }}"
+  - "switch_mgmt"
+
+# VXLAN virtual networks
+switch_config_vxlans_template: |
+  {% for network in switch_config_vxlan_networks %}
+  {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
+  {% endfor %}
+
+# VXLAN network
+switch_config_vxlan_template: |
+  - "virtual-network {vni}"
+  - " vxlan-vni {vni}"
+
+# BGP router
+switch_config_bgp_router:
+  - "router bgp {{ switch_bgp_asn }}"
+  # ROUTER-BGP mode
+  - " router-id {{ switch_bgp_ip }}"
+  - " address-family ipv4 unicast"
+  # ROUTER-BGP-ADDRESS-FAMILY mode
+  - " network {{ switch_bgp_cidr }}"
+  - " redistribute connected"
+  - " exit"
+  # ROUTER-BGP mode
+  - " exit"
+
+# Underlay BGP for L3 fabric
+switch_config_underlay_bgp_neighbours: "{{ switch_config_underlay_bgp_neighbours_template | from_yaml }}"
+
+# Underlay BGP for L3 fabric
+switch_config_underlay_bgp_neighbours_template: |
+  {% for host in switch_bgp_neighbours %}
+  {% set remote_ip = hostvars[host].switch_fabric_ips[inventory_hostname] %}
+  {% set remote_asn = hostvars[host].switch_bgp_asn %}
+  {{ switch_config_underlay_bgp_neighbour_template.format(remote_ip=remote_ip, remote_asn=remote_asn) }}
+  {% endfor %}
+
+# Underlay eBGP neigbour
+switch_config_underlay_bgp_neighbour_template: |
+  - "router bgp {{ switch_bgp_asn }}"
+  # ROUTER-BGP mode
+  - " neighbor {remote_ip}"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " remote-as {remote_asn}"
+  - " address-family ipv4 unicast"
+  # ROUTER-BGP-ADDRESS-FAMILY mode
+  {% if 'leaf-switches' in group_names %}
+  - " allowas-in 1"
+  {% endif %}
+  {% if 'spine-switches' in group_names %}
+  - " no sender-side-loop-detection"
+  {% endif %}
+  - " exit"
+  - " no shutdown"
+  - " exit"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " exit"
+  # ROUTER-BGP mode
+  - " exit"
+
+# Underlay iBGP neighbour for the VLT peer
+switch_config_underlay_bgp_neighbour_vlt_peer:
+  - "router bgp {{ switch_bgp_asn }}"
+  # ROUTER-BGP mode
+  - " neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " remote-as {{ switch_bgp_asn }}"
+  - " no shutdown"
+  - " exit"
+  # ROUTER-BGP mode
+  - " exit"
+
+# Overlay BGP for VXLANs
+switch_config_overlay_bgp_neighbours: "{{ switch_config_overlay_bgp_neighbours_template | from_yaml }}"
+
+# Overlay BGP for VXLANs
+switch_config_overlay_bgp_neighbours_template: |
+  {% for host in switch_bgp_neighbours %}
+  {% set remote_ip=hostvars[host].switch_bgp_ip %}
+  {% set remote_asn=hostvars[host].switch_bgp_asn %}
+  {{ switch_config_overlay_bgp_neighbour_template.format(remote_ip=remote_ip, remote_asn=remote_asn) }}
+  {% endfor %}
+
+# Overlay iBGP neighbour
+switch_config_overlay_bgp_neighbour_template: |
+  - "router bgp {{ switch_bgp_asn }}"
+  # ROUTER-BGP mode
+  - " neighbor {remote_ip}"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " remote-as {remote_asn}"
+  - " update-source loopback1"
+  - " send-community extended"
+  - " no shutdown"
+  # Optional on VLT deployment:
+  - " ebgp-multihop 4"
+  - " address-family ipv4 unicast"
+  # ROUTER-BGP-ADDRESS-FAMILY mode
+  - " no activate"
+  - " exit"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " address-family l2vpn evpn"
+  # ROUTER-BGP-ADDRESS-FAMILY mode
+  {% if 'spine-switches' in group_names %}
+  - " no sender-side-loop-detection"
+  {% endif %}
+  - " activate"
+  {% if 'leaf-switches' in group_names %}
+  - " allowas-in 1"
+  {% endif %}
+  - " exit"
+  # ROUTER-BGP-NEIGHBOR mode
+  - " exit"
+  # ROUTER-BGP mode
+  - " exit"
+
+###############################################################################
+# Interface configuration.
+
+# Toggle this to clear the VLANs, before re-adding them.
+switch_clear_vlans: false
+
+# Define these VLANs on all switches
+# NOTE: This is a string so we can use jinja templating for the dictionary keys
+switch_interface_config_vlans_template: |-
+  {% if 'spine-switches' in group_names %}
+  vlan {{ provision_oc_net_name | net_vlan }}:
+    description: overcloud-provisioning
+    config:
+      - no shutdown
+  vlan {{ oob_oc_net_name | net_vlan }}:
+    description: overcloud-iDRAC
+    config:
+      - no shutdown
+  vlan {{ 'mgmt_lustre' | net_vlan }}:
+    description: lustre-iDRAC
+    config:
+      - no shutdown
+  {% endif %}
+  vlan {{ 'switch_mgmt' | net_vlan }}:
+    description: switch-management
+    config:
+      - no shutdown
+  vlan {{ provision_wl_net_name | net_vlan }}:
+    description: workload-provisioning
+    config:
+      - no shutdown
+      # FIXME
+  {% raw %}
+      #- ip vrf forwarding baremetal-provisioning
+      #- ip address {{ lookup('vars', 'switch_vlan_provision_ip', default='invalid') }}/25
+      #- vrrp-group 5
+      #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
+      #- authentication simple-text {{ secrets_switch_vrrp_auth }}
+      #- virtual-address 10.96.160.253
+  {% endraw %}
+  vlan {{ oob_wl_net_name | net_vlan }}:
+    description: workload-iDRAC
+    config:
+      - no shutdown
+  vlan {{ internal_net_name | net_vlan }}:
+    description: internal-API
+    config:
+      - no shutdown
+  # FIXME
+  {% if 'spine-switches' in group_names %}
+  {% raw %}
+      #- ip vrf forwarding baremetal-provisioning
+      #- ip address {{ lookup('vars', 'switch_vlan_internal_ip', default='invalid') }}/23
+      #- vrrp-group 6
+      #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
+      #- authentication simple-text {{ secrets_switch_vrrp_auth }}
+      #- virtual-address 10.96.167.1
+  {% endraw %}
+  {% endif %}
+  vlan {{ public_net_name | net_vlan }}:
+    description: public
+    config:
+      - no shutdown
+  vlan {{ tunnel_net_name | net_vlan }}:
+    description: GENEVE-tunnel
+    config:
+      - no shutdown
+      - mtu {{ tunnel_net_name | net_mtu }}
+  vlan {{ storage_net_name | net_vlan }}:
+    description: Ceph-storage
+    config:
+      - no shutdown
+      - mtu {{ storage_net_name | net_mtu }}
+  vlan {{ storage_mgmt_net_name | net_vlan }}:
+    description: Ceph-replication
+    config:
+      - no shutdown
+      - mtu {{ storage_mgmt_net_name | net_mtu }}
+  {% if 'leaf-switches' in group_names %}
+  #vlan 4000:
+  #  description: BGP-peer
+  #  config:
+  #    - no shutdown
+  #    - ip address {{ switch_fabric_peer_ip }}/31
+  {% endif %}
+
+###############################################################################
+# Interface variables and templates.
+
+# L3 fabric link
+switch_interface_config_fabric_template: |
+  - no shutdown
+  #- no switchport
+  - mtu 9216
+  #- ip address {ip}
+  # FIXME: Remove me:
+  - switchport mode trunk
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_config_vxlan_networks | map('net_vlan') | unique | join(',') }}
+
+##############################################################################
