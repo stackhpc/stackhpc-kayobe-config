@@ -23,3 +23,30 @@ storage_sysctl_parameters:
   vm.overcommit_ratio: 100
   vm.overcommit_memory: 2
   vm.swappiness: 75
+
+###############################################################################
+# Storage node firewalld configuration.
+
+# Whether to install and enable firewalld.
+storage_firewalld_enabled: true
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+storage_firewalld_zones:
+  - zone: internal
+  - zone: provision_oc
+  - zone: storage
+  - zone: storage_mgmt
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+storage_firewalld_default_zone: trusted
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+storage_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
