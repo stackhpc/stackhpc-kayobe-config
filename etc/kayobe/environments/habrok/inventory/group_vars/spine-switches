@@ -20,10 +20,10 @@ switch_config_nested:
   - "{{ switch_config_mtu }}"
   - "{{ switch_config_breakout }}"
   - "{{ switch_config_overlay_routing_profile }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   #- "{{ switch_config_bgp_router }}"
   #- "{{ switch_config_underlay_bgp_neighbours | flatten }}"
   #- "{{ switch_config_overlay_bgp_neighbours | flatten }}"
+  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   - "{{ switch_config_vrf }}"
 
 switch_config_vrf: []
@@ -57,9 +57,10 @@ switch_interface_config_ethernet:
   "Ethernet 1/1/31:1":
     description: uplink
     config: "{{ switch_interface_config_uplink }}"
-  "Ethernet 1/1/32:1":
-    description: uplink
-    config: "{{ switch_interface_config_uplink }}"
+  # NOTE: Only one uplink active per spine currently.
+  #"Ethernet 1/1/32:1":
+  #  description: uplink
+  #  config: "{{ switch_interface_config_uplink }}"
 
 switch_interface_config_fabric:
   "Ethernet 1/1/1":
