@@ -1,0 +1,68 @@
+- hosts: localhost
+  vars: 
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Include the generated kolla.yml
+      include_vars:
+        file: ../../kolla/globals.yml
+        name: services 
+
+    - name: 
+      vars:
+        openstack_services: 
+          - { name: "aodh", backend: "aodh_api_back",  enabled: "{{ services.enable_aodh | default('false') | bool }}" }
+          - { name: "barbican", backend: "barbican_api_back",  enabled: "{{ services.enable_barbican | default('false') | bool }}" }
+          - { name: "blazar", backend: "blazar_api_back",  enabled: "{{ services.enable_blazar | default('false') | bool }}" }
+          - { name: "cinder", backend: "cinder_api_back",  enabled: "{{ services.enable_cinder | default('false') | bool }}" }
+          - { name: "cloudkitty", backend: "cloudkitty_api_back",  enabled: "{{ services.enable_cloudkitty | default('false') | bool }}" }
+          - { name: "cyborg", backend: "cyborg_api_back",  enabled: "{{ services.enable_cyborg | default('false') | bool }}" }
+          - { name: "designate", backend: "designate_api_back",  enabled: "{{ services.enable_designate | default('false') | bool }}" }
+          - { name: "freezer", backend: "freezer_api_back",  enabled: "{{ services.enable_freezer | default('false') | bool }}" }
+          - { name: "glance", backend: "glance_api_back",  enabled: "{{ services.enable_glance | default('false') | bool }}" }
+          - { name: "glance-tls-proxy", backend: "",  enabled: "{{ glance_services.enable_tls_backend | default('false') | bool }}" }
+          - { name: "gnocchi", backend: "gnocchi_api_back",  enabled: "{{ services.enable_gnocchi | default('false') | bool }}" }
+          - { name: "heat", backend: "heat_api_back",  enabled: "{{ services.enable_heat | default('false') | bool }}" }
+          - { name: "horizon", backend: "horizon_back",  enabled: "{{ services.enable_horizon | default('false') | bool }}" }
+          - { name: "ironic", backend: "ironic_api_back",  enabled: "{{ services.enable_ironic | default('false') | bool }}" }
+          - { name: "ironic-inspector", backend: "",  enabled: "{{ services.enable_ironic | default('false') | bool }}" }
+          - { name: "keystone", backend: "keystone_admin_back",  enabled: "{{ services.enable_keystone | default('false') | bool }}" }
+          - { name: "kuryr", backend: "",  enabled: "{{ services.enable_kuryr | default('false') | bool }}" }
+          - { name: "mariadb", backend: "mariadb_back", enabled: "{{ services.enable_mariadb | default('false') | bool }}" }
+          - { name: "magnum", backend: "magnum_api_back",  enabled: "{{ services.enable_magnum | default('false') | bool }}" }
+          - { name: "manila", backend: "manila_api_back",  enabled: "{{ services.enable_manila | default('false') | bool }}" }
+          - { name: "masakari", backend: "masakari_api_back",  enabled: "{{ services.enable_masakari | default('false') | bool }}" }
+          - { name: "mistral", backend: "mistral_api_back",  enabled: "{{ services.enable_mistral | default('false') | bool }}" }
+          - { name: "monasca", backend: "monasca_api_back",  enabled: "{{ services.enable_monasca | default('false') | bool }}" }
+          - { name: "murano", backend: "murano_api_back",  enabled: "{{ services.enable_murano | default('false') | bool }}" }
+          - { name: "neutron", backend: "neutron_server_back",  enabled: "{{ services.enable_neutron | default('false') | bool }}" }
+          - { name: "nova", backend: "nova_api_back",  enabled: "{{ services.enable_nova | default('false') | bool }}" }
+          - { name: "octavia", backend: "octavia_api_back",  enabled: "{{ services.enable_octavia | default('false') | bool }}" }
+          - { name: "placement", backend: "placement_api_back",  enabled: "{{ services.enable_placement | default('false') | bool }}" }
+          - { name: "rabbitmq", backend: "rabbitmq_management_back",  enabled: "{{ services.enable_rabbitmq | default('false') | bool }}" }
+          - { name: "sahara", backend: "sahara_api_back",  enabled: "{{ services.enable_sahara | default('false') | bool }}" }
+          - { name: "senlin", backend: "senlin_api_back",  enabled: "{{ services.enable_senlin | default('false') | bool }}" }
+          - { name: "skydive", backend: "skydive_api_back",  enabled: "{{ services.enable_skydive | default('false') | bool }}" }
+          - { name: "solum", backend: "solum_api_back",  enabled: "{{ services.enable_solum | default('false') | bool }}" }
+          - { name: "storm", backend: "storm_api_back",  enabled: "{{ services.enable_storm | default('false') | bool }}" }
+          - { name: "swift", backend: "swift_api_back",  enabled: "{{ services.enable_swift | default('false') | bool }}" }
+          - { name: "tacker", backend: "tacker_api_back",  enabled: "{{ services.enable_tacker | default('false') | bool }}" }
+          - { name: "trove", backend: "trove_api_back",  enabled: "{{ services.enable_trove | default('false') | bool }}" }
+          - { name: "vitrage", backend: "vitrage_api_back",  enabled: "{{ services.enable_vitrage | default('false') | bool }}" }
+          - { name: "watcher", backend: "watcher_api_back",  enabled: "{{ services.enable_watcher | default('false') | bool }}" }
+          - { name: "zookeeper", backend: "zookeeper_api_back",  enabled: "{{ services.enable_zookeeper | default('false') | bool }}" }
+          - { name: "zun", backend: "zun_api_back",  enabled: "{{ services.enable_zun | default('false') | bool }}" }
+      set_fact: 
+        openstack_enabled_services: >-
+          {{ openstack_services | 
+             selectattr('enabled')
+          }}
+
+    - name: "Template out dashboard config" 
+      template:
+        src: ./dashboard.overview.j2
+        dest: ./dashboard.py
+      delegate_to: localhost
+
+    - name: 
+      shell: >- 
+        generate-dashboard -o frontend.json dashboard.py

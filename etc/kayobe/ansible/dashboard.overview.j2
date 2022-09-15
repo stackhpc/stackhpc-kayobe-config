@@ -1,0 +1,317 @@
+{% set counter = { 'counter1': 0, 'counter2': 1 } %}
+{% macro increment1(dct, key, inc=8)%}
+    {% if dct.update({key: dct[key] + inc}) %} {% endif %}
+{% endmacro %}
+{% macro increment2(dct, key, inc=1)%}
+    {% if dct.update({key: dct[key] + inc}) %} {% endif %}
+{% endmacro %}
+from grafanalib.core import *
+
+dashboard = Dashboard(
+    title="Openstack Overview Dashboard",
+    description="",
+    timezone="browser",
+    templating=Templating([
+        Template(
+            type="datasource",
+            dataSource="default",
+            name="datasource",
+            label="Prometheus",
+            query="prometheus"
+        ),
+        Template(
+            type="query",
+            name="node",
+            dataSource='$datasource',
+            label="node",
+            query={ "query": "label_values(node_cpu_seconds_total, instance)",
+                    "refId": "StandardVariableQuery"
+            },
+            refresh=5
+        ),
+       ],
+     ),
+     panels=[
+        RowPanel(
+        title = "Service Stats",
+        collapsed=False,
+        gridPos=GridPos(h=1, w=24, x=0, y=0),
+        ),
+        {% for service in openstack_enabled_services %}
+        Stat(
+                    title="{{ service.name }}",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    mappings=[
+                        StatValueMappings(
+			StatValueMappingItem('DOWN', '0' , 'red', 0),
+			StatValueMappingItem('WARN', '1' , 'orange', 1),
+			StatValueMappingItem('WARN', '2' , 'orange', 2),
+			StatValueMappingItem('UP', '3' , 'green', 3),
+                       ),
+                        StatRangeMappings(text='UP', color='green', index=4, startValue=3, endValue=20)
+                     ],
+                     targets=[
+                     Target(
+                            expr='sum(haproxy_backend_up{backend="{{ service.backend }}"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x={{ counter.counter1}}, y={{ counter.counter2 }}),
+                    {{ increment1(counter, 'counter1') }}
+                    {% if (counter.counter1 == 24) %}
+                    {{ increment2(counter, 'counter2') }}
+                    {% if counter.update({'counter1': 0 }) %}
+                    {% endif %}
+                    {% endif %}
+                    #if counter.update({'couter1': counter.counter1 + 3})
+                    #if counter.update({'couter2': counter.counter1 + 1})
+                    #set _ = counter.append(counter.pop()+3)
+                ),
+             {% endfor %}
+        RowPanel(
+        title = "Openstack Stats",
+        collapsed=False,
+        gridPos=GridPos(h=1, w=24, x=0, y=8),
+        ),
+        Stat(
+                    title="Total VMs",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='openstack_nova_total_vms{job="openstack_exporter"}',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=0, y=11),
+
+        ),
+        Stat(
+                    title="Running VMs",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_running_vms{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=8, y=11),
+
+        ),
+        Stat(
+                    title="Number of Flavors",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_flavors{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=16, y=11),
+
+        ),
+        Stat(
+                    title="Number of vCPUs Available",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_vcpus_available{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=0, y=14),
+
+        ),
+        Stat(
+                    title="Number of vCPUs Used",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_vcpus_used{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=8, y=14),
+
+        ),
+        Stat(
+                    title="Number of users",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_identity_users{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=16, y=14),
+
+        ),
+        Stat(
+                    title="Number of glance images",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_glance_images{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=0, y=17),
+
+        ),
+        Stat(
+                    title="Number of neutron networks",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_networks{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=8, y=17),
+
+        ),
+        Stat(
+                    title="Number of neutron subnets",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_subnets{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=16, y=17),
+
+        ),
+        Stat(
+                    title="Number of neutron ports",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_ports{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=0, y=20),
+
+        ),
+        Stat(
+                    title="Number of neutron security groups",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_security_groups{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=8, y=20),
+
+        ),
+        Stat(
+                    title="Number of neutron routers",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_routers{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=16, y=20),
+
+        ),
+        Stat(
+                    title="Number of floating IPs",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_floating_ips{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=0, y=23),
+
+        ),
+        Stat(
+                    title="Number of floating IPs associated not active",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_neutron_floating_ips_associated_not_active{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    gridPos=GridPos(h=3, w=8, x=8, y=23),
+
+        ),
+        Stat(
+                    title="Nova used memory",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_memory_used_bytes{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    format='bytes',
+                    gridPos=GridPos(h=3, w=8, x=16, y=23),
+
+        ),
+        Stat(
+                    title="Nova available memory",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_memory_available_bytes{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    format='bytes',
+                    gridPos=GridPos(h=3, w=8, x=0, y=26),
+
+        ),
+        Stat(
+                    title="Nova local storage used",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_local_storage_used_bytes{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    format='bytes',
+                    gridPos=GridPos(h=3, w=8, x=8, y=26),
+
+        ),
+        Stat(
+                    title="Nova local storage available",
+                    dataSource="$datasource",
+                    orientation="horizontal",
+                    targets=[
+                     Target(
+                            expr='sum(openstack_nova_local_storage_available_bytes{job="openstack_exporter"})',
+                            datasource="$datasource",
+                        ),
+                    ],
+                    format='bytes',
+                    gridPos=GridPos(h=3, w=8, x=16, y=26),
+
+        ),
+    ]
+).auto_panel_ids()
+
