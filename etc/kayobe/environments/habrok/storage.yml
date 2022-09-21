@@ -35,7 +35,6 @@ storage_firewalld_zones:
   - zone: internal
   - zone: provision_oc
   - zone: storage
-  - zone: storage_mgmt
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
@@ -50,3 +49,13 @@ storage_firewalld_default_zone: trusted
 storage_firewalld_rules:
   - service: ssh
     zone: provision_oc
+  - port: 9283/tcp
+    zone: provision_oc
+  - service: ssh
+    zone: storage
+    state: disabled
+  - service: ceph
+    zone: storage
+  - service: ceph-mon
+    zone: storage
+    state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
