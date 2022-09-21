@@ -91,7 +91,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20211207T102718{% else %}wallaby-20220819T112725{% endif %}"
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220905T105054{% else %}wallaby-20220819T112725{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -168,10 +168,10 @@ stackhpc_centos_additional_repos:
     file: "CentOS-NFV-OpenvSwitch.repo"
   - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
     file: "CentOS-OpenStack-wallaby.repo"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ stackhpc_repo_centos_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
 
@@ -257,23 +257,44 @@ kolla_build_customizations_common:
     - /additions/*
 
 kolla_build_customizations_centos:
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_compute_packages_remove:
+    - openvswitch
+  nova_compute_packages_append:
+    - openvswitch2.17
+  octavia_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  octavia_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
   ovn_base_packages_override:
-    - ovn-2021-21.12.0
+    - ovn22.06
   ovn_controller_packages_override:
-    - ovn-2021-host-21.12.0
+    - ovn22.06-host
   ovn_nb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_northd_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_sb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
-  openvswitch_base_packages_override:
-    - libibverbs
-    - openvswitch2.16
-    - openvswitch-selinux-extra-policy
-    - python3-netifaces
-    - python3-openvswitch2.16
-    - tcpdump
+    - ovn22.06-central
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
 
 kolla_build_customizations_ubuntu: {}
 
