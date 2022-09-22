@@ -8,12 +8,14 @@
     venv: "~/venvs/cardiff-venv"
     input_dir: "{{ lookup('env', 'PWD') }}/overcloud-introspection-data"
     output_dir: "{{ lookup('env', 'PWD') }}/review"
+    cardiff_pattern: ".*.eval" # Uses regex
   tasks:
     - name: Install dependencies
       pip:
         virtualenv: "{{ venv }}"
         name:
           - git+https://github.com/stackhpc/cardiff
+          #- /home/matt/Documents/cardiff
           - pyvis
           - pyvis.network
         state: latest
@@ -38,7 +40,7 @@
         cmd: >
           {{ venv }}/bin/cardiff
           -I ipmi
-          -p '{{ output_dir }}/data/extra-hardware/*.eval'
+          -p '{{ output_dir }}/data/extra-hardware/{{ cardiff_pattern }}'
           -o '{{ output_dir }}/results'
           --visualise
         #  --visualise_dataless
