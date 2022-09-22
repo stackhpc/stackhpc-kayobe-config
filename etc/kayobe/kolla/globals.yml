@@ -28,19 +28,8 @@ neutron_plugin_agent: 'ovn'
 
 libvirt_enable_sasl: true
 
-{% raw %}
-# These are copied from the baremetal role.
-docker_yum_baseurl_default: "{{ docker_yum_url }}/$releasever/$basearch/stable"
-docker_yum_gpgkey_default: "{{ docker_yum_url }}/gpg"
-{% endraw %}
-
-docker_yum_baseurl_redhat8: "{{ stackhpc_repo_docker_url }}"
-docker_yum_gpgkey_redhat8: "https://download.docker.com/linux/centos/gpg"
-
-{% raw %}
-docker_yum_baseurl: "{{ lookup('vars', 'docker_yum_baseurl_' ~ ansible_facts.os_family | lower ~ ansible_facts.distribution_major_version, default=docker_yum_baseurl_default) }}"
-docker_yum_gpgkey: "{{ lookup('vars', 'docker_yum_gpgkey_' ~ ansible_facts.os_family | lower ~ ansible_facts.distribution_major_version, default=docker_yum_gpgkey_default) }}"
-{% endraw %}
+# On EL8 use kayobe configured docker repo
+enable_docker_repo: "{% raw %}{{ ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version | int == 7 }}{% endraw %}"
 
 # Disable kolla managed NTP clients
 enable_chrony: false
