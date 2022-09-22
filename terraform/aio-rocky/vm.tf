@@ -19,7 +19,7 @@ variable "gitlab_token" {
 
 variable "rocky_image_version" {
   type = string
-  default = "train-20220811T152056-2e632cf"
+  default = "20220922T094655-2619bde"
 }
 
 variable "use_local_image" {

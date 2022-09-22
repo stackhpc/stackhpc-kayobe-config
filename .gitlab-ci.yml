@@ -169,8 +169,25 @@ build:
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
       variables:
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+        KAYOBE_ENVIRONMENT: builder
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
       variables:
+        KAYOBE_ENVIRONMENT: $KAYOBE_ENVIRONMENT_KOLLA_BUILD
+        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+dib:
+  stage: run
+  trigger:
+    include: .gitlab/build-dib.yml
+    strategy: depend
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $KAYOBE_ENVIRONMENT == "builder"'
+      variables:
+        PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+        KAYOBE_ENVIRONMENT: builder
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $FEATURE_ENABLE_BUILD_JOBS == "true"'
+      variables:
+        KAYOBE_ENVIRONMENT: $KAYOBE_ENVIRONMENT_DIB_BUILD
         PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 lint-yaml:
