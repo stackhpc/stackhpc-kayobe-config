@@ -58,6 +58,20 @@ dnf_custom_repos_el8:
     file: epel-modular
     gpgkey: "{{ dnf_epel_gpg_key_url }}"
     gpgcheck: yes
+  mlnx_ofed:
+    baseurl: "{{ stackhpc_repo_ofed_url }}"
+    description: "Mellanox Technologies rhel8.6- mlnx_ofed 5.7-1.0.2.0 GA"
+    enabled: "{{ dnf_enable_mofed | bool }}"
+    file: mofed
+    gpgkey: https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox
+    gpgcheck: yes
+  ceph:
+    baseurl: "{{ stackhpc_repo_centos_storage_ceph_nautilus_url }}"
+    description: CentOS-$releasever - Ceph Nautilus
+    enabled: "{{ dnf_enable_ceph | bool }}"
+    file: ceph
+    gpgkey: https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Storage
+    gpgcheck: yes
 
 # CentOS Stream 8 specific repositories
 dnf_custom_repos_centos:
@@ -115,6 +129,12 @@ dnf_custom_repos_rocky:
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
+
+# Whether to enable the Mellanox OFED repo.
+dnf_enable_mofed: true
+
+# Whether to enable the Ceph repo.
+dnf_enable_ceph: true
 
 # URL of EPEL GPG key.
 dnf_epel_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
