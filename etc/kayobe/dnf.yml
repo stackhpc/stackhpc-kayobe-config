@@ -40,6 +40,115 @@
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
 #dnf_custom_repos:
+dnf_custom_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
+
+# Custom repositories shared between all RHEL derivatives.
+dnf_custom_repos_el8:
+  epel:
+    baseurl: "{{ stackhpc_repo_epel_url }}"
+    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
+    file: epel
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgcheck: yes
+  epel-modular:
+    baseurl: "{{ stackhpc_repo_epel_modular_url }}"
+    description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
+    file: epel-modular
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgcheck: yes
+  mlnx_ofed:
+    baseurl: "{{ stackhpc_repo_ofed_url }}"
+    description: "Mellanox Technologies rhel8.6- mlnx_ofed 5.7-1.0.2.0 GA"
+    enabled: "{{ dnf_enable_mofed | bool }}"
+    file: mofed
+    gpgkey: https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox
+    gpgcheck: yes
+  ceph:
+    baseurl: "{{ stackhpc_repo_centos_storage_ceph_nautilus_url }}"
+    description: CentOS-$releasever - Ceph Nautilus
+    enabled: "{{ dnf_enable_ceph | bool }}"
+    file: ceph
+    gpgkey: https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Storage
+    gpgcheck: yes
+  docker:
+    baseurl: "{{ stackhpc_repo_docker_url }}"
+    description: Docker main Repository
+    enabled: true
+    file: docker
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    gpgcheck: yes
+
+# CentOS Stream 8 specific repositories
+dnf_custom_repos_centos:
+  appstream:
+    baseurl: "{{ stackhpc_repo_centos_stream_appstream_url }}"
+    description: "CentOS Stream $releasever - AppStream"
+    file: CentOS-Stream-AppStream
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  baseos:
+    baseurl: "{{ stackhpc_repo_centos_stream_baseos_url }}"
+    description: "CentOS Stream $releasever - BaseOS"
+    file: CentOS-Stream-BaseOS
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  extras:
+    baseurl: "{{ stackhpc_repo_centos_stream_extras_url }}"
+    description: "CentOS Stream $releasever - Extras"
+    file: CentOS-Stream-Extras
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+
+# Rocky 8 specific repositories
+dnf_custom_repos_rocky:
+  appstream:
+    baseurl: "{{ stackhpc_repo_rocky_appstream_url }}"
+    description: "Rocky Linux $releasever - AppStream"
+    file: Rocky-AppStream
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+  baseos:
+    baseurl: "{{ stackhpc_repo_rocky_baseos_url }}"
+    description: "Rocky Linux $releasever - BaseOS"
+    file: Rocky-BaseOS
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+  extras:
+    baseurl: "{{ stackhpc_repo_rocky_extras_url }}"
+    description: "Rocky Linux $releasever - Extras"
+    file: Rocky-Extras
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+  nfv:
+    baseurl: "{{ stackhpc_repo_rocky_nfv_url }}"
+    description: "Rocky Linux $releasever - NFV"
+    file: Rocky-NFV
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+  powertools:
+    baseurl: "{{ stackhpc_repo_rocky_powertools_url }}"
+    description: "Rocky Linux $releasever - PowerTools"
+    file: Rocky-PowerTools
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+
+# Whether to enable EPEL repositories. This affects RedHat-based systems only.
+dnf_enable_epel: "{{ dnf_install_epel | bool }}"
+
+# Whether to enable the Mellanox OFED repo.
+dnf_enable_mofed: true
+
+# Whether to enable the Ceph repo.
+dnf_enable_ceph: true
+
+# URL of EPEL GPG key.
+dnf_epel_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
+
+# Whether to install the epel-release package. This affects RedHat-based
+# systems only. Default value is 'true'.
+dnf_install_epel: false
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'true'.
