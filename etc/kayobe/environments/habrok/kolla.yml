@@ -24,10 +24,13 @@ kolla_external_vip_address: 195.169.22.10
 # Fully Qualified Domain Name (FQDN) of OpenStack external API. Default is the
 # fqdn attribute of the external network if set, otherwise
 # kolla_external_vip_address.
-#kolla_external_fqdn:
+kolla_external_fqdn: hb-openstack.hpc.rug.nl
 
 ###############################################################################
 # Kolla-ansible configuration.
+
+# Whether TLS is enabled for the external API endpoints. Default is 'no'.
+kolla_enable_tls_external: true
 
 # Whether TLS is enabled for the internal API endpoints. Default is 'no'.
 kolla_enable_tls_internal: true
@@ -38,3 +41,17 @@ kolla_enable_tls_internal: true
 kolla_enable_cinder: true
 kolla_enable_cinder_backup: true
 kolla_enable_ovn: true
+
+###############################################################################
+# TLS certificate bundle management
+
+# External API certificate bundle.
+#
+# When kolla_enable_tls_external is true, this should contain an X.509
+# certificate bundle for the external API.
+#
+# Note that this should be formatted as a literal style block scalar.
+#
+# NOTE: kolla_tls_cert has been renamed to kolla_external_tls_cert. Support for
+# the deprecated name kolla_tls_cert will be removed in a future release.
+kolla_external_tls_cert: "{{ secrets_kolla_external_tls_cert }}"
