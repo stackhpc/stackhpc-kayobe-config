@@ -130,6 +130,7 @@ inspector_rules:
   - "{{ inspector_rule_redfish_credentials }}"
   - "{{ inspector_rule_redfish_address }}"
   - "{{ inspector_rule_lldp_switch_port_desc_to_name_eth0 }}"
+  - "{{ inspector_rule_uefi }}"
 
 # Ironic inspector rule to set Redfish credentials.
 inspector_rule_redfish_credentials:
@@ -203,6 +204,14 @@ inspector_rule_lldp_switch_port_desc_to_name_eth0:
     - action: "set-attribute"
       path: "name"
       value: "{data[all_interfaces][eth0][lldp_processed][switch_port_description]}"
+
+inspector_rule_uefi:
+  - description: "Set UEFI boot mode"
+    conditions: []
+    actions:
+      - action: "set-capability"
+        name: "boot_mode"
+        value: "uefi"
 
 ###############################################################################
 # Dell switch LLDP workaround configuration.
