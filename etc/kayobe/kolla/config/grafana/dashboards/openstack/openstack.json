@@ -102,7 +102,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(openstack_nova_agent_state{adminState=\"enabled\"})-sum(openstack_nova_agent_state{adminState=\"enabled\"})",
+          "expr": "count(openstack_nova_agent_state{adminState=\"enabled\"} or openstack_nova_agent_state{adminState=\"disabled\", disabledReason=~\"^AUTO:.*\"})-sum(openstack_nova_agent_state{adminState=\"enabled\"})",
           "format": "time_series",
           "hide": false,
           "instant": true,
