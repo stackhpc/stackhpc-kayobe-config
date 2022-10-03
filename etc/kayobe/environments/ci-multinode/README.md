@@ -46,7 +46,3 @@ manually increase the partition size on each host)
 1. `source kayobe-env --environment ci-aio`
 10. Run `kayobe overcloud host configure`
 11. Run `kayobe overcloud service deploy`
-
-TODO:
-- openstack will use the port that as been reserved for vslan so 4790 was chosen because it's one away
--m 
