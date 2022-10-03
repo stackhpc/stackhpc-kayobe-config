@@ -88,6 +88,9 @@ ipa_build_dib_packages:
 ###############################################################################
 # Ironic Python Agent (IPA) images configuration.
 
+# Common path for all of the image URLs.
+ipa_images_base_url: '{{ gitlab_api_v4_url }}/projects/{{ gitlab_kayobe_config_project_id }}/packages/generic/ironic-python-agent/ussuri-20221003T124659-d223c7e'
+
 # Suffix of upstream Ironic deployment image files. Default is based on
 # {{ openstack_branch }}.
 #ipa_images_upstream_url_suffix:
@@ -96,10 +99,10 @@ ipa_build_dib_packages:
 #ipa_images_kernel_name:
 
 # URL of Ironic deployment kernel image to download.
-#ipa_kernel_upstream_url:
+ipa_kernel_upstream_url: '{{ ipa_images_base_url }}/ipa.kernel?access_token={{ ipa_access_token }}'
 
 # URL of checksum of Ironic deployment kernel image.
-#ipa_kernel_checksum_url:
+ipa_kernel_checksum_url: '{{ ipa_images_base_url }}/ipa.kernel.sha256?access_token={{ ipa_access_token }}'
 
 # Algorithm of checksum of Ironic deployment kernel image.
 #ipa_kernel_checksum_algorithm:
@@ -108,13 +111,16 @@ ipa_build_dib_packages:
 #ipa_images_ramdisk_name:
 
 # URL of Ironic deployment ramdisk image to download.
-#ipa_ramdisk_upstream_url:
+ipa_ramdisk_upstream_url: '{{ ipa_images_base_url }}/ipa.initramfs?access_token={{ ipa_access_token }}'
 
 # URL of checksum of Ironic deployment ramdisk image.
-#ipa_ramdisk_checksum_url:
+ipa_ramdisk_checksum_url: '{{ ipa_images_base_url }}/ipa.initramfs.sha256?access_token={{ ipa_access_token }}'
 
 # Algorithm of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_algorithm:
+
+# Access token for downloading the IPA images.
+ipa_access_token: '{{ secrets_scientific_openstack_ipa_token }}'
 
 ###############################################################################
 # Ironic Python Agent (IPA) deployment configuration.
