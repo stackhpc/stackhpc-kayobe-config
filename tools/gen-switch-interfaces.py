@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import pandas as pd
+import os
 import re
+
+import pandas as pd
 
 
 # Top-level node groups.
@@ -263,7 +265,11 @@ def main():
             ms_df = ms_df.query("`idrac-switch` == @parsed_args.switch")
         columns = ["nodename", "idrac-switchport", "management-switchport"]
         ms_df = ms_df[columns].dropna().sort_values(by=['idrac-switchport'], key=interface_key)
-        path = f"{parsed_args.out_path}/{ms}.yml"
+        try:
+           os.makedirs(f"{parsed_args.out_path}/{ms}")
+        except FileExistsError:
+           pass
+        path = f"{parsed_args.out_path}/{ms}/switch-config.yml"
         print("Writing", ms, "interfaces to", path)
         with open(path, "w") as f:
             write_preamble(f)
