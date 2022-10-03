@@ -131,6 +131,9 @@ inspector_rules:
   - "{{ inspector_rule_redfish_address }}"
   - "{{ inspector_rule_lldp_switch_port_desc_to_name_eth0 }}"
   - "{{ inspector_rule_uefi }}"
+  - "{{ inspector_rule_resource_class_baremetal }}"
+  - "{{ inspector_rule_resource_class_baremetal_gpu }}"
+  - "{{ inspector_rule_resource_class_baremetal_memory }}"
 
 # Ironic inspector rule to set Redfish credentials.
 inspector_rule_redfish_credentials:
@@ -212,6 +215,45 @@ inspector_rule_uefi:
       - action: "set-capability"
         name: "boot_mode"
         value: "uefi"
+
+inspector_rule_resource_class_baremetal:
+  - description: "Set resource class for generic nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R6525 \\(SKU=NotProvided;ModelName=PowerEdge R6525\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal"
+
+inspector_rule_resource_class_baremetal_gpu:
+  - description: "Set resource class for GPU nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R750xa \\(SKU=NotProvided;ModelName=PowerEdge R750xa\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal_gpu"
+
+inspector_rule_resource_class_baremetal_memory:
+  - description: "Set resource class for high memory nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R750 \\(SKU=NotProvided;ModelName=PowerEdge R750\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal_memory"
 
 ###############################################################################
 # Dell switch LLDP workaround configuration.
