@@ -1,0 +1,11 @@
+scrape_configs:
+  - job_name: ceph
+    static_configs:
+      - targets:
+{% for host in groups['ceph-mons'] %}
+        - "{{ host }}:9283"
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
