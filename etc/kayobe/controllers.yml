@@ -125,5 +125,182 @@ controller_bootstrap_user: centos
 #controller_users:
 
 ###############################################################################
+# Controller node firewalld configuration.
+
+# Whether to install and enable firewalld.
+#controller_firewalld_enabled:
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+controller_firewalld_zones:
+  - zone: internal
+  - zone: public
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+controller_firewalld_default_zone: public
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+controller_firewalld_rules:
+  # Allow everything in the internal zone
+  - zone: internal
+    state: present
+    permanent: yes
+    target: ACCEPT
+  # horizon80
+  - port: 80/tcp
+    state: '{{ "enabled" if kolla_enable_horizon | bool else "disabled" }}'
+    zone: public
+  # horizon443
+  - port: 443/tcp
+    state: '{{ "enabled" if kolla_enable_tls_external | bool and kolla_enable_horizon
+        | bool else "disabled" }}'
+    zone: public
+  # keystone
+  - port: 5000/tcp
+    state: '{{ "enabled" if kolla_enable_keystone | bool else "disabled" }}'
+    zone: public
+  # nova_api
+  - port: 8774/tcp
+    state: '{{ "enabled" if kolla_enable_nova | bool else "disabled" }}'
+    zone: public
+  # nova_novnc
+  - port: 6080/tcp
+    state: '{{ "enabled" if kolla_enable_nova | bool else "disabled" }}'
+    zone: public
+  # neutron
+  - port: 9696/tcp
+    state: '{{ "enabled" if kolla_enable_neutron | bool else "disabled" }}'
+    zone: public
+  # cinder
+  - port: 8776/tcp
+    state: '{{ "enabled" if kolla_enable_cinder | bool else "disabled" }}'
+    zone: public
+  # glance
+  - port: 9292/tcp
+    state: '{{ "enabled" if kolla_enable_glance | bool else "disabled" }}'
+    zone: public
+  # heat
+  - port: 8004/tcp
+    state: '{{ "enabled" if kolla_enable_heat | bool else "disabled" }}'
+    zone: public
+  # heat_cfn
+  - port: 8000/tcp
+    state: '{{ "enabled" if kolla_enable_heat | bool else "disabled" }}'
+    zone: public
+  # octavia
+  - port: 9876/tcp
+    state: '{{ "enabled" if kolla_enable_octavia | bool else "disabled" }}'
+    zone: public
+  # monasca
+  - port: 8070/tcp
+    state: '{{ "enabled" if kolla_enable_monasca | bool else "disabled" }}'
+    zone: public
+  # kibana
+  - port: 5601/tcp
+    state: '{{ "enabled" if kolla_enable_kibana | bool else "disabled" }}'
+    zone: public
+  # monasca_grafana
+  - port: 3001/tcp
+    state: '{{ "enabled" if kolla_enable_monasca | bool else "disabled" }}'
+    zone: public
+  # placement
+  - port: 8780/tcp
+    state: '{{ "enabled" if kolla_enable_placement | bool else "disabled" }}'
+    zone: public
+  # designate
+  - port: 9001/tcp
+    state: '{{ "enabled" if kolla_enable_designate | bool else "disabled" }}'
+    zone: public
+  # barbican
+  - port: 9311/tcp
+    state: '{{ "enabled" if kolla_enable_barbican | bool else "disabled" }}'
+    zone: public
+  # magnum
+  - port: 9511/tcp
+    state: '{{ "enabled" if kolla_enable_magnum | bool else "disabled" }}'
+    zone: public
+  # aodh
+  - port: 8042/tcp
+    state: '{{ "enabled" if kolla_enable_aodh | bool else "disabled" }}'
+    zone: public
+  # gnocchi
+  - port: 8041/tcp
+    state: '{{ "enabled" if kolla_enable_gnocchi | bool else "disabled" }}'
+    zone: public
+  # ironic_api
+  - port: 6385/tcp
+    state: '{{ "enabled" if kolla_enable_ironic | bool else "disabled" }}'
+    zone: public
+  # ironic_inspector
+  - port: 5050/tcp
+    state: '{{ "enabled" if kolla_enable_ironic | bool else "disabled" }}'
+    zone: public
+  # senlin
+  - port: 8778/tcp
+    state: '{{ "enabled" if kolla_enable_senlin | bool else "disabled" }}'
+    zone: public
+  # mistral
+  - port: 8989/tcp
+    state: '{{ "enabled" if kolla_enable_mistral | bool else "disabled" }}'
+    zone: public
+  # panko
+  - port: 8977/tcp
+    state: '{{ "enabled" if kolla_enable_panko | bool else "disabled" }}'
+    zone: public
+  # sahara
+  - port: 8386/tcp
+    state: '{{ "enabled" if kolla_enable_sahara | bool else "disabled" }}'
+    zone: public
+  # karbor
+  - port: 8799/tcp
+    state: '{{ "enabled" if kolla_enable_karbor | bool else "disabled" }}'
+    zone: public
+  # skydive
+  - port: 8085/tcp
+    state: '{{ "enabled" if kolla_enable_skydive | bool else "disabled" }}'
+    zone: public
+  # blazar
+  - port: 1234/tcp
+    state: '{{ "enabled" if kolla_enable_blazar | bool else "disabled" }}'
+    zone: public
+  # swift
+  - port: 8080/tcp
+    state: '{{ "enabled" if kolla_enable_swift | bool else "disabled" }}'
+    zone: public
+  # cloudkitty
+  - port: 8889/tcp
+    state: '{{ "enabled" if kolla_enable_cloudkitty | bool else "disabled" }}'
+    zone: public
+  # tacker
+  - port: 9890/tcp
+    state: '{{ "enabled" if kolla_enable_tacker | bool else "disabled" }}'
+    zone: public
+  # vitrage
+  - port: 8999/tcp
+    state: '{{ "enabled" if kolla_enable_vitrage | bool else "disabled" }}'
+    zone: public
+  # trove
+  - port: 8779/tcp
+    state: '{{ "enabled" if kolla_enable_trove | bool else "disabled" }}'
+    zone: public
+  # freezer
+  - port: 9090/tcp
+    state: '{{ "enabled" if kolla_enable_freezer | bool else "disabled" }}'
+    zone: public
+  # masakari
+  - port: 15868/tcp
+    state: '{{ "enabled" if kolla_enable_masakari | bool else "disabled" }}'
+    zone: public
+  # manila
+  - port: 8786/tcp
+    state: '{{ "enabled" if kolla_enable_manila | bool else "disabled" }}'
+    zone: public
+
+###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes

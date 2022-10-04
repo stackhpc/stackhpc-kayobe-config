@@ -16,29 +16,6 @@
             undefined: "{{ secrets | rejectattr('test', 'true') | map(attribute='name')\
               \ | list }}"
             secrets:
-              - name: secrets_ceph_fsid
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_fsid
-                  is defined }}'
-              - name: secrets_ceph_client_cinder
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_client_cinder
-                  is defined }}'
-              - name: secrets_ceph_client_cinder_backup
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_client_cinder_backup
-                  is defined }}'
-              - name: secrets_cinder_rbd_secret_uuid
-                test: '{{ not scientific_openstack_trait_ceph or secrets_cinder_rbd_secret_uuid
-                  is defined }}'
-              - name: secrets_ceph_client_glance
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_client_glance
-                  is defined }}'
-              - name: secrets_ceph_client_openstack
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_client_openstack
-                  is defined }}'
-              - name: secrets_ceph_client_manila
-                test: '{{ not scientific_openstack_trait_ceph or secrets_ceph_client_manila
-                  is defined }}'
-              - name: secrets_ipa_dev_user_password
-                test: '{{ secrets_ipa_dev_user_password is defined }}'
               - name: secrets_ipmi_password
                 test: '{{ secrets_ipmi_password is defined }}'
               - name: secrets_slack_notification_channel_url
@@ -46,28 +23,6 @@
       rescue:
         - set_fact:
             failed: true
-    - block:
-        - name: Check that mandatory variables are defined
-          assert:
-            that: undefined | length == 0
-            fail_msg: >-
-              The following variables are undefined: {{ undefined }}. Please
-              define them in scientific-openstack.yml.
-          vars:
-            undefined: "{{ secrets | rejectattr('test', 'true') | map(attribute='name')\
-              \ | list }}"
-            secrets:
-              - name: scientific_openstack_ceph_mon_initial_members
-                test: '{{ not scientific_openstack_trait_ceph or scientific_openstack_ceph_mon_initial_members
-                  is defined and scientific_openstack_ceph_mon_initial_members is
-                  string }}'
-              - name: scientific_openstack_ceph_mon_host
-                test: '{{ not scientific_openstack_trait_ceph or scientific_openstack_ceph_mon_host
-                  is defined and scientific_openstack_ceph_mon_host is string }}'
-      rescue:
-        - set_fact:
-            failed: true
-
     - fail:
         msg: Some checks are failing. Please check the output above.
       when: failed

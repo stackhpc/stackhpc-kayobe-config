@@ -4,20 +4,12 @@
 # Tell kolla to use the extra volume in this location
 nova_instance_datadir_volume: '/var/lib/nova'
 
-# Ceph integration, without nova having rbd backend
-cinder_backend_ceph: "{{ scientific_openstack_trait_ceph }}"
-
 # Make glance use a file backend
 glance_backend_swift: "no"
 glance_file_backend: "yes"
 
 # Enable CADF notifications in Keystone
 enable_cadf_notifications: "yes"
-
-# add route to ceph-rgw group in haproxy
-enable_ceph_rgw: "{{ scientific_openstack_trait_ceph }}"
-# Produce a list of radosgw endpoints e.g ['192.168.1.4:6780']
-ceph_rgw_hosts: "{{ groups['ceph-rgw'] | default([]) | map('extract', hostvars, 'ansible_host') | select('defined') | map('regex_replace', '^(.*)$', '\\1:6780') | list  }}"
 
 # Projects to extracts metrics from with cASO
 #caso_projects:
@@ -34,6 +26,68 @@ designate_ns_record: "CHANGEME_DESIGNATE_NS_RECORD"
 
 # Container image tags.
 # These should be allowed to change independently, as services are updated.
+
+# Default size causes ES to fall over very easily
+{% if scientific_openstack_trait_all_in_one %}
+es_heap_size: 8g
+{% else %}
+es_heap_size: "24g"
+{% endif %}
+
+# Look after elasticserach indexes, as required
+enable_elasticsearch_curator: true
+# Close index after 30 days
+elasticsearch_curator_soft_retention_period_days: 30
+# Hard delete index after around 3 years
+elasticsearch_curator_hard_retention_period_days: 1100
+
+# Takes longer than the default 10 seconds, we poll every 1m
+prometheus_openstack_exporter_timeout: 30s
+
+rabbitmq_remove_ha_all_policy: true
+
+# Needed to launch VM instances in aio environment without nested virt
+nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
+
+# Increase the default prometheus retention period
+prometheus_cmdline_extras: '--storage.tsdb.retention.time=90d --storage.tsdb.retention.size=50GB'
+
+# Reduce the kolla-ansible token expiry default from one day to one hour
+fernet_token_expiry: 3600
+
+# Custom exporters
+enable_prometheus_libvirt_exporter: True
+
+# Using gitlab registry with TLS
+docker_registry_insecure: false
+
+{% if scientific_openstack_trait_all_in_one %}
+keepalived_vip_prechecks: false
+{% endif %}
+
+{% if scientific_openstack_trait_ovn %}
+# No kayobe support for OVN until Wallaby
+enable_ovn: true
+neutron_plugin_agent: 'ovn'
+{% endif %}
+
+libvirt_enable_sasl: true
+
+# On EL8 use kayobe configured docker repo
+enable_docker_repo: false
+
+enable_prometheus_libvirt_exporter: "yes"
+
+# Disable kolla managed NTP clients
+enable_chrony: false
+enable_host_ntp: false
+
+# This is templated on localhost, so use raw tags.
+enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.os_distribution == 'Rocky' }}{% endraw %}"
+
+# Custom container image tags.
+# These should be allowed to change independently, as services are updated.
+# If there are no custom images this comment serves as a placeholder.
 barbican_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 bifrost_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 caso_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
@@ -81,44 +135,3 @@ rabbitmq_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 storm_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 zookeeper_tag: "11.0.0.2-3{% raw %}{{ openstack_tag_suffix }}{% endraw %}"
 
-# Default size causes ES to fall over very easily
-{% if scientific_openstack_trait_all_in_one %}
-es_heap_size: 8g
-{% else %}
-es_heap_size: "24g"
-{% endif %}
-
-# Look after elasticserach indexes, as required
-enable_elasticsearch_curator: true
-# Close index after 30 days
-elasticsearch_curator_soft_retention_period_days: 30
-# Hard delete index after around 3 years
-elasticsearch_curator_hard_retention_period_days: 1100
-
-# Takes longer than the default 10 seconds, we poll every 1m
-prometheus_openstack_exporter_timeout: 30s
-
-# Needed to launch VM instances in aio environment without nested virt
-nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
-
-# Increase the default prometheus retention period
-prometheus_cmdline_extras: '--storage.tsdb.retention.time=90d --storage.tsdb.retention.size=50GB'
-
-# Reduce the kolla-ansible token expiry default from one day to one hour
-fernet_token_expiry: 3600
-
-# Custom exporters
-enable_prometheus_libvirt_exporter: True
-
-# Using gitlab registry with TLS
-docker_registry_insecure: false
-
-{% if scientific_openstack_trait_all_in_one %}
-keepalived_vip_prechecks: false
-{% endif %}
-
-{% if scientific_openstack_trait_ovn %}
-# No kayobe support for OVN until Wallaby
-enable_ovn: true
-neutron_plugin_agent: 'ovn'
-{% endif %}

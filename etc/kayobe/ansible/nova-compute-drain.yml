@@ -1,0 +1,43 @@
+---
+- name: Drain a nova compute host of instances
+  hosts: compute
+  gather_facts: yes
+  tags:
+    - nova-compute-drain
+  vars:
+    nova_compute_migration_fatal: true
+  tasks:
+    - include_role:
+        name: nova-compute-drain
+        tasks_from: setup.yml
+      run_once: true
+
+    - include_role:
+        name: nova-compute-drain
+        tasks_from: instance-info.yml
+
+    - include_role:
+        name: nova-compute-drain
+        tasks_from: live-migrate.yml
+      loop: "{{ nova_compute_drain_instance_info | selectattr('Status', 'equalto', 'ACTIVE') | list }}"
+      loop_control:
+        label: "{{ item.ID | default }}"
+
+    - include_role:
+        name: nova-compute-drain
+        tasks_from: cold-migrate.yml
+      loop: "{{ nova_compute_drain_instance_info | selectattr('Status', 'equalto', 'SHUTOFF') | list }}"
+      loop_control:
+        label: "{{ item.ID | default }}"
+
+    - include_role:
+        name: nova-compute-drain
+        tasks_from: instance-info.yml
+
+    - name: Fail if there are instances still on the host
+      fail:
+        msg: >
+          Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
+      when:
+        - nova_compute_migration_fatal | bool
+        - nova_compute_drain_instance_info | length > 0
