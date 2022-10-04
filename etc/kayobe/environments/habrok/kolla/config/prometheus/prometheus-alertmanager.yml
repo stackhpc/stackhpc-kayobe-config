@@ -1,0 +1,25 @@
+---
+global:
+  resolve_timeout: 5m
+  smtp_require_tls: true
+  slack_api_url: '{{ secrets_slack_notification_channel_url }}'
+
+route:
+  receiver: slack-notifications
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+ {{ '{% raw %}' }}{% raw %}
+receivers:
+  - name: slack-notifications
+    slack_configs:
+    - channel: '#habrok-prometheus'
+      send_resolved: true
+      http_config:
+        proxy_url: http://172.23.9.249:3128
+{% endraw %}{{ '{% endraw %}' }}
+
+templates:
+  - '/etc/prometheus/*.tmpl'
