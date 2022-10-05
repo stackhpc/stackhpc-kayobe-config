@@ -10,7 +10,7 @@
 # Ironic inspector PXE configuration.
 
 # List of extra kernel parameters for the inspector default PXE configuration.
-#inspector_extra_kernel_options:
+inspector_extra_kernel_options: "{{ ipa_kernel_options + kolla_ironic_pxe_append_params_extra }}"
 
 # URL of Ironic Python Agent (IPA) kernel image.
 #inspector_ipa_kernel_upstream_url:
@@ -57,7 +57,7 @@ inspector_keep_ports: added
 #inspector_enable_discovery:
 
 # The Ironic driver with which to register newly discovered nodes.
-#inspector_discovery_enroll_node_driver:
+inspector_discovery_enroll_node_driver: redfish
 
 ###############################################################################
 # Ironic inspector configuration.
@@ -130,6 +130,10 @@ inspector_rules:
   - "{{ inspector_rule_redfish_credentials }}"
   - "{{ inspector_rule_redfish_address }}"
   - "{{ inspector_rule_lldp_switch_port_desc_to_name_eth0 }}"
+  - "{{ inspector_rule_uefi }}"
+  - "{{ inspector_rule_resource_class_baremetal }}"
+  - "{{ inspector_rule_resource_class_baremetal_gpu }}"
+  - "{{ inspector_rule_resource_class_baremetal_memory }}"
 
 # Ironic inspector rule to set Redfish credentials.
 inspector_rule_redfish_credentials:
@@ -204,6 +208,53 @@ inspector_rule_lldp_switch_port_desc_to_name_eth0:
       path: "name"
       value: "{data[all_interfaces][eth0][lldp_processed][switch_port_description]}"
 
+inspector_rule_uefi:
+  - description: "Set UEFI boot mode"
+    conditions: []
+    actions:
+      - action: "set-capability"
+        name: "boot_mode"
+        value: "uefi"
+
+inspector_rule_resource_class_baremetal:
+  - description: "Set resource class for generic nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R6525 \\(SKU=NotProvided;ModelName=PowerEdge R6525\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal"
+
+inspector_rule_resource_class_baremetal_gpu:
+  - description: "Set resource class for GPU nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R750xa \\(SKU=NotProvided;ModelName=PowerEdge R750xa\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal_gpu"
+
+inspector_rule_resource_class_baremetal_memory:
+  - description: "Set resource class for high memory nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R750 \\(SKU=NotProvided;ModelName=PowerEdge R750\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal_memory"
+
 ###############################################################################
 # Dell switch LLDP workaround configuration.
 
@@ -226,7 +277,7 @@ inspector_rule_lldp_switch_port_desc_to_name_eth0:
 # data which may be useful in environments without Swift.
 
 # Whether the inspection data store is enabled.
-#inspector_store_enabled:
+inspector_store_enabled: false
 
 # Port on which the inspection data store should listen.
 #inspector_store_port:
