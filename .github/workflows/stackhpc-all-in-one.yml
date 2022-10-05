@@ -19,6 +19,10 @@ on:
         description: Neutron ML2 plugin
         type: string
         required: true
+      vm_user:
+        description: User to use when bootstraping the VM. Leave unset to use os_distribution.
+        type: string
+        default: ''
       vm_image:
         description: Image for the all-in-one VM
         type: string
@@ -60,6 +64,12 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      - name: Set bootstrap user output
+        id: bootstrap_user
+        run: |
+          user=${{ github.event.inputs.vm_user }}
+          echo "::set-output name=value::${user:-"${{ user.input.os_distribution }}"}"
+
       - uses: actions/checkout@v2
         with:
            submodules: true
@@ -155,8 +165,7 @@ jobs:
           ---
           os_distribution: ${{ env.OS_DISTRIBUTION }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
-          # FIXME: don't hardcode this here
-          bootstrap_user: cloud-user
+          bootstrap_user: ${{ steps.name.ouputs.value }}
           EOF
         env:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
