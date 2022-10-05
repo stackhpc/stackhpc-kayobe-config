@@ -1,0 +1,62 @@
+---
+###############################################################################
+# Cephadm deployment configuration.
+
+# Ceph container image.
+cephadm_image: "quay.io/ceph/ceph:v16.2.5"
+
+# Ceph OSD specification.
+cephadm_osd_spec:
+  service_type: osd
+  service_id: osd_spec_default
+  placement:
+    host_pattern: "*"
+  data_devices:
+    all: true
+
+###############################################################################
+# Ceph post-deployment configuration.
+
+# List of Ceph erasure coding profiles. See stackhpc.cephadm.ec_profiles role
+# for format.
+cephadm_ec_profiles: []
+
+# List of Ceph CRUSH rules. See stackhpc.cephadm.crush_rules role for format.
+cephadm_crush_rules: []
+
+# List of Ceph pools. See stackhpc.cephadm.pools role for format.
+cephadm_pools:
+  - name: backups
+    application: rbd
+    state: present
+  - name: images
+    application: rbd
+    state: present
+  - name: volumes
+    application: rbd
+    state: present
+  - name: vms
+    application: rbd
+    state: present
+
+# List of Cephx keys. See stackhpc.cephadm.keys role for format.
+cephadm_keys:
+  - name: client.cinder
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=volumes, profile rbd pool=vms, profile rbd-read-only pool=images"
+      mgr: "profile rbd pool=volumes, profile rbd pool=vms"
+    state: present
+  - name: client.cinder-backup
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=volumes, profile rbd pool=backups"
+      mgr: "profile rbd pool=volumes, profile rbd pool=backups"
+    state: present
+  - name: client.glance
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=images"
+      mgr: "profile rbd pool=images"
+    state: present
+
