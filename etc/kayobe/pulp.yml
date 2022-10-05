@@ -424,24 +424,18 @@ stackhpc_release_pulp_registry_url: "{{ stackhpc_release_pulp_url }}"
 # List of all image names.
 stackhpc_pulp_images_kolla:
   - barbican-api
-  - barbican-base
   - barbican-keystone-listener
   - barbican-worker
-  - base
-  - bifrost-base
   - bifrost-deploy
   - cinder-api
   - cinder-backup
-  - cinder-base
   - cinder-scheduler
   - cinder-volume
   - cloudkitty-api
-  - cloudkitty-base
   - cloudkitty-processor
   - cron
   - designate-api
   - designate-backend-bind9
-  - designate-base
   - designate-central
   - designate-mdns
   - designate-producer
@@ -452,17 +446,14 @@ stackhpc_pulp_images_kolla:
   - elasticsearch-curator
   - fluentd
   - glance-api
-  - glance-base
   - grafana
   - haproxy
   - heat-api
   - heat-api-cfn
-  - heat-base
   - heat-engine
   - horizon
   - influxdb
   - ironic-api
-  - ironic-base
   - ironic-conductor
   - ironic-inspector
   - ironic-neutron-agent
@@ -470,24 +461,19 @@ stackhpc_pulp_images_kolla:
   - iscsid
   - keepalived
   - keystone
-  - keystone-base
   - keystone-fernet
   - keystone-ssh
   - kibana
   - kolla-toolbox
   - magnum-api
-  - magnum-base
   - magnum-conductor
   - manila-api
-  - manila-base
   - manila-data
   - manila-scheduler
   - manila-share
-  - mariadb-base
   - mariadb-clustercheck
   - mariadb-server
   - memcached
-  - neutron-base
   - neutron-dhcp-agent
   - neutron-l3-agent
   - neutron-metadata-agent
@@ -495,7 +481,6 @@ stackhpc_pulp_images_kolla:
   - neutron-server
   - neutron-sriov-agent
   - nova-api
-  - nova-base
   - nova-compute
   - nova-compute-ironic
   - nova-conductor
@@ -505,25 +490,19 @@ stackhpc_pulp_images_kolla:
   - nova-serialproxy
   - nova-ssh
   - octavia-api
-  - octavia-base
   - octavia-driver-agent
   - octavia-health-manager
   - octavia-housekeeping
   - octavia-worker
-  - openstack-base
-  - openvswitch-base
   - openvswitch-db-server
   - openvswitch-netcontrold
   - openvswitch-vswitchd
-  - ovn-base
   - ovn-controller
   - ovn-nb-db-server
   - ovn-northd
   - ovn-sb-db-server
   - placement-api
-  - placement-base
   - prometheus-alertmanager
-  - prometheus-base
   - prometheus-blackbox-exporter
   - prometheus-cadvisor
   - prometheus-elasticsearch-exporter
@@ -539,11 +518,9 @@ stackhpc_pulp_images_kolla:
   - prometheus-v2-server
   - rabbitmq
   - redis
-  - redis-base
   - redis-sentinel
   - skydive-agent
   - skydive-analyzer
-  - skydive-base
 
 # Whitespace-separated list of regular expressions matching Kolla image names.
 # Usage is similar to kolla-build CLI arguments.
@@ -597,6 +574,7 @@ stackhpc_pulp_repository_container_repos_ceph:
     url: "https://quay.io"
     policy: on_demand
     state: present
+    include_tags: "{{ cephadm_image_tag }}"
     required: "{{ stackhpc_sync_ceph_images | bool }}"
 
 # List of Ceph container image distributions.
