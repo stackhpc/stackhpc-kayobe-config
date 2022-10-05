@@ -6,6 +6,12 @@ external_net_names:
   - external
 
 provision_oc_interface: "eno8303"
+# NOTE: This is a static route to the switch management network via a router on
+# the PVE cluster. We may be able to avoid this when the spine-core link passes
+# our VLANs again.
+provision_oc_routes:
+  - cidr: "{{ 'switch_mgmt' | net_cidr }}"
+    gateway: "172.23.9.240"
 
 mgmt_wl_interface: "bond0.{{ mgmt_wl_vlan }}"
 
