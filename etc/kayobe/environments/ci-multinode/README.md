@@ -51,11 +51,11 @@ The following steps are to be carried out from an ansible control host that can 
 
 ```
 ansible-galaxy role install \
-     -p ${KAYOBE_CONFIG_PATH}/ansible/ansible/roles \
+     -p ${KAYOBE_CONFIG_PATH}/ansible/roles \
      -r ${KAYOBE_CONFIG_PATH}/ansible/requirements.yml
 
 ansible-galaxy collection install \
-    -p ${KAYOBE_CONFIG_PATH}/ansible/ansible/collections \
+    -p ${KAYOBE_CONFIG_PATH}/ansible/collections \
     -r ${KAYOBE_CONFIG_PATH}/ansible/requirements.yml
 ```
 
