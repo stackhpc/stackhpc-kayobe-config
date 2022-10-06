@@ -92,7 +92,7 @@ ansible-galaxy collection install \
 
 1. Configure the vxlan vars found within `${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml` [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
-    > **_NOTE:_** this will change be moved in a future commit
+> **_NOTE:_** this will change be moved in a future commit
 
 ```
 vars:
@@ -105,7 +105,7 @@ vars:
           bridge: breth
 ```
 
-    > :warning: Must change `vxlan_vni` to another value to prevent interfering with another VXLAN on the same network :warning:
+> ⚠️ **_WARNING:_** change `vxlan_vni` to another value to prevent interfering with another VXLAN on the same network ⚠️
 
 ## Deploying Kayobe Config
 
