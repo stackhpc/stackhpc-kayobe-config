@@ -187,3 +187,68 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
 ```
 kayobe overcloud service deploy
 ```
+
+## Testing with Tempest
+
+It is important to test the various features and services of the OpenStack deployment. This can be achieved with the use of Tempest.
+
+1. On the CentOS based Ansible host install Docker
+
+```
+sudo dnf config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf install docker-ce
+```
+
+2. Start the Docker service
+
+```
+sudo systemctl status docker
+```
+
+3. Inside the kayobe-config root directory initialise the submodules
+
+```
+git submodule init
+git submodule update
+```
+
+4. Build Docker image
+
+```
+sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+```
+
+5. Configure some test resources
+
+
+```
+kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
+```
+
+6. Copy `ci-aio` tempest overrides for the current environment or provide your own
+
+```
+cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf 
+```
+
+7. Make a directory to store the tempest outputs
+
+```
+mkdir -p tempest-artifacts
+```
+
+8. Ensure the private key for kayobe has been set
+
+```
+export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
+```
+
+9. Run the tempest test suite
+
+```
+sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+```
+
+Once the test suite has finished you can view the contents of `${KAYOBE_CONFIG_PATH}/tempest-artifacts/failed_tests` which should be empty. You may also download a copy of `rally-verify-report.html` to review allowing you to ensure all expected tests were carried out. `scp centos@{{ ANSIBLE_HOST_IP }}:/home/centos/src/kayobe-config/tempest-artifacts/rally-verify-report.html ~/Downloads/rally-verify-report.html`
