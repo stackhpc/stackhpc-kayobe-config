@@ -204,7 +204,7 @@ sudo dnf install docker-ce
 2. Start the Docker service
 
 ```
-sudo systemctl status docker
+sudo systemctl start docker
 ```
 
 3. Inside the kayobe-config root directory initialise the submodules
