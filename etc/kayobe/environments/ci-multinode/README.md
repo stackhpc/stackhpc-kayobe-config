@@ -44,17 +44,17 @@ sudo dnf install -y python3-virtualenv
 2. Clone Kayobe and the Kayobe multinode configuration
 
 ```
-mkdir -p src\
+mkdir -p src
 cd src
 git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
-git https://github.com/stackhpc/stackhpc-kayobe-config.git -b multinode-env
+git clone https://github.com/stackhpc/stackhpc-kayobe-config.git -b multinode-env
 ```
 
 3. Create a virtual environment and install Kayobe
 
 ```
 mkdir -p venvs
-cd vevns
+cd venvs
 virtualenv kayobe
 source kayobe/bin/activate
 pip install -U pip
@@ -70,7 +70,8 @@ export KAYOBE_VAULT_PASSWORD=$(cat ~/vault-pw)
 5. Activate the `ci-multinode` environment
 
 ```
-kayobe environment ci-multinode
+cd ../stackhpc-kayobe-config
+source kayobe-env --environment ci-multinode
 ```
 
 6. Add hooks for `configure-vxlan.yml` and `growroot.yml`
