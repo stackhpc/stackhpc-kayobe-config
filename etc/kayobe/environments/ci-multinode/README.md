@@ -162,10 +162,28 @@ vars:
 
 With Kayobe Config configured as required you can proceed with deployment.
 
+1. Perform a control host configure
+
 ```
-kayobe control host bootstrap
+kayobe control host configure
+```
+
+2. Perform a overcloud configure
+
+```
 kayobe overcloud host configure
-kayobe overcloud host configure
+```
+
+3. Deploy CEPH cluster
+
+```
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+```
+
+4. Finally proceed with service deploy
+
+```
 kayobe overcloud service deploy
 ```
