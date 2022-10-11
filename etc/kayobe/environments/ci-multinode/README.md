@@ -162,10 +162,10 @@ vars:
 
 With Kayobe Config configured as required you can proceed with deployment.
 
-1. Perform a control host configure
+1. Perform a control host bootstrap
 
 ```
-kayobe control host configure
+kayobe control host boostrap
 ```
 
 2. Perform a overcloud configure
