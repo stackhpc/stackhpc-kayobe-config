@@ -192,14 +192,23 @@ kayobe overcloud service deploy
 
 It is important to test the various features and services of the OpenStack deployment. This can be achieved with the use of Tempest.
 
-1. On the CentOS based Ansible host install Docker
+1. Install Docker on the Ansible Control Host
 
-```
-sudo dnf config-manager \
-    --add-repo \
-    https://download.docker.com/linux/centos/docker-ce.repo
-sudo dnf install docker-ce
-```
+* __Ubuntu:__
+
+  ```
+  sudo apt update
+  sudo apt install -y docker.io
+  ```
+
+* __Centos:__
+
+  ```
+  sudo dnf config-manager \
+      --add-repo \
+      https://download.docker.com/linux/centos/docker-ce.repo
+  sudo dnf install docker-ce
+  ```
 
 2. Start the Docker service
 
