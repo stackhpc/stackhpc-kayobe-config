@@ -2,6 +2,10 @@ variable "ssh_public_key" {
   type = string
 }
 
+variable "ssh_private_key" {
+  type = string
+}
+
 variable "aio_vm_name" {
   type    = string
   default = "kayobe-aio"
