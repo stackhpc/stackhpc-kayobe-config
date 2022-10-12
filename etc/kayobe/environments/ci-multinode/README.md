@@ -195,21 +195,17 @@ It is important to test the various features and services of the OpenStack deplo
 
 1. Install Docker on the Ansible Control Host
 
-* __Ubuntu:__
-
-  ```
-  sudo apt update
-  sudo apt install -y docker.io
-  ```
-
-* __Centos:__
-
-  ```
+```
+if $(which dnf 2>/dev/null >/dev/null); then
   sudo dnf config-manager \
       --add-repo \
       https://download.docker.com/linux/centos/docker-ce.repo
   sudo dnf install docker-ce
-  ```
+else
+  sudo apt update
+  sudo apt install -y docker.io
+fi
+```
 
 2. Start the Docker service
 
