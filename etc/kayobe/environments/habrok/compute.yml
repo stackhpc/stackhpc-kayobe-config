@@ -1,12 +1,5 @@
 ---
 ###############################################################################
-# Compute network interface configuration.
-
-# List of extra networks to which compute nodes are attached.
-compute_extra_network_interfaces:
-  - provider
-
-###############################################################################
 # Compute node LVM configuration.
 
 # List of compute volume groups. See mrlesmithjr.manage-lvm role for
@@ -17,12 +10,13 @@ compute_lvm_groups:
 
 # LVM datavg VG. Contains one LV for Docker storage.
 compute_lvm_group_datavg:
-  - vgname: datavg
-    disks: TODO
-      #- /dev/disk/by-path/pci-0000:44:00.0-nvme-1
-    create: true
-    lvnames:
-      - "{{ stackhpc_lvm_lv_docker }}"
+  vgname: datavg
+  disks:
+  - /dev/nvme0n1
+  - /dev/nvme1n1
+  create: true
+  lvnames:
+    - "{{ stackhpc_lvm_lv_docker }}"
 
 ###############################################################################
 # Compute node sysctl configuration.
@@ -34,3 +28,38 @@ compute_sysctl_parameters:
   vm.overcommit_ratio: 100
   vm.overcommit_memory: 2
   vm.swappiness: 75
+
+###############################################################################
+# Compute node firewalld configuration.
+
+# Whether to install and enable firewalld.
+compute_firewalld_enabled: true
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+compute_firewalld_zones:
+  - zone: provision_oc
+  - zone: storage
+  - zone: tunnel
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+compute_firewalld_default_zone: trusted
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+compute_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
+  # GENEVE
+  - port: 6081/udp
+    zone: tunnel
