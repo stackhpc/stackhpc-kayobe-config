@@ -20,6 +20,7 @@ switch_config_overlay_routing_profile:
   - hardware overlay-routing-profile balanced-overlay-routing
 
 switch_config_vxlan_networks:
+  - "{{ provision_oc_net_name }}"
   - "{{ provision_wl_net_name }}"
   - "{{ oob_wl_net_name }}"
   - "{{ internal_net_name }}"
@@ -152,10 +153,6 @@ switch_clear_vlans: false
 # NOTE: This is a string so we can use jinja templating for the dictionary keys
 switch_interface_config_vlans_template: |-
   {% if 'spine-switches' in group_names %}
-  vlan {{ provision_oc_net_name | net_vlan }}:
-    description: overcloud-provisioning
-    config:
-      - no shutdown
   vlan {{ oob_oc_net_name | net_vlan }}:
     description: overcloud-iDRAC
     config:
@@ -167,6 +164,10 @@ switch_interface_config_vlans_template: |-
   {% endif %}
   vlan {{ 'switch_mgmt' | net_vlan }}:
     description: switch-management
+    config:
+      - no shutdown
+  vlan {{ provision_oc_untagged_vlan }}:
+    description: overcloud-provisioning
     config:
       - no shutdown
   vlan {{ provision_wl_net_name | net_vlan }}:

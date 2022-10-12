@@ -20,7 +20,7 @@ switch_interface_config_vlans_template: |-
     description: public
     config:
       - no shutdown
-  vlan {{ provision_oc_net_name | net_vlan }}:
+  vlan {{ provision_oc_untagged_vlan }}:
     description: overcloud-provisioning
     config:
       - no shutdown
@@ -57,7 +57,7 @@ switch_interface_config_ethernet:
 switch_interface_config_overcloud_idrac:
   - no shutdown
   - switchport mode trunk
-  - switchport access vlan {{ provision_oc_net_name | net_vlan }}
+  - switchport access vlan {{ provision_oc_untagged_vlan }}
   - switchport trunk allowed vlan {{ oob_oc_net_name | net_vlan }}
   - spanning-tree port type edge
 
@@ -100,7 +100,7 @@ switch_interface_config_overcloud_idrac_dedicated:
 switch_interface_config_overcloud_provision_dedicated:
   - no shutdown
   - switchport mode access
-  - switchport access vlan {{ provision_oc_net_name | net_vlan }}
+  - switchport access vlan {{ provision_oc_untagged_vlan }}
   - spanning-tree port type edge
 
 # Uplink VLT
@@ -114,7 +114,7 @@ switch_interface_config_uplink:
 # VLANs to trunk to Proxmox nodes.
 switch_mgmt_proxmox_trunk_vlans:
   - "{{ public_net_name | net_vlan }}"
-  - "{{ provision_oc_net_name | net_vlan }}"
+  - "{{ provision_oc_untagged_vlan }}"
   - "{{ oob_oc_net_name | net_vlan }}"
   - "{{ oob_wl_net_name | net_vlan }}"
   - "{{ mgmt_lustre_vlan }}"
