@@ -12,6 +12,10 @@ variable "aio_vm_image" {
   default = "CentOS-stream8"
 }
 
+variable "aio_vm_user" {
+  type = string
+}
+
 variable "aio_vm_flavor" {
   type = string
 }
@@ -49,5 +53,19 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = true
+  }
+
+  provisioner "remote-exec" {
+  inline = [
+      "sudo killall dhclient || true"
+  ]
+  connection {
+      type     = "ssh"
+      host     = self.access_ip_v4
+      user     = var.aio_vm_user
+      private_key = file(var.ssh_private_key)
+      # /tmp is noexec
+      script_path = "/home/${var.aio_vm_user}/.check-ssh-online"
+    }
   }
 }

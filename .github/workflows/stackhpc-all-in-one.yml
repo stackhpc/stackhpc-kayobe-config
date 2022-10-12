@@ -96,6 +96,8 @@ jobs:
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
+          ssh_private_key = "id_rsa"
+          aio_vm_user = "${{ env.VM_USER }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
           aio_vm_flavor = "${{ env.VM_FLAVOR }}"
@@ -110,6 +112,7 @@ jobs:
           VM_FLAVOR: ${{ inputs.vm_flavor }}
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
+          VM_USER: ${{ steps.bootstrap_user.outputs.value }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -187,16 +190,6 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           sudo docker image pull $KAYOBE_IMAGE
-  
-      - name: Workaround dhclient preventing network restart
-        run: |
-          sudo -E docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-command-run.sh --become --command 'killall dhclient || true' -e ansible_user=rocky --ansible-python-interpreter /usr/bin/python3
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |
