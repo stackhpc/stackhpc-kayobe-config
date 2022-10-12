@@ -166,7 +166,7 @@ With Kayobe Config configured as required you can proceed with deployment.
 1. Perform a control host bootstrap
 
 ```
-kayobe control host boostrap
+kayobe control host bootstrap
 ```
 
 2. Perform a overcloud configure
