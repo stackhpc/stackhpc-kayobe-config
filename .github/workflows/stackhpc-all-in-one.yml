@@ -187,6 +187,16 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           sudo docker image pull $KAYOBE_IMAGE
+  
+      - name: Workaround dhclient preventing network restart
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-command-run.sh --become --command 'killall dhclient || true' -e ansible_user=rocky --ansible-python-interpreter /usr/bin/python3
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |
