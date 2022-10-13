@@ -251,7 +251,13 @@ mkdir -p tempest-artifacts
 export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
 ```
 
-9. Run the tempest test suite
+9. Update your tempest inventory file with your controller hostname
+
+```
+vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/kayobe-automation
+```
+
+10. Run the tempest test suite
 
 ```
 sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
