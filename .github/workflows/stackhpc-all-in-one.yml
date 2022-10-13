@@ -27,6 +27,10 @@ on:
         description: Image for the all-in-one VM
         type: string
         default: CentOS-stream8
+      vm_interface:
+        description: Default network interface name
+        type: string
+        default: eth0
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
@@ -108,11 +112,11 @@ jobs:
         env:
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ inputs.vm_image }}
-          VM_KEYPAIR: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_FLAVOR: ${{ inputs.vm_flavor }}
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_USER: ${{ steps.bootstrap_user.outputs.value }}
+          VM_INTERFACE: ${{ inputs.vm_interface }}
 
       - name: Terraform Plan
         run: terraform plan
