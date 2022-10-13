@@ -175,6 +175,20 @@ kayobe control host bootstrap
 kayobe overcloud host configure
 ```
 
+2a. (OPTIONAL) If required, update host packages and reboot all the overcloud nodes by running
+```
+kayobe overcloud host package update --packages '*'
+```
+After successfull updates
+
+```
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
+```
+or
+```
+kayobe overcloud host command run --command "shutdown -r +1 rebooting"  --become
+```
+
 3. Deploy CEPH cluster
 
 ```
