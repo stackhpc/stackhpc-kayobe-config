@@ -100,9 +100,6 @@ upgrade:
   stage: configure
   script:
     - !reference [.prelude_kayobe_setup, script]
-    # Workaround inconsistent hostname in snapshot. This can be removed when
-    # a new snapshot has been created.
-    - .automation/pipeline/overcloud-host-command-run.sh -b --command 'hostnamectl --static set-hostname kayobe-rocky-aio'
     - .automation/pipeline/overcloud-host-configure.sh
     - .automation/pipeline/overcloud-host-upgrade.sh
     - .automation/pipeline/overcloud-service-upgrade.sh --kolla-skip-tags neutron,nova
