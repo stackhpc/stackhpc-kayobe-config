@@ -20,6 +20,11 @@ variable "aio_vm_user" {
   type = string
 }
 
+variable "aio_vm_interface" {
+  type = string
+  default = "eth0"
+}
+
 variable "aio_vm_flavor" {
   type = string
 }

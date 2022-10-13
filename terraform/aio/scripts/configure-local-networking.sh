@@ -36,7 +36,13 @@ sudo sysctl -w net.ipv4.conf.all.forwarding=1
 # Install iptables.
 if $(which dnf >/dev/null 2>&1); then
     sudo dnf -y install iptables
+    # FIXME: https://github.com/stackhpc/smslab-config/pull/106
+    sudo dnf -y install cloud-utils-growpart
 fi
+
+# FIXME: https://github.com/stackhpc/smslab-config/pull/106
+sudo cloud-init clean
+sudo cloud-init init
 
 # Configure port forwarding from the hypervisor to the Horizon GUI on the
 # controller.
@@ -55,4 +61,4 @@ if ! sudo ip a show dev breth1 | grep $public_ip/24 >/dev/null 2>&1; then
 fi
 
 # This prevents network.service from restarting correctly.
-sudo pkill '*dhclient' || true
+sudo pkill '.*dhclient' || true
