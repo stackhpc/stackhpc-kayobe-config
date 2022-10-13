@@ -175,7 +175,11 @@ kayobe control host bootstrap
 kayobe overcloud host configure
 ```
 
-2a. (OPTIONAL) If host packages were updated reboot all the overcloud nodes by running
+2a. (OPTIONAL) Update host packages and reboot all the overcloud nodes by running
+```
+kayobe overcloud host package update --packages '*'
+```
+After successfull updates
 
 ```
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
