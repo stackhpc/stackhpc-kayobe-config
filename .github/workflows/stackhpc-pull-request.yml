@@ -35,8 +35,8 @@ jobs:
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-ovs:
-    name: aio (OVS)
+  all-in-one-centos-ovs:
+    name: aio (CentOS OVS)
     needs:
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
@@ -47,14 +47,46 @@ jobs:
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-ovn:
-    name: aio (OVN)
+  all-in-one-centos-ovn:
+    name: aio (CentOS OVN)
     needs:
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovn
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-rocky-ovs:
+    name: aio (Rocky OVS)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: rocky
+      neutron_plugin: ovs
+      vm_image: Rocky8
+      vm_user: cloud-user
+      vm_interface: ens3
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-rocky-ovn:
+    name: aio (Rocky OVN)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: rocky
+      neutron_plugin: ovn
+      vm_image: Rocky8
+      vm_user: cloud-user
+      vm_interface: ens3
       OS_CLOUD: sms-lab-release
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'

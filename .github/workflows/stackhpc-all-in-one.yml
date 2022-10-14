@@ -11,14 +11,26 @@ on:
         description: Kayobe container image
         type: string
         required: true
+      os_distribution:
+        description: Host OS distribution
+        type: string
+        default: centos
       neutron_plugin:
         description: Neutron ML2 plugin
         type: string
         required: true
+      vm_user:
+        description: User to use when bootstraping the VM. Leave unset to use os_distribution.
+        type: string
+        default: ''
       vm_image:
         description: Image for the all-in-one VM
         type: string
         default: CentOS-stream8
+      vm_interface:
+        description: Default network interface name
+        type: string
+        default: eth0
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
@@ -56,6 +68,12 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      - name: Set bootstrap user output
+        id: bootstrap_user
+        run: |
+          user=${{ inputs.vm_user }}
+          echo "::set-output name=value::${user:-"${{ inputs.os_distribution }}"}"
+
       - uses: actions/checkout@v2
         with:
            submodules: true
@@ -81,11 +99,12 @@ jobs:
       - name: Generate terraform.tfvars
         run: |
           cat << EOF > terraform.tfvars
-          ssh_private_key = "id_rsa"
           ssh_public_key = "id_rsa.pub"
+          ssh_private_key = "id_rsa"
+          aio_vm_user = "${{ env.VM_USER }}"
+          aio_vm_interface = "${{ env.VM_INTERFACE }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
-          aio_vm_keypair = "${{ env.VM_KEYPAIR }}"
           aio_vm_flavor = "${{ env.VM_FLAVOR }}"
           aio_vm_network = "${{ env.VM_NETWORK }}"
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
@@ -94,10 +113,11 @@ jobs:
         env:
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ inputs.vm_image }}
-          VM_KEYPAIR: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_FLAVOR: ${{ inputs.vm_flavor }}
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
+          VM_USER: ${{ steps.bootstrap_user.outputs.value }}
+          VM_INTERFACE: ${{ inputs.vm_interface }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -151,10 +171,14 @@ jobs:
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
           ---
+          os_distribution: ${{ env.OS_DISTRIBUTION }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
+          bootstrap_user: ${{ env.BOOTSTRAP_USER }}
           EOF
         env:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
+          OS_DISTRIBUTION: ${{ inputs.os_distribution }}
+          BOOTSTRAP_USER: ${{ steps.bootstrap_user.outputs.value }}
 
       # https://renehernandez.io/snippets/multiline-strings-as-a-job-output-in-github-actions/
       - name: Set SSH key output
