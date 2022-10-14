@@ -28,7 +28,7 @@ Also storage nodes which back OpenStack such as Cinder, Glance and Nova are apar
     4. For the storage nodes ensure the hostname is not FQDN
 
     ```
-    sudo hostname "$(hostname -s)"
+    sudo hostnamectl set-hostname "$(hostname -s)"
     ```
 
 ## Setup of Kayobe Config
