@@ -41,7 +41,27 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
-dnf_custom_repos:
+dnf_custom_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
+
+# Custom repositories shared between all RHEL derivatives.
+dnf_custom_repos_el8:
+  epel:
+    baseurl: "{{ stackhpc_repo_epel_url }}"
+    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
+    file: epel
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgcheck: yes
+  epel-modular:
+    baseurl: "{{ stackhpc_repo_epel_modular_url }}"
+    description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
+    file: epel-modular
+    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgcheck: yes
+
+# CentOS Stream 8 specific repositories
+dnf_custom_repos_centos:
   appstream:
     baseurl: "{{ stackhpc_repo_centos_stream_appstream_url }}"
     description: "CentOS Stream $releasever - AppStream"
@@ -60,19 +80,26 @@ dnf_custom_repos:
     file: CentOS-Stream-Extras
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     gpgcheck: yes
-  epel:
-    baseurl: "{{ stackhpc_repo_epel_url }}"
-    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
-    enabled: "{{ dnf_enable_epel | bool }}"
-    file: epel
-    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+
+# Rocky 8 specific repositories
+dnf_custom_repos_rocky:
+  appstream:
+    baseurl: "{{ stackhpc_repo_rocky_appstream_url }}"
+    description: "Rocky Linux $releasever - AppStream"
+    file: Rocky-AppStream
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
-  epel-modular:
-    baseurl: "{{ stackhpc_repo_epel_modular_url }}"
-    description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
-    enabled: "{{ dnf_enable_epel | bool }}"
-    file: epel-modular
-    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+  baseos:
+    baseurl: "{{ stackhpc_repo_rocky_baseos_url }}"
+    description: "Rocky Linux $releasever - BaseOS"
+    file: Rocky-BaseOS
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
+    gpgcheck: yes
+  extras:
+    baseurl: "{{ stackhpc_repo_rocky_extras_url }}"
+    description: "Rocky Linux $releasever - Extras"
+    file: Rocky-Extras
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
