@@ -1,14 +1,4 @@
 ---
-# Most development environments will use nested virtualisation, and we can't
-# guarantee that nested KVM support is available. Use QEMU as a lowest common
-# denominator.
-nova_compute_virt_type: qemu
-
-# Reduce the control plane's memory footprint by limiting the number of worker
-# processes to one per-service.
-openstack_service_workers: "1"
-openstack_service_rpc_workers: "1"
-
 # Glance Ceph configuration
 glance_backend_ceph: "yes"
 
@@ -17,3 +7,10 @@ cinder_backend_ceph: "yes"
 
 # Nova Ceph configuration
 nova_backend_ceph: "yes"
+
+# Because this is a vxlan interface, Kayobe can't generate the config for it.
+# Therefore we can't use this interface as the external network
+# (external_net_names). Instead, make external_net_names an empty
+# list, and add the config that would be generated from it here.
+neutron_bridge_name: "{{ vxlan_interfaces[0].device }}-ovs"
+neutron_external_interface: "{{ vxlan_interfaces[0].device }}"
