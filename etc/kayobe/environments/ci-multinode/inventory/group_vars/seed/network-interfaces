@@ -1,13 +1,15 @@
 ---
 ###############################################################################
-# Network interface definitions for the controller group.
+# Network interface definitions for the seed group.
 
-admin_interface: eth0
+admin_oc_interface: "{{ 'ens2' if os_distribution == 'ubuntu' else 'eth0' }}"
 
-# Controller interface on all-in-one network.
-aio_interface: breth1
-# Use dummy1 if it exists, otherwise the bridge will have no ports.
-aio_bridge_ports: []
+provision_oc_interface: "{{ vxlan_interfaces[0].device }}"
+
+external_interface: "{{ vxlan_interfaces[0].device }}.{{ external_vlan }}"
+
+public_interface: "{{ vxlan_interfaces[0].device }}.{{ public_vlan }}"
+
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes
