@@ -1,20 +1,20 @@
 ---
-- name: Cardiff run
+- name: ADVise run
   hosts: localhost
   gather_facts: no
   tags:
-    - cardiff
+    - advise
   vars:
-    venv: "~/venvs/cardiff-review"
+    venv: "~/venvs/advise-review"
     input_dir: "{{ lookup('env', 'PWD') }}/overcloud-introspection-data"
     output_dir: "{{ lookup('env', 'PWD') }}/review"
-    cardiff_pattern: ".*.eval" # Uses regex
+    advise_pattern: ".*.eval" # Uses regex
   tasks:
     - name: Install dependencies
       pip:
         virtualenv: "{{ venv }}"
         name:
-          - git+https://github.com/stackhpc/cardiff
+          - git+https://github.com/stackhpc/ADVise
         state: latest
 
     - name: Create data directory
@@ -35,8 +35,8 @@
     - name: Process data
       shell:
         cmd: >
-          {{ venv }}/bin/cardiff
+          {{ venv }}/bin/advise
           -I ipmi
-          -p '{{ output_dir }}/data/extra-hardware/{{ cardiff_pattern }}'
+          -p '{{ output_dir }}/data/extra-hardware/{{ advise_pattern }}'
           -o '{{ output_dir }}/results'
           --visualise
