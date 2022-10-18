@@ -7,7 +7,7 @@
 # ../login.sh <state name>
 
 set -eux
-state_file=$1
+state_file=${KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME:-$1}
 
 GITLAB_USER="${GITLAB_USER:-will70}"
 # Scientific openstack
