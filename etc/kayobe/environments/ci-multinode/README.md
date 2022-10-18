@@ -1,48 +1,280 @@
 # Multinode Test Environment 
 
-## Set up hosts
-1. Create four baremetal instances with a centos 8 stream LVM image, and a 
-Centos 8 stream vm
-2. SSH into each baremetal and run `sudo chown -R centos:.` in the home directory,
-   then add the lines 
-   >`10.0.0.34 pelican pelican.service.compute.sms-lab.cloud`  
-   >`10.205.3.187 pulp-server pulp-server.internal.sms-cloud`  
+The multinode test environment is intended as an easy method of deploying an openstack deployment with multiple baremetal nodes acting as compute/controllers and a seed.
+Also storage nodes which back OpenStack such as Cinder, Glance and Nova are apart of the environment and are intended to run as virtual machines.
 
-   to /etc/hosts (if you're waiting on them starting up, you can progress until 
-   `kayobe overcloud host configure` without this step)
+## Deploy Hosts & Preconfiguration
+1. [Terraform Kayobe Multinode](https://github.com/stackhpc/terraform-kayobe-multinode) for instructions on deploying nodes within an OpenStack environment.
 
-## Basic Kayobe Setup
-1. SSH into the VM
-1. `sudo dnf install -y python3-virtualenv`
-1. `mkdir src` and `cd src`
-1. Clone https://github.com/stackhpc/stackhpc-kayobe-config.git, then checkout
-   commit f31df6256f1b1fea99c84547d44f06c4cb74b161 
-1. `cd ..` and `mkdir venvs`
-1. `virtualenv venvs/kayobe` and source `venvs/kayobe/bin/activate`
-1. `pip install -U pip`
-1. `pip install ./src/kayobe`
-1. Acquire the Ansible Vault password for this repository, and store a copy at
-``~/vault-pw``
-1. `export KAYOBE_VAULT_PASSWORD=$(cat ~/vault-pw)`
+2. Due to some outstanding issues with the network and OS image ensure the following steps have been taken for each of the nodes:
 
-## Config changes
-1. In etc/kayobe/ansible/requirements.yml remove version from vxlan
-4. In etc/kayobe/ansible/configure-vxlan.yml, change the group of
-vxlan_interfaces so that the last octet is different e.g. 224.0.0.15
-5. Also under vxlan_interfaces, add vni:x where x is between 500 and 1000
-5. Also under vxlan_interfaces, check vxlan_dstport is not 4789 (this causes
-conflicts, change to 4790)
-6. In /etc/kayobe/environments/ci-multinode/tf-networks.yml, 
-   edit admin_ips so that the compute and controller IPs line up with the 
-   instances that were created earlier, remove the other IPs for seed and 
-   cephOSD
-7. In /etc/kayobe/environments/ci-multinode/network-allocation.yml, remove all
-the entries and just assign `aio_ips:` an empty set `[]`
-8. In etc/kayobe/environments/ci-multinode/inventory/hosts, remove the seed
-9. run stackhpc-kayobe-config/etc/kayobe/ansible/growroot.yml (if this fails,
-manually increase the partition size on each host)
+    1. Edit `/etc/hosts` to include the following lines
 
-## Final steps
-1. `source kayobe-env --environment ci-aio`
-10. Run `kayobe overcloud host configure`
-11. Run `kayobe overcloud service deploy`
+    ```
+    10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
+    10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+    ```
+    2. Edit `/etc/resolv.conf` to include include the following line
+    ```
+    nameserver 10.209.0.5
+    nameserver 10.209.0.3
+    nameserver 10.209.0.4
+    ```
+    3. Ensure the `centos` user owns its own home folder
+    ```
+    sudo chown -R centos: ~
+    ```
+
+    4. For the storage nodes ensure the hostname is not FQDN
+
+    ```
+    sudo hostnamectl set-hostname "$(hostname -s)"
+    ```
+
+## Setup of Kayobe Config
+
+The following steps are to be carried out from an ansible control host that can reach of nodes within the environment.
+
+1. Install package dependencies
+
+```
+sudo dnf install -y python3-virtualenv
+```
+
+2. Clone Kayobe and the Kayobe multinode configuration
+
+```
+mkdir -p src
+cd src
+git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
+git clone https://github.com/stackhpc/stackhpc-kayobe-config.git -b multinode-env
+```
+
+3. Create a virtual environment and install Kayobe
+
+```
+mkdir -p venvs
+cd venvs
+virtualenv kayobe
+source kayobe/bin/activate
+pip install -U pip
+pip install ~/src/kayobe
+```
+
+4. Acquire the Ansible Vault password for this repository, and store a copy at `~/vault-pw` and load the contents as an environment variable
+
+```
+export KAYOBE_VAULT_PASSWORD=$(cat ~/vault-pw)
+```
+
+5. Activate the `ci-multinode` environment
+
+```
+cd ../stackhpc-kayobe-config
+source kayobe-env --environment ci-multinode
+```
+
+6. Add hooks for `configure-vxlan.yml` and `growroot.yml`
+
+```
+mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 40-growroot.yml
+```
+```
+mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
+cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 50-configure-vxlan.yml
+```
+
+## Configuration of Kayobe Config
+
+1. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` is configured appropriately
+```
+[controllers]
+kayobe-controller-01
+kayobe-controller-02
+kayobe-controller-03
+
+[compute]
+kayobe-compute-01
+
+[seed]
+
+[storage:children]
+ceph
+
+[ceph:children]
+mons
+mgrs
+osds
+rgws
+
+[mons]
+kayobe-ceph-1
+kayobe-ceph-2
+kayobe-ceph-3
+[mgrs]
+kayobe-ceph-1
+kayobe-ceph-2
+kayobe-ceph-3
+[osds]
+kayobe-ceph-1
+kayobe-ceph-2
+kayobe-ceph-3
+[rgws]
+```
+
+2. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/tf-networks.yml` is configured appropriately
+```
+---
+admin_cidr: 10.209.0.0/16
+admin_allocation_pool_start: 0.0.0.0
+admin_allocation_pool_end: 0.0.0.0
+admin_bootproto: dhcp
+admin_ips:
+  kayobe-ceph-1: 10.209.0.76
+  kayobe-ceph-2: 10.209.3.225
+  kayobe-ceph-3: 10.209.1.20
+  kayobe-compute-01: 10.209.2.79
+  kayobe-controller-01: 10.209.0.168
+  kayobe-controller-02: 10.209.0.36
+  kayobe-controller-03: 10.209.2.228
+```
+
+3. Configure the vxlan vars found within `${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml` [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
+
+> **_NOTE:_** this will change be moved in a future commit
+
+```
+vars:
+    vxlan_vni: 10
+    vxlan_phys_dev: "{{ admin_oc_net_name | net_interface }}"
+    vxlan_dstport: 4790
+    vxlan_interfaces:
+        - device: vxlan10
+          group: 224.0.0.10
+          bridge: breth
+```
+
+> ⚠️ **_WARNING:_** change `vxlan_vni` to another value to prevent interfering with another VXLAN on the same network. Also change the change group address to another [multicast address](https://en.wikipedia.org/wiki/Multicast_address) ⚠️
+
+## Deploying Kayobe Config
+
+With Kayobe Config configured as required you can proceed with deployment.
+
+1. Perform a control host bootstrap
+
+```
+kayobe control host bootstrap
+```
+
+2. Perform a overcloud configure
+
+```
+kayobe overcloud host configure
+```
+
+2a. (OPTIONAL) If required, update host packages and reboot all the overcloud nodes by running
+```
+kayobe overcloud host package update --packages '*'
+```
+After successfull updates
+
+```
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
+```
+or
+```
+kayobe overcloud host command run --command "shutdown -r +1 rebooting"  --become
+```
+
+3. Deploy CEPH cluster
+
+```
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+```
+
+4. Finally proceed with service deploy
+
+```
+kayobe overcloud service deploy
+```
+
+## Testing with Tempest
+
+It is important to test the various features and services of the OpenStack deployment. This can be achieved with the use of Tempest.
+
+1. Install Docker on the Ansible Control Host
+
+```
+if $(which dnf 2>/dev/null >/dev/null); then
+  sudo dnf config-manager \
+      --add-repo \
+      https://download.docker.com/linux/centos/docker-ce.repo
+  sudo dnf install docker-ce
+else
+  sudo apt update
+  sudo apt install -y docker.io
+fi
+```
+
+2. Start the Docker service
+
+```
+sudo systemctl start docker
+```
+
+3. Inside the kayobe-config root directory initialise the submodules
+
+```
+git submodule init
+git submodule update
+```
+
+4. Build Docker image
+
+```
+sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+```
+
+5. Configure some test resources
+
+
+```
+kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
+```
+
+6. Copy `ci-aio` tempest overrides for the current environment or provide your own
+
+```
+cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf 
+```
+
+7. Make a directory to store the tempest outputs
+
+```
+mkdir -p tempest-artifacts
+```
+
+8. Ensure the private key for kayobe has been set
+
+```
+export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
+```
+
+9. Update your tempest inventory file with your controller hostname
+
+```
+vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/kayobe-automation
+```
+
+10. Run the tempest test suite
+
+```
+sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+```
+
+Once the test suite has finished you can view the contents of `${KAYOBE_CONFIG_PATH}/tempest-artifacts/failed_tests` which should be empty. You may also download a copy of `rally-verify-report.html` to review allowing you to ensure all expected tests were carried out. `scp centos@{{ ANSIBLE_HOST_IP }}:/home/centos/src/kayobe-config/tempest-artifacts/rally-verify-report.html ~/Downloads/rally-verify-report.html`
