@@ -20,12 +20,15 @@ Also storage nodes which back OpenStack such as Cinder, Glance and Nova are apar
     nameserver 10.209.0.3
     nameserver 10.209.0.4
     ```
-    3. Ensure the `centos` user owns its own home folder
+    3. If you are using Centos ensure the `centos` user owns its own home folder
     ```
     sudo chown -R centos: ~
     ```
-
-    4. For the storage nodes ensure the hostname is not FQDN
+    4. If you are using Centos ensure /home/stack does not exist (bug with DIB cache).
+    ```
+    sudo rm -fr /home/stack
+    ```
+    5. For the storage nodes ensure the hostname is not FQDN
 
     ```
     sudo hostnamectl set-hostname "$(hostname -s)"
