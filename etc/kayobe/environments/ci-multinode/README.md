@@ -28,12 +28,19 @@ Also storage nodes which back OpenStack such as Cinder, Glance and Nova are apar
     ```
     sudo rm -fr /home/stack
     ```
-    5. For the storage nodes ensure the hostname is not FQDN
+    5. If you are using Centos ensure pvresize has been executed on your partition (computes and controllers BMs)
+    ```
+    pvresize /dev/sda3
+    ```
+    6. For the storage nodes ensure the hostname is not FQDN
 
     ```
     sudo hostnamectl set-hostname "$(hostname -s)"
     ```
-
+    7. If you are using Centos ensure pvresize has been executed on your partition (storage nodes VMs)
+    ```
+    pvresize /dev/vda3
+    ```
 ## Setup of Kayobe Config
 
 The following steps are to be carried out from an ansible control host that can reach of nodes within the environment.
