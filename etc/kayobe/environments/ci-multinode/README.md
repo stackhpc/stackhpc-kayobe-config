@@ -41,7 +41,7 @@ The following steps are to be carried out from an ansible control host that can 
 1. Install package dependencies
 
 ```
-sudo dnf install -y python3-virtualenv
+sudo dnf install -y python3-virtualenv git
 ```
 
 2. Clone Kayobe and the Kayobe multinode configuration
