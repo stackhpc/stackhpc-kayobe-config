@@ -77,19 +77,6 @@ cd ../stackhpc-kayobe-config
 source kayobe-env --environment ci-multinode
 ```
 
-6. Add hooks for `configure-vxlan.yml` and `growroot.yml`
-
-```
-mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
-cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
-ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 40-growroot.yml
-```
-```
-mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
-cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
-ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 50-configure-vxlan.yml
-```
-
 ## Configuration of Kayobe Config
 
 1. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` is configured appropriately
