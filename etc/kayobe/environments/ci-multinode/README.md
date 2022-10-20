@@ -101,8 +101,10 @@ kayobe-controller-03
 
 [compute]
 kayobe-compute-01
+kayobe-compute-02
 
 [seed]
+kayobe-seed
 
 [storage:children]
 ceph
@@ -114,17 +116,17 @@ osds
 rgws
 
 [mons]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
+kayobe-storage-1
+kayobe-storage-2
+kayobe-storage-3
 [mgrs]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
+kayobe-storage-1
+kayobe-storage-2
+kayobe-storage-3
 [osds]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
+kayobe-storage-1
+kayobe-storage-2
+kayobe-storage-3
 [rgws]
 ```
 
@@ -136,31 +138,34 @@ admin_allocation_pool_start: 0.0.0.0
 admin_allocation_pool_end: 0.0.0.0
 admin_bootproto: dhcp
 admin_ips:
-  kayobe-ceph-1: 10.209.0.76
-  kayobe-ceph-2: 10.209.3.225
-  kayobe-ceph-3: 10.209.1.20
+  kayobe-seed: 10.209.3.65
+  kayobe-storage-01: 10.209.1.202
+  kayobe-storage-02: 10.209.0.63
+  kayobe-storage-03: 10.209.3.142
   kayobe-compute-01: 10.209.2.79
+  kayobe-compute-02: 10.209.2.194
   kayobe-controller-01: 10.209.0.168
   kayobe-controller-02: 10.209.0.36
   kayobe-controller-03: 10.209.2.228
 ```
 
-3. Configure the vxlan vars found within `${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml` [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
-
-> **_NOTE:_** this will change be moved in a future commit
+3. Configure the VXLAN interface for the `ALL` group 
+{KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
 ```
-vars:
-    vxlan_vni: 10
-    vxlan_phys_dev: "{{ admin_oc_net_name | net_interface }}"
-    vxlan_dstport: 4790
-    vxlan_interfaces:
-        - device: vxlan10
-          group: 224.0.0.10
-          bridge: breth
+ vxlan_phys_dev: "{{ admin_oc_interface }}"
+  vxlan_dstport: 4790
+  vxlan_vni: 10
+  vxlan_interfaces:
+    - device: "vxlan{{ vxlan_vni }}"
+      group: 224.0.0.10
 ```
 
-> ⚠️ **_WARNING:_** change `vxlan_vni` to another value to prevent interfering with another VXLAN on the same network. Also change the change group address to another [multicast address](https://en.wikipedia.org/wiki/Multicast_address) ⚠️
+> ⚠️ **_WARNING_** ⚠️
+> 
+> #### To avoid crosstalk between the existing VXLANs it important you change the following values;
+> - vxlan_vni: this value is similar to VLAN ID however it is 24 bits in size (16,777,215) 
+> - group: [multicast address](https://en.wikipedia.org/wiki/Multicast_address)
 
 ## Deploying Kayobe Config
 
@@ -172,9 +177,10 @@ With Kayobe Config configured as required you can proceed with deployment.
 kayobe control host bootstrap
 ```
 
-2. Perform a overcloud configure
+2. Perform a overcloud host and seed configure
 
 ```
+kayobe seed host configure
 kayobe overcloud host configure
 ```
 
@@ -245,10 +251,13 @@ sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile 
 
 5. Configure some test resources
 
+In some instances the `configure-aio-resources.yml` may provide you with enough to work with and pass tempest tests. This can be achieved with the following;
 
 ```
 kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
 ```
+
+Where a more comprehensive openstack setup is required you can use [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode) **WIP** configuration and instructions to follow soon.
 
 6. Copy `ci-aio` tempest overrides for the current environment or provide your own
 
