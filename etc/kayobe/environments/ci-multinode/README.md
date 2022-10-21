@@ -171,21 +171,23 @@ kayobe seed host configure
 kayobe overcloud host configure
 ```
 
-2a. (OPTIONAL) If required, update host packages and reboot all the overcloud nodes by running
+3. If required, update host packages and reboot all the overcloud nodes by running
 ```
 kayobe overcloud host package update --packages '*'
 ```
-After successfull updates
+
+Reboot the system updates after upgrade the system packages
 
 ```
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
 ```
+
 or
 ```
 kayobe overcloud host command run --command "shutdown -r +1 rebooting"  --become
 ```
 
-3. Deploy CEPH cluster
+4. Deploy CEPH cluster
 
 ```
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
@@ -193,13 +195,15 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
 ```
 
-4. Finally proceed with service deploy
+5. Finally proceed with service deploy
 
 ```
 kayobe overcloud service deploy
 ```
 
 ## Testing with Tempest
+
+### Building Tempest Docker Container
 
 It is important to test the various features and services of the OpenStack deployment. This can be achieved with the use of Tempest.
 
@@ -236,7 +240,9 @@ git submodule update
 sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 ```
 
-5. Configure some test resources
+### Configure Test Resources
+
+> ⚠️ **WIP** configuration and instructions to follow soon. ⚠️
 
 In some instances the `configure-aio-resources.yml` may provide you with enough to work with and pass tempest tests. This can be achieved with the following;
 
@@ -244,33 +250,33 @@ In some instances the `configure-aio-resources.yml` may provide you with enough 
 kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
 ```
 
-Where a more comprehensive openstack setup is required you can use [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode) **WIP** configuration and instructions to follow soon.
-
-6. Copy `ci-aio` tempest overrides for the current environment or provide your own
-
 ```
-cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf 
+cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf
 ```
 
-7. Make a directory to store the tempest outputs
+When a more comprehensive openstack setup is required you can use [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode) 
+
+### Running Tempest Tests
+
+1. Make a directory to store the tempest outputs
 
 ```
 mkdir -p tempest-artifacts
 ```
 
-8. Ensure the private key for kayobe has been set
+2. Ensure the private key for kayobe has been set
 
 ```
 export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
 ```
 
-9. Update your tempest inventory file with your controller hostname
+3. Update your tempest inventory file with your seed hostname
 
 ```
 vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/kayobe-automation
 ```
 
-10. Run the tempest test suite
+4. Run the tempest test suite
 
 ```
 sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
