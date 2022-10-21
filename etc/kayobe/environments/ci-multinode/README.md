@@ -49,8 +49,8 @@ sudo dnf install -y python3-virtualenv git
 ```
 mkdir -p src
 cd src
-git clone https://github.com/stackhpc/kayobe.git -b stackhpc/wallaby
-git clone https://github.com/stackhpc/stackhpc-kayobe-config.git -b multinode-env
+git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
+git clone https://github.com/stackhpc/stackhpc-kayobe-config.git -b stackhpc/xena
 ```
 
 3. Create a virtual environment and install Kayobe
