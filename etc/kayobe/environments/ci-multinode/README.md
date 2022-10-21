@@ -283,3 +283,11 @@ sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-en
 ```
 
 Once the test suite has finished you can view the contents of `${KAYOBE_CONFIG_PATH}/tempest-artifacts/failed_tests` which should be empty. You may also download a copy of `rally-verify-report.html` to review allowing you to ensure all expected tests were carried out. `scp centos@{{ ANSIBLE_HOST_IP }}:/home/centos/src/kayobe-config/tempest-artifacts/rally-verify-report.html ~/Downloads/rally-verify-report.html`
+
+## Tips & Tricks
+
+This section will be used to list useful commands and software that can be used to investigate and debug the mutltinode environment
+
+- When running the Tempest tests you may want to view the current progress which can be achieved by running `sudo docker logs --follow ${rally_docker_container_name}`
+
+- If need to access the network from your local machine or Ansible Control Host you can use `sshuttle` which operates as a transparent proxy over SSH. For example to access Horizon on the public network you can `sshuttle -r centos@${controller_ip} ${public_network_cidr}` This can also be used with `openstackclient`.
