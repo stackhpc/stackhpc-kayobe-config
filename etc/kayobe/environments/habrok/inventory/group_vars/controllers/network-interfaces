@@ -2,16 +2,31 @@
 ###############################################################################
 # Network interface definitions for the controller group.
 
+# Use policy-based routing on the admin API network for ironic. This ensures
+# that during provisioning and cleaning, nodes accessing the admin API network
+# can be routed to without routing asymmetrically which would cause packets to be
+# dropped by the kernel.
+network_route_tables:
+  - name: internal-api
+    id: 1
+
 external_net_names:
   - external
+  - provision_oc
 
-provision_oc_interface: "eno8303"
+provision_oc_interface: "breno8303"
+provision_oc_bridge_ports:
+  - "eno8303"
 # NOTE: This is a static route to the switch management network via a router on
 # the PVE cluster. We may be able to avoid this when the spine-core link passes
 # our VLANs again.
 provision_oc_routes:
   - cidr: "{{ 'switch_mgmt' | net_cidr }}"
     gateway: "172.23.9.240"
+
+# The Lustre storage network on physnet2 has MTU 9000, so requires the parent
+# interface to have at least the same.
+provision_oc_mtu: 9000
 
 mgmt_wl_interface: "bond0.{{ mgmt_wl_vlan }}"
 
@@ -29,11 +44,26 @@ bond0_mtu: 9000
 
 internal_interface: "bond0.{{ internal_vlan }}"
 
+# IP routing rule to process all packets from the admin API subnet using the
+# admin-api routing table.
+# CentOS:
+internal_rules:
+  - from: "{{ internal_net_name | net_cidr }}"
+    table: internal-api
+
+# IP routes for the internal-api routing table.
+internal_routes:
+  - cidr: "{{ provision_wl_net_name | net_cidr }}"
+    gateway: "{{ internal_provision_wl_gateway }}"
+    table: internal-api
+  - cidr: "{{ internal_net_name | net_cidr }}"
+    table: internal-api
+
 external_interface: "brbond0"
 external_bridge_ports:
   - "bond0"
 
-public_interface: "bond0.{{ public_vlan }}"
+public_interface: "brbond0.{{ public_vlan }}"
 
 storage_interface: "bond0.{{ storage_vlan }}"
 

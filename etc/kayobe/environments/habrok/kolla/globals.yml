@@ -22,5 +22,58 @@ horizon_custom_themes: [{"name": "groningen", "label": "Groningen"}]
 # OVN setting required for bare metal instances.
 neutron_ovn_dhcp_agent: True
 
+{% raw %}
+# Custom images built with bumped OVS and OVN packages
+kolla_toolbox_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-kolla-toolbox"
+kolla_toolbox_tag: wallaby-20221019T091323
+
+neutron_tag: wallaby-20221019T091323
+neutron_dhcp_agent_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-neutron-dhcp-agent"
+neutron_ovn_metadata_agent_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-neutron-metadata-agent"
+# neutron-server also has a custom NGS branch.
+neutron_server_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-neutron-server"
+ironic_neutron_agent_tag: "{{ openstack_tag }}"
+neutron_tls_proxy_tag: "{{ openstack_tag }}"
+
+nova_tag: wallaby-20221019T091323
+nova_scheduler_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-scheduler"
+nova_api_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-api"
+nova_tag: wallaby-20221019T091323
+nova_libvirt_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-libvirt"
+nova_ssh_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-ssh"
+nova_novncproxy_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-novncproxy"
+nova_conductor_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-conductor"
+nova_compute_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-compute"
+nova_compute_ironic_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-nova-compute-ironic"
+
+octavia_tag: wallaby-20221019T091323
+octavia_api_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-octavia-api"
+octavia_driver_agent_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-octavia-driver-agent"
+octavia_health_manager_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-octavia-health-manager"
+octavia_housekeeping_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-octavia-housekeeping"
+octavia_worker_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-octavia-worker"
+
+openvswitch_tag: wallaby-20221019T091323
+openvswitch_db_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-openvswitch-db-server"
+openvswitch_vswitchd_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-openvswitch-vswitchd"
+
+ovn_tag: wallaby-20221019T091323
+ovn_controller_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-ovn-controller"
+ovn_northd_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-ovn-northd"
+ovn_nb_db_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-ovn-nb-db-server"
+ovn_sb_db_image: "{{ docker_registry ~ '/' if docker_registry else '' }}rug/ubuntu-source-ovn-sb-db-server"
+{% endraw %}
+
+# NOTE: We are increasing the HAProxy timeouts to 5 minutes due to the neutron
+# generic switch driver, which synchronously applies switch configuration for
+# each ironic port during node provisioning and tear down.
+# The specific API calls that require this long timeout are:
+# - Creation and deletion of VLAN networks.
+# - Creation or update of ports, adding binding information.
+# - Update of ports, removing binding information.
+# - Deletion of ports.
+haproxy_client_timeout: 5m30
+haproxy_server_timeout: 5m30
+
 # Bump up Elasticsearch memory defaults
 es_heap_size: 8g

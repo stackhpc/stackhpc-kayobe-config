@@ -3,20 +3,27 @@
 # Network interface definitions for the compute group.
 
 external_net_names:
-  - external
-  - provider
+  - provision_oc
+  - lustre_storage
 
-provision_oc_interface: eth0
+provision_oc_interface: breno2
+provision_oc_bridge_ports:
+  - eno2
 
-internal_interface: "hs1.{{ internal_vlan }}"
+# The tunnel interface has MTU 9000, so requires the parent interface to have
+# at least the same.
+provision_oc_mtu: 9000
 
-external_interface: "hs1"
+internal_interface: "eno2.{{ internal_vlan }}"
 
-storage_interface: "hs2.{{ storage_vlan }}"
+storage_interface: "eno1.{{ storage_vlan }}"
 
-tunnel_interface: "hs1.{{ tunnel_vlan }}"
+lustre_storage_interface: breno1
+lustre_storage_bridge_ports:
+  - eno1
+lustre_storage_mtu: 9000
 
-provider_interface: hs2
+tunnel_interface: "eno2.{{ tunnel_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

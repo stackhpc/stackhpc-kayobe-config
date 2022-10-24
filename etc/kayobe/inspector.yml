@@ -134,6 +134,7 @@ inspector_rules:
   - "{{ inspector_rule_resource_class_baremetal }}"
   - "{{ inspector_rule_resource_class_baremetal_gpu }}"
   - "{{ inspector_rule_resource_class_baremetal_memory }}"
+  - "{{ inspector_rule_resource_class_hypervisor }}"
 
 # Ironic inspector rule to set Redfish credentials.
 inspector_rule_redfish_credentials:
@@ -254,6 +255,19 @@ inspector_rule_resource_class_baremetal_memory:
       - action: "set-attribute"
         path: "resource_class"
         value: "baremetal_memory"
+
+inspector_rule_resource_class_hypervisor:
+  - description: "Set resource class for hypervisor nodes"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R640 \\(SKU=0716;ModelName=PowerEdge R640\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "hypervisor"
 
 ###############################################################################
 # Dell switch LLDP workaround configuration.

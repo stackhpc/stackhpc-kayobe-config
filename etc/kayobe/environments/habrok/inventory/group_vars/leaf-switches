@@ -191,7 +191,7 @@ switch_interface_config_controller_template: |-
 
 switch_interface_config_hypervisor_data_template: |-
   {{ switch_interface_config_eth_template }}
-  - no switchport access vlan
+  - switchport access vlan {{ provision_oc_untagged_vlan }}
   - switchport trunk allowed vlan {{ switch_hypervisor_data_trunk_vlans | unique | join(',') }}
 
 # OpenStack hypervisor data interface configuration
@@ -212,6 +212,8 @@ switch_interface_config_baremetal:
   - switchport mode access
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+  - "{% if physical_network_enable_discovery | default(false) | bool %}switchport access vlan {{ provision_wl_net_name | net_vlan }}{% endif %}"
+  - "{% if physical_network_disable_discovery | default(false) | bool %}switchport access vlan 1{% endif %}"
   - spanning-tree port type edge
 
 # Ceph monitor interface configuration
@@ -245,24 +247,25 @@ switch_interface_config_robinhood: []
 # VLANs to trunk to controllers
 switch_controller_trunk_vlans:
   - "{{ oob_wl_net_name | net_vlan }}"
+  - "{{ provision_oc_untagged_vlan }}"
   - "{{ provision_wl_net_name | net_vlan }}"
   - "{{ internal_net_name | net_vlan }}"
   - "{{ public_net_name | net_vlan }}"
   - "{{ storage_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  # TODO: Provider & tenant VLANs?
+  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
 
 # VLANs to trunk to compute data interface
 switch_hypervisor_data_trunk_vlans:
   - "{{ internal_net_name | net_vlan }}"
   - "{{ public_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  # TODO: Tenant VLANs
+  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
 
 # VLANs to trunk to compute storage interface
 switch_hypervisor_storage_trunk_vlans:
   - "{{ storage_net_name | net_vlan }}"
-  # TODO: Provider VLANs
+  - "{{ lustre_storage_vlan }}"
 
 # VLANs to trunk to Ceph monitor interface
 switch_ceph_mon_trunk_vlans:
