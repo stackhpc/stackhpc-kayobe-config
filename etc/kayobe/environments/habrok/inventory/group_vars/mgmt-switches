@@ -44,6 +44,11 @@ switch_interface_config_vlans_template: |-
     description: switch-management
     config:
       - no shutdown
+  vlan {{ lustre_storage_vlan }}:
+    description: Lustre-storage
+    config:
+      - no shutdown
+      - mtu {{ lustre_storage_mtu }}
 
 switch_interface_config_ethernet:
   Ethernet 1/1/52:
@@ -96,11 +101,13 @@ switch_interface_config_overcloud_idrac_dedicated:
   - switchport access vlan {{ oob_oc_net_name | net_vlan }}
   - spanning-tree port type edge
 
-# Overcloud dedicated provisioning ports
-switch_interface_config_overcloud_provision_dedicated:
+# Controller dedicated provisioning ports
+switch_interface_config_controller_provision_dedicated:
   - no shutdown
-  - switchport mode access
+  - switchport mode trunk
   - switchport access vlan {{ provision_oc_untagged_vlan }}
+  # The controllers use their shared 1G NIC for connecting Neutron to physnet2.
+  - switchport trunk allowed vlan {{ lustre_storage_vlan }}
   - spanning-tree port type edge
 
 # Uplink VLT

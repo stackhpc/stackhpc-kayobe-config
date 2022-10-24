@@ -26,9 +26,10 @@ switch_config_nested:
   #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   - "{{ switch_config_vrf }}"
 
-switch_config_vrf: []
+switch_config_vrf:
   # TODO: Router between internal and baremetal provisioning networks
-  #- ip vrf baremetal-provisioning
+  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %}ip vrf baremetal-provisioning{% endif %}"
+  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %} exit{% endif %}"
 
 switch_config_breakout:
   - interface breakout 1/1/30 map 10g-4x

@@ -175,14 +175,19 @@ switch_interface_config_vlans_template: |-
     config:
       - no shutdown
       # FIXME
+  {% if 'spine-switches' in group_names %}
+  {% if inventory_hostname == 'hb-sw-spine01-h03' %}
   {% raw %}
-      #- ip vrf forwarding baremetal-provisioning
+      - ip vrf forwarding baremetal-provisioning
+      - ip address 172.23.3.250/22
       #- ip address {{ lookup('vars', 'switch_vlan_provision_ip', default='invalid') }}/25
       #- vrrp-group 5
       #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
       #- authentication simple-text {{ secrets_switch_vrrp_auth }}
       #- virtual-address 10.96.160.253
   {% endraw %}
+  {% endif %}
+  {% endif %}
   vlan {{ oob_wl_net_name | net_vlan }}:
     description: workload-iDRAC
     config:
@@ -193,14 +198,17 @@ switch_interface_config_vlans_template: |-
       - no shutdown
   # FIXME
   {% if 'spine-switches' in group_names %}
+  {% if inventory_hostname == 'hb-sw-spine01-h03' %}
   {% raw %}
-      #- ip vrf forwarding baremetal-provisioning
-      #- ip address {{ lookup('vars', 'switch_vlan_internal_ip', default='invalid') }}/23
+      - ip vrf forwarding baremetal-provisioning
+      - ip address 172.23.23.250/22
+      #- ip address {{ lookup('vars', 'switch_vlan_provision_ip', default='invalid') }}/25
       #- vrrp-group 6
       #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
       #- authentication simple-text {{ secrets_switch_vrrp_auth }}
       #- virtual-address 10.96.167.1
   {% endraw %}
+  {% endif %}
   {% endif %}
   vlan {{ public_net_name | net_vlan }}:
     description: public
@@ -221,6 +229,17 @@ switch_interface_config_vlans_template: |-
     config:
       - no shutdown
       - mtu {{ storage_mgmt_net_name | net_mtu }}
+  vlan {{ lustre_storage_vlan }}:
+    description: Lustre-storage
+    config:
+      - no shutdown
+      - mtu {{ lustre_storage_mtu }}
+  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  vlan {{ vlan }}:
+    description: Fake-tenant-network
+    config:
+      - no shutdown
+  {% endfor %}
   {% if 'leaf-switches' in group_names %}
   #vlan 4000:
   #  description: BGP-peer
@@ -242,5 +261,7 @@ switch_interface_config_fabric_template: |
   - switchport mode trunk
   - no switchport access vlan
   - switchport trunk allowed vlan {{ switch_config_vxlan_networks | map('net_vlan') | unique | join(',') }}
+  - switchport trunk allowed vlan {{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}
+  - switchport trunk allowed vlan {{ lustre_storage_vlan }}
 
 ##############################################################################

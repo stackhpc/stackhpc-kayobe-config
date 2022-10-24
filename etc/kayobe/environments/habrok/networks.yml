@@ -106,12 +106,15 @@ mgmt_wl_zone: mgmt_wl
 mgmt_lustre_mtu: 1500
 mgmt_lustre_vlan: 1072
 
+lustre_storage_vlan: 1073
+lustre_storage_mtu: 9000
+
 provision_oc_cidr: 172.23.9.0/24
 provision_oc_allocation_pool_start: 172.23.9.101
 provision_oc_allocation_pool_end: 172.23.9.200
 provision_oc_inspection_allocation_pool_start: 172.23.9.10
 provision_oc_inspection_allocation_pool_end: 172.23.9.100
-provision_oc_mtu: 1500
+#provision_oc_mtu: 1500
 # NOTE: Not using the standard vlan attribute here as hosts are untagged on
 # this network. We do need the ID for switch config though.
 provision_oc_untagged_vlan: 1074
@@ -123,14 +126,19 @@ provision_wl_allocation_pool_end: 172.23.0.9
 provision_wl_inspection_allocation_pool_start: 172.23.0.10
 provision_wl_inspection_allocation_pool_end: 172.23.2.255
 provision_wl_neutron_allocation_pool_start: 172.23.3.0
-provision_wl_neutron_allocation_pool_end: 172.23.3.254
+provision_wl_neutron_allocation_pool_end: 172.23.3.240
+provision_wl_neutron_gateway: 172.23.3.250
 provision_wl_mtu: 1500
 provision_wl_vlan: 1069
 provision_wl_zone: provision_wl
 
 internal_cidr: 172.23.20.0/22
+# 172.23.23.241-172.23.23.250 reserved for neutron
 internal_allocation_pool_start: 172.23.20.2
-internal_allocation_pool_end: 172.23.23.250
+internal_allocation_pool_end: 172.23.23.240
+# Next hop on the internal API network to access Ironic provisioning network.
+# This is a virtual router in the switch fabric.
+internal_provision_wl_gateway: 172.23.23.250
 internal_mtu: 1500
 internal_vlan: 1079
 internal_zone: trusted

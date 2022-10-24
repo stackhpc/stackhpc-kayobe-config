@@ -25,5 +25,16 @@ neutron_ovn_dhcp_agent: True
 # Custom image built with NGS feature branch
 neutron_server_image_full: "172.23.9.249:80/rug/ubuntu-source-neutron-server:wallaby-20220819T112725"
 
+# NOTE: We are increasing the HAProxy timeouts to 5 minutes due to the neutron
+# generic switch driver, which synchronously applies switch configuration for
+# each ironic port during node provisioning and tear down.
+# The specific API calls that require this long timeout are:
+# - Creation and deletion of VLAN networks.
+# - Creation or update of ports, adding binding information.
+# - Update of ports, removing binding information.
+# - Deletion of ports.
+haproxy_client_timeout: 5m30
+haproxy_server_timeout: 5m30
+
 # Bump up Elasticsearch memory defaults
 es_heap_size: 8g

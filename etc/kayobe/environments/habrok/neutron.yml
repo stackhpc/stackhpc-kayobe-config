@@ -5,8 +5,8 @@
 # List of Neutron ML2 mechanism drivers to use. If unset the kolla-ansible
 # defaults will be used.
 kolla_neutron_ml2_mechanism_drivers:
-  - baremetal
   - genericswitch
+  - baremetal
   - ovn
 
 # List of Neutron ML2 type drivers to use.
@@ -17,7 +17,6 @@ kolla_neutron_ml2_type_drivers:
 
 # List of Neutron ML2 tenant network types to use.
 kolla_neutron_ml2_tenant_network_types:
-  - flat
   - geneve
   - vlan
 
@@ -27,7 +26,10 @@ kolla_neutron_ml2_tenant_network_types:
 # range: Range of allowed VLANs on this physical network (format <min>:<max>,
 # optional)
 kolla_neutron_ml2_network_vlan_ranges:
+  # baremetal provisioning, internal API, tunnel, tenant/provider VLANs
   - physical_network: "physnet1"
+  # Lustre storage
+  - physical_network: "physnet2"
 
 # List of Neutron ML2 extention drivers to use.
 #kolla_neutron_ml2_extension_drivers:
@@ -55,16 +57,16 @@ kolla_neutron_ml2_network_vlan_ranges:
 # password: ansible_ssh_pass
 # key_file: not currently supported
 # secret: not currently supported
-kolla_neutron_ml2_generic_switch_hosts: "{{ groups['mgmt-switches'] + groups['leaf-switches'] }}"
+kolla_neutron_ml2_generic_switch_hosts: "{{ groups['leaf-switches'] }}"
 
 # Dict containing additional configuration for switches managed by the
 # genericswitch ML2 mechanism driver. For per-switch configuration of switches
 # in kolla_neutron_ml2_generic_switch_hosts, this may be set as a group or
 # host variable for the switch host.
 kolla_neutron_ml2_generic_switch_extra:
-  nsg_mac_address: "{{ switch_facts_mac }}"
   ngs_trunk_ports:
   ngs_manage_vlans: false
+  ngs_disable_inactive_ports: true
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

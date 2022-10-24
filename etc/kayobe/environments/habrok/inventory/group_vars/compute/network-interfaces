@@ -4,17 +4,26 @@
 
 external_net_names:
   - provision_oc
+  - lustre_storage
 
-provision_oc_interface: eno2
+provision_oc_interface: breno2
+provision_oc_bridge_ports:
+  - eno2
+
 # The tunnel interface has MTU 9000, so requires the parent interface to have
 # at least the same.
 provision_oc_mtu: 9000
 
-internal_interface: "{{ provision_oc_interface }}.{{ internal_vlan }}"
+internal_interface: "eno2.{{ internal_vlan }}"
 
 storage_interface: "eno1.{{ storage_vlan }}"
 
-tunnel_interface: "{{ provision_oc_interface }}.{{ tunnel_vlan }}"
+lustre_storage_interface: breno1
+lustre_storage_bridge_ports:
+  - eno1
+lustre_storage_mtu: 9000
+
+tunnel_interface: "eno2.{{ tunnel_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

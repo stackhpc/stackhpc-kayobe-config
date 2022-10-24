@@ -35,7 +35,7 @@ NODE_GROUPS = [
         "regex": "hb-openstack-controller[0-9]+",
         "networks": {
             "mgmt": "overcloud_idrac_dedicated",
-            "provision": "overcloud_provision_dedicated",
+            "provision": "controller_provision_dedicated",
             "storage": "controller_template",
             "cluster": "controller_template",
         },

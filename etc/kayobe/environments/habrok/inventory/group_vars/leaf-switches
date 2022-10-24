@@ -253,19 +253,19 @@ switch_controller_trunk_vlans:
   - "{{ public_net_name | net_vlan }}"
   - "{{ storage_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  # TODO: Provider & tenant VLANs?
+  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
 
 # VLANs to trunk to compute data interface
 switch_hypervisor_data_trunk_vlans:
   - "{{ internal_net_name | net_vlan }}"
   - "{{ public_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  # TODO: Tenant VLANs
+  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
 
 # VLANs to trunk to compute storage interface
 switch_hypervisor_storage_trunk_vlans:
   - "{{ storage_net_name | net_vlan }}"
-  # TODO: Provider VLANs
+  - "{{ lustre_storage_vlan }}"
 
 # VLANs to trunk to Ceph monitor interface
 switch_ceph_mon_trunk_vlans:
