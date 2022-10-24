@@ -35,8 +35,12 @@
     - name: Process data
       shell:
         cmd: >
-          {{ venv }}/bin/advise
+          {{ venv }}/bin/advise-process
           -I ipmi
           -p '{{ output_dir }}/data/extra-hardware/{{ advise_pattern }}'
-          -o '{{ output_dir }}/results'
-          --visualise
+          -o '{{ output_dir }}'
+
+    - name: Visualise data
+      command: >
+        {{ venv }}/bin/advise-visualise
+        --output_dir '{{ output_dir }}'
