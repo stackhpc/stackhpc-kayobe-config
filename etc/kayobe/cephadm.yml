@@ -9,7 +9,7 @@ cephadm_ceph_release: "pacific"
 #cephadm_fsid:
 
 # Ceph container image.
-cephadm_image: "quay.io/ceph/ceph:v16.2.5"
+cephadm_image: "{{ stackhpc_docker_registry }}/ceph/ceph:{{ cephadm_image_tag }}"
 
 # Ceph container image tag.
 cephadm_image_tag: "v16.2.5"
@@ -42,59 +42,23 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 #cephadm_enable_firewalld:
 
 # Ceph OSD specification.
-cephadm_osd_spec:
-  service_type: osd
-  service_id: osd_spec_default
-  placement:
-    host_pattern: "*"
-  data_devices:
-    all: true
+#cephadm_osd_spec:
 
 ###############################################################################
 # Ceph post-deployment configuration.
 
 # List of Ceph erasure coding profiles. See stackhpc.cephadm.ec_profiles role
 # for format.
-cephadm_ec_profiles: []
+#cephadm_ec_profiles:
 
 # List of Ceph CRUSH rules. See stackhpc.cephadm.crush_rules role for format.
-cephadm_crush_rules: []
+#cephadm_crush_rules:
 
 # List of Ceph pools. See stackhpc.cephadm.pools role for format.
-cephadm_pools:
-  - name: backups
-    application: rbd
-    state: present
-  - name: images
-    application: rbd
-    state: present
-  - name: volumes
-    application: rbd
-    state: present
-  - name: vms
-    application: rbd
-    state: present
+#cephadm_pools:
 
 # List of Cephx keys. See stackhpc.cephadm.keys role for format.
-cephadm_keys:
-  - name: client.cinder
-    caps:
-      mon: "profile rbd"
-      osd: "profile rbd pool=volumes, profile rbd pool=vms, profile rbd-read-only pool=images"
-      mgr: "profile rbd pool=volumes, profile rbd pool=vms"
-    state: present
-  - name: client.cinder-backup
-    caps:
-      mon: "profile rbd"
-      osd: "profile rbd pool=volumes, profile rbd pool=backups"
-      mgr: "profile rbd pool=volumes, profile rbd pool=backups"
-    state: present
-  - name: client.glance
-    caps:
-      mon: "profile rbd"
-      osd: "profile rbd pool=images"
-      mgr: "profile rbd pool=images"
-    state: present
+#cephadm_keys:
 
 ###############################################################################
 # Kolla Ceph auto-configuration.
@@ -137,4 +101,3 @@ kolla_ceph_manila_required: "{{ kolla_enable_manila | bool }}"
 
 # Whether to generate Ceph configuration for Nova.
 kolla_ceph_nova_required: "{{ kolla_enable_nova | bool }}"
-
