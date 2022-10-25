@@ -52,9 +52,7 @@ switch_config_nested:
   - "{{ switch_config_overlay_routing_profile }}"
   - "{{ switch_config_vlt }}"
   - "{{ switch_config_loopback0 }}"
-  #- "{{ switch_config_bgp_router }}"
-  #- "{{ switch_config_underlay_bgp_neighbours | flatten }}"
-  #- "{{ switch_config_underlay_bgp_neighbour_vlt_peer }}"
+  - "{{ switch_config_bgp_router_template | from_yaml }}"
   #- "{{ switch_config_overlay_bgp_neighbours | flatten }}"
   #- "{{ switch_config_evpn }}"
   #- "{{ switch_config_ufd_template | from_yaml }}"
@@ -70,6 +68,7 @@ switch_config_loopback0:
   - " description VXLAN-VTEP"
   - " no shutdown"
   - " ip address {{ switch_tunnel_ip }}/32"
+  - " exit"
 
 # loopback1 BGP router ID interface
 switch_config_loopback1:
@@ -133,12 +132,21 @@ switch_interface_config_ethernet_template: |
 
 switch_interface_config_fabric: "{{ switch_interface_config_fabric_links_template | from_yaml }}"
 switch_interface_config_fabric_links_template: |
+  {% if switch_rack | int == 1 %}
+  "{{ switch_fabric_interface_1 }}":
+    description: upstream-hb-sw-spine01-h03
+    config: {{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
+  "{{ switch_fabric_interface_2 }}":
+    description: upstream-hb-sw-spine01-h04
+    config: {{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-spine01-h04']) | from_yaml }}
+  {% else %}
   "{{ switch_fabric_interface_1 }}":
     description: upstream-hb-sw-spine01-h03
     config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
   "{{ switch_fabric_interface_2 }}":
     description: upstream-hb-sw-spine01-h04
     config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h04']) | from_yaml }}
+  {% endif %}
 
 # Most leaf switches are S5248s, while those in rack 7 are S5232, and use a slightly different interface range.
 switch_fabric_interface_1: "Ethernet 1/1/{{ 29 if switch_rack | int == 7 else 49 }}"

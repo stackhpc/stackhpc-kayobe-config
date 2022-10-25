@@ -42,20 +42,21 @@ switch_config_vxlan_template: |
   - " vxlan-vni {vni}"
 
 # BGP router
-switch_config_bgp_router:
+switch_config_bgp_router_template: |
   - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
   - " router-id {{ switch_bgp_ip }}"
   - " address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
-  - " network {{ switch_bgp_cidr }}"
-  - " redistribute connected"
-  - " exit"
+  - "  network {{ switch_bgp_cidr }}"
+  - "  redistribute connected"
+  - "  exit"
+  {{ switch_config_underlay_bgp_neighbours_template }}
+  {% if 'leaf-switches' in group_names %}
+  {{ switch_config_underlay_bgp_neighbour_vlt_peer_template }}
+  {% endif %}
   # ROUTER-BGP mode
   - " exit"
-
-# Underlay BGP for L3 fabric
-switch_config_underlay_bgp_neighbours: "{{ switch_config_underlay_bgp_neighbours_template | from_yaml }}"
 
 # Underlay BGP for L3 fabric
 switch_config_underlay_bgp_neighbours_template: |
@@ -67,38 +68,33 @@ switch_config_underlay_bgp_neighbours_template: |
 
 # Underlay eBGP neigbour
 switch_config_underlay_bgp_neighbour_template: |
-  - "router bgp {{ switch_bgp_asn }}"
   # ROUTER-BGP mode
   - " neighbor {remote_ip}"
   # ROUTER-BGP-NEIGHBOR mode
-  - " remote-as {remote_asn}"
-  - " address-family ipv4 unicast"
+  - "  remote-as {remote_asn}"
+  - "  address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
   {% if 'leaf-switches' in group_names %}
-  - " allowas-in 1"
+  - "   allowas-in 1"
   {% endif %}
   {% if 'spine-switches' in group_names %}
-  - " no sender-side-loop-detection"
+  - "   no sender-side-loop-detection"
   {% endif %}
-  - " exit"
-  - " no shutdown"
-  - " exit"
+  - "   exit"
   # ROUTER-BGP-NEIGHBOR mode
-  - " exit"
+  - "  no shutdown"
+  - "  exit"
   # ROUTER-BGP mode
-  - " exit"
 
 # Underlay iBGP neighbour for the VLT peer
-switch_config_underlay_bgp_neighbour_vlt_peer:
-  - "router bgp {{ switch_bgp_asn }}"
+switch_config_underlay_bgp_neighbour_vlt_peer_template: |
   # ROUTER-BGP mode
   - " neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}"
   # ROUTER-BGP-NEIGHBOR mode
-  - " remote-as {{ switch_bgp_asn }}"
-  - " no shutdown"
-  - " exit"
+  - "  remote-as {{ switch_bgp_asn }}"
+  - "  no shutdown"
+  - "  exit"
   # ROUTER-BGP mode
-  - " exit"
 
 # Overlay BGP for VXLANs
 switch_config_overlay_bgp_neighbours: "{{ switch_config_overlay_bgp_neighbours_template | from_yaml }}"
@@ -241,11 +237,11 @@ switch_interface_config_vlans_template: |-
       - no shutdown
   {% endfor %}
   {% if 'leaf-switches' in group_names %}
-  #vlan 4000:
-  #  description: BGP-peer
-  #  config:
-  #    - no shutdown
-  #    - ip address {{ switch_fabric_peer_ip }}/31
+  vlan 4000:
+    description: BGP-peer
+    config:
+      - no shutdown
+      - ip address {{ switch_fabric_peer_ip }}/31
   {% endif %}
 
 ###############################################################################
@@ -256,12 +252,19 @@ switch_interface_config_fabric_template: |
   - no shutdown
   #- no switchport
   - mtu 9216
-  #- ip address {ip}
+  #- ip address {ip}/31
   # FIXME: Remove me:
   - switchport mode trunk
   - no switchport access vlan
   - switchport trunk allowed vlan {{ switch_config_vxlan_networks | map('net_vlan') | unique | join(',') }}
   - switchport trunk allowed vlan {{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}
   - switchport trunk allowed vlan {{ lustre_storage_vlan }}
+
+# L3 fabric link
+switch_interface_config_fabric_real_template: |
+  - no shutdown
+  - no switchport
+  - mtu 9216
+  - ip address {ip}/31
 
 ##############################################################################
