@@ -52,9 +52,7 @@ switch_config_bgp_router_template: |
   - "  redistribute connected"
   - "  exit"
   {{ switch_config_underlay_bgp_neighbours_template }}
-  {% if 'leaf-switches' in group_names %}
   {{ switch_config_underlay_bgp_neighbour_vlt_peer_template }}
-  {% endif %}
   # ROUTER-BGP mode
   - " exit"
 
@@ -89,11 +87,13 @@ switch_config_underlay_bgp_neighbour_template: |
 # Underlay iBGP neighbour for the VLT peer
 switch_config_underlay_bgp_neighbour_vlt_peer_template: |
   # ROUTER-BGP mode
+  {% if 'leaf-switches' in group_names %}
   - " neighbor {{ hostvars[switch_peer].switch_fabric_peer_ip }}"
   # ROUTER-BGP-NEIGHBOR mode
   - "  remote-as {{ switch_bgp_asn }}"
   - "  no shutdown"
   - "  exit"
+  {% endif %}
   # ROUTER-BGP mode
 
 # Overlay BGP for VXLANs
@@ -262,8 +262,8 @@ switch_interface_config_fabric_template: |
 
 # L3 fabric link
 switch_interface_config_fabric_real_template: |
-  - no shutdown
   - no switchport
+  - no shutdown
   - mtu 9216
   - ip address {ip}/31
 
