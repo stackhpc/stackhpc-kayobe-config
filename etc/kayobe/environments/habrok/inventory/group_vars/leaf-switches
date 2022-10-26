@@ -52,8 +52,8 @@ switch_config_nested:
   - "{{ switch_config_overlay_routing_profile }}"
   - "{{ switch_config_vlt }}"
   - "{{ switch_config_loopback0 }}"
+  - "{{ switch_config_loopback1 }}"
   - "{{ switch_config_bgp_router_template | from_yaml }}"
-  #- "{{ switch_config_overlay_bgp_neighbours | flatten }}"
   #- "{{ switch_config_evpn }}"
   #- "{{ switch_config_ufd_template | from_yaml }}"
   #- "{{ switch_config_nve }}"
@@ -69,13 +69,6 @@ switch_config_loopback0:
   - " no shutdown"
   - " ip address {{ switch_tunnel_ip }}/32"
   - " exit"
-
-# loopback1 BGP router ID interface
-switch_config_loopback1:
-  - "interface loopback1"
-  - " description BGP-Router-ID"
-  - " no shutdown"
-  - " ip address {{ switch_bgp_ip }}/32"
 
 # Network Virtualisation Edge (NVE) for VXLANs
 switch_config_nve:
