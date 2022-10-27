@@ -54,10 +54,15 @@ switch_config_nested:
   - "{{ switch_config_loopback0 }}"
   - "{{ switch_config_loopback1 }}"
   - "{{ switch_config_bgp_router_template | from_yaml }}"
-  #- "{{ switch_config_evpn }}"
-  #- "{{ switch_config_ufd_template | from_yaml }}"
-  #- "{{ switch_config_nve }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_evpn }}"
+  - "{{ switch_config_ufd_template | from_yaml }}"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_vrf }}"
+
+switch_config_vrf:
+  - "{% if switch_rack | int in [1, 3] %}ip vrf test-vrf{% endif %}"
+  - "{% if switch_rack | int in [1, 3] %} exit{% endif %}"
 
 # Port breakouts.
 switch_config_breakout: []
@@ -125,7 +130,7 @@ switch_interface_config_ethernet_template: |
 
 switch_interface_config_fabric: "{{ switch_interface_config_fabric_links_template | from_yaml }}"
 switch_interface_config_fabric_links_template: |
-  {% if switch_rack | int == 1 %}
+  {% if switch_rack | int in [1, 3] %}
   "{{ switch_fabric_interface_1 }}":
     description: upstream-hb-sw-spine01-h03
     config: {{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
