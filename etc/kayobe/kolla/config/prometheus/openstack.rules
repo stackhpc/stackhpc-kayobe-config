@@ -4,12 +4,12 @@ groups:
 - name: OpenStack
   rules:
   - alert: OpenStackServiceDown
-    expr: ((sum(avg_over_time({__name__=~"openstack.+_state",job="openstack_exporter"} [10m])) by(hostname, service)) == 0)
+    expr: (sum({__name__=~"openstack.+_state", job="openstack_exporter"} == 0) by (hostname, service))
     for: 1m
     labels:
       severity: alert
     annotations:
-      summary: "{{ $labels.service }} at {{ $labels.instance }} is down"
-      description: "OpenStack service {{ $labels.service }} at {{ $labels.instance }} is down"
+      summary: "{{ $labels.service }} at {{ $labels.hostname }} is down"
+      description: "OpenStack service {{ $labels.service }} at {{ $labels.hostname }} is down"
 
 {% endraw %}
