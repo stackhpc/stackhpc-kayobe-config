@@ -22,14 +22,32 @@ groups:
       summary: "Prometheus exporter at {{ $labels.instance }} reports low memory"
       description: "Memory is {{ $value }}% full."
 
+  - alert: HostOomKillDetected
+    expr: increase(node_vmstat_oom_kill[5m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host OOM kill detected (instance {{ $labels.instance }})"
+      description: "OOM kill detected"
+
   - alert: Overheating
-    expr: node_hwmon_temp_celsius >= 100
+    expr: node_hwmon_temp_celsius >= 85
     for: 1m
     labels:
-      severity: alert
+      severity: warning
     annotations:
       summary: "Prometheus exporter at {{ $labels.instance }} reports overheating"
       description: "Sensor {{ $labels.chip }} reports {{ $value }} degrees celcius."
+
+  - alert: HostNodeOvertemperatureAlarm
+    expr: node_hwmon_temp_crit_alarm_celsius == 1
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Host node overtemperature alarm (instance {{ $labels.instance }})"
+      description: "Physical node temperature alarm triggered"
 
   - alert: InstanceDown
     expr: up{job="node"} == 0
@@ -39,5 +57,23 @@ groups:
     annotations:
       summary: "Instance {{$labels.instance}} down"
       description: "{{$labels.instance}} has been down for more than 5 minutes."
+
+  - alert: HostEdacCorrectableErrorsDetected
+    expr: increase(node_edac_correctable_errors_total[5m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host EDAC Correctable Errors detected (instance {{ $labels.instance }})"
+      description: "{{ $labels.instance }} has had {{ printf \"%.0f\" $value }} correctable memory errors reported by EDAC in the last 5 minutes."
+
+  - alert: HostEdacUncorrectableErrorsDetected
+    expr: node_edac_uncorrectable_errors_total > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Host EDAC Uncorrectable Errors detected (instance {{ $labels.instance }})"
+      description: "{{ $labels.instance }} has had {{ printf \"%.0f\" $value }} uncorrectable memory errors reported by EDAC in the last 5 minutes."
 
 {% endraw %}
