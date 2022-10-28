@@ -35,7 +35,6 @@ before_script:
   variables:
     TF_STATE_NAME: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
     TF_CACHE_KEY: $CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
-    TF_ROOT: terraform/vglab-aio
     TF_VAR_vm_name: kayobe-aio-$CI_ENVIRONMENT_SLUG-$CI_COMMIT_SHA
 
 .kayobe-extras:
@@ -101,7 +100,8 @@ configure:
   stage: configure
   script:
     - !reference [.prelude_kayobe_setup, script]
-    - .automation/pipeline/overcloud-host-configure.sh
+    # Testing: https://storyboard.openstack.org/#!/story/2010367
+    - .automation/pipeline/overcloud-host-configure.sh --wipe-disks
     - .automation/pipeline/overcloud-service-deploy.sh
     - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
 
@@ -116,7 +116,11 @@ tempest:
   image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   stage: test
   script:
-    - .automation/pipeline/tempest.sh
+    # Setting ansible_user is a workaround for:
+    # "Unexpected remote arg: }}@10.0.0.97:/tmp/ansible.0fjk897erally-results/\nrsync error: syntax or usage error (code 1) at main.c(1354) [sender=3.1.3]\n"
+    # See: https://github.com/ansible-collections/ansible.posix/pull/344
+    # See: https://github.com/ansible/ansible/issues/28551
+    - .automation/pipeline/tempest.sh -e ansible_user=stack
     - mkdir ${CI_PROJECT_DIR}/artifacts
     - cp $HOME/tempest-artifacts/* ${CI_PROJECT_DIR}/artifacts
     # Exit with non-zero exit code if any tests failed. Otherwise

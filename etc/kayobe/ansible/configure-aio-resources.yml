@@ -7,6 +7,12 @@
     venv: '{{ virtualenv_path }}/openstack'
   tasks:
     - block:
+        - name: Upgrade pip
+          pip:
+            name: pip
+            virtualenv: '{{ venv }}'
+            state: latest
+
         - name: Install python openstack client
           pip:
             name: python-openstackclient
@@ -40,8 +46,7 @@
             OS_PROJECT_NAME: admin
             OS_TENANT_NAME: admin
             OS_USERNAME: admin
-            OS_PASSWORD: "{{ kolla_passwords.keystone_admin_password | mandatory('Could\
-              \ not find keystone_admin_password in passwords.yml') }}"
+            OS_PASSWORD: "{{ kolla_passwords.keystone_admin_password | mandatory }}"
             # Use kolla_external_fqdn in wallaby
             OS_AUTH_URL: http://{{ kolla_external_fqdn | default(public_net_name
               | net_fqdn) | default(public_net_name | net_vip_address, true) }}:5000

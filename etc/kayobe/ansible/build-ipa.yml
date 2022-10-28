@@ -14,7 +14,7 @@
     ipa_logs:
       - ipa.stdout
       - ipa.stderr
-    version: '{{ ansible_date_time.iso8601_basic_short }}'
+    version: '{{ openstack_release }}-{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
     ipa_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | default(false,\
       \ true) | bool }}"
   tasks:
@@ -22,6 +22,15 @@
       package:
         name: libgcrypt
         state: latest
+      become: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Ensure utilities are installed
+      package:
+        name:
+          - cpio
+          - systemd-udev
+        state: present
       become: true
       when: ansible_os_family == 'RedHat'
 
