@@ -1,3 +1,15 @@
+output "snapshot_name" {
+   value = local.fqdn
+}
+
+output "boot_from_volume" {
+  value = var.boot_from_volume
+}
+
+output "instance_uuid" {
+   value = openstack_compute_instance_v2.kayobe-aio.id
+}
+
 output "access_ip_v4" {
    value = openstack_compute_instance_v2.kayobe-aio.access_ip_v4
 }
@@ -11,5 +23,5 @@ output "access_gw" {
 }
 
 output "access_interface" {
-  value = "eth0"
+  value = "${var.aio_rocky_interface}"
 }

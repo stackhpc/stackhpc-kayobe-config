@@ -1,7 +1,5 @@
 # Enter config overrides in here
 
-# See: https://github.com/stackhpc/docker-rally/blob/master/bin/rally-verify-wrapper.sh for a full list of tempest parameters that can be overriden.
-# You can override tempest parameters like so:
 export TEMPEST_CONCURRENCY=2
 # Specify single test whilst experimenting
 #export TEMPEST_PATTERN="${TEMPEST_PATTERN:-tempest.api.compute.servers.test_create_server.ServersTestJSON.test_host_name_is_same_as_server_name}"
@@ -9,13 +7,16 @@ export TEMPEST_CONCURRENCY=2
 KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest.overrides.conf"
 
 if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
-  # NOTE: could dynamically switch this based on environment
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}-${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}.overrides.conf"
 
-  if [ "$KAYOBE_ENVIRONMENT" == "aio" ]; then
+  # Check if loadlist specific overrides exist, if not fallback to environment overrides.
+  if [ ! -e "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" ]; then
+      KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}.overrides.conf"
+  fi
+
+  if [ "$KAYOBE_ENVIRONMENT" == "aio" ] || [ "$KAYOBE_ENVIRONMENT" == "aio-rocky" ]; then
     # Seem to get servers failing to spawn with higher concurrency
     export TEMPEST_CONCURRENCY=1
   fi
 fi
-
 
