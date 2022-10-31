@@ -145,14 +145,13 @@ admin_ips:
   vxlan_vni: 10
   vxlan_interfaces:
     - device: "vxlan{{ vxlan_vni }}"
-      group: 224.0.0.10
+      group: "{{ '239.0.0.0/8' | ansible.utils.next_nth_usable(vxlan_vni) }}"
 ```
 
 > ⚠️ **_WARNING_** ⚠️
 > 
 > #### To avoid crosstalk between the existing VXLANs it important you change the following values;
 > - vxlan_vni: this value is similar to VLAN ID however it is 24 bits in size (16,777,215) 
-> - group: [multicast address](https://en.wikipedia.org/wiki/Multicast_address)
 
 ## Deploying Kayobe Config
 
@@ -164,7 +163,7 @@ With Kayobe Config configured as required you can proceed with deployment.
 kayobe control host bootstrap
 ```
 
-2. Perform a overcloud host and seed configure
+2. Perform a seed and overcloud host configure
 
 ```
 kayobe seed host configure
@@ -201,6 +200,13 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
 ```
 kayobe overcloud service deploy
 ```
+
+## Configuring OpenStack Resources
+
+You can configure the OpenStack deployment using the [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode). The configuration applied should ensure that the OpenStack deployment has appropriate networks, flavours, security groups and images available. 
+
+If need to access the network from your local machine or Ansible Control Host you can use `sshuttle` which operates as a transparent proxy over SSH. For example to access Horizon on the public network you can `sshuttle -r centos@${controller_ip} 192.168.39.0/24` This can also be used with `openstackclient`.
+
 
 ## Testing with Tempest
 
@@ -242,22 +248,6 @@ git submodule update
 sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 ```
 
-### Configure Test Resources
-
-> ⚠️ **WIP** configuration and instructions to follow soon. ⚠️
-
-In some instances the `configure-aio-resources.yml` may provide you with enough to work with and pass tempest tests. This can be achieved with the following;
-
-```
-kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
-```
-
-```
-cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf
-```
-
-When a more comprehensive openstack setup is required you can use [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode) 
-
 ### Running Tempest Tests
 
 1. Make a directory to store the tempest outputs
@@ -272,25 +262,13 @@ mkdir -p tempest-artifacts
 export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
 ```
 
-3. Update your tempest inventory file with your seed hostname
-
-```
-vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/kayobe-automation
-```
-
-4. Run the tempest test suite
+3. Run the tempest test suite
 
 
 ```
 sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
 ```
 
+Whilst the tests are running you can view the logs in realtime by running `ssh centos@seed 'sudo docker logs --follow $(sudo docker ps -q)'
+
 Once the test suite has finished you can view the contents of `${KAYOBE_CONFIG_PATH}/tempest-artifacts/failed_tests` which should be empty. You may also download a copy of `rally-verify-report.html` to review allowing you to ensure all expected tests were carried out. `scp centos@{{ ANSIBLE_HOST_IP }}:/home/centos/src/kayobe-config/tempest-artifacts/rally-verify-report.html ~/Downloads/rally-verify-report.html`
-
-## Tips & Tricks
-
-This section will be used to list useful commands and software that can be used to investigate and debug the mutltinode environment
-
-- When running the Tempest tests you may want to view the current progress which can be achieved by running `sudo docker logs --follow ${rally_docker_container_name}`
-
-- If need to access the network from your local machine or Ansible Control Host you can use `sshuttle` which operates as a transparent proxy over SSH. For example to access Horizon on the public network you can `sshuttle -r centos@${controller_ip} ${public_network_cidr}` This can also be used with `openstackclient`.
