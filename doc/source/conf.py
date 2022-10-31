@@ -48,7 +48,6 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'kayobe-config'
-# copyright = '2013, OpenStack Foundation'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
