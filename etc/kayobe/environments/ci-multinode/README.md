@@ -183,6 +183,7 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
 ```
 
 or
+
 ```
 kayobe overcloud host command run --command "shutdown -r +1 rebooting"  --become
 ```
@@ -202,6 +203,7 @@ kayobe overcloud service deploy
 ```
 
 ## Testing with Tempest
+
 
 ### Building Tempest Docker Container
 
@@ -277,6 +279,7 @@ vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/k
 ```
 
 4. Run the tempest test suite
+
 
 ```
 sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
