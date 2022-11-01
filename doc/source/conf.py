@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'kayobe-config'
+project = 'stackhpc-kayobe-config'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
@@ -69,10 +69,10 @@ html_theme = 'default'
 
 # Add any paths that contain "extra" files, such as .htaccess or
 # robots.txt.
-html_extra_path = ['_extra']
+# html_extra_path = ['_extra']
 
 html_theme_options = {
-    "show_other_versions": True,
+    # "show_other_versions": True,
 }
 
 # Output file base name for HTML help builder.
