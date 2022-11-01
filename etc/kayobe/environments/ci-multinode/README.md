@@ -77,6 +77,21 @@ cd ../stackhpc-kayobe-config
 source kayobe-env --environment ci-multinode
 ```
 
+
+6. Add hooks for `grow-root.yml`, `fix-hostname.yml`, `fix-networking.yml`, `configure-vxlan.yml`
+```
+mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/seed-host-configure/pre.d
+cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 5-growroot.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-hostname.yml 10-fix-hostname.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-networking.yml 15-fix-networking.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
+cd ${KAYOBE_CONFIG_PATH}/hooks/seed-host-configure/pre.d
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 5-growroot.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
+```
+
 ## Configuration of Kayobe Config
 
 1. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` is configured appropriately
