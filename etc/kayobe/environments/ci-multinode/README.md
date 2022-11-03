@@ -94,63 +94,6 @@ ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
 
 ## Configuration of Kayobe Config
 
-1. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` is configured appropriately
-```
-[controllers]
-kayobe-controller-01
-kayobe-controller-02
-kayobe-controller-03
-
-[compute]
-kayobe-compute-01
-kayobe-compute-02
-
-[seed]
-kayobe-seed
-
-[storage:children]
-ceph
-
-[ceph:children]
-mons
-mgrs
-osds
-rgws
-
-[mons]
-kayobe-storage-1
-kayobe-storage-2
-kayobe-storage-3
-[mgrs]
-kayobe-storage-1
-kayobe-storage-2
-kayobe-storage-3
-[osds]
-kayobe-storage-1
-kayobe-storage-2
-kayobe-storage-3
-[rgws]
-```
-
-2. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/admin-oc-networks.yml` is configured appropriately
-```
----
-admin_oc_cidr: 10.209.0.0/16
-admin_oc_allocation_pool_start: 0.0.0.0
-admin_oc_allocation_pool_end: 0.0.0.0
-admin_oc_bootproto: dhcp
-admin_oc_ips:
-  kayobe-seed: 10.209.3.65
-  kayobe-storage-01: 10.209.1.202
-  kayobe-storage-02: 10.209.0.63
-  kayobe-storage-03: 10.209.3.142
-  kayobe-compute-01: 10.209.2.79
-  kayobe-compute-02: 10.209.2.194
-  kayobe-controller-01: 10.209.0.168
-  kayobe-controller-02: 10.209.0.36
-  kayobe-controller-03: 10.209.2.228
-```
-
 3. Configure the VXLAN interface for the `all` group
 {KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan. You must ensure that `vxlan_vni` value is unique within the network. Choose between 1 - 16,777,215. [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
