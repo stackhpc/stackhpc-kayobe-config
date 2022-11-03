@@ -132,14 +132,14 @@ kayobe-storage-3
 [rgws]
 ```
 
-2. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/tf-networks.yml` is configured appropriately
+2. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/admin-oc-networks.yml` is configured appropriately
 ```
 ---
-admin_cidr: 10.209.0.0/16
-admin_allocation_pool_start: 0.0.0.0
-admin_allocation_pool_end: 0.0.0.0
-admin_bootproto: dhcp
-admin_ips:
+admin_oc_cidr: 10.209.0.0/16
+admin_oc_allocation_pool_start: 0.0.0.0
+admin_oc_allocation_pool_end: 0.0.0.0
+admin_oc_bootproto: dhcp
+admin_oc_ips:
   kayobe-seed: 10.209.3.65
   kayobe-storage-01: 10.209.1.202
   kayobe-storage-02: 10.209.0.63
