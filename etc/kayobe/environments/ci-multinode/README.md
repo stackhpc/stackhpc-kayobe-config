@@ -152,7 +152,7 @@ admin_oc_ips:
 ```
 
 3. Configure the VXLAN interface for the `all` group
-{KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan. You must ensure that `vxlan_vni` value is unique within the network. Choose between 1 - 16,777,216. [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
+{KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan. You must ensure that `vxlan_vni` value is unique within the network. Choose between 1 - 16,777,215. [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
 ```
  vxlan_phys_dev: "{{ admin_oc_interface }}"
@@ -160,7 +160,7 @@ admin_oc_ips:
   vxlan_vni: 10
   vxlan_interfaces:
     - device: "vxlan{{ vxlan_vni }}"
-      group: "{{ '239.0.0.0/8' | ansible.utils.next_nth_usable(vxlan_vni) }}"
+      group: "{{ '239.0.0.0/8' | next_nth_usable(vxlan_vni) }}"
 ```
 
 > ⚠️ **_WARNING_** ⚠️
