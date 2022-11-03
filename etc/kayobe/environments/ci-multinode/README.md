@@ -95,7 +95,7 @@ ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
 
 ## Configuration of Kayobe Config
 
-3. Configure the VXLAN interface for the `all` group
+1. Configure the VXLAN interface for the `all` group
 {KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan. You must ensure that `vxlan_vni` value is unique within the network. Choose between 1 - 16,777,215. [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
 ```
