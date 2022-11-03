@@ -89,6 +89,7 @@ ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-networking.yml 15-fix-networking.yml
 ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
 cd ${KAYOBE_CONFIG_PATH}/hooks/seed-host-configure/pre.d
 ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 5-growroot.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-networking.yml 15-fix-networking.yml
 ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
 ```
 
