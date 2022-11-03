@@ -77,90 +77,40 @@ cd ../stackhpc-kayobe-config
 source kayobe-env --environment ci-multinode
 ```
 
-6. Add hooks for `configure-vxlan.yml` and `growroot.yml`
 
+6. Add hooks for `grow-root.yml`, `fix-hostname.yml`, `fix-networking.yml`, `configure-vxlan.yml`
 ```
 mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/seed-host-configure/pre.d
 cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
-ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 40-growroot.yml
-```
-```
-mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
-cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
-ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 50-configure-vxlan.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 5-growroot.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-hostname.yml 10-fix-hostname.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-networking.yml 15-fix-networking.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
+cd ${KAYOBE_CONFIG_PATH}/hooks/seed-host-configure/pre.d
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/growroot.yml 5-growroot.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/fix-networking.yml 15-fix-networking.yml
+ln -s ${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml 20-configure-vxlan.yml
 ```
 
 ## Configuration of Kayobe Config
 
-1. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` is configured appropriately
-```
-[controllers]
-kayobe-controller-01
-kayobe-controller-02
-kayobe-controller-03
-
-[compute]
-kayobe-compute-01
-
-[seed]
-
-[storage:children]
-ceph
-
-[ceph:children]
-mons
-mgrs
-osds
-rgws
-
-[mons]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
-[mgrs]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
-[osds]
-kayobe-ceph-1
-kayobe-ceph-2
-kayobe-ceph-3
-[rgws]
-```
-
-2. Ensure the `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/tf-networks.yml` is configured appropriately
-```
----
-admin_cidr: 10.209.0.0/16
-admin_allocation_pool_start: 0.0.0.0
-admin_allocation_pool_end: 0.0.0.0
-admin_bootproto: dhcp
-admin_ips:
-  kayobe-ceph-1: 10.209.0.76
-  kayobe-ceph-2: 10.209.3.225
-  kayobe-ceph-3: 10.209.1.20
-  kayobe-compute-01: 10.209.2.79
-  kayobe-controller-01: 10.209.0.168
-  kayobe-controller-02: 10.209.0.36
-  kayobe-controller-03: 10.209.2.228
-```
-
-3. Configure the vxlan vars found within `${KAYOBE_CONFIG_PATH}/ansible/configure-vxlan.yml` [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
-
-> **_NOTE:_** this will change be moved in a future commit
+1. Configure the VXLAN interface for the `all` group
+{KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups_vars/all/vxlan. You must ensure that `vxlan_vni` value is unique within the network. Choose between 1 - 16,777,215. [See role documentation for more details](https://github.com/stackhpc/ansible-role-vxlan)
 
 ```
-vars:
-    vxlan_vni: 10
-    vxlan_phys_dev: "{{ admin_oc_net_name | net_interface }}"
-    vxlan_dstport: 4790
-    vxlan_interfaces:
-        - device: vxlan10
-          group: 224.0.0.10
-          bridge: breth
+ vxlan_phys_dev: "{{ admin_oc_interface }}"
+  vxlan_dstport: 4790
+  vxlan_vni: 10
+  vxlan_interfaces:
+    - device: "vxlan{{ vxlan_vni }}"
+      group: "{{ '239.0.0.0/8' | next_nth_usable(vxlan_vni) }}"
 ```
 
-> ⚠️ **_WARNING:_** change `vxlan_vni` to another value to prevent interfering with another VXLAN on the same network. Also change the change group address to another [multicast address](https://en.wikipedia.org/wiki/Multicast_address) ⚠️
+> ⚠️ **_WARNING_** ⚠️
+> 
+> #### To avoid crosstalk between the existing VXLANs it important you change the following values;
+> - vxlan_vni: this value is similar to VLAN ID however it is 24 bits in size (16,777,215) 
 
 ## Deploying Kayobe Config
 
@@ -172,27 +122,31 @@ With Kayobe Config configured as required you can proceed with deployment.
 kayobe control host bootstrap
 ```
 
-2. Perform a overcloud configure
+2. Perform a seed and overcloud host configure
 
 ```
+kayobe seed host configure
 kayobe overcloud host configure
 ```
 
-2a. (OPTIONAL) If required, update host packages and reboot all the overcloud nodes by running
+3. If required, update host packages and reboot all the overcloud nodes by running
 ```
 kayobe overcloud host package update --packages '*'
 ```
-After successfull updates
+
+Reboot the system updates after upgrade the system packages
 
 ```
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
 ```
+
 or
+
 ```
 kayobe overcloud host command run --command "shutdown -r +1 rebooting"  --become
 ```
 
-3. Deploy CEPH cluster
+4. Deploy CEPH cluster
 
 ```
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
@@ -200,13 +154,23 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
 ```
 
-4. Finally proceed with service deploy
+5. Finally proceed with service deploy
 
 ```
 kayobe overcloud service deploy
 ```
 
+## Configuring OpenStack Resources
+
+You can configure the OpenStack deployment using the [Openstack Config Multinode](https://github.com/stackhpc/openstack-config-multinode). The configuration applied should ensure that the OpenStack deployment has appropriate networks, flavours, security groups and images available. 
+
+If need to access the network from your local machine or Ansible Control Host you can use `sshuttle` which operates as a transparent proxy over SSH. For example to access Horizon on the public network you can `sshuttle -r centos@${controller_ip} 192.168.39.0/24` This can also be used with `openstackclient`.
+
+
 ## Testing with Tempest
+
+
+### Building Tempest Docker Container
 
 It is important to test the various features and services of the OpenStack deployment. This can be achieved with the use of Tempest.
 
@@ -243,41 +207,27 @@ git submodule update
 sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 ```
 
-5. Configure some test resources
+### Running Tempest Tests
 
-
-```
-kayobe playbook run etc/kayobe/ansible/configure-aio-resources.yml
-```
-
-6. Copy `ci-aio` tempest overrides for the current environment or provide your own
-
-```
-cp .automation.conf/tempest/tempest-{ci-aio,$KAYOBE_ENVIRONMENT}.overrides.conf 
-```
-
-7. Make a directory to store the tempest outputs
+1. Make a directory to store the tempest outputs
 
 ```
 mkdir -p tempest-artifacts
 ```
 
-8. Ensure the private key for kayobe has been set
+2. Ensure the private key for kayobe has been set
 
 ```
 export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
 ```
 
-9. Update your tempest inventory file with your controller hostname
+3. Run the tempest test suite
 
-```
-vi ~/src/stackhpc-kayobe-config/etc/kayobe/environments/ci-multinode/inventory/kayobe-automation
-```
-
-10. Run the tempest test suite
 
 ```
 sudo -E docker run -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
 ```
+
+Whilst the tests are running you can view the logs in realtime by running `ssh centos@seed 'sudo docker logs --follow $(sudo docker ps -q)'
 
 Once the test suite has finished you can view the contents of `${KAYOBE_CONFIG_PATH}/tempest-artifacts/failed_tests` which should be empty. You may also download a copy of `rally-verify-report.html` to review allowing you to ensure all expected tests were carried out. `scp centos@{{ ANSIBLE_HOST_IP }}:/home/centos/src/kayobe-config/tempest-artifacts/rally-verify-report.html ~/Downloads/rally-verify-report.html`

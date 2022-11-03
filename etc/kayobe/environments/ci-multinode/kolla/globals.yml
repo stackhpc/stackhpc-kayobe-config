@@ -7,3 +7,10 @@ cinder_backend_ceph: "yes"
 
 # Nova Ceph configuration
 nova_backend_ceph: "yes"
+
+# Because this is a vxlan interface, Kayobe can't generate the config for it.
+# Therefore we can't use this interface as the external network
+# (external_net_names). Instead, make external_net_names an empty
+# list, and add the config that would be generated from it here.
+neutron_bridge_name: "{{ vxlan_interfaces[0].device }}-ovs"
+neutron_external_interface: "{{ vxlan_interfaces[0].device }}"
