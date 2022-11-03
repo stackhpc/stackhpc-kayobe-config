@@ -232,3 +232,8 @@ jobs:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()
+
+      - name: Prune Docker images over 1 week old
+        # May fail if another prune is running
+        run: sudo docker image prune --force --filter until=168h || true
+        if: always()
