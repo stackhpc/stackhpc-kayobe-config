@@ -53,6 +53,20 @@ switch_config_vxlan_template: |
   - "virtual-network {vni}"
   - " vxlan-vni {vni}"
 
+# Disable BGP router & EVPN.
+# Add this to config & disable other things to clean BGP EVPN from the system.
+switch_config_disable_bgp_evpn_vxlan:
+  - "no router bgp"
+  - "interface vlan 321"
+  - "  no virtual-network"
+  - "  exit"
+  - "no virtual-network 10321"
+  - "no interface virtual-network 10321"
+  - "no interface vlan 321"
+  - "no nve"
+  - "{% if 'leaf-switches' in group_names %}no interface loopback0{% endif %}"
+  - "no interface loopback1"
+
 # BGP router
 switch_config_bgp_router_template: |
   - "router bgp {{ switch_bgp_asn }}"
