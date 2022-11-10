@@ -154,7 +154,7 @@ groups:
 
   # alert on nic packet errors and drops rates > 1 packet/s
   - alert: NetworkPacketsDropped
-    expr: irate(node_network_receive_drop_total{device=~"en.*|eth.*"}[5m]) + irate(node_network_transmit_drop_total{device=~"en.*|eth.*"}[5m]) > 1
+    expr: irate(node_network_receive_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) + irate(node_network_transmit_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) > 1
     labels:
       severity: warning
     annotations:
