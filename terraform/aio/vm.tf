@@ -67,7 +67,6 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   provisioner "file" {
     source      = "scripts/configure-local-networking.sh"
     destination = "/home/${var.aio_vm_user}/configure-local-networking.sh"
-
     connection {
       type        = "ssh"
       host        = self.access_ip_v4
