@@ -48,7 +48,17 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-#kolla_ansible_venv_extra_requirements:
+kolla_ansible_venv_extra_requirements: "{{ lookup('vars', 'kolla_ansible_venv_extra_requirements_' ~ os_distribution, default=[]) }}"
+
+# Rocky specific requirements in the kolla-ansible virtualenv
+kolla_ansible_venv_extra_requirements_rocky:
+  # NOTE(wszumski): This is wallaby specific as we can use ansible-core 2.11 in Xena.
+  - 'ansible-base@git+https://github.com/stackhpc/ansible@stackhpc/2.10/rocky'
+
+# Pip requirement specifier for the ansible package. NOTE: This limits the
+# version of ansible used by kolla-ansible to avoid new releases from breaking
+# tested code. Changes to this limit should be tested.
+#kolla_ansible_venv_ansible:
 
 # Path to Kolla-ansible configuration directory. Default is $KOLLA_CONFIG_PATH
 # or /etc/kolla if $KOLLA_CONFIG_PATH is not set.
@@ -62,7 +72,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 # Kolla configuration.
 
 # Kolla base container image distribution. Options are "centos", "debian",
-# "ubuntu". Default is {{ os_distribution }}.
+# "ubuntu". Default is
+# {{ 'centos' if os_distribution == 'rocky' else os_distribution }}.
 #kolla_base_distro:
 
 # Kolla container image type: binary or source. Default is 'binary'.
@@ -85,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: wallaby-20211207T102718
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220919T081704{% else %}wallaby-20220819T112725{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -100,10 +111,19 @@ kolla_openstack_release: wallaby-20211207T102718
 #     location: https://github.com/openstack/ironic
 #     reference: master
 kolla_sources:
+  barbican-base:
+    type: git
+    location: "https://github.com/stackhpc/barbican.git"
+    reference: stackhpc/wallaby
   bifrost-base:
     type: git
     location: "{{ kolla_bifrost_source_url }}"
     reference: "{{ kolla_bifrost_source_version }}"
+  bifrost-base-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
@@ -111,15 +131,19 @@ kolla_sources:
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/wallaby    
+    reference: stackhpc/wallaby
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
-    reference: 1.1.2
+    reference: 1.3.0
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
+    reference: stackhpc/wallaby
+  neutron-base-plugin-networking-generic-switch:
+    type: git
+    location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/wallaby
 
 ###############################################################################
@@ -149,10 +173,10 @@ stackhpc_centos_additional_repos:
     file: "CentOS-NFV-OpenvSwitch.repo"
   - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
     file: "CentOS-OpenStack-wallaby.repo"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ stackhpc_repo_centos_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
 
@@ -169,9 +193,18 @@ stackhpc_third_party_repos:
   - url: "{{ stackhpc_repo_treasuredata_4_url }}"
     file: "td.repo"
 
+# List of repositories for Ubuntu focal.
+stackhpc_ubuntu_focal_repos:
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
+  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/wallaby main"
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
+    {% if kolla_base_distro == 'centos' %}
     RUN \
     {% for repo in stackhpc_centos_stream_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
@@ -179,7 +212,7 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
-
+    {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
@@ -188,15 +221,27 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
-
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # base_ubuntu_package_sources_list: |
+  #   RUN \
+  #       rm -f /etc/apt/sources.list && \
+  #   {% for repo in stackhpc_ubuntu_focal_repos %}
+  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+  #   {% endif %}
+  #   {% endfor %}
+  bifrost_base_header: |
+    ADD additions-archive /
   grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel
+    RUN grafana-cli plugins install vonage-status-panel \
+        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
   prometheus_v2_server_repository_version: |
-    ARG prometheus_version='2.32.1'
+    ARG prometheus_version='2.35.0'
   prometheus_alertmanager_repository_version: |
-    ARG prometheus_alertmanager_version='0.23.0'
+    ARG prometheus_alertmanager_version='0.24.0'
   prometheus_cadvisor_repository_version: |
     ARG prometheus_cadvisor_version='0.40.0'
     ARG prometheus_cadvisor_sha256sum='8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0'
@@ -211,32 +256,61 @@ kolla_build_blocks:
   prometheus_blackbox_exporter_repository_version: |
     ARG blackbox_exporter_version='0.19.0'
 
+kolla_build_customizations_common:
+  bifrost_base_pip_packages_append:
+    - /additions/*
+  ironic_inspector_pip_packages_append:
+    - /additions/*
+
+kolla_build_customizations_centos:
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_compute_packages_remove:
+    - openvswitch
+  nova_compute_packages_append:
+    - openvswitch2.17
+  octavia_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  octavia_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  ovn_base_packages_override:
+    - ovn22.06
+  ovn_controller_packages_override:
+    - ovn22.06-host
+  ovn_nb_db_server_packages_override:
+    - ovn22.06-central
+  ovn_northd_packages_override:
+    - ovn22.06-central
+  ovn_sb_db_server_packages_override:
+    - ovn22.06-central
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+
+kolla_build_customizations_ubuntu: {}
+
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
 # <image name>_<customization>_<operation>
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations:
-  ironic_inspector_pip_packages_append:
-    - /additions/*
-  ovn_base_packages_override:
-    - ovn-2021-21.06.0
-  ovn_controller_packages_override:
-    - ovn-2021-host-21.06.0
-  ovn_nb_db_server_packages_override:
-    - ovn-2021-central-21.06.0
-  ovn_northd_packages_override:
-    - ovn-2021-central-21.06.0
-  ovn_sb_db_server_packages_override:
-    - ovn-2021-central-21.06.0
-  openvswitch_base_packages_override:
-    - libibverbs
-    - openvswitch2.16
-    - openvswitch-selinux-extra-policy
-    - python3-netifaces
-    - python3-openvswitch2.16
-    - tcpdump
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
@@ -502,6 +576,7 @@ kolla_build_customizations:
 #kolla_enable_prometheus_ceph_mgr_exporter:
 #kolla_enable_prometheus_elasticsearch_exporter:
 #kolla_enable_prometheus_haproxy_exporter:
+#kolla_enable_prometheus_libvirt_exporter:
 #kolla_enable_prometheus_memcached_exporter:
 #kolla_enable_prometheus_mysqld_exporter:
 #kolla_enable_prometheus_node_exporter:
@@ -595,6 +670,21 @@ kolla_build_customizations:
 # in admin-openrc.sh file when TLS is enabled, instead of Kolla-Ansible's
 # default.
 #kolla_internal_fqdn_cacert:
+
+###############################################################################
+# Proxy configuration
+
+# HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port) used by
+# Kolla. Default value is "{{ http_proxy }}".
+#kolla_http_proxy:
+
+# HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port) used by
+# Kolla. Default value is "{{ https_proxy }}".
+#kolla_https_proxy:
+
+# List of domains, hostnames, IP addresses and networks for which no proxy is
+# used. Default value is "{{ no_proxy }}".
+#kolla_no_proxy:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

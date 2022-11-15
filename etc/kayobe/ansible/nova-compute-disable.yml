@@ -1,0 +1,47 @@
+---
+- name: Disable nova compute service
+  hosts: compute
+  gather_facts: yes
+  tags:
+    - nova-compute-disable
+  vars:
+    venv: "{{ virtualenv_path }}/openstack"
+    disabled_reason: "Down for maintenance by nova-compute-disable.yml"
+  tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Query nova compute services
+      command: >
+        {{ venv }}/bin/openstack
+        compute service list
+        --format json
+        --service nova-compute --host {{ ansible_facts.nodename }}
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+      register: compute_services
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Disable nova compute service
+      command: >
+        {{ venv }}/bin/openstack
+        compute service set
+        {{ ansible_facts.nodename }} nova-compute
+        --disable --disable-reason '{{ disabled_reason }}'
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        service: "{{ compute_services.stdout | from_json | first }}"
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      when:
+        - service.Status != 'disabled'
