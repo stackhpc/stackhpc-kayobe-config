@@ -96,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}yoga-20220831T083604{% endif %}"
+kolla_openstack_release: yoga-20221007T094200
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -132,6 +132,10 @@ kolla_sources:
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
+    reference: stackhpc/{{ openstack_release }}
+  neutron-base:
+    type: git
+    location: https://github.com/stackhpc/neutron.git
     reference: stackhpc/{{ openstack_release }}
   neutron-base-plugin-networking-generic-switch:
     type: git
@@ -230,7 +234,8 @@ kolla_build_blocks:
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel
+    RUN grafana-cli plugins install vonage-status-panel \
+        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
 
@@ -249,23 +254,44 @@ kolla_build_customizations_common:
 kolla_build_customizations_centos:
   base_yum_repo_files_remove:
     - proxysql.repo
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_compute_packages_remove:
+    - openvswitch
+  nova_compute_packages_append:
+    - openvswitch2.17
+  octavia_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  octavia_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
   ovn_base_packages_override:
-    - ovn-2021-21.12.0
+    - ovn22.06
   ovn_controller_packages_override:
-    - ovn-2021-host-21.12.0
+    - ovn22.06-host
   ovn_nb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_northd_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_sb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
-  openvswitch_base_packages_override:
-    - libibverbs
-    - openvswitch2.16
-    - openvswitch-selinux-extra-policy
-    - python3-netifaces
-    - python3-openvswitch2.16
-    - tcpdump
+    - ovn22.06-central
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
 
 kolla_build_customizations_ubuntu: {}
 
@@ -432,7 +458,7 @@ kolla_build_args:
 #kolla_enable_ceilometer_ipmi:
 #kolla_enable_ceilometer_prometheus_pushgateway:
 #kolla_enable_cells:
-#kolla_enable_central_logging:
+kolla_enable_central_logging: true
 #kolla_enable_ceph_rgw:
 #kolla_enable_ceph_rgw_loadbalancer:
 #kolla_enable_cinder:
@@ -450,7 +476,7 @@ kolla_build_args:
 #kolla_enable_designate:
 #kolla_enable_destroy_images:
 #kolla_enable_elasticsearch:
-#kolla_enable_elasticsearch_curator:
+kolla_enable_elasticsearch_curator: true
 #kolla_enable_etcd:
 #kolla_enable_external_mariadb_load_balancer:
 #kolla_enable_fluentd:
@@ -460,7 +486,7 @@ kolla_build_args:
 #kolla_enable_glance_image_cache:
 #kolla_enable_gnocchi:
 #kolla_enable_gnocchi_statsd:
-#kolla_enable_grafana:
+kolla_enable_grafana: true
 #kolla_enable_hacluster:
 #kolla_enable_haproxy:
 #kolla_enable_haproxy_memcached:
@@ -549,7 +575,7 @@ kolla_build_args:
 #kolla_enable_ovn:
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
-#kolla_enable_prometheus:
+kolla_enable_prometheus: true
 #kolla_enable_prometheus_alertmanager:
 #kolla_enable_prometheus_blackbox_exporter:
 #kolla_enable_prometheus_cadvisor:

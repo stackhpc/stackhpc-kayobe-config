@@ -104,12 +104,6 @@ Apply the changes:
 
    terraform apply -auto-approve
 
-Use the ci-aio environment:
-
-.. code-block:: console
-
-   export KAYOBE_ENVIRONMENT=ci-aio
-
 Write Terraform outputs to a Kayobe config file:
 
 .. code-block:: console
@@ -151,6 +145,12 @@ Build a Kayobe image:
 .. code-block:: console
 
    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+
+Use the ci-aio environment:
+
+.. code-block:: console
+
+   export KAYOBE_ENVIRONMENT=ci-aio
 
 Set the Kayobe Vault password env var:
 

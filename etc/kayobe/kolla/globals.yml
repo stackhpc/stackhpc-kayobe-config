@@ -1,9 +1,13 @@
 # yamllint disable-file
 ---
 docker_yum_baseurl: "{{ stackhpc_repo_docker_url }}"
-docker_yum_gpgkey: "https://download.docker.com/linux/{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}/gpg"
+docker_yum_gpgkey: "https://download.docker.com/linux/centos/gpg"
 
 {% if kolla_base_distro == 'centos' %}
-bifrost_tag: yoga-20220831T122627
+bifrost_tag: yoga-20221007T134036
 neutron_tag: yoga-20221115T101524
 {% endif %}
+
+# Monitoring and alerting related settings
+es_heap_size: 8g
+prometheus_cmdline_extras: "--storage.tsdb.retention.time=30d"
