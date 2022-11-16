@@ -3,15 +3,16 @@
 # Helper variables.
 
 # BGP Autonomous System Number
-switch_bgp_asn: 65100
+switch_bgp_range_start: 65100
+switch_bgp_asn: "{{ switch_bgp_range_start - switch_bgp_index | int }}"
 
 # VXLAN VTEP IP address per spine.
 switch_tunnel_index: "{{ switch_bgp_index }}"
 switch_tunnel_ip: "{{ switch_tunnel_cidr | ipaddr(switch_tunnel_index) | ipaddr('address') }}"
 
 # BGP router ID is per-switch.
-switch_bgp_ip_index: "{{ -1 * switch_rack | int }}"
-switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_ip_index | string) | ipaddr('address') }}"
+switch_bgp_index: "{{ -1 * switch_rack | int }}"
+switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_index | string) | ipaddr('address') }}"
 
 ###############################################################################
 # Global configuration.
