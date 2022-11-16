@@ -10,6 +10,9 @@ pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
 pulp_username: admin
 pulp_password: "{{ secrets_pulp_password }}"
 
+# Proxy to use when adding remotes.
+pulp_proxy_url: "{{ omit }}"
+
 ###############################################################################
 # StackHPC Pulp server
 
@@ -44,6 +47,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main restricted universe multiverse
     distributions: focal focal-updates focal-backports
@@ -56,6 +60,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main restricted universe multiverse
     distributions: focal-security
@@ -69,6 +74,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main
     distributions: focal-updates/wallaby
@@ -82,6 +88,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     distributions: focal
     components: stable
@@ -174,6 +181,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -182,6 +190,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -190,6 +199,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -200,6 +210,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_content_only
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -208,6 +219,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -218,6 +230,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -439,6 +452,7 @@ stackhpc_pulp_images:
 stackhpc_pulp_repository_container_repos_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
   policy: on_demand
+  proxy_url: "{{ pulp_proxy_url }}"
   remote_username: "{{ stackhpc_release_pulp_username }}"
   remote_password: "{{ stackhpc_release_pulp_password }}"
   state: present
