@@ -5,6 +5,10 @@
 # BGP Autonomous System Number
 switch_bgp_asn: 65100
 
+# VXLAN VTEP IP address per spine.
+switch_tunnel_index: "{{ switch_bgp_index }}"
+switch_tunnel_ip: "{{ switch_tunnel_cidr | ipaddr(switch_tunnel_index) | ipaddr('address') }}"
+
 # BGP router ID is per-switch.
 switch_bgp_ip_index: "{{ -1 * switch_rack | int }}"
 switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_ip_index | string) | ipaddr('address') }}"
@@ -20,18 +24,14 @@ switch_config_nested:
   - "{{ switch_config_mtu }}"
   - "{{ switch_config_breakout }}"
   - "{{ switch_config_overlay_routing_profile }}"
+  - "{{ switch_config_loopback0 }}"
   - "{{ switch_config_loopback1 }}"
   - "{{ switch_config_bgp_router_template | from_yaml }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   - "{{ switch_config_vrf }}"
-
-switch_config_vrf:
-  # TODO: Router between internal and baremetal provisioning networks
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %}ip vrf baremetal-provisioning{% endif %}"
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %} exit{% endif %}"
-  # TESTING
-  #- "ip vrf test-vrf"
-  #- " exit"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_evpn }}"
+  - "{{ switch_config_virtual_router }}"
 
 switch_config_breakout:
   - interface breakout 1/1/30 map 10g-4x
