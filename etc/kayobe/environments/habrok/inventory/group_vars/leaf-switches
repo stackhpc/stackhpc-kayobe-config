@@ -58,7 +58,7 @@ switch_config_nested:
   - "{{ switch_config_vrf }}"
   - "{{ switch_config_nve }}"
   - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
-  - "{{ switch_config_evpn }}"
+  - "{{ switch_config_evpn_template | from_yaml }}"
   - "{{ switch_config_virtual_router }}"
 
 # Port breakouts.
@@ -108,21 +108,12 @@ switch_interface_config_ethernet_template: |
 
 switch_interface_config_fabric: "{{ switch_interface_config_fabric_links_template | from_yaml }}"
 switch_interface_config_fabric_links_template: |
-  {% if switch_rack | int in [1, 3] %}
-  "{{ switch_fabric_interface_1 }}":
-    description: upstream-hb-sw-spine01-h03
-    config: {{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
-  "{{ switch_fabric_interface_2 }}":
-    description: upstream-hb-sw-spine01-h04
-    config: {{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-spine01-h04']) | from_yaml }}
-  {% else %}
   "{{ switch_fabric_interface_1 }}":
     description: upstream-hb-sw-spine01-h03
     config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h03']) | from_yaml }}
   "{{ switch_fabric_interface_2 }}":
     description: upstream-hb-sw-spine01-h04
     config: {{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-spine01-h04']) | from_yaml }}
-  {% endif %}
 
 # Most leaf switches are S5248s, while those in rack 7 are S5232, and use a slightly different interface range.
 switch_fabric_interface_1: "Ethernet 1/1/{{ 29 if switch_rack | int == 7 else 49 }}"

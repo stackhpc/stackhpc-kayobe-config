@@ -40,8 +40,8 @@ switch_config_vrf:
   - "{% if inventory_hostname == 'hb-sw-spine01-h03' %}ip vrf baremetal-provisioning{% endif %}"
   - "{% if inventory_hostname == 'hb-sw-spine01-h03' %} exit{% endif %}"
   # TESTING
-  - "{% if switch_rack | int in [1, 3] or 'spine-switches' in group_names %}ip vrf test-vrf{% endif %}"
-  - "{% if switch_rack | int in [1, 3] or 'spine-switches' in group_names %} exit{% endif %}"
+  - "ip vrf test-vrf"
+  - " exit"
 
 # Network Virtualisation Edge (NVE) for VXLANs
 switch_config_nve:
@@ -74,20 +74,31 @@ switch_config_vxlan_template: |
   - "virtual-network {vni}"
   - " vxlan-vni {vni}"
 
+# List of VXLAN VNIs to enable for EVPN
+switch_config_evpn_evis:
+  - 10321
+
 # EVPN
-switch_config_evpn:
+switch_config_evpn_template: |
   - "evpn"
   - " no auto-evi"
-  - " evi 10321"
-  - "  vni 10321"
-  - "  rd {{ switch_tunnel_ip }}:10321"
-  - "{% if 'leaf-rack-1' not in group_names %}  route-target 65001:10321 import{% endif %}"
-  - "{% if 'leaf-rack-3' not in group_names %}  route-target 65003:10321 import{% endif %}"
-  - "{% if 'spine-switches' not in group_names or switch_rack | int != 3 %}  route-target 65103:10321 import{% endif %}"
-  - "{% if 'spine-switches' not in group_names or switch_rack | int != 4 %}  route-target 65104:10321 import{% endif %}"
-  - "  route-target {{ switch_bgp_asn }}:10321 both"
-  - "  exit"
+  {% for evi in switch_config_evpn_evis %}
+  {{ switch_config_evpn_evi_template.format(vni=321 + switch_vxlan_offset) }}
+  {% endfor %}
   - " exit"
+
+# EVPN EVI
+switch_config_evpn_evi_template: |
+  - " evi {vni}"
+  - "  vni {vni}"
+  - "  rd {{ switch_tunnel_ip }}:{vni}"
+  {% for switch in groups['spine-leaf-switches'] %}
+  {% if switch_bgp_asn != hostvars[switch].switch_bgp_asn and (hostvars[switch].switch_layer == 'spine' or hostvars[switch].switch_is_rack_primary | bool) %}
+  - "  route-target {{ hostvars[switch].switch_bgp_asn }}:{vni} import"
+  {% endif %}
+  {% endfor %}
+  - "  route-target {{ switch_bgp_asn }}:{vni} both"
+  - "  exit"
 
 # Disable BGP router & EVPN.
 # Add this to config & disable other things to clean BGP EVPN from the system.
@@ -304,7 +315,6 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - ip address {{ switch_fabric_peer_ip }}/31
   {% endif %}
-  {% if ('leaf-switches' in group_names and switch_rack | int in [1, 3]) or 'spine-switches' in group_names %}
   vlan 321:
     config:
       - no shutdown
@@ -314,26 +324,12 @@ switch_interface_config_vlans_template: |-
       - ip vrf forwarding test-vrf
       - ip address {{ '172.23.254.0/26' | ipaddr(switch_bgp_index | string) }}
       - no shutdown
-  {% endif %}
 
 ###############################################################################
 # Interface variables and templates.
 
 # L3 fabric link
 switch_interface_config_fabric_template: |
-  - no shutdown
-  #- no switchport
-  - mtu 9216
-  #- ip address {ip}/31
-  # FIXME: Remove me:
-  - switchport mode trunk
-  - no switchport access vlan
-  - switchport trunk allowed vlan {{ switch_config_vxlan_networks | map('net_vlan') | unique | join(',') }}
-  - switchport trunk allowed vlan {{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}
-  - switchport trunk allowed vlan {{ lustre_storage_vlan }}
-
-# L3 fabric link
-switch_interface_config_fabric_real_template: |
   - no switchport
   - no shutdown
   - mtu 9216

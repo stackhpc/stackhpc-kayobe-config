@@ -31,7 +31,7 @@ switch_config_nested:
   - "{{ switch_config_vrf }}"
   - "{{ switch_config_nve }}"
   - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
-  - "{{ switch_config_evpn }}"
+  - "{{ switch_config_evpn_template | from_yaml }}"
   - "{{ switch_config_virtual_router }}"
 
 switch_config_breakout:
@@ -69,16 +69,16 @@ switch_interface_config_ethernet:
 switch_interface_config_fabric:
   "Ethernet 1/1/1":
     description: downstream-hb-sw-leaf01-h01
-    config: "{{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h01']) | from_yaml }}"
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h01']) | from_yaml }}"
   "Ethernet 1/1/2":
     description: downstream-hb-sw-leaf02-h01
-    config: "{{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h01']) | from_yaml }}"
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h01']) | from_yaml }}"
   "Ethernet 1/1/3":
     description: downstream-hb-sw-leaf01-h03
-    config: "{{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h03']) | from_yaml }}"
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h03']) | from_yaml }}"
   "Ethernet 1/1/4":
     description: downstream-hb-sw-leaf02-h03
-    config: "{{ switch_interface_config_fabric_real_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h03']) | from_yaml }}"
+    config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf02-h03']) | from_yaml }}"
   "Ethernet 1/1/5":
     description: downstream-hb-sw-leaf01-h04
     config: "{{ switch_interface_config_fabric_template.format(ip=switch_fabric_ips['hb-sw-leaf01-h04']) | from_yaml }}"
@@ -111,10 +111,10 @@ switch_interface_config_mgmt_downlink:
 
 # Uplink to core
 switch_interface_config_uplink:
-  - no shutdown
+  - shutdown
   - mtu 9216
   - switchport mode trunk
   - no switchport access vlan
-  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
+  - no switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }},42-45,1071
 
 ###############################################################################
