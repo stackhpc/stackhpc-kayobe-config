@@ -71,9 +71,6 @@ switch_interface_config_workload_idrac:
   - no shutdown
   - flowcontrol receive on
   - switchport mode trunk
-  # Ironic will manage the provisioning VLAN membership.
-  - "{% if physical_network_enable_discovery | default(false) | bool %}switchport access vlan {{ provision_wl_net_name | net_vlan }}{% endif %}"
-  - "{% if physical_network_disable_discovery | default(false) | bool %}switchport access vlan 1{% endif %}"
   - switchport trunk allowed vlan {{ oob_wl_net_name | net_vlan }}
   - spanning-tree port type edge
 
