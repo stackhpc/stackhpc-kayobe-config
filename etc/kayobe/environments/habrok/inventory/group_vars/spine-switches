@@ -117,14 +117,4 @@ switch_interface_config_uplink:
   - no switchport access vlan
   - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
 
-# Trunk between spines
-switch_interface_config_spine_peerlink:
-  - no shutdown
-  - mtu 9216
-  - switchport mode trunk
-  - switchport trunk allowed vlan {{ switch_spine_peerlink_trunk_vlans | unique | join(',') }}
-
-# VLANs to trunk on the peer link between spines
-switch_spine_trunk_peerlink_vlans: "{{ switch_mgmt_uplink_trunk_vlans }}"
-
 ###############################################################################
