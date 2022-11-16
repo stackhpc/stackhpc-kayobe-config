@@ -20,7 +20,7 @@
     virtualenv: "{{ nova_compute_drain_venv }}"
     name:
       - python-openstackclient
-
+    extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
   run_once: true
   delegate_to: "{{ nova_compute_drain_delegate_host }}"
   vars:
