@@ -1,7 +1,3 @@
-variable "ssh_private_key" {
-  type = string
-}
-
 variable "ssh_public_key" {
   type = string
 }
@@ -16,8 +12,9 @@ variable "aio_vm_image" {
   default = "CentOS-stream8"
 }
 
-variable "aio_vm_keypair" {
+variable "aio_vm_interface" {
   type = string
+  default = "eth0"
 }
 
 variable "aio_vm_flavor" {
@@ -41,17 +38,11 @@ data "openstack_networking_subnet_v2" "network" {
   name = var.aio_vm_subnet
 }
 
-resource "openstack_compute_keypair_v2" "keypair" {
-  name = var.aio_vm_keypair
-  public_key = file(var.ssh_public_key)
-}
-
 resource "openstack_compute_instance_v2" "kayobe-aio" {
   name         = var.aio_vm_name
   flavor_name  = var.aio_vm_flavor
-  key_pair     = var.aio_vm_keypair
   config_drive = true
-  user_data    = file("templates/userdata.cfg.tpl")
+  user_data    = templatefile("templates/userdata.cfg.tpl", {ssh_public_key = file(var.ssh_public_key)})
   network {
     name = var.aio_vm_network
   }
@@ -65,29 +56,4 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     delete_on_termination = true
   }
 
-  provisioner "file" {
-    source      = "scripts/configure-local-networking.sh"
-    destination = "/home/cloud-user/configure-local-networking.sh"
-
-    connection {
-      type        = "ssh"
-      host        = self.access_ip_v4
-      user        = "cloud-user"
-      private_key = file(var.ssh_private_key)
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo bash /home/cloud-user/configure-local-networking.sh"
-    ]
-
-    connection {
-      type        = "ssh"
-      host        = self.access_ip_v4
-      user        = "cloud-user"
-      private_key = file(var.ssh_private_key)
-    }
-
-  }
 }
