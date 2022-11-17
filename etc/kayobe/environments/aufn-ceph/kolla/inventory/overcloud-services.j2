@@ -96,6 +96,7 @@ neutron
 
 [neutron-ovn-metadata-agent:children]
 compute
+network
 
 [neutron-bgp-dragent:children]
 neutron
@@ -120,7 +121,7 @@ storage
 cinder
 
 [cinder-volume:children]
-cinder
+storage
 
 # Cloudkitty
 [cloudkitty-api:children]
@@ -211,12 +212,6 @@ monasca-agent
 [monasca-api:children]
 monasca
 
-[monasca-grafana:children]
-monasca
-
-[monasca-log-transformer:children]
-monasca
-
 [monasca-log-persister:children]
 monasca
 
@@ -257,10 +252,10 @@ ironic
 {{ groups['controllers'][0] }}
 {% endif %}
 
-[ironic-pxe:children]
+[ironic-tftp:children]
 ironic
 
-[ironic-ipxe:children]
+[ironic-http:children]
 ironic
 
 # Magnum
@@ -344,10 +339,6 @@ compute
 
 [cyborg-conductor:children]
 cyborg
-
-# Panko
-[panko-api:children]
-panko
 
 # Gnocchi
 [gnocchi-api:children]
@@ -502,7 +493,7 @@ storage
 mariadb
 
 [prometheus-haproxy-exporter:children]
-haproxy
+loadbalancer
 
 [prometheus-memcached-exporter:children]
 memcached
@@ -517,6 +508,9 @@ storage
 [prometheus-alertmanager:children]
 monitoring
 
+[prometheus-msteams:children]
+monitoring
+
 [prometheus-openstack-exporter:children]
 monitoring
 
@@ -525,6 +519,12 @@ elasticsearch
 
 [prometheus-blackbox-exporter:children]
 monitoring
+
+[prometheus-libvirt-exporter:children]
+compute
+
+[prometheus-msteams:children]
+prometheus-alertmanager
 
 [masakari-api:children]
 control

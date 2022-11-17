@@ -7,7 +7,7 @@ set -eu
 
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/yoga
-KAYOBE_CONFIG_BRANCH=stackhpc/yoga
+KAYOBE_CONFIG_BRANCH=yoga-aufn
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 # FIXME: Work around lack of DNS on SMS lab.
@@ -70,12 +70,6 @@ $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.
 # Bootstrap the Ansible control host.
 kayobe control host bootstrap
 
-# Sync package & container repositories.
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
-
 # Configure the seed hypervisor host.
 kayobe seed hypervisor host configure
 
@@ -91,6 +85,12 @@ kayobe seed service deploy
 # Deploying the seed restarts networking interface,
 # run configure-local-networking.sh again to re-add routes.
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
+
+# Sync package & container repositories.
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
 
 # NOTE: Make sure to use ./tenks, since just ‘tenks’ will install via PyPI.
 (export TENKS_CONFIG_PATH=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/tenks.yml && \
