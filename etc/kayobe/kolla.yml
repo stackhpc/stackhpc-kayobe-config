@@ -48,11 +48,10 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-kolla_ansible_venv_extra_requirements: "{{ lookup('vars', 'kolla_ansible_venv_extra_requirements_' ~ os_distribution, default=[]) }}"
-
-# Rocky specific requirements in the kolla-ansible virtualenv
-kolla_ansible_venv_extra_requirements_rocky:
-  # NOTE(wszumski): This is wallaby specific as we can use ansible-core 2.11 in Xena.
+kolla_ansible_venv_extra_requirements:
+  # NOTE(wszumski): Fork with support for Rocky Linux target hosts. Remove in
+  # Xena as kayobe supports ansible 2.11 which has Rocky Support out of the
+  # box.
   - 'ansible-base@git+https://github.com/stackhpc/ansible@stackhpc/2.10/rocky'
 
 # Pip requirement specifier for the ansible package. NOTE: This limits the
@@ -523,6 +522,7 @@ kolla_build_customizations: "{{ kolla_build_customizations_common | combine(koll
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
+kolla_enable_nova_libvirt_container: "{{ os_distribution not in ['rocky'] }}"
 #kolla_enable_magnum:
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
