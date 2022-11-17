@@ -6,8 +6,8 @@
 set -eu
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/wallaby
-KAYOBE_CONFIG_BRANCH=stackhpc/wallaby
+KAYOBE_BRANCH=stackhpc/yoga
+KAYOBE_CONFIG_BRANCH=stackhpc/yoga
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 # FIXME: Work around lack of DNS on SMS lab.
@@ -67,21 +67,14 @@ source kayobe-env --environment $KAYOBE_ENVIRONMENT
 # Configure host networking (bridge, routes & firewall)
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
 
-# Deploy Pulp
-$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/deploy-pulp.sh
-
 # Bootstrap the Ansible control host.
 kayobe control host bootstrap
 
 # Sync package & container repositories.
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-
-# NOTE: Building Ubuntu containers locally for now.
-# if $(which dnf 2>/dev/null >/dev/null); then
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
-# fi
 
 # Configure the seed hypervisor host.
 kayobe seed hypervisor host configure
@@ -91,12 +84,6 @@ kayobe seed vm provision
 
 # Configure the seed host, and deploy a local registry.
 kayobe seed host configure
-
-# NOTE: Building Ubuntu containers locally for now.
-# if ! $(which dnf 2>/dev/null >/dev/null); then
-#     kayobe seed container image build --push
-#     kayobe overcloud container image build --push
-# fi
 
 # Deploy the seed services.
 kayobe seed service deploy
@@ -118,7 +105,6 @@ kayobe overcloud hardware inspect
 kayobe overcloud provision
 kayobe overcloud host configure
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-config.yml
 kayobe overcloud container image pull
 kayobe overcloud service deploy
 source $KOLLA_CONFIG_PATH/public-openrc.sh
