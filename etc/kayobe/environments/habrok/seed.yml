@@ -93,3 +93,18 @@ seed_firewalld_rules:
   - service: ssh
     state: disabled
     zone: public
+  # Redfish exporter
+  - port: 9610/tcp
+    zone: provision_oc
+
+seed_extra_containers:
+  redfish:
+    name: redfish_exporter
+    command: "./redfish_exporter --config.file=/etc/redfish_exporter/redfish_exporter.conf"
+    image: stackhpc/redfish_exporter
+    pre: "{{ kayobe_config_path }}/containers/redfish_exporter/pre.yml"
+    tag: latest
+    network_mode: host
+    volumes:
+      - /etc/redfish_exporter/redfish_exporter.conf:/etc/redfish_exporter/redfish_exporter.conf
+    restart_policy: unless-stopped

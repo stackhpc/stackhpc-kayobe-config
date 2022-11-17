@@ -1,0 +1,13 @@
+---
+- name: Ensure /etc/redfish_exporter exists
+  file:
+    path: /etc/redfish_exporter
+    state: directory
+  become: true
+
+- name: Template out the exporter config
+  template:
+    src: "{{ kayobe_config_path }}/containers/redfish_exporter/redfish_exporter.conf.j2"
+    dest: /etc/redfish_exporter/redfish_exporter.conf
+    mode: 0644
+  become: true
