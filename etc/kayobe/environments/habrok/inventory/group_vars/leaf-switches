@@ -52,42 +52,17 @@ switch_config_nested:
   - "{{ switch_config_overlay_routing_profile }}"
   - "{{ switch_config_vlt }}"
   - "{{ switch_config_loopback0 }}"
-  #- "{{ switch_config_bgp_router }}"
-  #- "{{ switch_config_underlay_bgp_neighbours | flatten }}"
-  #- "{{ switch_config_underlay_bgp_neighbour_vlt_peer }}"
-  #- "{{ switch_config_overlay_bgp_neighbours | flatten }}"
-  #- "{{ switch_config_evpn }}"
-  #- "{{ switch_config_ufd_template | from_yaml }}"
-  #- "{{ switch_config_nve }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_loopback1 }}"
+  - "{{ switch_config_bgp_router_template | from_yaml }}"
+  - "{{ switch_config_ufd_template | from_yaml }}"
+  - "{{ switch_config_vrf }}"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_evpn_template | from_yaml }}"
+  - "{{ switch_config_virtual_router }}"
 
 # Port breakouts.
 switch_config_breakout: []
-
-# loopback0 VXLAN VTEP interface
-switch_config_loopback0:
-  - "interface loopback0"
-  - " description VXLAN-VTEP"
-  - " no shutdown"
-  - " ip address {{ switch_tunnel_ip }}/32"
-
-# loopback1 BGP router ID interface
-switch_config_loopback1:
-  - "interface loopback1"
-  - " description BGP-Router-ID"
-  - " no shutdown"
-  - " ip address {{ switch_bgp_ip }}/32"
-
-# Network Virtualisation Edge (NVE) for VXLANs
-switch_config_nve:
-  - "nve"
-  - " source-interface loopback0"
-
-# EVPN
-switch_config_evpn:
-  - "evpn"
-  # Automatically assign EVPN EVIs.
-  - " auto-evi"
 
 switch_config_vlt:
   # VLT

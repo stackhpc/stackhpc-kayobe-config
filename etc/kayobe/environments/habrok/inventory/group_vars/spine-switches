@@ -3,11 +3,16 @@
 # Helper variables.
 
 # BGP Autonomous System Number
-switch_bgp_asn: 65100
+switch_bgp_range_start: 65100
+switch_bgp_asn: "{{ switch_bgp_range_start - switch_bgp_index | int }}"
+
+# VXLAN VTEP IP address per spine.
+switch_tunnel_index: "{{ switch_bgp_index }}"
+switch_tunnel_ip: "{{ switch_tunnel_cidr | ipaddr(switch_tunnel_index) | ipaddr('address') }}"
 
 # BGP router ID is per-switch.
-switch_bgp_ip_index: "{{ -1 * switch_rack | int }}"
-switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_ip_index | string) | ipaddr('address') }}"
+switch_bgp_index: "{{ -1 * switch_rack | int }}"
+switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_index | string) | ipaddr('address') }}"
 
 ###############################################################################
 # Global configuration.
@@ -20,16 +25,14 @@ switch_config_nested:
   - "{{ switch_config_mtu }}"
   - "{{ switch_config_breakout }}"
   - "{{ switch_config_overlay_routing_profile }}"
-  #- "{{ switch_config_bgp_router }}"
-  #- "{{ switch_config_underlay_bgp_neighbours | flatten }}"
-  #- "{{ switch_config_overlay_bgp_neighbours | flatten }}"
-  #- "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_loopback0 }}"
+  - "{{ switch_config_loopback1 }}"
+  - "{{ switch_config_bgp_router_template | from_yaml }}"
   - "{{ switch_config_vrf }}"
-
-switch_config_vrf:
-  # TODO: Router between internal and baremetal provisioning networks
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %}ip vrf baremetal-provisioning{% endif %}"
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %} exit{% endif %}"
+  - "{{ switch_config_nve }}"
+  - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
+  - "{{ switch_config_evpn_template | from_yaml }}"
+  - "{{ switch_config_virtual_router }}"
 
 switch_config_breakout:
   - interface breakout 1/1/30 map 10g-4x
@@ -108,20 +111,10 @@ switch_interface_config_mgmt_downlink:
 
 # Uplink to core
 switch_interface_config_uplink:
-  - no shutdown
+  - shutdown
   - mtu 9216
   - switchport mode trunk
   - no switchport access vlan
-  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
-
-# Trunk between spines
-switch_interface_config_spine_peerlink:
-  - no shutdown
-  - mtu 9216
-  - switchport mode trunk
-  - switchport trunk allowed vlan {{ switch_spine_peerlink_trunk_vlans | unique | join(',') }}
-
-# VLANs to trunk on the peer link between spines
-switch_spine_trunk_peerlink_vlans: "{{ switch_mgmt_uplink_trunk_vlans }}"
+  - no switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }},42-45,1071
 
 ###############################################################################
