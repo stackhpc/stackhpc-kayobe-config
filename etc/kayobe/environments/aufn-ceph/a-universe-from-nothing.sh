@@ -78,10 +78,10 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
 
 # NOTE: Building Ubuntu containers locally for now.
-if $(which dnf 2>/dev/null >/dev/null); then
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
-fi
+# if $(which dnf 2>/dev/null >/dev/null); then
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+# fi
 
 # Configure the seed hypervisor host.
 kayobe seed hypervisor host configure
@@ -93,10 +93,10 @@ kayobe seed vm provision
 kayobe seed host configure
 
 # NOTE: Building Ubuntu containers locally for now.
-if ! $(which dnf 2>/dev/null >/dev/null); then
-    kayobe seed container image build --push
-    kayobe overcloud container image build --push
-fi
+# if ! $(which dnf 2>/dev/null >/dev/null); then
+#     kayobe seed container image build --push
+#     kayobe overcloud container image build --push
+# fi
 
 # Deploy the seed services.
 kayobe seed service deploy
