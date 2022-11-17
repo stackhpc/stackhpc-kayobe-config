@@ -19,10 +19,6 @@ on:
         description: Neutron ML2 plugin
         type: string
         required: true
-      vm_user:
-        description: User to use when bootstraping the VM. Leave unset to use os_distribution.
-        type: string
-        default: ''
       vm_image:
         description: Image for the all-in-one VM
         type: string
@@ -68,12 +64,6 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - name: Set bootstrap user output
-        id: bootstrap_user
-        run: |
-          user=${{ inputs.vm_user }}
-          echo "::set-output name=value::${user:-"${{ inputs.os_distribution }}"}"
-
       - uses: actions/checkout@v2
         with:
            submodules: true
@@ -100,8 +90,6 @@ jobs:
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
-          ssh_private_key = "id_rsa"
-          aio_vm_user = "${{ env.VM_USER }}"
           aio_vm_interface = "${{ env.VM_INTERFACE }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
@@ -116,7 +104,6 @@ jobs:
           VM_FLAVOR: ${{ inputs.vm_flavor }}
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
-          VM_USER: ${{ steps.bootstrap_user.outputs.value }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
 
       - name: Terraform Plan
