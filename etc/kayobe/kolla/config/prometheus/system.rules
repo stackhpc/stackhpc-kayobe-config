@@ -78,4 +78,13 @@ groups:
       summary: "Host EDAC Uncorrectable Errors detected (instance {{ $labels.instance }})"
       description: "{{ $labels.instance }} has had {{ printf \"%.0f\" $value }} uncorrectable memory errors reported by EDAC in the last 5 minutes."
 
+  - alert: DiskSmartStatusUnhealthy
+    expr: smartmon_device_smart_healthy < 1
+    for: 10m
+    labels:
+      severity: alert
+    annotations:
+      summary: "SMART monitor reports bad disk on (instance {{ $labels.instance }})"
+      description: "{{ $labels.instance }} is reporting unhealthy for the disk at {{ $labels.disk }}. Disk serial number is: {{ $labels.serial_number }}"
+
 {% endraw %}
