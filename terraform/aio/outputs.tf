@@ -11,5 +11,5 @@ output "access_gw" {
 }
 
 output "access_interface" {
-  value = "eth0"
+  value = var.aio_vm_interface
 }
