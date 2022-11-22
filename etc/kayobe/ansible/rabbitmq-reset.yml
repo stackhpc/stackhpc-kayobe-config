@@ -1,0 +1,29 @@
+---
+- name: Reset RabbitMQ
+  hosts: overcloud
+  become: True
+  vars:
+    - container_name: rabbitmq
+  tasks:
+    - name: Inspect the {{ container_name }} container
+      shell:
+        cmd: "docker container inspect --format '{{ '{{' }} .State.Running {{ '}}' }}' {{ container_name }}"
+      register: result
+
+    - name: Ensure the {{ container_name }} container is running
+      command: "docker start {{ container_name }}"
+      when: result.stdout == 'false'
+
+    - name: Wait to give the {{ container_name }} container time to start
+      ansible.builtin.wait_for:
+        timeout: 10
+      when: result.stdout == 'false'
+
+    - name: Stop app
+      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl stop_app'"
+
+    - name: Force reset app
+      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl force_reset'"
+
+    - name: Start app
+      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'"
