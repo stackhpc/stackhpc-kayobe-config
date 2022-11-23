@@ -2,6 +2,9 @@
 - name: Reset RabbitMQ
   hosts: controllers
   become: True
+  gather_facts: no
+  tags:
+    - rabbitmq-reset
   vars:
     - container_name: rabbitmq
   tasks:
@@ -34,3 +37,6 @@
 
     - name: Start app
       command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'"
+
+    - name: Wait for all nodes to join the cluster
+      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ groups['controllers'] | length }}'"
