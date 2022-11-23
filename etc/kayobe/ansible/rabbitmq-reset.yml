@@ -23,7 +23,7 @@
       delay: 6
 
     - name: Wait for the rabbitmq node to automatically start on container start
-      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl wait --pid 1 --timeout 60'"
+      command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbitmq.pid --timeout 60'"
       when: inspection.stdout == 'false'
 
     - name: Stop app
