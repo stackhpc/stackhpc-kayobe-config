@@ -1,0 +1,59 @@
+include: .gitlab/prelude.yml
+
+Build IPA:
+  extends:
+    - .ipa-tags
+    - .environment-prepare
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  resource_group: "$KAYOBE_ENVIRONMENT/ipa"
+  stage: run
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      variables:
+        KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
+        # Default plugin prints loop item on failure that
+        # may contain devuser password.
+        ANSIBLE_STDOUT_CALLBACK: unixy
+  script:
+    - exit_code=0
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-ipa.yml || exit_code=$?
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /opt/kayobe/images/ipa/ipa.{stdout,stderr} ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; fi
+  artifacts:
+    when: always
+    paths:
+      - artifacts/ipa.stdout
+      - artifacts/ipa.stderr
+
+Build Rocky Image:
+  extends:
+    - .ipa-tags
+    - .environment-prepare
+  image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  resource_group: "$KAYOBE_ENVIRONMENT/deployment_image"
+  stage: run
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      variables:
+        # Default plugin prints loop item on failure that
+        # may contain devuser password.
+        ANSIBLE_STDOUT_CALLBACK: unixy
+        KAYOBE_AUTOMATION_PUSH_IMAGE: "1"
+  script:
+    - exit_code=0
+    - !reference [.prelude_kayobe_setup, script]
+    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-rocky-deployment-image.yml || exit_code=$?
+    - mkdir ${CI_PROJECT_DIR}/artifacts
+    - cp /opt/kayobe/images/deployment_image/deployment_image.{stdout,stderr} ${CI_PROJECT_DIR}/artifacts/
+    - if [ ${exit_code} -ne 0 ];then exit $exit_code; fi
+  artifacts:
+    when: always
+    paths:
+      - artifacts/deployment_image.stdout
+      - artifacts/deployment_image.stderr

@@ -1,0 +1,151 @@
+---
+###############################################################################
+# Scientific OpenStack LVM Volume Group (VG) configuration.
+
+# Scientific OpenStack rootvg VG.
+# This VG contains a set of LVs that conform to the CIS partition benchmarks.
+# This layout is compatible with the overcloud DIB host image configuration in
+# overcloud-dib.yml. This may be used as an item in one of the
+# *_lvm_groups variables.
+# Example:
+# controller_lvm_groups:
+#   - "{{ scientific_openstack_lvm_group_rootvg }}"
+scientific_openstack_lvm_group_rootvg:
+  vgname: vg
+  disks: "{{ scientific_openstack_lvm_group_rootvg_disks }}"
+  create: true
+  lvnames: "{{ scientific_openstack_lvm_group_rootvg_lvs_default +
+               [scientific_openstack_lvm_lv_swap] if 'swap_group' in group_names else [] +
+               scientific_openstack_lvm_group_rootvg_lvs_extra }}"
+
+# List of disks to include in the rootvg VG.
+scientific_openstack_lvm_group_rootvg_disks:
+  - /dev/disk/by-partlabel/lvm_part
+
+# List of default LVs to include in the rootvg VG.
+scientific_openstack_lvm_group_rootvg_lvs_default:
+  - "{{ scientific_openstack_lvm_lv_root }}"
+  - "{{ scientific_openstack_lvm_lv_tmp }}"
+  - "{{ scientific_openstack_lvm_lv_var }}"
+  - "{{ scientific_openstack_lvm_lv_var_tmp }}"
+  - "{{ scientific_openstack_lvm_lv_log }}"
+  - "{{ scientific_openstack_lvm_lv_audit }}"
+  - "{{ scientific_openstack_lvm_lv_home }}"
+
+# List of extra LVs to include in the rootvg VG.
+scientific_openstack_lvm_group_rootvg_lvs_extra: []
+
+###############################################################################
+# Scientific OpenStack LVM Logical Volume (LV) configuration.
+
+# Scientific OpenStack LVM lv_swap LV size.
+scientific_openstack_lvm_lv_swap_size: 16g
+
+# Scientific OpenStack LVM lv_root LV size.
+scientific_openstack_lvm_lv_root_size: 10g
+
+# Scientific OpenStack LVM lv_tmp LV size.
+scientific_openstack_lvm_lv_tmp_size: 10g
+
+# Scientific OpenStack LVM lv_var LV size.
+scientific_openstack_lvm_lv_var_size: 20g
+
+# Scientific OpenStack LVM lv_var_tmp LV size.
+scientific_openstack_lvm_lv_var_tmp_size: 2g
+
+# Scientific OpenStack LVM lv_log LV size.
+scientific_openstack_lvm_lv_log_size: 20g
+
+# Scientific OpenStack LVM lv_audit LV size.
+scientific_openstack_lvm_lv_audit_size: 10g
+
+# Scientific OpenStack LVM lv_home LV size.
+scientific_openstack_lvm_lv_home_size: 10g
+
+# Scientific OpenStack LVM lv_docker LV size.
+scientific_openstack_lvm_lv_docker_size: 100%FREE
+
+# Scientific OpenStack LVM lv_swap LV.
+scientific_openstack_lvm_lv_swap:
+  lvname: lv_swap
+  size: "{{ scientific_openstack_lvm_lv_swap_size }}"
+  create: true
+  mount: false
+
+# Scientific OpenStack LVM lv_root LV.
+scientific_openstack_lvm_lv_root:
+  lvname: lv_root
+  size: "{{ scientific_openstack_lvm_lv_root_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /
+
+# Scientific OpenStack LVM lv_tmp LV.
+scientific_openstack_lvm_lv_tmp:
+  lvname: lv_tmp
+  size: "{{ scientific_openstack_lvm_lv_tmp_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /tmp
+
+# Scientific OpenStack LVM lv_var LV.
+scientific_openstack_lvm_lv_var:
+  lvname: lv_var
+  size: "{{ scientific_openstack_lvm_lv_var_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var
+
+# Scientific OpenStack LVM lv_var_tmp LV.
+scientific_openstack_lvm_lv_var_tmp:
+  lvname: lv_var_tmp
+  size: "{{ scientific_openstack_lvm_lv_var_tmp_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/tmp
+
+# Scientific OpenStack LVM lv_log LV.
+scientific_openstack_lvm_lv_log:
+  lvname: lv_log
+  size: "{{ scientific_openstack_lvm_lv_log_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/log
+
+# Scientific OpenStack LVM lv_audit LV.
+scientific_openstack_lvm_lv_audit:
+  lvname: lv_audit
+  size: "{{ scientific_openstack_lvm_lv_audit_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/log/audit
+
+# Scientific OpenStack LVM lv_home LV.
+scientific_openstack_lvm_lv_home:
+  lvname: lv_home
+  size: "{{ scientific_openstack_lvm_lv_home_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /home
+
+# Scientific OpenStack LVM lv_docker LV.
+# NOTE: This is not included in the rootvg by default, but may be added via
+# scientific_openstack_lvm_group_rootvg_lvs_extra.
+# Example:
+# scientific_openstack_lvm_group_rootvg_lvs_extra:
+#   - "{{ scientific_openstack_lvm_lv_docker }}"
+# Alternatively, this may reside in a separate VG.
+scientific_openstack_lvm_lv_docker:
+  lvname: lv_docker
+  size: "{{ scientific_openstack_lvm_lv_docker_size }}"
+  create: true
+  filesystem: ext4
+  mount: true
+  mntp: /var/lib/docker

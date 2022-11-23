@@ -1,0 +1,241 @@
+---
+# Overcloud host disk image configuration.
+
+###############################################################################
+# Diskimage-builder configuration for overcloud host disk images.
+
+# Whether to build host disk images with DIB directly instead of through
+# Bifrost. Setting it to true disables Bifrost image build and allows images to
+# be built with the `kayobe overcloud host image build` command. Default value
+# is {{ os_distribution == 'rocky' }}. This will change in a future release.
+overcloud_dib_build_host_images: true
+
+# List of overcloud host disk images to build. Each element is a dict defining
+# an image in a format accepted by the stackhpc.os-images role. Default is to
+# build an image named "deployment_image" configured with the overcloud_dib_*
+# variables defined below: {"name": "deployment_image", "elements": "{{
+# overcloud_dib_elements }}", "env": "{{ overcloud_dib_env_vars }}",
+# "packages": "{{ overcloud_dib_packages }}"}.
+#overcloud_dib_host_images:
+
+# DIB base OS element. Default is {{ 'rocky-container' if os_distribution ==
+# 'rocky' else os_distribution }}.
+overcloud_dib_os_element: rocky-container
+
+# DIB image OS release. Default is {{ os_release }}.
+overcloud_dib_os_release: 8
+
+# List of default DIB elements. Default is ["centos", "cloud-init-datasources",
+# "disable-selinux", "enable-serial-console", "vm"] when
+# overcloud_dib_os_element is "centos", or ["rocky-container",
+# "cloud-init-datasources", "disable-selinux", "enable-serial-console", "vm"]
+# when overcloud_dib_os_element is "rocky" or
+# ["ubuntu", "cloud-init-datasources", "enable-serial-console", "vm"]
+# when overcloud_dib_os_element is "ubuntu".
+#overcloud_dib_elements_default:
+
+# List of additional DIB elements. Default is none.
+overcloud_dib_elements_extra:
+  - "dracut-regenerate"
+  - "cloud-init-datasources"
+  - "enable-serial-console"
+  - "block-device-efi"
+  - "unmask-tmp"
+  - "openssh-server"
+  - "cloud-init"
+  - "disable-selinux"
+  - "disable-nouveau"
+
+# List of DIB elements. Default is a combination of
+# overcloud_dib_elements_default and overcloud_dib_elements_extra.
+#overcloud_dib_elements:
+
+# DIB default environment variables. Default is
+# {"DIB_BOOTLOADER_DEFAULT_CMDLINE": "nofb nomodeset gfxpayload=text
+# net.ifnames=1", "DIB_CLOUD_INIT_DATASOURCES": "ConfigDrive",
+# "DIB_CONTAINERFILE_RUNTIME": "docker", "DIB_CONTAINERFILE_NETWORK_DRIVER":
+# "host", "DIB_RELEASE": "{{ overcloud_dib_os_release }}"}.
+#overcloud_dib_env_vars_default:
+
+# DIB additional environment variables. Default is none.
+overcloud_dib_env_vars_extra:
+  DOCKER_BUILDKIT: "1"
+  DIB_BLOCK_DEVICE_CONFIG: |
+    - local_loop:
+        name: image0
+        size: 85GiB
+    - partitioning:
+        base: image0
+        label: gpt
+        partitions:
+          - name: ESP
+            type: EF00
+            size: 16MiB
+            mkfs:
+              type: vfat
+              mount:
+                mount_point: /boot/efi
+                fstab:
+                  options: "defaults"
+                  fsck-passno: 1
+          - name: BSP
+            type: 'EF02'
+            size: 8MiB
+          - name: lvm_part
+            flags: [boot]
+            # size is relative to the remaining free space
+            size: 100%
+            type: '0x8e'
+    - lvm:
+        name: lvm
+        pvs:
+          - name: pv
+            base: lvm_part
+            options: [ "--force" ]
+        vgs:
+          - name: vg
+            base: [ "pv" ]
+            options: [ "--force" ]
+        lvs:
+          - name: lv_root
+            base: vg
+            size: 10G
+          - name: lv_tmp
+            base: vg
+            size: 10G
+          - name: lv_var
+            base: vg
+            size: 20G
+          - name: lv_var_tmp
+            base: vg
+            size: 2G
+          - name: lv_log
+            base: vg
+            size: 20G
+          - name: lv_audit
+            base: vg
+            size: 10G
+          - name: lv_home
+            base: vg
+            size: 10G
+    - mkfs:
+        name: fs_root
+        base: lv_root
+        type: ext4
+        label: fs_root
+        mount:
+          mount_point: /
+          fstab:
+            options: "rw"
+            fsck-passno: 1
+    - mkfs:
+        name: fs_tmp
+        base: lv_tmp
+        type: ext4
+        mount:
+          mount_point: /tmp
+          fstab:
+            options: "rw,noexec,nosuid,nodev"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_var
+        base: lv_var
+        type: ext4
+        mount:
+          mount_point: /var
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_var_tmp
+        base: lv_var_tmp
+        type: ext4
+        mount:
+          mount_point: /var/tmp
+          fstab:
+            options: "rw,noexec,nosuid,nodev"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_log
+        base: lv_log
+        type: ext4
+        mount:
+          mount_point: /var/log
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_audit
+        base: lv_audit
+        type: ext4
+        mount:
+          mount_point: /var/log/audit
+          fstab:
+            options: "rw"
+            fsck-passno: 2
+    - mkfs:
+        name: fs_home
+        base: lv_home
+        type: ext4
+        mount:
+          mount_point: /home
+          fstab:
+            options: "rw,nodev"
+            fsck-passno: 2
+  DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1 rd.auto"
+  DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
+  DIB_RELEASE: "{{ overcloud_dib_os_release }}"
+  DIB_BLOCK_DEVICE: efi
+  DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: |
+    - name: crypt
+      packages:
+        - cryptsetup
+    - name: lvm
+      packages:
+        - lvm2
+    - name: mdraid
+      packages:
+        - mdraid
+  # Use custom container base file
+  DIB_CONTAINERFILE_DOCKERFILE: "{{ source_checkout_path }}/stackhpc-image-elements/elements/rocky-container-pulp/8.6-pulp-mofed"
+  YUM: dnf
+
+# Add if you don't have docker:
+# DIB_CONTAINERFILE_RUNTIME: "podman"
+
+# DIB environment variables. Default is combination of
+# overcloud_dib_env_vars_default and overcloud_dib_env_vars_extra.
+#overcloud_dib_env_vars:
+
+# List of DIB packages to install. Default is to install no extra packages.
+overcloud_dib_packages:
+  - lvm2
+  - logrotate
+  - net-tools
+  - sysstat
+
+# List of default git repositories containing Diskimage Builder (DIB) elements.
+# See stackhpc.os-images role for usage. Default is empty.
+#overcloud_dib_git_elements_default:
+
+# List of additional git repositories containing Diskimage Builder (DIB)
+# elements. See stackhpc.os-images role for usage. Default is empty.
+overcloud_dib_git_elements_extra:
+  - repo: https://github.com/stackhpc/stackhpc-image-elements
+    local: "{{ source_checkout_path }}/stackhpc-image-elements"
+    elements_path: elements
+    version: feature/rocky-container-scientific
+
+# List of git repositories containing Diskimage Builder (DIB) elements. See
+# stackhpc.os-images role for usage. Default is a combination of
+# overcloud_dib_git_elements_default and overcloud_dib_git_elements_extra.
+#overcloud_dib_git_elements:
+
+# Upper constraints file for installing packages in the virtual environment
+# used for building overcloud host disk images. Default is {{
+# pip_upper_constraints_file }}.
+overcloud_dib_upper_constraints_file: https://raw.githubusercontent.com/openstack/requirements/stable/yoga/upper-constraints.txt
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
