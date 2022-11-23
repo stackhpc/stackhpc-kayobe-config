@@ -10,6 +10,9 @@ pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
 pulp_username: admin
 pulp_password: "{{ secrets_pulp_password }}"
 
+# Proxy to use when adding remotes.
+pulp_proxy_url: "{{ omit }}"
+
 ###############################################################################
 # StackHPC Pulp server
 
@@ -44,6 +47,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main restricted universe multiverse
     distributions: focal focal-updates focal-backports
@@ -56,6 +60,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main restricted universe multiverse
     distributions: focal-security
@@ -69,6 +74,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main
     distributions: focal-updates/wallaby
@@ -82,6 +88,7 @@ stackhpc_pulp_repository_deb_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     distributions: focal
     components: stable
@@ -167,6 +174,21 @@ stackhpc_pulp_distribution_deb_production:
 # Whether to sync CentOS Stream 8 packages.
 stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
+# Whether to sync Rocky Linux 8 packages.
+stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' }}"
+# Rocky 8 minor version number. Supported values: 6.
+stackhpc_pulp_repo_rocky_8_minor_version: 6
+# Rocky 8 Snapshot versions. The defaults use the appropriate version from
+# pulp-repo-versions.yml for the selected minor release.
+stackhpc_pulp_repo_rocky_8_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_appstream_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
+stackhpc_pulp_repo_rocky_8_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_baseos_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
+stackhpc_pulp_repo_rocky_8_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_extras_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
+stackhpc_pulp_repo_rocky_8_nfv_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_nfv_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
+stackhpc_pulp_repo_rocky_8_powertools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_powertools_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
+
+# Whether to sync packages common to all RHEL derivatives.
+stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_centos_stream8 }}"
+
 stackhpc_pulp_repository_rpm_repos:
   # Base CentOS 8 Stream repositories
   - name: CentOS Stream 8 - AppStream
@@ -174,6 +196,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -182,6 +205,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
@@ -190,9 +214,52 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+
+  # Base Rocky 8 repositories
+  - name: Rocky Linux 8 - AppStream
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_appstream_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: Rocky Linux 8 - BaseOS
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_baseos_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: Rocky Linux 8 - Extras
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_extras_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: Rocky Linux 8 - NFV
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/nfv/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_nfv_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: Rocky Linux 8 - PowerTools
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/PowerTools/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_6_powertools_version }}"
+    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
+    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
 
   # EPEL repositories
   - name: Extra Packages for Enterprise Linux 8 - x86_64
@@ -200,17 +267,19 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_content_only
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Third-party repositories
   - name: Docker CE for CentOS 8
@@ -218,9 +287,10 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: "{{ stackhpc_release_pulp_client_cert }}"
     client_key: "{{ stackhpc_release_pulp_client_key }}"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_development }}"
@@ -247,24 +317,51 @@ stackhpc_pulp_distribution_rpm_development:
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
+  # Base Rocky 8 repositories
+  - name: "rocky-8-appstream-development"
+    repository: Rocky Linux 8 - AppStream
+    base_path: "rocky/8/AppStream/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-baseos-development"
+    repository: Rocky Linux 8 - BaseOS
+    base_path: "rocky/8/BaseOS/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-extras-development"
+    repository: Rocky Linux 8 - Extras
+    base_path: "rocky/8/extras/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-nfv-development"
+    repository: Rocky Linux 8 - NFV
+    base_path: "rocky/8/nfv/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-powertools-development"
+    repository: Rocky Linux 8 - PowerTools
+    base_path: "rocky/8/PowerTools/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+
   # EPEL repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-development"
     repository: Extra Packages for Enterprise Linux 8 - x86_64
     base_path: "epel/8/Everything/x86_64/development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
   - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
     repository: Extra Packages for Enterprise Linux Modular 8 - x86_64
     base_path: "epel/8/Modular/x86_64/development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-centos-8-development"
     repository: Docker CE for CentOS 8
     base_path: "docker-ce/centos/8/x86_64/stable/development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_rpm_production:
@@ -285,24 +382,51 @@ stackhpc_pulp_distribution_rpm_production:
     state: present
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
+  # Base Rocky 8 repositories
+  - name: "rocky-8-appstream-production"
+    distribution: "rocky-8-appstream-development"
+    base_path: "rocky/8/AppStream/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-baseos-production"
+    distribution: "rocky-8-baseos-development"
+    base_path: "rocky/8/BaseOS/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-extras-production"
+    distribution: "rocky-8-extras-development"
+    base_path: "rocky/8/extras/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-nfv-production"
+    distribution: "rocky-8-nfv-development"
+    base_path: "rocky/8/nfv/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "rocky-8-powertools-production"
+    distribution: "rocky-8-powertools-development"
+    base_path: "rocky/8/PowerTools/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+
   # EPEL repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-production"
     base_path: "epel/8/Everything/x86_64/production"
     distribution: "extra-packages-for-enterprise-linux-8-x86_64-development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
   - name: "extra-packages-for-enterprise-linux-modular-8-x86_64-production"
     base_path: "epel/8/Modular/x86_64/production"
     distribution: "extra-packages-for-enterprise-linux-modular-8-x86_64-development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Third-party repositories
   - name: "docker-ce-for-centos-8-production"
     base_path: "docker-ce/centos/8/x86_64/stable/production"
     distribution: "docker-ce-for-centos-8-development"
     state: present
-    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
 ###############################################################################
 # Containers
@@ -439,6 +563,7 @@ stackhpc_pulp_images:
 stackhpc_pulp_repository_container_repos_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
   policy: on_demand
+  proxy_url: "{{ pulp_proxy_url }}"
   remote_username: "{{ stackhpc_release_pulp_username }}"
   remote_password: "{{ stackhpc_release_pulp_password }}"
   state: present

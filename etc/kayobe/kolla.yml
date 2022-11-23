@@ -48,7 +48,11 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-#kolla_ansible_venv_extra_requirements:
+kolla_ansible_venv_extra_requirements:
+  # NOTE(wszumski): Fork with support for Rocky Linux target hosts. Remove in
+  # Xena as kayobe supports ansible 2.11 which has Rocky Support out of the
+  # box.
+  - 'ansible-base@git+https://github.com/stackhpc/ansible@stackhpc/2.10/rocky'
 
 # Pip requirement specifier for the ansible package. NOTE: This limits the
 # version of ansible used by kolla-ansible to avoid new releases from breaking
@@ -91,7 +95,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220905T105054{% else %}wallaby-20220819T112725{% endif %}"
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220919T081704{% else %}wallaby-20220819T112725{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -229,7 +233,8 @@ kolla_build_blocks:
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel
+    RUN grafana-cli plugins install vonage-status-panel \
+        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
   prometheus_v2_server_repository_version: |
@@ -517,6 +522,7 @@ kolla_build_customizations: "{{ kolla_build_customizations_common | combine(koll
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
+kolla_enable_nova_libvirt_container: "{{ os_distribution not in ['rocky'] }}"
 #kolla_enable_magnum:
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
