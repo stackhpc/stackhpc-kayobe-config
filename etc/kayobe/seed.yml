@@ -87,6 +87,40 @@ seed_bootstrap_user: centos
 ###############################################################################
 # Seed node additional containers configuration
 
+# Seed container running a "Pulp in one" service.
+# https://pulpproject.org/pulp-in-one-container/
+# This can be used as a package mirror, and container image registry.
+seed_pulp_container_enabled: false
+
+seed_pulp_container:
+  pulp:
+    image: pulp/pulp
+    pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
+    tag: "3.16"
+    network_mode: host
+    volumes:
+      - /opt/kayobe/containers/pulp:/etc/pulp
+      - pulp_storage:/var/lib/pulp
+      - pulp_pgsql:/var/lib/pgsql
+      - pulp_containers:/var/lib/containers
+    restart_policy: unless-stopped
+
+# Seed container running a Squid caching proxy. This can be used to proxy
+# HTTP(S) requests from control plane hosts.
+seed_squid_container_enabled: false
+
+seed_squid_container:
+  squid:
+    image: stackhpc/squid
+    pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
+    tag: "4.15"
+    network_mode: host
+    volumes:
+      - squid_spool:/var/spool/squid
+      - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
+      - /var/log/squid:/var/log/squid
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -96,7 +130,33 @@ seed_bootstrap_user: centos
 #     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
 #
-#seed_containers:
+seed_containers: >-
+  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
+        | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_extra_containers) }}
+
+seed_extra_containers: {}
+
+###############################################################################
+# Seed node firewalld configuration.
+
+# Whether to install and enable firewalld.
+#seed_firewalld_enabled:
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+#seed_firewalld_zones:
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+#seed_firewalld_default_zone:
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+#seed_firewalld_rules:
 
 ###############################################################################
 # Seed node firewalld configuration.

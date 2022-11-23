@@ -1,0 +1,170 @@
+---
+name: Build Kolla container images
+on:
+  workflow_dispatch:
+    inputs:
+      regexes:
+        description: Space-separated list of regular expressions matching overcloud images to build
+        type: string
+        required: false
+        default: ""
+      overcloud:
+        description: Build overcloud images?
+        type: boolean
+        required: false
+        default: true
+      seed:
+        description: Build seed images?
+        type: boolean
+        required: false
+        default: false
+      distro:
+        description: Container image OS distribution
+        type: choice
+        required: false
+        default: centos
+        options:
+          - centos
+          - ubuntu
+
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  container-image-build:
+    name: Build Kolla container images
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: src/kayobe-config
+
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v3
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/wallaby
+          path: src/kayobe
+
+      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
+      - name: Install dependencies
+        run: |
+          sudo dnf -y install python3-virtualenv
+
+      - name: Setup networking
+        run: |
+          if ! ip l show breth1 >/dev/null 2>&1; then
+              sudo ip l add breth1 type bridge
+          fi
+          sudo ip l set breth1 up
+          if ! ip a show breth1 | grep 192.168.33.3/24; then
+              sudo ip a add 192.168.33.3/24 dev breth1
+          fi
+          if ! ip l show dummy1 >/dev/null 2>&1; then
+              sudo ip l add dummy1 type dummy
+          fi
+          sudo ip l set dummy1 up
+          sudo ip l set dummy1 master breth1
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install ../src/kayobe
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Build and push kolla overcloud images
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push -e kolla_base_distro=${{ inputs.distro }}
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.event.inputs.overcloud == 'true'
+
+      - name: Display the overcloud container image tag
+        run: |
+          echo "$(cat ~/kolla_tag)"
+        if: github.event.inputs.overcloud == 'true'
+
+      - name: Get built overcloud container images
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
+        if: github.event.inputs.overcloud == 'true'
+
+      - name: Upload overcloud-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Overcloud container images
+          path: overcloud-container-images
+          retention-days: 7
+        if: github.event.inputs.overcloud == 'true'
+
+      - name: Build and push kolla seed images
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed container image build --push -e kolla_base_distro=${{ inputs.distro }}
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.event.inputs.seed == 'true'
+
+      - name: Display the seed container image tag
+        run: |
+          echo "$(cat ~/kolla_tag)"
+        if: github.event.inputs.seed == 'true'
+
+      - name: Get built seed container images
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
+        if: github.event.inputs.seed == 'true'
+
+      - name: Upload seed-container-images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Seed container images
+          path: seed-container-images
+          retention-days: 7
+        if: github.event.inputs.seed == 'true'
+
+      - name: Prune local Kolla container images over 1 week old
+        run: |
+          sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
+
+  sync-container-repositories:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger container image repository sync
+        run: |
+          gh workflow run \
+          container-sync.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
+      - name: Display link to container image repository sync workflows
+        run: |
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
