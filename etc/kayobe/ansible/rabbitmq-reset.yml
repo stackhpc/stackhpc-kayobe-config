@@ -40,3 +40,15 @@
 
     - name: Wait for all nodes to join the cluster
       command: "docker exec -it {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ groups['controllers'] | length }}'"
+
+- name: Restart OpenStack services
+  hosts: controllers:compute
+  become: true
+  gather_facts: no
+  tags:
+    - restart-openstack
+  tasks:
+    # The following services can have problems if the cluster gets broken.
+    - name: Restart OpenStack services
+      shell: >-
+        docker ps -a | egrep '(keystone|nova|neutron|cinder)' | awk '{ print $NF }' | xargs docker restart
