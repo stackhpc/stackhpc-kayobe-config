@@ -11,6 +11,11 @@ switch_bgp_neighbours: "{{ (groups['spine-switches' if switch_layer == 'leaf' el
 ###############################################################################
 # Global configuration.
 
+# NTP server
+switch_config_ntp:
+  - "no ip name-server {{ switch_mgmt_switch_gateway }}"
+  - "ntp server 172.23.61.102"
+
 # Default MTU
 switch_config_mtu:
   - default mtu 1532
