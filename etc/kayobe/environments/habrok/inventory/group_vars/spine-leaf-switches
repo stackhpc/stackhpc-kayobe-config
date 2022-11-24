@@ -18,7 +18,7 @@ switch_config_ntp:
 
 # Default MTU
 switch_config_mtu:
-  - default mtu 1532
+  - no default mtu
 
 # Hardware overlay routing profile
 switch_config_overlay_routing_profile:
@@ -28,6 +28,7 @@ switch_config_overlay_routing_profile:
 switch_config_loopback0:
   - "interface loopback0"
   - " description VXLAN-VTEP"
+  - " no mtu"
   - " no shutdown"
   - " ip address {{ switch_tunnel_ip }}/32"
   - " exit"
@@ -36,6 +37,7 @@ switch_config_loopback0:
 switch_config_loopback1:
   - "interface loopback1"
   - " description BGP-Router-ID"
+  - " no mtu"
   - " no shutdown"
   - " ip address {{ switch_bgp_ip }}/32"
   - " exit"
@@ -290,13 +292,13 @@ switch_interface_config_vlans_template: |-
     description: Ceph-storage
     config:
       - no shutdown
-      - mtu {{ storage_net_name | net_mtu }}
+      - no mtu #{{ storage_net_name | net_mtu }}
       - virtual-network {{ storage_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ lustre_storage_vlan }}:
     description: Lustre-storage
     config:
       - no shutdown
-      - mtu {{ lustre_storage_mtu }}
+      - no mtu #{{ lustre_storage_mtu }}
       - virtual-network {{ 'lustre_storage' | net_vlan + switch_vxlan_offset }}
   {% if 'leaf-switches' in group_names %}
   vlan {{ internal_net_name | net_vlan }}:
@@ -308,13 +310,13 @@ switch_interface_config_vlans_template: |-
     description: GENEVE-tunnel
     config:
       - no shutdown
-      - mtu {{ tunnel_net_name | net_mtu }}
+      - no mtu #{{ tunnel_net_name | net_mtu }}
       - virtual-network {{ tunnel_net_name | net_vlan + switch_vxlan_offset }}
   vlan {{ storage_mgmt_net_name | net_vlan }}:
     description: Ceph-replication
     config:
       - no shutdown
-      - mtu {{ storage_mgmt_net_name | net_mtu }}
+      - no mtu #{{ storage_mgmt_net_name | net_mtu }}
       - virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
   {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
   vlan {{ vlan }}:
@@ -364,8 +366,8 @@ switch_interface_config_vlans_template: |-
 # L3 fabric link
 switch_interface_config_fabric_template: |
   - no switchport
+  - mtu 1650
   - no shutdown
-  - mtu 9216
   - ip address {ip}/31
 
 # Downlink to managment switches
