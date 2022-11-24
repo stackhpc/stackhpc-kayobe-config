@@ -141,14 +141,14 @@ switch_interface_config_lag_member_edge_template: |-
   - channel-group %(channel)s mode active
   - lacp port-priority {{ switch_priority }}
   - no switchport
-  - no mtu
+  - mtu 9216
   - flowcontrol receive %(flowcontrol)s
   - flowcontrol transmit %(flowcontrol)s
 
 # Ethernet interface configuration
 switch_interface_config_eth_template: |
   - no shutdown
-  - no mtu
+  - mtu 9216
   - switchport mode trunk
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
@@ -157,7 +157,7 @@ switch_interface_config_eth_template: |
 # Virtual Link Trunking (VLT) interface configuration
 switch_interface_config_vlt_template: |-
   - no shutdown
-  - no mtu
+  - mtu 9216
   - vlt-port-channel %(channel)s
   - switchport mode trunk
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
@@ -194,7 +194,7 @@ switch_interface_config_hypervisor_storage: "{{ switch_interface_config_hypervis
 # OpenStack baremetal compute configuration
 switch_interface_config_baremetal:
   - no shutdown
-  - no mtu
+  - mtu 9216
   - switchport mode access
   - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
   - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
