@@ -73,9 +73,11 @@ switch_config_vxlans_template: |
   {% for network in switch_config_vxlan_networks | select %}
   {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% if switch_layer == 'leaf' %}
   {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
   {{ switch_config_vxlan_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% endif %}
 
 # VXLAN network
 switch_config_vxlan_template: |
@@ -93,9 +95,11 @@ switch_config_evpn_template: |
   {% for network in switch_config_evpn_networks %}
   {{ switch_config_evpn_evi_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% if switch_layer == 'leaf' %}
   {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
   {{ switch_config_evpn_evi_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% endif %}
   - " exit"
 
 # EVPN EVI
