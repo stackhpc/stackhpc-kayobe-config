@@ -50,7 +50,8 @@ switch_config_nve:
 switch_config_vxlan_networks:
   - "{{ provision_oc_net_name }}"
   - "{{ provision_wl_net_name }}"
-  - "{{ oob_oc_net_name if switch_layer == 'spine' else '' }}"
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  - "{{ oob_oc_net_name if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "{{ oob_wl_net_name }}"
   - "{{ internal_net_name if switch_layer == 'leaf' else '' }}"
   - "{{ public_net_name }}"
@@ -58,7 +59,8 @@ switch_config_vxlan_networks:
   - "{{ storage_net_name }}"
   - "{{ storage_mgmt_net_name if switch_layer == 'leaf' else '' }}"
   - "switch_mgmt"
-  - "{{ 'mgmt_lustre' if switch_layer == 'spine' else '' }}"
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "lustre_storage"
 
 # VXLAN virtual networks
@@ -227,7 +229,8 @@ switch_clear_vlans: false
 # Define these VLANs on all switches
 # NOTE: This is a string so we can use jinja templating for the dictionary keys
 switch_interface_config_vlans_template: |-
-  {% if 'spine-switches' in group_names %}
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  {% if 'spine-switches' in group_names or inventory_hostname == 'hb-sw-leaf01-h07' %}
   vlan {{ oob_oc_net_name | net_vlan }}:
     description: overcloud-iDRAC
     config:
@@ -345,5 +348,13 @@ switch_interface_config_fabric_template: |
   - no shutdown
   - mtu 9216
   - ip address {ip}/31
+
+# Downlink to managment switches
+switch_interface_config_mgmt_downlink:
+  - no shutdown
+  - no mtu
+  - switchport mode trunk
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
 
 ##############################################################################
