@@ -119,6 +119,16 @@ switch_config_disable_bgp_evpn_vxlan:
   - "no interface loopback0"
   - "no interface loopback1"
 
+switch_config_remove_all_vxlan_vlan_template: |
+  {% for network in switch_config_vxlan_networks | select %}
+  {{ switch_config_remove_vxlan_vlan_template.format(vlan=network | net_vlan, vni=network | net_vlan + switch_vxlan_offset) }}
+  {% endfor %}
+  {% if switch_layer == 'leaf' %}
+  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {{ switch_config_remove_vxlan_vlan_template.format(vlan=vlan, vni=vlan + switch_vxlan_offset) }}
+  {% endfor %}
+  {% endif %}
+
 # Remove a VXLAN & VLAN
 switch_config_remove_vxlan_vlan_template: |
   - "interface vlan {vlan}"

@@ -62,6 +62,12 @@ switch_config_nested:
   - "{{ switch_config_evpn_template | from_yaml }}"
   - "{{ switch_config_virtual_router }}"
 
+# NOTE: This can be uncommented to remove all EVPN & VXLAN configuration.
+#switch_config_nested:
+#  - "{{ switch_config_remove_all_vxlan_vlan_template | from_yaml }}"
+#  - "{{ switch_config_disable_bgp_evpn_vxlan }}"
+#switch_interface_config: {}
+
 # Port breakouts.
 switch_config_breakout: []
 
@@ -76,6 +82,10 @@ switch_config_vlt:
   - " discovery-interface {{ switch_vlti_interface_1 }}"
   - " discovery-interface {{ switch_vlti_interface_2 }}"
   - " backup destination {{ 'switch_mgmt' | net_ip(inventory_hostname=switch_peer) }}"
+
+# NOTE: This can be uncommented to remove the VLT domain configuration.
+#switch_config_vlt:
+#  - "no vlt-domain {{ switch_rack }}"
 
 # Uplink Failure Detection (UFD)
 switch_config_ufd_template: |
