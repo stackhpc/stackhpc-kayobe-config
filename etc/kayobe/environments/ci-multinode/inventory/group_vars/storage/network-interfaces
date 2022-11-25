@@ -1,13 +1,14 @@
 ---
 ###############################################################################
-# Network interface definitions for the stroage group.
+# Network interface definitions for the storage group.
 
-admin_interface: ens3
+admin_oc_interface: "ens3"
 
-# Controller interface on all-in-one network.
-aio_interface: breth1
-# Use dummy1 if it exists, otherwise the bridge will have no ports.
-aio_bridge_ports: []
+internal_interface: "{{ vxlan_interfaces[0].device }}.{{ internal_vlan }}"
+
+storage_interface: "{{ vxlan_interfaces[0].device }}.{{ storage_vlan }}"
+
+storage_mgmt_interface: "{{ vxlan_interfaces[0].device }}.{{ storage_mgmt_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
