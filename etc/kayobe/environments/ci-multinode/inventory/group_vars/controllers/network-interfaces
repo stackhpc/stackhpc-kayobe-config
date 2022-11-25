@@ -2,12 +2,15 @@
 ###############################################################################
 # Network interface definitions for the controller group.
 
-admin_interface: eno1
+admin_oc_interface: "eno1"
 
-# Controller interface on all-in-one network.
-aio_interface: breth1
-# Use dummy1 if it exists, otherwise the bridge will have no ports.
-aio_bridge_ports: []
+internal_interface: "{{ vxlan_interfaces[0].device }}.{{ internal_vlan }}"
+
+storage_interface: "{{ vxlan_interfaces[0].device }}.{{ storage_vlan }}"
+
+tunnel_interface: "{{ vxlan_interfaces[0].device }}.{{ tunnel_vlan }}"
+
+public_interface: "{{ vxlan_interfaces[0].device }}.{{ public_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
