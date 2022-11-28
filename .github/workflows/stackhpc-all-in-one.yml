@@ -90,6 +90,7 @@ jobs:
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
+          ssh_username = "${{ env.SSH_USERNAME }}"
           aio_vm_interface = "${{ env.VM_INTERFACE }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
@@ -99,6 +100,7 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
+          SSH_USERNAME: "${{ inputs.os_distribution == 'ubuntu' && 'ubuntu' || 'cloud-user' }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ inputs.vm_image }}
           VM_FLAVOR: ${{ inputs.vm_flavor }}
