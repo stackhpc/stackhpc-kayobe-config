@@ -94,3 +94,33 @@ jobs:
       OS_CLOUD: sms-lab-release
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-ubuntu-ovs:
+    name: aio (Ubuntu OVS)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: ubuntu
+      neutron_plugin: ovs
+      vm_image: Ubuntu-20.04
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    # NOTE: Ubuntu images not available yet.
+    if: false && github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-ubuntu-ovn:
+    name: aio (Ubuntu OVN)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: ubuntu
+      neutron_plugin: ovn
+      vm_image: Ubuntu-20.04
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    # NOTE: Ubuntu images not available yet.
+    if: false && github.repository == 'stackhpc/stackhpc-kayobe-config'
