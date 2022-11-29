@@ -7,7 +7,7 @@ StackHPC provides packages and container images for OpenStack via `Ark
 
 Deployments should use a local `Pulp <https://pulpproject.org/>`__ repository
 server to synchronise content from Ark and serve it locally. Access to the
-repositories on Ark is controlled via X.509 certificates issued by StackHPC.
+repositories on Ark is controlled via user accounts issued by StackHPC.
 
 This configuration is a base, and should be merged with any existing Kayobe
 configuration. It currently provides the following:
@@ -49,11 +49,6 @@ password:
 
    stackhpc_release_pulp_username: <username>
    stackhpc_release_pulp_password: <password>
-
-The client certificate and private key issued by StackHPC should be stored in
-``etc/kayobe/ansible/certs/ark.stackhpc.com/client-cert.pem`` and
-``etc/kayobe/ansible/certs/ark.stackhpc.com/client-key.pem``, respectively,
-with the private key encrypted via Ansible Vault.
 
 The distribution name for the environment should be configured as either
 ``development`` or ``production`` via ``stackhpc_repo_distribution`` in
