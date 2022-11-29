@@ -16,12 +16,9 @@ Overview
 Contents
 ========
 
+.. toctree::
+   :maxdepth: 2
 
-
-Intro
-=====
-
-
-
-Contributors Guide
-==================
+   usage
+   configuration/index
+   contributor/index
