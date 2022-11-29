@@ -2,8 +2,22 @@
 Monitoring
 ===========
 
+Monitoring Configuration
+========================
+
+StackHPC kayobe config includes a reference monitoring stack based on
+Prometheus. Whilst this often works out of the box, there are some tunables
+which can be customised to adapt the configuration to a particular deployment.
+
+The configuration options can be found in
+``etc/kayobe/stackhpc-monitoring.yml``:
+
+.. literalinclude:: ../../../etc/kayobe/stackhpc-monitoring.yml
+   :language: yaml
+
 SMART Drive Monitoring
 =======================
+StackHPC kayobe config also includes drive monitoring for spinning disks and NVME's. 
 After pulling in the latest changes into your local kayobe config, reconfigure prometheus and Grafana
 
 .. code-block:: console
@@ -20,3 +34,5 @@ Once the reconfigure has completed you can now run the custom playbook:
     (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmontools.yml
 
 SMART reporting should now be enabled along with a prometheus alert for unhealthy disks and a Grafana dashboard called ``Hardware Overview``. 
+
+
