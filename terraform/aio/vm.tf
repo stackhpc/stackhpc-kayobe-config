@@ -2,6 +2,10 @@ variable "ssh_public_key" {
   type = string
 }
 
+variable "ssh_username" {
+  type = string
+}
+
 variable "aio_vm_name" {
   type    = string
   default = "kayobe-aio"
@@ -55,5 +59,17 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     destination_type      = "volume"
     delete_on_termination = true
   }
+}
 
+# Wait for the instance to be accessible via SSH before progressing.
+resource "null_resource" "kayobe-aio" {
+  provisioner "remote-exec" {
+    connection {
+      host = openstack_compute_instance_v2.kayobe-aio.access_ip_v4
+      user = var.ssh_username
+      private_key = file("id_rsa")
+    }
+
+    inline = ["echo 'connected!'"]
+  }
 }
