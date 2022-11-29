@@ -1,6 +1,6 @@
-===========
+==========
 Monitoring
-===========
+==========
 
 Monitoring Configuration
 ========================
@@ -16,7 +16,7 @@ The configuration options can be found in
    :language: yaml
 
 SMART Drive Monitoring
-=======================
+======================
 
 StackHPC kayobe config also includes drive monitoring for spinning disks and
 NVME's.
@@ -27,7 +27,7 @@ a cronjob, to output the metrics and we use node exporter's Textfile collector
 to report the metrics output by the scripts to Prometheus. These metrics can
 then be visualised in Grafana with the bundled dashboard.
 
-After pulling in the latest changes into your local kayobe config, reconfigure 
+After pulling in the latest changes into your local kayobe config, reconfigure
 Prometheus and Grafana
 
 .. code-block:: console
@@ -38,7 +38,7 @@ Prometheus and Grafana
 `this <https://bugs.launchpad.net/kolla-ansible/+bug/1997984>`__ bug and at
 present, the workaround is to go into each node running Grafana and manually
 restart the process with ``docker restart grafana`` and then try the reconfigure
-command again.) 
+command again.)
 
 Once the reconfigure has completed you can now run the custom playbook which
 copies over the scripts and sets up the cron jobs to start SMART monitoring
@@ -50,6 +50,4 @@ on the overcloud hosts:
     (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmontools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
-unhealthy disks and a Grafana dashboard called ``Hardware Overview``. 
-
-
+unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
