@@ -18,7 +18,7 @@ The configuration options can be found in
 SMART Drive Monitoring
 =======================
 StackHPC kayobe config also includes drive monitoring for spinning disks and NVME's. 
-After pulling in the latest changes into your local kayobe config, reconfigure prometheus and Grafana
+After pulling in the latest changes into your local kayobe config, reconfigure Prometheus and Grafana
 
 .. code-block:: console
 
