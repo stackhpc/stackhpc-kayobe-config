@@ -224,16 +224,27 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: false
+
+      - name: Upload SSH key artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssh-access-${{ inputs.os_distribution }}-${{ inputs.neutron_plugin }}
+          path: |
+            terraform/aio/id_rsa
+            etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-outputs.yml
 
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
         with:
           name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.neutron_plugin }}
           path: tempest-artifacts/*
+        if: false
 
       - name: Fail if any Tempest tests failed
         run: |
           test $(wc -l < tempest-artifacts/failed-tests) -lt 1
+        if: false
 
       - name: Destroy
         run: terraform destroy -auto-approve
@@ -242,7 +253,7 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
+        if: false
 
       - name: Prune Docker images over 1 week old
         # May fail if another prune is running
