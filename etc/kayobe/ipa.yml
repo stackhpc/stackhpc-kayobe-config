@@ -44,6 +44,7 @@ ipa_build_dib_elements_extra:
 ipa_build_dib_env_extra:
   DIB_DEV_USER_PASSWORD: "{{ secrets_ipa_devuser_password }}"
   DIB_DEV_USER_PWDLESS_SUDO: "yes"
+  DIB_IPA_HARDWARE_PACKAGE: "git+https://github.com/stackhpc/hardware@disk-benchmarks-py36#egg=hardware"
 
 # Dictionary of environment variables to provide to Diskimage Builder (DIB)
 # during IPA image build.
@@ -113,7 +114,9 @@ ipa_build_dib_env_extra:
 
 # List of additional inspection collectors to run.
 ipa_collectors_extra:
+  - "dmi-decode"
   - "extra-hardware"
+  - "numa-topology"
 
 # List of inspection collectors to run.
 #ipa_collectors:
