@@ -41,7 +41,7 @@ restart the process with ``docker restart grafana`` and then try the reconfigure
 command again.) 
 
 Once the reconfigure has completed you can now run the custom playbook which
-copies over the scritps and sets up the cron jobs to start SMART monitoring
+copies over the scripts and sets up the cron jobs to start SMART monitoring
 on the overcloud hosts:
 
 .. code-block:: console
