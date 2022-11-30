@@ -20,6 +20,7 @@ switch_bgp_ip: "{{ switch_bgp_cidr | ipaddr(switch_bgp_index | string) | ipaddr(
 switch_config_nested:
   - "{{ switch_config_hostname }}"
   - "{{ switch_config_mgmt }}"
+  - "{{ switch_config_ntp }}"
   - "{{ switch_config_spanning_tree }}"
   - "{{ switch_config_bfd }}"
   - "{{ switch_config_mtu }}"
@@ -33,6 +34,12 @@ switch_config_nested:
   - "{{ switch_config_vxlans_template | from_yaml | flatten }}"
   - "{{ switch_config_evpn_template | from_yaml }}"
   - "{{ switch_config_virtual_router }}"
+
+# NOTE: This can be uncommented to remove all EVPN & VXLAN configuration.
+#switch_config_nested:
+#  - "{{ switch_config_remove_all_vxlan_vlan_template | from_yaml }}"
+#  - "{{ switch_config_disable_bgp_evpn_vxlan }}"
+#switch_interface_config: {}
 
 switch_config_breakout:
   - interface breakout 1/1/30 map 10g-4x
@@ -101,18 +108,10 @@ switch_interface_config_fabric:
 ###############################################################################
 # Interface variables and templates.
 
-# Downlink to managment switches
-switch_interface_config_mgmt_downlink:
-  - no shutdown
-  - mtu 9216
-  - switchport mode trunk
-  - no switchport access vlan
-  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
-
 # Uplink to core
 switch_interface_config_uplink:
   - shutdown
-  - mtu 9216
+  - mtu {{ switch_fabric_mtu }}
   - switchport mode trunk
   - no switchport access vlan
   - no switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }},42-45,1071

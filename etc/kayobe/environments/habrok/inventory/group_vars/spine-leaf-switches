@@ -11,6 +11,11 @@ switch_bgp_neighbours: "{{ (groups['spine-switches' if switch_layer == 'leaf' el
 ###############################################################################
 # Global configuration.
 
+# NTP server
+switch_config_ntp:
+  - "no ip name-server {{ switch_mgmt_switch_gateway }}"
+  - "ntp server 172.23.61.102"
+
 # Default MTU
 switch_config_mtu:
   - default mtu 1532
@@ -50,7 +55,8 @@ switch_config_nve:
 switch_config_vxlan_networks:
   - "{{ provision_oc_net_name }}"
   - "{{ provision_wl_net_name }}"
-  - "{{ oob_oc_net_name if switch_layer == 'spine' else '' }}"
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  - "{{ oob_oc_net_name if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "{{ oob_wl_net_name }}"
   - "{{ internal_net_name if switch_layer == 'leaf' else '' }}"
   - "{{ public_net_name }}"
@@ -58,7 +64,8 @@ switch_config_vxlan_networks:
   - "{{ storage_net_name }}"
   - "{{ storage_mgmt_net_name if switch_layer == 'leaf' else '' }}"
   - "switch_mgmt"
-  - "{{ 'mgmt_lustre' if switch_layer == 'spine' else '' }}"
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "lustre_storage"
 
 # VXLAN virtual networks
@@ -66,9 +73,11 @@ switch_config_vxlans_template: |
   {% for network in switch_config_vxlan_networks | select %}
   {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% if switch_layer == 'leaf' %}
   {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
   {{ switch_config_vxlan_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% endif %}
 
 # VXLAN network
 switch_config_vxlan_template: |
@@ -86,9 +95,11 @@ switch_config_evpn_template: |
   {% for network in switch_config_evpn_networks %}
   {{ switch_config_evpn_evi_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% if switch_layer == 'leaf' %}
   {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
   {{ switch_config_evpn_evi_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
+  {% endif %}
   - " exit"
 
 # EVPN EVI
@@ -111,6 +122,16 @@ switch_config_disable_bgp_evpn_vxlan:
   - "no nve"
   - "no interface loopback0"
   - "no interface loopback1"
+
+switch_config_remove_all_vxlan_vlan_template: |
+  {% for network in switch_config_vxlan_networks | select %}
+  {{ switch_config_remove_vxlan_vlan_template.format(vlan=network | net_vlan, vni=network | net_vlan + switch_vxlan_offset) }}
+  {% endfor %}
+  {% if switch_layer == 'leaf' %}
+  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {{ switch_config_remove_vxlan_vlan_template.format(vlan=vlan, vni=vlan + switch_vxlan_offset) }}
+  {% endfor %}
+  {% endif %}
 
 # Remove a VXLAN & VLAN
 switch_config_remove_vxlan_vlan_template: |
@@ -153,7 +174,7 @@ switch_config_underlay_bgp_neighbour_template: |
   - "  address-family ipv4 unicast"
   # ROUTER-BGP-ADDRESS-FAMILY mode
   {% if 'leaf-switches' in group_names %}
-  - "   allowas-in 1"
+  - "   no allowas-in"
   {% endif %}
   {% if 'spine-switches' in group_names %}
   - "   no sender-side-loop-detection"
@@ -227,7 +248,8 @@ switch_clear_vlans: false
 # Define these VLANs on all switches
 # NOTE: This is a string so we can use jinja templating for the dictionary keys
 switch_interface_config_vlans_template: |-
-  {% if 'spine-switches' in group_names %}
+  # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
+  {% if 'spine-switches' in group_names or inventory_hostname == 'hb-sw-leaf01-h07' %}
   vlan {{ oob_oc_net_name | net_vlan }}:
     description: overcloud-iDRAC
     config:
@@ -304,6 +326,7 @@ switch_interface_config_vlans_template: |-
   vlan 4000:
     description: BGP-peer
     config:
+      - mtu {{ switch_fabric_mtu }}
       - no shutdown
       - ip address {{ switch_fabric_peer_ip }}/31
   {% endif %}
@@ -343,7 +366,15 @@ switch_interface_config_vlans_template: |-
 switch_interface_config_fabric_template: |
   - no switchport
   - no shutdown
-  - mtu 9216
+  - mtu {{ switch_fabric_mtu }}
   - ip address {ip}/31
+
+# Downlink to managment switches
+switch_interface_config_mgmt_downlink:
+  - no shutdown
+  - no mtu
+  - switchport mode trunk
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_mgmt_uplink_trunk_vlans | unique | join(',') }}
 
 ##############################################################################
