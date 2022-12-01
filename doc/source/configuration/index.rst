@@ -8,5 +8,6 @@ the various features provided.
 .. toctree::
    :maxdepth: 1
 
+   walled-garden
    release-train
    monitoring
