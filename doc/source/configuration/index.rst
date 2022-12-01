@@ -9,4 +9,5 @@ the various features provided.
    :maxdepth: 1
 
    release-train
+   cephadm
    monitoring
