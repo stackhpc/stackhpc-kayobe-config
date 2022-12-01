@@ -41,9 +41,8 @@ switch_config_loopback1:
   - " exit"
 
 switch_config_vrf:
-  # TODO: Router between internal and baremetal provisioning networks
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %}ip vrf baremetal-provisioning{% endif %}"
-  - "{% if inventory_hostname == 'hb-sw-spine01-h03' %} exit{% endif %}"
+  - "{% if switch_layer == 'spine' %}ip vrf baremetal-provisioning{% endif %}"
+  - "{% if switch_layer == 'spine' %} exit{% endif %}"
 
 # Network Virtualisation Edge (NVE) for VXLANs
 switch_config_nve:
@@ -58,7 +57,7 @@ switch_config_vxlan_networks:
   # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
   - "{{ oob_oc_net_name if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "{{ oob_wl_net_name }}"
-  - "{{ internal_net_name if switch_layer == 'leaf' else '' }}"
+  - "{{ internal_net_name }}"
   - "{{ public_net_name }}"
   - "{{ tunnel_net_name if switch_layer == 'leaf' else '' }}"
   - "{{ storage_net_name }}"
@@ -237,7 +236,7 @@ switch_config_overlay_bgp_neighbour_template: |
 
 # Virtual router
 switch_config_virtual_router:
-  - "ip virtual-router mac-address 00:11:22:33:44:55"
+  - "ip virtual-router mac-address {{ '52:54:00' | community.general.random_mac(seed='habrok') }}"
 
 ###############################################################################
 # Interface configuration.
@@ -298,12 +297,12 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - mtu {{ lustre_storage_mtu }}
       - virtual-network {{ 'lustre_storage' | net_vlan + switch_vxlan_offset }}
-  {% if 'leaf-switches' in group_names %}
   vlan {{ internal_net_name | net_vlan }}:
     description: internal-API
     config:
       - no shutdown
       - virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}
+  {% if 'leaf-switches' in group_names %}
   vlan {{ tunnel_net_name | net_vlan }}:
     description: GENEVE-tunnel
     config:
@@ -331,32 +330,16 @@ switch_interface_config_vlans_template: |-
       - ip address {{ switch_fabric_peer_ip }}/31
   {% endif %}
   {% if 'spine-switches' in group_names %}
-  {% if inventory_hostname == 'hb-sw-spine01-h03' %}
   virtual-network {{ provision_wl_net_name | net_vlan + switch_vxlan_offset }}:
     config:
-      # FIXME
       - ip vrf forwarding baremetal-provisioning
-      - ip address 172.23.3.250/22
-  {% raw %}
-      #- ip address {{ lookup('vars', 'switch_vlan_provision_ip', default='invalid') }}/25
-      #- vrrp-group 5
-      #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
-      #- authentication simple-text {{ secrets_switch_vrrp_auth }}
-      #- virtual-address 10.96.160.253
-  {% endraw %}
+      - ip address {{ '172.23.0.0/22' | ipaddr(switch_bgp_index | string) }}
+      - ip virtual-router address 172.23.3.250
   virtual-network {{ internal_net_name | net_vlan + switch_vxlan_offset }}:
     config:
-  # FIXME
       - ip vrf forwarding baremetal-provisioning
-      - ip address 172.23.23.250/22
-  {% raw %}
-      #- ip address {{ lookup('vars', 'switch_vlan_provision_ip', default='invalid') }}/25
-      #- vrrp-group 6
-      #- priority {{ lookup('vars', 'switch_priority', default='invalid') }}
-      #- authentication simple-text {{ secrets_switch_vrrp_auth }}
-      #- virtual-address 10.96.167.1
-  {% endraw %}
-  {% endif %}
+      - ip address {{ '172.23.20.0/22' | ipaddr(switch_bgp_index | string) }}
+      - ip virtual-router address 172.23.23.250
   {% endif %}
 
 ###############################################################################
