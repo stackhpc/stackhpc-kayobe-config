@@ -148,3 +148,30 @@ with the push repository using the pulp CLI:
     (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/centos-source-prometheus-jiralert
     Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
     .Done.
+
+HTTP Error 404: Not Found 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your login credentials are incorrect, or lack the required permissions, 
+you will see a 404 error during ``pulp-repo-sync.yml``:
+
+.. code-block:: console
+
+    TASK [stackhpc.pulp.pulp_repository : Sync RPM remotes into repositories] ****************************************************************************************************************************************
+    An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435'))
+    failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false 
+      ansible_loop_var: item
+      item:
+        name: centos-stream-8-baseos-development
+        policy: on_demand
+        proxy_url: __omit_place_holder__d35452c39719f081229941a64fd2cdce1188a287
+        remote_password: <password>
+        remote_username: <username>
+        required: true
+        state: present
+        sync_policy: mirror_complete
+        url: https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435
+      msg: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435')) '''
+
+The issue can be rectified by updating the ``stackhpc_release_pulp_username``
+and ``stackhpc_release_pulp_password`` variables
