@@ -1,0 +1,32 @@
+{% raw %}
+
+{{ define "slack.default.title" -}}
+    [{{ .Status | toUpper -}}
+    {{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}
+    ] {{ .CommonLabels.alertname }}
+{{- end }}
+
+{{ define "slack.default.text" -}}
+
+{{ range .Alerts }}
+*Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+*Description:* {{ .Annotations.description }}
+*Details:*
+    {{ range .Labels.SortedPairs -}}
+    • *{{ .Name }}:* `{{ .Value }}`
+    {{ end }}
+{{ end }}
+
+{{ end }}
+
+{{ define "__alert_silence_link" -}}
+    {{ .ExternalURL }}/#/silences/new?filter=%7B
+    {{- range .CommonLabels.SortedPairs -}}
+        {{- if ne .Name "alertname" -}}
+            {{- .Name }}%3D"{{- .Value -}}"%2C%20
+        {{- end -}}
+    {{- end -}}
+    alertname%3D"{{ .CommonLabels.alertname }}"%7D
+{{- end }}
+
+{% endraw %}
