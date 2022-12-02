@@ -1,0 +1,61 @@
+---
+
+- name: Group hosts for one per golden configuration
+  hosts: all
+  gather_facts: false
+  serial: 1
+  tasks:
+    - group_by:
+        key: dell_server_profile_group_{{ dell_server_profile }}
+      when:
+        - dell_server_profile is defined 
+        - groups['dell_server_profile_group_'+dell_server_profile] | default([]) | count == 0
+
+- hosts: dell_server_profile_group_*
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  collections:
+   - dellemc.openmanage
+  
+  tasks:
+    - name: Export Server Configuration Profile
+      vars:
+        suffix: "{{ '-' ~ dell_server_profile_export_mode | lower if dell_server_profile_export_mode is defined else '' }}"
+      idrac_server_config_profile:
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+        idrac_port:      "443"
+        share_name:      "{{ playbook_dir }}/server-profiles/"
+        job_wait:        "True"
+        export_format:   "JSON"
+        # HINT: use clone for raid
+        scp_file: "{{ dell_server_profile }}{{ suffix }}.json"
+        export_use: "{{ dell_server_profile_export_mode | default | capitalize | default(omit, true) }}"
+      environment:
+        HTTPS_PROXY: ""
+        HTTP_PROXY: ""
+        http_proxy: ""
+        https_proxy: ""
+      register: idrac_firmware_output
+      delegate_to: localhost
+   
+    - debug:
+        var: idrac_firmware_output
+
+    - name: Filter out idrac configuration
+      # We don't want to set any passwords
+      # TODO: ansible filter
+      vars:
+        file: "{{ idrac_firmware_output.scp_status.file }}"
+      command: |-
+        {{ ansible_playbook_python }} "{{ playbook_dir }}/server-profiles/filter.py" --input "{{ file }}" --component-filter '(?!iDRAC)' --attr-filter '.*'
+      register: config_result
+      delegate_to: localhost
+
+    - name: Write filtered config
+      copy:
+        content: "{{ config_result.stdout | from_json | to_nice_json  }}"
+        dest: "{{ idrac_firmware_output.scp_status.file }}"
+      delegate_to: localhost
