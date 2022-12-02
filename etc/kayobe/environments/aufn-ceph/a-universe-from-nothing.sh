@@ -10,13 +10,13 @@
 set -eu
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/yoga/
+KAYOBE_BRANCH=stackhpc/yoga
 KAYOBE_CONFIG_BRANCH=yoga-aufn
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
 # PULP_HOST="10.205.3.187 pulp-server pulp-server.internal.sms-cloud"
-PULP_HOST="10.209.0.207 pulp-server pulp-server.internal.sms-cloud"
+PULP_HOST="10.209.0.207 pulp-server pulp-server.internal.sms-cloud" #Use Mark's router workaround
 
 # FIXME: Work around lack of DNS on SMS lab.
 cat << EOF | sudo tee -a /etc/hosts
@@ -141,25 +141,9 @@ kayobe overcloud post configure
 source $KOLLA_CONFIG_PATH/public-openrc.sh
 
 
-
 # Use Jack's openstack-config-multinode here instead of init-runonce.sh
 ####### Old verson: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/init-runonce.sh
-VENV_DIR=$BASE_PATH/venvs/ansible
-cd $BASE_PATH/src/
-[[ -d openstack-network-config ]] || git clone https://github.com/stackhpc/openstack-config-multinode.git -b geneve openstack-network-config
-cd openstack-network-config
-if [[ ! -d $VENV_DIR ]]; then
-    virtualenv $VENV_DIR
-fi
-source $VENV_DIR/bin/activate
-pip install -U pip
-pip install -r requirements.txt
-ansible-galaxy role install -p ansible/roles -r requirements.yml
-ansible-galaxy collection install -p ansible/collections -r requirements.yml
-source $KOLLA_CONFIG_PATH/public-openrc.sh
-tools/openstack-config #Run script to configure openstack cloud
-deactivate
-
+$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-openstack.sh $BASE_PATH
 
 # Create a test vm 
 VENV_DIR=$BASE_PATH/venvs/openstack
@@ -179,8 +163,3 @@ openstack floating ip create external
 openstack server add floating ip test-vm-1 `openstack floating ip list -c ID  -f value`
 echo -e "Done! \nopenstack server list:"
 openstack server list
-
-# (export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config && \
-#  export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe && \
-#  cd $BASE_PATH/src/kayobe && \
-#  ./dev/overcloud-test-vm.sh)
