@@ -19,14 +19,9 @@ pulp_proxy_url: "{{ omit }}"
 # Base URL of the StackHPC Pulp service.
 stackhpc_release_pulp_url: "https://ark.stackhpc.com"
 
-# Credentials used to access the StackHPC Ark container image registry.
+# Credentials used to access the StackHPC Ark pulp server.
 stackhpc_release_pulp_username:
 stackhpc_release_pulp_password:
-
-# Client certificates used to access StackHPC Ark repositories.
-# They are trusted by the 'release' cert guard's CA.
-stackhpc_release_pulp_client_cert: "{{ lookup('file', kayobe_config_path ~ '/ansible/certs/ark.stackhpc.com/client-cert.pem') | trim }}"
-stackhpc_release_pulp_client_key: "{{ lookup('file', kayobe_config_path ~ '/ansible/certs/ark.stackhpc.com/client-key.pem') | trim }}"
 
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
@@ -44,8 +39,8 @@ stackhpc_pulp_repository_deb_repos:
   # Base Ubuntu Focal repositories
   - name: Ubuntu focal
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/focal/{{ stackhpc_pulp_repo_ubuntu_focal_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
@@ -57,8 +52,8 @@ stackhpc_pulp_repository_deb_repos:
 
   - name: Ubuntu focal security
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/focal-security/{{ stackhpc_pulp_repo_ubuntu_focal_security_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
@@ -71,8 +66,8 @@ stackhpc_pulp_repository_deb_repos:
   # Ubuntu Cloud Archive (UCA) repositories
   - name: Ubuntu Cloud Archive
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
@@ -85,8 +80,8 @@ stackhpc_pulp_repository_deb_repos:
   # Third-party repositories
   - name: Docker CE for Ubuntu
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
@@ -193,8 +188,8 @@ stackhpc_pulp_repository_rpm_repos:
   # Base CentOS 8 Stream repositories
   - name: CentOS Stream 8 - AppStream
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/AppStream/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_appstream_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
@@ -202,8 +197,8 @@ stackhpc_pulp_repository_rpm_repos:
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: CentOS Stream 8 - BaseOS
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
@@ -211,8 +206,8 @@ stackhpc_pulp_repository_rpm_repos:
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
   - name: CentOS Stream 8 - Extras
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
@@ -222,40 +217,40 @@ stackhpc_pulp_repository_rpm_repos:
   # Base Rocky 8 repositories
   - name: Rocky Linux 8 - AppStream
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_appstream_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
   - name: Rocky Linux 8 - BaseOS
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_baseos_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
   - name: Rocky Linux 8 - Extras
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_extras_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
   - name: Rocky Linux 8 - NFV
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/nfv/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_nfv_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
   - name: Rocky Linux 8 - PowerTools
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/PowerTools/x86_64/os/{{ stackhpc_pulp_repo_rocky_8_powertools_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
@@ -264,8 +259,8 @@ stackhpc_pulp_repository_rpm_repos:
   # EPEL repositories
   - name: Extra Packages for Enterprise Linux 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Everything/x86_64/{{ stackhpc_pulp_repo_epel_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_content_only
@@ -273,8 +268,8 @@ stackhpc_pulp_repository_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
@@ -284,8 +279,8 @@ stackhpc_pulp_repository_rpm_repos:
   # Third-party repositories
   - name: Docker CE for CentOS 8
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/8/x86_64/stable/{{ stackhpc_pulp_repo_docker_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
