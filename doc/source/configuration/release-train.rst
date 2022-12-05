@@ -41,9 +41,8 @@ Pulp startup.
 StackHPC Ark
 ------------
 
-The container image registry credentials issued by StackHPC should be
-configured in ``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the
-password:
+The Ark pulp credentials issued by StackHPC should be configured in
+``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the password:
 
 .. code-block:: yaml
 
