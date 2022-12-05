@@ -16,6 +16,9 @@ pulp_password: "{{ secrets_pulp_password }}"
 # Base URL of the StackHPC Pulp service.
 stackhpc_release_pulp_url: "https://ark.stackhpc.com"
 
+# Credentials used to access the StackHPC Ark pulp server.
+stackhpc_release_pulp_username:
+stackhpc_release_pulp_password:
 
 ###############################################################################
 # RPMs
@@ -23,33 +26,28 @@ stackhpc_release_pulp_url: "https://ark.stackhpc.com"
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
 
-# Client certificates used to access ark.stackhpc.com repositories.
-# They are trusted by the 'development' cert guard's CA.
-stackhpc_release_pulp_client_cert: "{{ lookup('file', 'certs/ark.stackhpc.com/client-cert.pem') | trim }}"
-stackhpc_release_pulp_client_key: "{{ lookup('file', 'certs/ark.stackhpc.com/client-key.pem') | trim }}"
-
 # Content comes in from release repositories, via pinned repo versions.
 
 stackhpc_pulp_repository_rpm_repos:
   # Base CentOS 8 Stream repositories
   - name: CentOS Stream 8 - AppStream
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/AppStream/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_appstream_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
   - name: CentOS Stream 8 - BaseOS
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
   - name: CentOS Stream 8 - Extras
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
@@ -57,15 +55,15 @@ stackhpc_pulp_repository_rpm_repos:
   # EPEL repositories
   - name: Extra Packages for Enterprise Linux 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Everything/x86_64/{{ stackhpc_pulp_repo_epel_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_content_only
     state: present
   - name: Extra Packages for Enterprise Linux Modular 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Modular/x86_64/{{ stackhpc_pulp_repo_epel_modular_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
@@ -73,8 +71,8 @@ stackhpc_pulp_repository_rpm_repos:
   # Third-party repositories
   - name: Docker CE for CentOS 8
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/8/x86_64/stable/{{ stackhpc_pulp_repo_docker_version }}"
-    client_cert: "{{ stackhpc_release_pulp_client_cert }}"
-    client_key: "{{ stackhpc_release_pulp_client_key }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
     sync_policy: mirror_complete
     state: present
