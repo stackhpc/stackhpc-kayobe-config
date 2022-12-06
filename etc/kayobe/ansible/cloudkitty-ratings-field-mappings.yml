@@ -1,0 +1,39 @@
+---
+# Task file for a single field and its mappings.
+
+- name: Create hashmap field
+  command: >
+    {{ openstack }} rating hashmap field create {{ service_id }} {{ field.name }}
+  when: field.name not in fields | map(attribute='Name') | list
+  changed_when: true
+
+# List again to get ID of created mapping.
+- name: List hashmap fields
+  command: >
+    {{ openstack }} rating hashmap field list -f json {{ service_id }}
+  register: hashmap_field
+  changed_when: false
+
+- name: List hashmap field mappings
+  vars:
+    field_id: "{{ (hashmap_field.stdout | from_json | selectattr('Name', 'equalto', field.name) | first)['Field ID'] }}"
+  command: >
+    {{ openstack }} rating hashmap mapping list -f json --field-id {{ field_id }}
+  register: hashmap_mappings
+  changed_when: false
+
+- name: Create hashmap field mappings
+  vars:
+    field_id: "{{ (hashmap_field.stdout | from_json | selectattr('Name', 'equalto', field.name) | first)['Field ID'] }}"
+    group_id: "{{ (hashmap_groups.stdout | from_json | selectattr('Name', 'equalto', item.group) | first)['Group ID'] | default('') }}"
+  command: >
+    {{ openstack }} rating hashmap mapping create
+    {{ item.cost }}
+    --field-id {{ field_id }}
+    --value {{ item.value }}
+    {% if group_id | length > 0 %}--group-id {{ group_id }}{% endif %}
+    --type {{ item.type }}
+  loop: "{{ field.mappings }}"
+  # Condition could be better, but should work with current values.
+  when: item.value not in (hashmap_mappings.stdout | from_json | map(attribute='Value') | list)
+  changed_when: true

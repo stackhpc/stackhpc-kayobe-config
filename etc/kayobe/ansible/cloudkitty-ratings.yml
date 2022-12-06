@@ -1,0 +1,164 @@
+---
+- name: Register Cloudkitty ratings
+  hosts: controllers[0]
+  gather_facts: no
+  environment: "{{ openstack_auth_env }}"
+  vars:
+    venv: "{{ virtualenv_path }}/cloudkitty"
+    openstack: "{{ venv }}/bin/openstack"
+    # Mappings associated with a field.
+    # Each item is a dict with the following fields:
+    # * service
+    # * name
+    # * mappings
+    # The mappings field is a list, where each item is a dict with the following fields:
+    # * value
+    # * cost
+    # * group (optional)
+    # * type
+    # For example, for per-instance rating:
+    # - service: instance
+    #   name: flavor_id
+    #   mappings:
+    #     - value: small
+    #       cost: 1.0
+    #       group: instance_uptime_flavor_id
+    #       type: flat
+    #     - value: large
+    #       cost: 2.0
+    #       group: instance_uptime_flavor_id
+    #       type: flat
+    cloudkitty_hashmap_field_mappings: []
+    # Mappings not associated with a field.
+    # Each item is a dict with the following fields:
+    # * service
+    # * cost
+    # * group (optional)
+    # * type
+    # For example, for image image storage (MB)
+    # - service: image.size
+    #   cost: 0.1
+    #   group: volume_ceph
+    #   type: flat
+    cloudkitty_hashmap_service_mappings: []
+    cloudkitty_hashmap_field_mapping_services: "{{ cloudkitty_hashmap_field_mappings | map(attribute='service') | list }}"
+    cloudkitty_hashmap_service_mapping_services: "{{ cloudkitty_hashmap_service_mappings | map(attribute='service') | list }}"
+  tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-cloudkittyclient
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+
+    - name: List modules
+      command: >
+        {{ openstack }} rating module list -f json
+      register: modules
+      changed_when: false
+
+    - name: Enable hashmap module
+      command: >
+        {{ openstack }} rating module enable hashmap
+      when: not (modules.stdout | from_json | selectattr('Module', 'equalto', 'hashmap') | first)['Enabled'] | bool
+      changed_when: true
+
+    - name: List hashmap services
+      command: >
+        {{ openstack }} rating hashmap service list -f json
+      register: hashmap_services
+      changed_when: false
+
+    - name: Create hashmap services
+      vars:
+        existing_services: "{{ hashmap_services.stdout | from_json | map(attribute='Name') | list }}"
+      command: >
+        {{ openstack }} rating hashmap service create {{ item }}
+      loop: "{{ (cloudkitty_hashmap_field_mapping_services + cloudkitty_hashmap_service_mapping_services) | unique | list }}"
+      when: item not in existing_services
+      changed_when: true
+
+    - name: List hashmap groups
+      command: >
+        {{ openstack }} rating hashmap group list -f json
+      register: hashmap_groups
+      changed_when: false
+
+    - name: Create hashmap groups
+      vars:
+        existing_groups: "{{ hashmap_groups.stdout | from_json | map(attribute='Name') | list }}"
+        field_mapping_groups: "{{ query('subelements', cloudkitty_hashmap_field_mappings, 'mappings') | map(attribute='1.group') | select('defined') | list }}"
+        service_mapping_groups: "{{ cloudkitty_hashmap_service_mappings | map(attribute='group') | select('defined') | list }}"
+      command: >
+        {{ openstack }} rating hashmap group create {{ item }}
+      loop: "{{ (field_mapping_groups + service_mapping_groups) | unique | list }}"
+      when:
+        - item is not none and item | length > 0
+        - item not in existing_groups
+      changed_when: true
+
+    # List again to get IDs of created services.
+    - name: List hashmap services
+      command: >
+        {{ openstack }} rating hashmap service list -f json
+      register: hashmap_services
+      changed_when: false
+
+    # List again to get IDs of created groups.
+    - name: List hashmap groups
+      command: >
+        {{ openstack }} rating hashmap group list -f json
+      register: hashmap_groups
+      changed_when: false
+
+    - name: List hashmap fields
+      vars:
+        service_id: "{{ (hashmap_services.stdout | from_json | selectattr('Name', 'equalto', item) | first)['Service ID'] }}"
+      command: >
+        {{ openstack }} rating hashmap field list {{ service_id }} -f json
+      loop: "{{ cloudkitty_hashmap_field_mapping_services }}"
+      register: hashmap_fields
+      changed_when: false
+
+    # Field mappings
+
+    - name: Include field mappings
+      include_tasks: cloudkitty-ratings-field-mappings.yml
+      vars:
+        fields_result: "{{ hashmap_fields.results | selectattr('item', 'equalto', field.service) | first }}"
+        fields: "{{ fields_result.stdout | from_json }}"
+        service_id: "{{ (hashmap_services.stdout | from_json | selectattr('Name', 'equalto', field.service) | first)['Service ID'] }}"
+      loop: "{{ cloudkitty_hashmap_field_mappings }}"
+      loop_control:
+        loop_var: field
+
+    # Service mappings
+
+    - name: List hashmap service mappings
+      vars:
+        service_id: "{{ (hashmap_services.stdout | from_json | selectattr('Name', 'equalto', item) | first)['Service ID'] }}"
+      command: >
+        {{ openstack }} rating hashmap mapping list -f json --service-id {{ service_id }}
+      loop: "{{ cloudkitty_hashmap_service_mapping_services }}"
+      register: hashmap_mappings
+      changed_when: false
+
+    - name: Create hashmap service mappings
+      vars:
+        mappings_result: "{{ hashmap_mappings.results | selectattr('item', 'equalto', item.service) | first }}"
+        mappings: "{{ mappings_result.stdout | from_json }}"
+        service_id: "{{ (hashmap_services.stdout | from_json | selectattr('Name', 'equalto', item.service) | first)['Service ID'] }}"
+        group_id: "{{ (hashmap_groups.stdout | from_json | selectattr('Name', 'equalto', item.group) | first)['Group ID'] | default('') }}"
+      command: >
+        {{ openstack }} rating hashmap mapping create
+        {{ item.cost }}
+        --service-id {{ service_id }}
+        {% if group_id | length > 0 %}--group-id {{ group_id }}{% endif %}
+        --type {{ item.type }}
+      loop: "{{ cloudkitty_hashmap_service_mappings }}"
+      # Condition could be better, but should work with current values.
+      when: mappings | length == 0
+      changed_when: true
