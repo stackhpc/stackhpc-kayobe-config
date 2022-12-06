@@ -108,6 +108,9 @@ seed_pulp_container:
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
     tag: "3.21"
     network_mode: host
+    # Override deploy_containers_defaults.init == true to ensure
+    # s6-overlay-suexec starts as pid 1
+    init: false
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
       - pulp_storage:/var/lib/pulp
