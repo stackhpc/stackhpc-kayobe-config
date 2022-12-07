@@ -156,6 +156,7 @@ If your login credentials are incorrect, or lack the required permissions,
 you will see a 404 error during ``pulp-repo-sync.yml``:
 
 .. code-block:: console
+
     TASK [stackhpc.pulp.pulp_repository : Sync RPM remotes into repositories] ****************************************************************************************************************************************
     An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435'))
     failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false 

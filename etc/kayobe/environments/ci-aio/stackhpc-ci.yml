@@ -48,9 +48,16 @@ stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_
 stackhpc_repo_ubuntu_focal_version: "{{ stackhpc_pulp_repo_ubuntu_focal_version }}"
 stackhpc_repo_ubuntu_focal_security_version: "{{ stackhpc_pulp_repo_ubuntu_focal_security_version }}"
 stackhpc_repo_docker_ce_ubuntu_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-stackhpc_repo_rocky_baseos_version: "{{ stackhpc_pulp_repo_rocky_8_6_baseos_version }}"
-stackhpc_repo_rocky_appstream_version: "{{ stackhpc_pulp_repo_rocky_8_6_appstream_version }}"
-stackhpc_repo_rocky_extras_version: "{{ stackhpc_pulp_repo_rocky_8_6_extras_version }}"
+## Use derived vars from etc/kayobe/pulp.yml to switch between
+## minor Rocky versions using stackhpc_pulp_repo_rocky_8_minor_version
+stackhpc_repo_rocky_baseos_version: "{{ stackhpc_pulp_repo_rocky_8_baseos_version }}"
+stackhpc_repo_rocky_appstream_version: "{{ stackhpc_pulp_repo_rocky_8_appstream_version }}"
+stackhpc_repo_rocky_extras_version: "{{ stackhpc_pulp_repo_rocky_8_extras_version }}"
+
+# Rocky-and-CI-specific Pulp urls
+stackhpc_repo_rocky_baseos_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_repo_rocky_baseos_version }}/"
+stackhpc_repo_rocky_appstream_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/AppStream/x86_64/os/{{ stackhpc_repo_rocky_appstream_version }}/"
+stackhpc_repo_rocky_extras_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8.{{ stackhpc_pulp_repo_rocky_8_minor_version }}/extras/x86_64/os/{{ stackhpc_repo_rocky_extras_version }}/"
 
 # Host and port of container registry.
 # Push built images to the development Pulp service registry.
