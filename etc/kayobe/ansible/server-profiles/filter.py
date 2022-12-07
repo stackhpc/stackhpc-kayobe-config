@@ -47,7 +47,7 @@ if __name__ == "__main__":
                 filtered.append(filter_attr(component, args.attr_filter[i]))
     # [filter_attr(x, args.attr_filter[i]) for i, x in enumerate(components) if not component_filters or re.match("|".join(component_filters), x["FQDD"])]
     # filter_attr returns none on no attributes
-    content["SystemConfiguration"]["Components"] = [x for x in filtered if x]
+    content["SystemConfiguration"]["Components"] = sorted([x for x in filtered if x], key=lambda c: c["FQDD"])
 
     print(json.dumps(content))
 

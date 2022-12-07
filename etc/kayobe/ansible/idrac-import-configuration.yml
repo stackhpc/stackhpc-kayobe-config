@@ -4,45 +4,48 @@
   gather_facts: false
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    server_profiles_dir: "{{ kayobe_env_config_path }}/server-profiles/"
   collections:
    - dellemc.openmanage
   tasks:
-    - name: Import Server Configuration Profile
-      vars:
-        suffix: "{{ '-' ~ dell_server_profile_export_mode | lower if dell_server_profile_export_mode is defined else '' }}"
-      idrac_server_config_profile:
-        idrac_ip: "{{ ipmi_address }}"
-        idrac_user: "{{ secrets_ipmi_username }}"
-        idrac_password: "{{ secrets_ipmi_password }}"
-        idrac_port: "443"
-        share_name: "{{ playbook_dir }}/server-profiles/"
-        command: import
-        scp_file: "{{ dell_server_profile }}{{ suffix }}.json"
-        job_wait: "True"
-        # Graceful, Forced, NoReboot
-        # shutdown_type: "NoReboot"
-      register: idrac_import_output_job
-      delegate_to: localhost
-      async: 60 # wait a second
-      poll: 0
-      environment:
-        HTTPS_PROXY: ""
-        HTTP_proxy: ""
-        https_proxy: ""
-        http_proxy: ""
+    - block:
+        - name: Import Server Configuration Profile
+          vars:
+            suffix: "{{ '-' ~ dell_server_profile_export_mode | lower if dell_server_profile_export_mode is defined else '' }}"
+          idrac_server_config_profile:
+            idrac_ip: "{{ ipmi_address }}"
+            idrac_user: "{{ secrets_ipmi_username }}"
+            idrac_password: "{{ secrets_ipmi_password }}"
+            idrac_port: "443"
+            share_name: "{{ server_profiles_dir }}"
+            command: import
+            scp_file: "{{ dell_server_profile }}{{ suffix }}.json"
+            job_wait: "True"
+            # Graceful, Forced, NoReboot
+            # shutdown_type: "NoReboot"
+          register: idrac_import_output_job
+          delegate_to: localhost
+          async: 60 # wait a second
+          poll: 0
+          environment:
+            HTTPS_PROXY: ""
+            HTTP_proxy: ""
+            https_proxy: ""
+            http_proxy: ""
 
-    - name: Check on BIOS settings update
-      async_status:
-        jid: "{{ idrac_import_output_job.ansible_job_id }}"
-      delegate_to: localhost
-      register: idrac_import_output
-      until: idrac_import_output.finished
-      retries: 180
-      delay: 5
+        - name: Check on BIOS settings update
+          async_status:
+            jid: "{{ idrac_import_output_job.ansible_job_id }}"
+          delegate_to: localhost
+          register: idrac_import_output
+          until: idrac_import_output.finished
+          retries: 180
+          delay: 5
 
-    - debug:
-        var: idrac_import_output
+        - debug:
+            var: idrac_import_output
 
-    - assert:
-        that: idrac_import_output.scp_status.Status == "Success"
+        - assert:
+            that: idrac_import_output.scp_status.Status == "Success"
 
+      when: dell_server_profile is defined
