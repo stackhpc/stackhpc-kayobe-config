@@ -10,4 +10,5 @@ the various features provided.
 
    walled-garden
    release-train
+   cephadm
    monitoring
