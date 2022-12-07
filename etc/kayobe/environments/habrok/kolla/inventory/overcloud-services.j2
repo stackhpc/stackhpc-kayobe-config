@@ -1,3 +1,9 @@
+# This inventory section provides a mapping of services to components.
+#
+# Top level groups define the roles of hosts, e.g. controller or compute.
+# Components define groups of services, e.g. nova or ironic.
+# Services define single containers, e.g. nova-compute or ironic-api.
+
 # Additional control implemented here. These groups allow you to control which
 # services run on which hosts at a per-service level.
 #
@@ -31,25 +37,49 @@ glance
 nova
 
 [nova-conductor:children]
+{% if 'cell-control' in kolla_overcloud_inventory_top_level_group_map %}
+cell-control
+{% else %}
 nova
+{% endif %}
 
 [nova-super-conductor:children]
 nova
 
 [nova-novncproxy:children]
+{% if 'cell-control' in kolla_overcloud_inventory_top_level_group_map %}
+cell-control
+{% else %}
 nova
+{% endif %}
 
 [nova-scheduler:children]
 nova
 
 [nova-spicehtml5proxy:children]
+{% if 'cell-control' in kolla_overcloud_inventory_top_level_group_map %}
+cell-control
+{% else %}
 nova
+{% endif %}
 
+# NOTE: HA for nova-compute services with ironic is still an experimental
+# feature. Provide the option to use a single compute host, even when multiple
+# controllers are in use.
+{% if kolla_nova_compute_ironic_host is not none %}
+[nova-compute-ironic]
+{{ kolla_nova_compute_ironic_host }}
+{% else %}
 [nova-compute-ironic:children]
 nova
+{% endif %}
 
 [nova-serialproxy:children]
+{% if 'cell-control' in kolla_overcloud_inventory_top_level_group_map %}
+cell-control
+{% else %}
 nova
+{% endif %}
 
 # Neutron
 [neutron-server:children]
@@ -503,7 +533,7 @@ monitoring
 compute
 
 [prometheus-msteams:children]
-monitoring
+prometheus-alertmanager
 
 [masakari-api:children]
 control
