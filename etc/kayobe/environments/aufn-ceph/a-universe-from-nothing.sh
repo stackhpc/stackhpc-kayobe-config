@@ -143,6 +143,10 @@ source $KOLLA_CONFIG_PATH/public-openrc.sh
 
 # Use Jack's openstack-config-multinode here instead of init-runonce.sh
 ####### Old verson: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/init-runonce.sh
+#Deactivate current kayobe venv
+set +u
+deactivate
+set -u
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-openstack.sh $BASE_PATH
 
 # Create a test vm 
