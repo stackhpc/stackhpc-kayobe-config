@@ -21,31 +21,31 @@ Install package dependencies.
 
 On CentOS:
 
-.. code-block:: console
+.. parsed-literal::
 
    sudo dnf install -y python3-virtualenv
 
 On Ubuntu:
 
-.. code-block:: console
+.. parsed-literal::
 
    sudo apt update
    sudo apt install -y python3-virtualenv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
-.. code-block:: console
+.. parsed-literal::
 
    cd
    mkdir -p src
    pushd src
-   git clone https://github.com/stackhpc/kayobe.git -b stackhpc/xena
-   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b stackhpc/xena kayobe-config
+   git clone https://github.com/stackhpc/kayobe.git -b |current_release_git_branch_name|
+   git clone https://github.com/stackhpc/stackhpc-kayobe-config -b |current_release_git_branch_name| kayobe-config
    popd
 
 Create a virtual environment and install Kayobe:
 
-.. code-block:: console
+.. parsed-literal::
 
    cd
    mkdir -p venvs
@@ -58,7 +58,7 @@ Create a virtual environment and install Kayobe:
 
 Add initial network configuration:
 
-.. code-block:: console
+.. parsed-literal::
 
    sudo ip l add breth1 type bridge
    sudo ip l set breth1 up
@@ -76,7 +76,7 @@ Acquire the Ansible Vault password for this repository, and store a copy at
 The following commands install Kayobe and its dependencies, and prepare the
 Ansible control host.
 
-.. code-block:: console
+.. parsed-literal::
 
    export KAYOBE_VAULT_PASSWORD=$(cat ~/vault-pw)
    pushd ~/venvs/kayobe
@@ -91,7 +91,7 @@ Deployment
 
 Next, configure the host OS & services.
 
-.. code-block:: console
+.. parsed-literal::
 
    kayobe seed host configure
 
@@ -100,7 +100,7 @@ Building images
 
 At this point you are ready to build and push some container images.
 
-.. code-block:: console
+.. parsed-literal::
 
    kayobe seed container image build --push
    kayobe overcloud container image build --push
