@@ -30,4 +30,5 @@ Contents
 
    usage
    configuration/index
+   release-notes
    contributor/index
