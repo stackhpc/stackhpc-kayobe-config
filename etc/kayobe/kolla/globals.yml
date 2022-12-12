@@ -1,7 +1,11 @@
 # yamllint disable-file
 ---
-docker_yum_baseurl: "{{ stackhpc_repo_docker_url }}"
-docker_yum_gpgkey: "https://download.docker.com/linux/centos/gpg"
+
+# To work around issue of trying to install docker from 
+# empty pulp server, use upstream docker dnf repo on 
+# non-overcloud hosts
+enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names }}"{% endraw %}
+
 
 {% if kolla_base_distro == 'centos' %}
 bifrost_tag: yoga-20221007T134036
