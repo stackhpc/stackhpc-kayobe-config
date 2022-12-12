@@ -4,7 +4,7 @@
 # To work around issue of trying to install docker from 
 # empty pulp server, use upstream docker dnf repo on 
 # non-overcloud hosts
-enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names }}"{% endraw %}
+enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}"{% endraw %}
 
 
 {% if kolla_base_distro == 'centos' %}
