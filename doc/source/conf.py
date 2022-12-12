@@ -26,12 +26,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# -- StackHPC Kayobe configuration --------------------------------------
+# Variables to override
+
+current_series = "xena"
+branch = f"stackhpc/{current_series}"
+
+# Substitutions loader
+rst_epilog = """
+.. |current_release| replace:: {current_release}
+.. |current_release_git_branch_name| replace:: {current_release_git_branch_name}
+""".format(  # noqa: E501
+    current_release_git_branch_name=branch,
+    current_release=current_series,
+)
+
 # -- General configuration ----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     #'sphinx.ext.autodoc',
+    'sphinx.ext.extlinks',
     #'sphinx.ext.intersphinx',
     'sphinxcontrib.rsvgconverter',
 ]
@@ -91,3 +107,13 @@ htmlhelp_basename = '%sdoc' % project
 # Disable usage of xindy https://bugzilla.redhat.com/show_bug.cgi?id=1643664
 latex_use_xindy = False
 
+extlinks_projects = {
+    "kayobe",
+    "kolla",
+    "kolla-ansible",
+}
+
+extlinks = {
+    f"{project}-doc": (f"https://docs.openstack.org/{project}/{current_series}/", "%s documentation")
+    for project in extlinks_projects
+}

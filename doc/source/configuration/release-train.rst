@@ -57,15 +57,14 @@ The distribution name for the environment should be configured as either
 Usage
 =====
 
-The local Pulp service will be deployed as a `Seed custom container
-<https://docs.openstack.org/kayobe/xena/configuration/reference/seed-custom-containers.html>`__
+The local Pulp service will be deployed as a :kayobe-doc:`Seed custom container
+<configuration/reference/seed-custom-containers.html>`
 on next ``kayobe seed service deploy`` or ``kayobe seed service upgrade``.
 
 The following custom playbooks are provided in ``etc/kayobe/ansible/``:
 
-See the Kayobe `custom playbook documentation
-<https://docs.openstack.org/kayobe/xena/custom-ansible-playbooks.html>`__
-for information on how to run them.
+See the Kayobe :kayobe-doc:`custom playbook documentation
+<custom-ansible-playbooks.html>` for information on how to run them.
 
 * ``pulp-repo-sync.yml``: Pull packages from Ark to the local Pulp. This will
   create a new repository version (snapshot) for each repository in the local
