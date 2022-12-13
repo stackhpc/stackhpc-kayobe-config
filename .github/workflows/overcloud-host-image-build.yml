@@ -15,6 +15,9 @@ on:
         description: Build Ubuntu
         type: boolean
         default: true
+  push:
+    branches:
+      - pulp-image-hosting
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -32,7 +35,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/wallaby
+          ref: refs/heads/stackhpc/xena
           path: src/kayobe
 
       # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
@@ -97,10 +100,8 @@ jobs:
         run: |
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
-          -i localhost \
           -e image_path='/opt/kayobe/images/overcloud-centos-stream-8' \
-          -e os_distribution='centos' \
-          -e os_version='stream8'
+          -e os_distribution='centos'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.centos
@@ -118,10 +119,8 @@ jobs:
         run: |
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
-          -i localhost \
           -e image_path='/opt/kayobe/images/overcloud-rocky-linux-8' \
-          -e os_distribution='rocky' \
-          -e os_version='8'
+          -e os_distribution='rocky'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky
@@ -145,13 +144,18 @@ jobs:
         run: |
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
-          -i localhost \
           -e image_path='/opt/kayobe/images/overcloud-ubuntu-focal' \
-          -e os_distribution='ubuntu' \
-          -e os_version='20.04-focal'
+          -e os_distribution='ubuntu'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu
+
+      - name: Upload updated images artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Updated images list
+          path: /tmp/updated_images.txt
+          retention-days: 7
 
       - name: Clean up old images
         run: |

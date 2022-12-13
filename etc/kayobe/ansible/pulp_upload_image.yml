@@ -3,15 +3,22 @@
   hosts: localhost
   vars:
     remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
-    remote_pulp_username: "{{ stackhpc_image_repositiory_username }}"
-    remote_pulp_password: "{{ stackhpc_image_repositiory_password }}"
+    remote_pulp_username: "{{ stackhpc_image_repository_username }}"
+    remote_pulp_password: "{{ stackhpc_image_repository_password }}"
+    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os-version }}"
   tasks:
+    - name: Get filename
+      find:
+        paths: "{{ image_path }}"
+        patterns: '*.qcow2'
+      register: found_files
+
     - name: Upload an artifact
       pulp.squeezer.artifact:
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        file: "{{ image_path }}"
+        file: "{{ found_files[0].path }}"
         state: present
 
     - name: Get sha256 hash
@@ -26,7 +33,7 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         sha256: "{{ file_stats.stat.checksum }}"
-        relative_path: "{{ os_distribution }}-{{ os_version }}.img"
+        relative_path: "{{ found_files[0].path | basename }}"
         state: present
 
     - name: Ensure file repo exists
@@ -34,7 +41,7 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ os_distribution }}_{{ os_version }}_img_repo"
+        name: "{{ repository_name }}"
         state: present
 
     - name: Add content to file repo
@@ -42,9 +49,9 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
+        repository: "{{ repository_name }}"
         present_content:
-          - relative_path: "{{ os_distribution }}-{{ os_version }}.img"
+          - relative_path: "{{ found_files[0].path | basename }}"
             sha256: "{{ file_stats.stat.checksum }}"
       register: repo_details
 
@@ -57,7 +64,7 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
+        repository: "{{ repository_name }}"
         state: present
         version: "{{ repo_details.repository_version | regex_search('(\\d+)(?!.*\\d)') }}"
       register: version_publication_details
@@ -67,7 +74,7 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
+        repository: "{{ repository_name }}"
         state: present
       register: latest_publication_details
 
@@ -76,7 +83,7 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ os_distribution }}_{{ os_version }}_latest"
+        name: "{{ repository_name }}_latest"
         base_path: "images/{{ os_distribution }}/{{ os_version }}/latest"
         publication: "{{ latest_publication_details.publication.pulp_href }}"
         content_guard: development
@@ -88,9 +95,23 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ os_distribution }}_{{ os_version }}_{{ ansible_date_time.iso8601_basic_short }}"
+        name: "{{ repository_name }}_{{ ansible_date_time.iso8601_basic_short }}"
         base_path: "images/{{ os_distribution }}/{{ os_version }}/{{ ansible_date_time.iso8601_basic_short }}"
         publication: "{{ version_publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
+      when: latest_distribution_details.changed is true
+
+    - name: Update new images file with versioned path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}pulp/content/images/{{ os_distribution }}/{{ os_version }}/\
+        {{ ansible_date_time.iso8601_basic_short }}/{{ found_files[0].path | basename }}"
+      when: latest_distribution_details.changed is true
+
+    - name: Update new images file with latest path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}pulp/content/images/{{ os_distribution }}/{{ os_version }}/\
+        latest/{{ found_files[0].path | basename }}"
       when: latest_distribution_details.changed is true
