@@ -1,22 +1,16 @@
 ---
 - name: Upload and create a distribution for an image
   hosts: localhost
-  # These vars are placeholders, they should be deleted before merging
-  # ==================================================================
   vars:
-    pulp_username: username
-    pulp_password: password
-    pulp_url: http://example.com
-    os_distribution: ubuntu
-    os_version: 20.04-focal
-    image_path: path/to/ubuntu.iso
-  # ==================================================================
+    remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
+    remote_pulp_username: "{{ stackhpc_image_repositiory_username }}"
+    remote_pulp_password: "{{ stackhpc_image_repositiory_password }}"
   tasks:
     - name: Upload an artifact
       pulp.squeezer.artifact:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
         file: "{{ image_path }}"
         state: present
 
@@ -28,29 +22,29 @@
 
     - name: Create file content from artifact
       pulp.squeezer.file_content:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
         sha256: "{{ file_stats.stat.checksum }}"
-        relative_path: "{{ os_distribution }}.img"
+        relative_path: "{{ os_distribution }}-{{ os_version }}.img"
         state: present
 
-    - name: Create a file repo
+    - name: Ensure file repo exists
       pulp.squeezer.file_repository:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
-        name: "{{ os_distribution }}_img_repo"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ os_distribution }}_{{ os_version }}_img_repo"
         state: present
 
-    - name: Add content to repo
+    - name: Add content to file repo
       pulp.squeezer.file_repository_content:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
-        repository: "{{ os_distribution }}_img_repo"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
         present_content:
-          - relative_path: "{{ os_distribution }}.img"
+          - relative_path: "{{ os_distribution }}-{{ os_version }}.img"
             sha256: "{{ file_stats.stat.checksum }}"
       register: repo_details
 
@@ -60,43 +54,43 @@
     # number in the href is the version. regex_search is used to extract it
     - name: Create a new publication to point to this version
       pulp.squeezer.file_publication:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
-        repository: "{{ os_distribution }}_img_repo"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
         state: present
         version: "{{ repo_details.repository_version | regex_search('(\\d+)(?!.*\\d)') }}"
       register: version_publication_details
 
     - name: Create a publication to point to the latest version
       pulp.squeezer.file_publication:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
-        repository: "{{ os_distribution }}_img_repo"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ os_distribution }}_{{ os_version }}_img_repo"
         state: present
       register: latest_publication_details
 
-    - name: Create distribution for latest version
+    - name: Update distribution for latest version
       pulp.squeezer.file_distribution:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
         name: "{{ os_distribution }}_{{ os_version }}_latest"
         base_path: "images/{{ os_distribution }}/{{ os_version }}/latest"
         publication: "{{ latest_publication_details.publication.pulp_href }}"
-        content_guard: release
+        content_guard: development
         state: present
       register: latest_distribution_details
 
     - name: Create distribution for given version
       pulp.squeezer.file_distribution:
-        pulp_url: "{{ pulp_url }}"
-        username: "{{ pulp_username }}"
-        password: "{{ pulp_password }}"
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
         name: "{{ os_distribution }}_{{ os_version }}_{{ ansible_date_time.iso8601_basic_short }}"
         base_path: "images/{{ os_distribution }}/{{ os_version }}/{{ ansible_date_time.iso8601_basic_short }}"
         publication: "{{ version_publication_details.publication.pulp_href }}"
-        content_guard: release
+        content_guard: development
         state: present
       when: latest_distribution_details.changed is true
