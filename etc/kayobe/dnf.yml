@@ -41,7 +41,7 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
-dnf_custom_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
+stackhpc_dnf_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
 
 # Custom repositories shared between all RHEL derivatives.
 dnf_custom_repos_el8:
@@ -58,6 +58,13 @@ dnf_custom_repos_el8:
     enabled: "{{ dnf_enable_epel | bool }}"
     file: epel-modular
     gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgcheck: yes
+  docker:
+    baseurl: "{{ stackhpc_repo_docker_url }}"
+    description: "Package repository for installing docker"
+    enabled: "{{ dnf_enable_docker | bool }}"
+    file: docker
+    gpgkey: "{{ dnf_docker_gpg_key_url }}"
     gpgcheck: yes
 
 # CentOS Stream 8 specific repositories
@@ -111,6 +118,13 @@ dnf_epel_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'false'.
 #dnf_install_epel:
+
+# Whether to enable docker dnf repo in stackhpc_dnf_repos
+dnf_enable_docker: true
+
+#URL of docker repo GPG key
+dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
+
 
 ###############################################################################
 # DNF Automatic configuration.
