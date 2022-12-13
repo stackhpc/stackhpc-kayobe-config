@@ -5,27 +5,44 @@
     remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
     remote_pulp_username: "{{ stackhpc_image_repository_username }}"
     remote_pulp_password: "{{ stackhpc_image_repository_password }}"
-    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os-version }}"
+    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
   tasks:
+    - name: Debug - create fake image directory # TODO: remove
+      ansible.builtin.file:
+        path: "{{ image_path }}"
+        state: directory
+        mode: '0766'
+      become: true
+
+    - name: Debug - create fake image file # TODO: remove
+      copy:
+        content: This is the image file content version 6
+        dest: "{{ image_path }}/fake-image.qcow2"
+        mode: '0766'
+      become: true
+
     - name: Get filename
       find:
         paths: "{{ image_path }}"
         patterns: '*.qcow2'
       register: found_files
+      become: true # TODO: remove
 
     - name: Upload an artifact
       pulp.squeezer.artifact:
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        file: "{{ found_files[0].path }}"
+        file: "{{ found_files.files[0].path }}"
         state: present
+      become: true # TODO: remove
 
     - name: Get sha256 hash
       ansible.builtin.stat:
-        path: "{{ image_path }}"
+        path: "{{ found_files.files[0].path }}"
         checksum_algorithm: sha256
       register: file_stats
+      become: true # TODO: remove
 
     - name: Create file content from artifact
       pulp.squeezer.file_content:
@@ -33,7 +50,7 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         sha256: "{{ file_stats.stat.checksum }}"
-        relative_path: "{{ found_files[0].path | basename }}"
+        relative_path: "{{ found_files.files[0].path | basename }}"
         state: present
 
     - name: Ensure file repo exists
@@ -51,7 +68,7 @@
         password: "{{ remote_pulp_password }}"
         repository: "{{ repository_name }}"
         present_content:
-          - relative_path: "{{ found_files[0].path | basename }}"
+          - relative_path: "{{ found_files.files[0].path | basename }}"
             sha256: "{{ file_stats.stat.checksum }}"
       register: repo_details
 
@@ -84,7 +101,7 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}_latest"
-        base_path: "images/{{ os_distribution }}/{{ os_version }}/latest"
+        base_path: "images/{{ os_distribution }}/{{ os_release }}/latest"
         publication: "{{ latest_publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
@@ -95,8 +112,8 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ repository_name }}_{{ ansible_date_time.iso8601_basic_short }}"
-        base_path: "images/{{ os_distribution }}/{{ os_version }}/{{ ansible_date_time.iso8601_basic_short }}"
+        name: "{{ repository_name }}_{{ ansible_facts.date_time.iso8601_basic_short }}"
+        base_path: "images/{{ os_distribution }}/{{ os_release }}/{{ ansible_facts.date_time.iso8601_basic_short }}"
         publication: "{{ version_publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
@@ -105,13 +122,14 @@
     - name: Update new images file with versioned path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}pulp/content/images/{{ os_distribution }}/{{ os_version }}/\
-        {{ ansible_date_time.iso8601_basic_short }}/{{ found_files[0].path | basename }}"
+        line: "{{ remote_pulp_url }}/pulp/content/images/{{ os_distribution }}/{{ os_release }}/\
+        {{ ansible_facts.date_time.iso8601_basic_short }}/{{ found_files.files[0].path | basename }}"
+        create: true
       when: latest_distribution_details.changed is true
 
     - name: Update new images file with latest path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}pulp/content/images/{{ os_distribution }}/{{ os_version }}/\
-        latest/{{ found_files[0].path | basename }}"
+        line: "{{ remote_pulp_url }}/pulp/content/images/{{ os_distribution }}/{{ os_release }}/\
+        latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed is true

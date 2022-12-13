@@ -98,13 +98,14 @@ jobs:
 
       - name: Upload CentOS Stream 8 overcloud host image artifact
         run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
+          src/kayobe-config/etc/kayobe/ansible/pulp_upload_image.yml \
           -e image_path='/opt/kayobe/images/overcloud-centos-stream-8' \
           -e os_distribution='centos'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.centos
 
       - name: Build a Rocky Linux 8 overcloud host image
         run: |
@@ -117,8 +118,8 @@ jobs:
 
       - name: Upload Rocky Linux 8 overcloud host image artifact
         run: |
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
+          source src/kayobe-config/.automation/pipeline/playbook-run.sh \
+          src/kayobe-config/etc/kayobe/ansible/pulp_upload_image.yml \
           -e image_path='/opt/kayobe/images/overcloud-rocky-linux-8' \
           -e os_distribution='rocky'
         env:
@@ -142,8 +143,8 @@ jobs:
 
       - name: Upload Ubuntu Focal 20.04 overcloud host image artifact
         run: |
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/upload-image.yml \
+          source src/kayobe-config/.automation/pipeline/playbook-run.sh \
+          src/kayobe-config/etc/kayobe/ansible/pulp_upload_image.yml \
           -e image_path='/opt/kayobe/images/overcloud-ubuntu-focal' \
           -e os_distribution='ubuntu'
         env:
