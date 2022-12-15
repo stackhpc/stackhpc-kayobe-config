@@ -6,6 +6,7 @@
     remote_pulp_username: "{{ stackhpc_image_repository_username }}"
     remote_pulp_password: "{{ stackhpc_image_repository_password }}"
     repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
   tasks:
     - name: Debug - create fake image directory # TODO: remove
       ansible.builtin.file:
@@ -16,8 +17,8 @@
 
     - name: Debug - create fake image file # TODO: remove
       copy:
-        content: This is the image file content version 6
-        dest: "{{ image_path }}/fake-image.qcow2"
+        content: This is the image file content version 14
+        dest: "{{ image_path }}/{{ os_distribution }}-{{ os_release }}.qcow2"
         mode: '0766'
       become: true
 
@@ -84,16 +85,16 @@
         repository: "{{ repository_name }}"
         state: present
         version: "{{ repo_details.repository_version | regex_search('(\\d+)(?!.*\\d)') }}"
-      register: version_publication_details
+      register: publication_details
 
-    - name: Create a publication to point to the latest version
-      pulp.squeezer.file_publication:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        repository: "{{ repository_name }}"
-        state: present
-      register: latest_publication_details
+    # - name: Create a publication to point to the latest version
+    #   pulp.squeezer.file_publication:
+    #     pulp_url: "{{ remote_pulp_url }}"
+    #     username: "{{ remote_pulp_username }}"
+    #     password: "{{ remote_pulp_password }}"
+    #     repository: "{{ repository_name }}"
+    #     state: present
+    #   register: publication_details
 
     - name: Update distribution for latest version
       pulp.squeezer.file_distribution:
@@ -101,8 +102,8 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}_latest"
-        base_path: "images/{{ os_distribution }}/{{ os_release }}/latest"
-        publication: "{{ latest_publication_details.publication.pulp_href }}"
+        base_path: "{{ base_path }}/latest"
+        publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
       register: latest_distribution_details
@@ -113,8 +114,8 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}_{{ ansible_facts.date_time.iso8601_basic_short }}"
-        base_path: "images/{{ os_distribution }}/{{ os_release }}/{{ ansible_facts.date_time.iso8601_basic_short }}"
-        publication: "{{ version_publication_details.publication.pulp_href }}"
+        base_path: "{{ base_path }}/{{ ansible_facts.date_time.iso8601_basic_short }}"
+        publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
       when: latest_distribution_details.changed is true
@@ -122,7 +123,7 @@
     - name: Update new images file with versioned path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}/pulp/content/images/{{ os_distribution }}/{{ os_release }}/\
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
         {{ ansible_facts.date_time.iso8601_basic_short }}/{{ found_files.files[0].path | basename }}"
         create: true
       when: latest_distribution_details.changed is true
@@ -130,6 +131,6 @@
     - name: Update new images file with latest path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}/pulp/content/images/{{ os_distribution }}/{{ os_release }}/\
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed is true
