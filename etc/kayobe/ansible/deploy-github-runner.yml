@@ -1,0 +1,14 @@
+---
+- name: Deploy GitHub Runner
+  hosts: github-runner
+  become: yes
+  vars:
+    - runner_version: "2.300.0"
+    - runner_user: runner
+    - github_account: rug-cit-hpc
+    - github_repo: rug-kayobe-config
+    - runner_labels:
+        - kayobe
+    - access_token: "{{ github_access_token }}"
+  roles:
+    - role: monolithprojects.github_actions_runner
