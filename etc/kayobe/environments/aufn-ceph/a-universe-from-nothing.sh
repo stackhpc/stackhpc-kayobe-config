@@ -94,10 +94,10 @@ kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
 # Deploying the seed restarts networking interface, run configure-local-networking.sh again to re-add routes.
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
 
-#######################################################################
-# NEED TO ADD 10.205.3.187 pulp-server pulp-server.internal.sms-cloud 
-# TO ETC/HOSTS OF DOCKER CONTAINER BEFORE SYNCING WITH UPSTEAM PULP
-#######################################################################
+#####################################################################
+# NEED TO ADD $PULP_HOST pulp-server pulp-server.internal.sms-cloud #
+# TO ETC/HOSTS OF DOCKER CONTAINER BEFORE SYNCING WITH UPSTEAM PULP #
+#####################################################################
 
 # Add sms lab test pulp to /etc/hosts of seed vm's pulp container
 SEED_IP=192.168.33.5
