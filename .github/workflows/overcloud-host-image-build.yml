@@ -15,9 +15,6 @@ on:
         description: Build Ubuntu
         type: boolean
         default: true
-  push: # TODO: remove
-    branches:
-      - pulp-image-hosting
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -95,7 +92,9 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild -e os_distribution=centos -e stackhpc_overcloud_dib_name=overcloud-centos-stream-8
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution=centos \
+          -e stackhpc_overcloud_dib_name=overcloud-centos-stream-8
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.centos
@@ -110,12 +109,15 @@ jobs:
           -e os_distribution='centos'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.centos
 
       - name: Build a Rocky Linux 8 overcloud host image
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild -e os_distribution=rocky -e stackhpc_overcloud_dib_name=overcloud-rocky-linux-8
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution=rocky \
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-linux-8
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky
@@ -130,7 +132,7 @@ jobs:
           -e os_distribution='rocky'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        # if: inputs.rocky
+        if: inputs.rocky
 
       # FIXME: Need EPEL on CentOS for debootstrap. It is disabled by default.
       # Do this via config?
@@ -142,7 +144,9 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild -e os_distribution=ubuntu -e stackhpc_overcloud_dib_name=overcloud-ubuntu-focal
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution=ubuntu \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-focal
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu
@@ -157,7 +161,7 @@ jobs:
           -e os_distribution='ubuntu'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        # if: inputs.ubuntu
+        if: inputs.ubuntu
 
       - name: Upload updated images artifact
         uses: actions/upload-artifact@v3
@@ -165,6 +169,7 @@ jobs:
           name: Updated images list
           path: /tmp/updated_images.txt
           retention-days: 7
+        if: always()
 
       - name: Clean up old images
         run: |

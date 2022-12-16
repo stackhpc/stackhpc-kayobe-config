@@ -8,26 +8,11 @@
     repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
     base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
   tasks:
-    - name: Debug - create fake image directory # TODO: remove
-      ansible.builtin.file:
-        path: "{{ image_path }}"
-        state: directory
-        mode: '0766'
-      become: true
-
-    - name: Debug - create fake image file # TODO: remove
-      copy:
-        content: This is the image file content version 14
-        dest: "{{ image_path }}/{{ os_distribution }}-{{ os_release }}.qcow2"
-        mode: '0766'
-      become: true
-
     - name: Get filename
       find:
         paths: "{{ image_path }}"
         patterns: '*.qcow2'
       register: found_files
-      become: true # TODO: remove
 
     - name: Upload an artifact
       pulp.squeezer.artifact:
@@ -36,14 +21,12 @@
         password: "{{ remote_pulp_password }}"
         file: "{{ found_files.files[0].path }}"
         state: present
-      become: true # TODO: remove
 
     - name: Get sha256 hash
       ansible.builtin.stat:
         path: "{{ found_files.files[0].path }}"
         checksum_algorithm: sha256
       register: file_stats
-      become: true # TODO: remove
 
     - name: Create file content from artifact
       pulp.squeezer.file_content:
@@ -86,15 +69,6 @@
         state: present
         version: "{{ repo_details.repository_version | regex_search('(\\d+)(?!.*\\d)') }}"
       register: publication_details
-
-    # - name: Create a publication to point to the latest version
-    #   pulp.squeezer.file_publication:
-    #     pulp_url: "{{ remote_pulp_url }}"
-    #     username: "{{ remote_pulp_username }}"
-    #     password: "{{ remote_pulp_password }}"
-    #     repository: "{{ repository_name }}"
-    #     state: present
-    #   register: publication_details
 
     - name: Update distribution for latest version
       pulp.squeezer.file_distribution:
