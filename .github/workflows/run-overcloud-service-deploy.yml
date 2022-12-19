@@ -46,7 +46,7 @@ jobs:
       contents: write
       packages: read
     container:
-      image: ghcr.io/${{ github.repository }}:${{needs.env.outputs.kayobeImageTag}}
+      image: ghcr.io/${{ github.repository }}:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -78,11 +78,12 @@ jobs:
           KAYOBE_TAGS: "${{ github.event.inputs.kayobeTags }}"
           KAYOBE_LIMIT: "${{ github.event.inputs.kayobeLimit }}"
           KAYOBE_AUTOMATION_PR_TARGET_BRANCH: ${{ github.event.ref }}
-          KAYOBE_AUTOMATION_PR_REMOTE: https://${KAYOBE_AUTOMATION_PR_GITHUB_USER}:${KAYOBE_AUTOMATION_PR_AUTH_TOKEN}@github.com/${{ github.repository }}
-          KAYOBE_AUTOMATION_PR_GITHUB_USER: ${{ github.actor }}
-          KAYOBE_AUTOMATION_PR_AUTH_TOKEN: ${{ github.token }}
-          KAYOBE_AUTOMATION_PR_TYPE: github
-          KAYOBE_AUTOMATION_PR_TITLE: "[kayobe-automation] ${{ github.workflow }} #${{ github.run_id }}"
-          KAYOBE_AUTOMATION_PR_URL: https://api.github.com/repos/${{ github.repository }}/pulls
+          KAYOBE_ENVIRONMENT: "${{ github.event.inputs.environment }}"
+          # KAYOBE_AUTOMATION_PR_REMOTE: https://${KAYOBE_AUTOMATION_PR_GITHUB_USER}:${KAYOBE_AUTOMATION_PR_AUTH_TOKEN}@github.com/${{ github.repository }}
+          # KAYOBE_AUTOMATION_PR_GITHUB_USER: ${{ github.actor }}
+          # KAYOBE_AUTOMATION_PR_AUTH_TOKEN: ${{ github.token }}
+          # KAYOBE_AUTOMATION_PR_TYPE: github
+          # KAYOBE_AUTOMATION_PR_TITLE: "[kayobe-automation] ${{ github.workflow }} #${{ github.run_id }}"
+          # KAYOBE_AUTOMATION_PR_URL: https://api.github.com/repos/${{ github.repository }}/pulls
           HOME: /stack
 
