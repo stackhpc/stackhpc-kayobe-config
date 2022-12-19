@@ -40,10 +40,6 @@ jobs:
            latest=${{ !contains(github.ref, 'alpha') }}
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - uses: webfactory/ssh-agent@836c84ec59a0e7bc0eabc79988384eb567561ee2
-        with:
-          ssh-private-key: ${{ secrets.KAYOBE_AUTOMATION_PRIVATE_KEY }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
         with:
@@ -57,10 +53,6 @@ jobs:
           context: .
           build-args: |
              KAYOBE_DOCKER_SSH_CONFIG_PATH=.automation/docker/kayobe/ssh_config
-             KAYOBE_ENVIRONMENT=habrok
-             KAYOBE_USER_UID=1001
-             KAYOBE_USER_GID=1001
-          ssh: default
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
