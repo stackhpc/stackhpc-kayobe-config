@@ -5,9 +5,25 @@ Monitoring
 Monitoring Configuration
 ========================
 
-StackHPC kayobe config includes a reference monitoring stack based on
-Prometheus. Whilst this often works out of the box, there are some tunables
-which can be customised to adapt the configuration to a particular deployment.
+StackHPC kayobe config includes a reference monitoring and alerting stack based
+on Prometheus, Alertmanager, Grafana, Fluentd, Elasticsearch & Kibana. These
+services by default come enabled and configured. Central Elasticsearch cluster
+collects OpenStack logs, with an option to receive operating system logs too.
+In order to enable this, execute custom playbook after deployment:
+
+.. code-block:: console
+
+    cd $KAYOBE_CONFIG_PATH
+    kayobe playbook run ansible/rsyslog.yml
+
+`Prometheus <https://prometheus.io/>`__ comes with a comprehensive set of
+metrics gathered from enabled exporters; every exporter's data is visualised
+by at least one `Grafana <https://grafana.com>`__ dashboard. Standard set of
+alerting rules is present as well.
+
+While the default configuration often works out of the box, there
+are some tunables which can be customised to adapt the configuration to a
+particular deployment's needs.
 
 The configuration options can be found in
 ``etc/kayobe/stackhpc-monitoring.yml``:
