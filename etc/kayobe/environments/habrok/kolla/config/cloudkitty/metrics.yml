@@ -1,0 +1,16 @@
+metrics:
+  openstack_nova_server_status:
+    alt_name: instance
+    unit: instance
+    mutate: MAP
+    mutate_map:
+      0.0: 1.0  # ACTIVE
+      11.0: 1.0 # SHUTOFF
+      12.0: 1.0 # SUSPENDED
+      16.0: 1.0 # PAUSED
+    groupby:
+      - tenant_id
+      - user_id
+      - uuid
+    metadata:
+      - flavor_id
