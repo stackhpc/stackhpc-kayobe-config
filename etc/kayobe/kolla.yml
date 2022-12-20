@@ -48,7 +48,11 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-#kolla_ansible_venv_extra_requirements:
+kolla_ansible_venv_extra_requirements:
+  # NOTE(wszumski): Fork with support for Rocky Linux target hosts. Remove in
+  # Xena as kayobe supports ansible 2.11 which has Rocky Support out of the
+  # box.
+  - 'ansible-base@git+https://github.com/stackhpc/ansible@stackhpc/2.10/rocky'
 
 # Pip requirement specifier for the ansible package. NOTE: This limits the
 # version of ansible used by kolla-ansible to avoid new releases from breaking
@@ -91,7 +95,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20211207T102718{% else %}wallaby-20220819T112725{% endif %}"
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220919T081704{% else %}wallaby-20220819T112725{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -114,6 +118,11 @@ kolla_sources:
     type: git
     location: "{{ kolla_bifrost_source_url }}"
     reference: "{{ kolla_bifrost_source_version }}"
+  bifrost-base-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
@@ -163,10 +172,10 @@ stackhpc_centos_additional_repos:
     file: "CentOS-NFV-OpenvSwitch.repo"
   - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
     file: "CentOS-OpenStack-wallaby.repo"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ stackhpc_repo_centos_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
 
@@ -238,8 +247,11 @@ kolla_build_blocks:
   #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
   #   {% endif %}
   #   {% endfor %}
+  bifrost_base_header: |
+    ADD additions-archive /
   grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel
+    RUN grafana-cli plugins install vonage-status-panel \
+        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
   prometheus_v2_server_repository_version: |
@@ -261,27 +273,50 @@ kolla_build_blocks:
     ARG blackbox_exporter_version='0.19.0'
 
 kolla_build_customizations_common:
+  bifrost_base_pip_packages_append:
+    - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
 
 kolla_build_customizations_centos:
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_compute_packages_remove:
+    - openvswitch
+  nova_compute_packages_append:
+    - openvswitch2.17
+  octavia_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  octavia_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
   ovn_base_packages_override:
-    - ovn-2021-21.12.0
+    - ovn22.06
   ovn_controller_packages_override:
-    - ovn-2021-host-21.12.0
+    - ovn22.06-host
   ovn_nb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_northd_packages_override:
-    - ovn-2021-central-21.12.0
+    - ovn22.06-central
   ovn_sb_db_server_packages_override:
-    - ovn-2021-central-21.12.0
-  openvswitch_base_packages_override:
-    - libibverbs
-    - openvswitch2.16
-    - openvswitch-selinux-extra-policy
-    - python3-netifaces
-    - python3-openvswitch2.16
-    - tcpdump
+    - ovn22.06-central
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
 
 kolla_build_customizations_ubuntu: {}
 
@@ -504,6 +539,7 @@ kolla_build_customizations: "{{ kolla_build_customizations_common | combine(koll
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
+kolla_enable_nova_libvirt_container: "{{ os_distribution not in ['rocky'] }}"
 #kolla_enable_magnum:
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
