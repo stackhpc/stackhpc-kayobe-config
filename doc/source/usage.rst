@@ -12,9 +12,8 @@ based on the upstream kayobe-config, with some opinionated configuration
 changes applied.
 
 Since this repository makes changes to the base configuration, it works best
-when used with Kayobe's `multiple environments
-<https://docs.openstack.org/kayobe/latest/multiple-environments.html>`__
-feature.
+when used with Kayobe's :kayobe-doc:`multiple environments
+<multiple-environments>` feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
 <https://github.com/stackhpc/kayobe/tree/stackhpc/xena>`__, which includes
