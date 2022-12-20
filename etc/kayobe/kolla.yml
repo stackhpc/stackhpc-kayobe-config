@@ -220,6 +220,27 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
+  # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
+  # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
+  # packages.
+  base_debian_after_sources_list: |
+    RUN echo "\
+    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
+    > /etc/apt/sources.list.d/uca-yoga.list
+    RUN echo "\
+    Package: *\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: -1\n\
+    \n\
+    Package: ovn*\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500\n\
+    \n\
+    Package: openvswitch* python3-openvswitch\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500"\
+    > /etc/apt/preferences.d/uca-yoga
   # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
   # Ark does not work if the upstream mirror pulls packages (which it does
   # sometimes).
