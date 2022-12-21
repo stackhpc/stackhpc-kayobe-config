@@ -5,14 +5,9 @@ StackHPC Kayobe Configuration
 This repository provides a base Kayobe configuration for the Xena release
 of StackHPC OpenStack.
 
-Documentation for this project is provided in the ``doc`` directory. To build
-it, run:
-
-.. code-block:: console
-
-   tox -e docs
-
-The HTML will be written to ``doc/build``.
+Documentation is hosted on `readthedocs.io
+<https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-xena/index.html>`__,
+and includes release notes.
 
 Resources
 =========
