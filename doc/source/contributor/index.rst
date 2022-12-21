@@ -8,4 +8,4 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
    :maxdepth: 1
 
    documentation
-   environments
+   environments/index
