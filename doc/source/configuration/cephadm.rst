@@ -3,7 +3,7 @@ Cephadm & Kayobe
 ================
 
 This section describes how to use the Cephadm integration included in StackHPC
-Kayobe configuration since Yoga to deploy Ceph.
+Kayobe configuration since Xena to deploy Ceph.
 
 The Cephadm integration takes the form of custom playbooks that wrap
 around the Ansible `stackhpc.cephadm collection
