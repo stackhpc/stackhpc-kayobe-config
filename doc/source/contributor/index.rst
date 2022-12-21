@@ -7,4 +7,6 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
 .. toctree::
    :maxdepth: 1
 
-   environments
+   documentation
+   release-notes
+   environments/index

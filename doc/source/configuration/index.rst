@@ -10,5 +10,8 @@ the various features provided.
 
    walled-garden
    release-train
+   host-images
+   lvm
+   swap
    cephadm
    monitoring
