@@ -9,7 +9,7 @@ Prerequisites
 =============
 
 * a CentOS Stream 8 or Ubuntu Focal 20.04 host
-* access to the local Pulp server
+* access to the Test Pulp server on SMS lab
 
 Setup
 =====
