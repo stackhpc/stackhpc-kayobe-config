@@ -73,7 +73,7 @@ switch_config_vxlans_template: |
   {{ switch_config_vxlan_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% if switch_layer == 'leaf' %}
-  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {% for vlan in range(provider_vlans_physnet1.start | int, provider_vlans_physnet1.end | int + 1) %}
   {{ switch_config_vxlan_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% endif %}
@@ -95,7 +95,7 @@ switch_config_evpn_template: |
   {{ switch_config_evpn_evi_template.format(vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% if switch_layer == 'leaf' %}
-  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {% for vlan in range(provider_vlans_physnet1.start | int, provider_vlans_physnet1.end | int + 1) %}
   {{ switch_config_evpn_evi_template.format(vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% endif %}
@@ -127,7 +127,7 @@ switch_config_remove_all_vxlan_vlan_template: |
   {{ switch_config_remove_vxlan_vlan_template.format(vlan=network | net_vlan, vni=network | net_vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% if switch_layer == 'leaf' %}
-  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {% for vlan in range(provider_vlans_physnet1.start | int, provider_vlans_physnet1.end | int + 1) %}
   {{ switch_config_remove_vxlan_vlan_template.format(vlan=vlan, vni=vlan + switch_vxlan_offset) }}
   {% endfor %}
   {% endif %}
@@ -315,7 +315,7 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - mtu {{ storage_mgmt_net_name | net_mtu }}
       - virtual-network {{ storage_mgmt_net_name | net_vlan + switch_vxlan_offset }}
-  {% for vlan in range(provider_vlans_physnet1.start, provider_vlans_physnet1.end + 1) %}
+  {% for vlan in range(provider_vlans_physnet1.start | int, provider_vlans_physnet1.end | int + 1) %}
   vlan {{ vlan }}:
     description: Provider-network
     config:
