@@ -25,6 +25,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 1935501,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -251,23 +252,7 @@
             "filterable": false,
             "inspect": false
           },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "Failed"
-                },
-                "1": {
-                  "color": "dark-green",
-                  "index": 0,
-                  "text": "Ok"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -306,7 +291,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Value"
+              "options": "Value #Health"
             },
             "properties": [
               {
@@ -315,13 +300,37 @@
               },
               {
                 "id": "custom.width"
+              },
+              {
+                "id": "displayName",
+                "value": "Health"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Bad"
+                      },
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Ok"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "type"
+              "options": "type 1"
             },
             "properties": [
               {
@@ -353,7 +362,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
+              "options": "Time 1"
             },
             "properties": [
               {
@@ -365,7 +374,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "disk"
+              "options": "disk 1"
             },
             "properties": [
               {
@@ -381,7 +390,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "instance"
+              "options": "instance 1"
             },
             "properties": [
               {
@@ -391,28 +400,6 @@
               {
                 "id": "displayName",
                 "value": "Hostname"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Type"
-            },
-            "properties": [
-              {
-                "id": "custom.width"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Serial Number"
-            },
-            "properties": [
-              {
-                "id": "custom.width"
               }
             ]
           },
@@ -430,11 +417,60 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Disk"
+              "options": "group 1"
             },
             "properties": [
               {
-                "id": "custom.width"
+                "id": "displayName",
+                "value": "Group"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "smart_id"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* 2"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Temp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperature"
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "noValue",
+                "value": "-"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-text"
               }
             ]
           }
@@ -442,7 +478,7 @@
       },
       "gridPos": {
         "h": 13,
-        "w": 18,
+        "w": 20,
         "x": 0,
         "y": 7
       },
@@ -455,6 +491,7 @@
           ],
           "show": false
         },
+        "frameIndex": 1,
         "showHeader": true,
         "sortBy": []
       },
@@ -481,13 +518,64 @@
           "interval": "",
           "legendFormat": "",
           "range": false,
-          "refId": "A",
+          "refId": "Health",
           "units": "none",
           "valueHandler": "Number Threshold",
           "warn": 0
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "smartmon_temperature_case_raw_value",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "range": false,
+          "refId": "Temp"
         }
       ],
-      "title": "Panel Title",
+      "title": "SMART Info",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "serial_number"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time 1": 3,
+              "Time 2": 10,
+              "Value #Health": 8,
+              "Value #Temp": 9,
+              "__name__ 1": 4,
+              "__name__ 2": 11,
+              "disk 1": 5,
+              "disk 2": 12,
+              "group 1": 0,
+              "group 2": 13,
+              "instance 1": 1,
+              "instance 2": 14,
+              "job 1": 6,
+              "job 2": 15,
+              "serial_number": 7,
+              "smart_id": 16,
+              "type 1": 2,
+              "type 2": 17
+            },
+            "renameByName": {}
+          }
+        }
+      ],
       "transparent": true,
       "type": "table"
     }
@@ -511,7 +599,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "Prometheus",
           "value": "Prometheus"
         },
@@ -537,7 +625,7 @@
   "timezone": "",
   "title": "Hardware Overview",
   "uid": "TCN51Y25P",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
 {% endraw %}
