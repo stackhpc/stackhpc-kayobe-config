@@ -15,8 +15,7 @@ KAYOBE_CONFIG_BRANCH=yoga-aufn
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
-# PULP_HOST="10.205.3.187 pulp-server pulp-server.internal.sms-cloud"
-PULP_HOST="10.209.0.207 pulp-server pulp-server.internal.sms-cloud" #Use Mark's router workaround
+PULP_HOST="10.205.3.187 pulp-server pulp-server.internal.sms-cloud"
 
 # FIXME: Work around lack of DNS on SMS lab.
 cat << EOF | sudo tee -a /etc/hosts
