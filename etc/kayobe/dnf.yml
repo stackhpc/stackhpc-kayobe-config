@@ -41,6 +41,12 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
+#dnf_custom_repos:
+
+# A dict of custom repositories that point to the local Pulp server.
+# To use these repos, set dnf_custom_repos to the value of stackhpc_dnf_repos.
+# This is done by default for hosts in the overcloud group via a group_vars
+# file.
 stackhpc_dnf_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
 
 # Custom repositories shared between all RHEL derivatives.
