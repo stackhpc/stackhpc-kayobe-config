@@ -235,6 +235,15 @@ jobs:
         run: |
           test $(wc -l < tempest-artifacts/failed-tests) -lt 1
 
+      - name: Upload SSH key artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssh-key-${{ inputs.os_distribution }}-${{ inputs.neutron_plugin }}
+          path: |
+            terraform/aio/id_rsa
+            terraform/aio/id_rsa.pub
+        if: failure()
+
       - name: Destroy
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/terraform/aio
@@ -242,7 +251,6 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
 
       - name: Prune Docker images over 1 week old
         # May fail if another prune is running
