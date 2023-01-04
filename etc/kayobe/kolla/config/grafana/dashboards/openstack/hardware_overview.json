@@ -84,7 +84,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(smartmon_device_smart_healthy > 0)",
+          "expr": "count(smartmon_device_smart_healthy{instance=~\"$node\"} > 0 )",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -157,7 +157,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(smartmon_device_smart_healthy < 1) ",
+          "expr": "count(smartmon_device_smart_healthy{instance=~\"$node\"} < 1) ",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -225,7 +225,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(smartmon_device_smart_healthy)",
+          "expr": "count(smartmon_device_smart_healthy{instance=~\"$node\"})",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -477,7 +477,7 @@
         ]
       },
       "gridPos": {
-        "h": 13,
+        "h": 10,
         "w": 20,
         "x": 0,
         "y": 7
@@ -512,7 +512,7 @@
           "displayValueWithAlias": "Never",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "smartmon_device_smart_healthy",
+          "expr": "smartmon_device_smart_healthy{instance=~\"$node\"}",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -530,7 +530,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "smartmon_temperature_case_raw_value",
+          "expr": "smartmon_temperature_case_raw_value{instance=~\"$node\"}",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -578,6 +578,102 @@
       ],
       "transparent": true,
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Temperature (°C)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 20,
+        "x": 0,
+        "y": 17
+      },
+      "hideTimeOverride": false,
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "avg_over_time(smartmon_temperature_case_raw_value{instance=~\"$node\"}[1h])",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{instance}} - {{disk}} - {{serial_number}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Disk Temperatures",
+      "type": "timeseries"
     }
   ],
   "refresh": false,
@@ -599,7 +695,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "Prometheus",
           "value": "Prometheus"
         },
@@ -614,18 +710,46 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(node_cpu_seconds_total{job=\"node\"}, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Host:",
+        "multi": false,
+        "name": "node",
+        "options": [],
+        "query": {
+          "query": "label_values(node_cpu_seconds_total{job=\"node\"}, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Hardware Overview",
   "uid": "TCN51Y25P",
-  "version": 3,
+  "version": 5,
   "weekStart": ""
 }
 {% endraw %}
