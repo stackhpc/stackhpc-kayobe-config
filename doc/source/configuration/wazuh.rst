@@ -151,53 +151,24 @@ Install the role:
 
 ``kayobe control host bootstrap``
 
-Setup Kayobe symlinks for custom playbooks if not done already:
-
-.. code-block:: console
-
-  pushd etc/kayobe/ansible/
-  ln -s ../../../../kayobe/ansible/filter_plugins/ filter_plugins
-  ln -s ../../../../kayobe/ansible/group_vars/ group_vars
-  ln -s ../../../../kayobe/ansible/test_plugins/ test_plugins
-  popd
-
 You might wish to add the following to .gitignore in kayobe-config:
 
 .. code-block:: console
 
   # Wazuh
   etc/kayobe/ansible/roles/wazuh-ansible/
-  etc/kayobe/ansible/vars/certificates/deps
-  etc/kayobe/ansible/vars/certificates/search-guard-tlstool-1.8.zip
-  etc/kayobe/ansible/vars/certificates/tools/sgtls*
+  etc/kayobe/ansible/vars/certificates/*
+  etc/kayobe/ansible/vars/certificates/custom_certificates/*
+  
 
-
-Acquire the playbook:
-
-.. code-block:: console
-
-  pushd etc/kayobe/ansible/
-  curl -O https://raw.githubusercontent.com/stackhpc/kayobe-ops/master/wazuh-manager.yml
-  popd
-
-
-Edit the playbook to your needs.
-
-``vi wazuh-manager.yml``
-
-
-Acquire the group variables files:
-
-.. code-block:: console
-
-  mkdir -p etc/kayobe/inventory/group_vars/wazuh-master/
-  pushd etc/kayobe/inventory/group_vars/wazuh-master/
-  curl -O https://raw.githubusercontent.com/stackhpc/kayobe-ops/master/vars/wazuh-manager.yml
-  popd
-
+Edit the playbook and variables to your needs: 
 
 Configuration
 ============= 
+
+``vi wazuh-manager.yml``
+
+``vi vars/wazuh-manager.yml``
 
 You may need to modify some of the variables, including:
 
@@ -329,8 +300,9 @@ Deploy Wazuh manager:
 
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
 
-If you are using the Search Guard generated certificates, 
-this will result in the creation of some certificates and keys. Encrypt the keys (and remember to commit to git):
+If you are using the wazuh generated certificates, 
+this will result in the creation of some certificates and keys (in case of custom certs adjust path to it). 
+Encrypt the keys (and remember to commit to git):
 
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/vars/certificates/certs/*.key``
@@ -352,19 +324,6 @@ Logs are in ``/var/log/elasticsearch/wazuh.log``. There are also logs in the jou
 ============
 Wazuh agents
 ============
-
-Add a playbook to deploy wazuh agent in ``etc/kayobe/ansible/wazuh-agent.yml``:
-
-.. code-block:: console
-  
-  ---
-  - name: Deploy Wazuh agent
-    hosts: wazuh-agent
-    become: yes
-    tasks:
-      - import_role:
-          name: "wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-agent"
-
 
 Add a wazuh-agent group to the inventory in ``etc/kayobe/inventory/groups``:
 
