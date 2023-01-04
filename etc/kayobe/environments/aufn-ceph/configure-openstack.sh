@@ -3,7 +3,7 @@
 BASE_PATH=~
 VENV_DIR=$BASE_PATH/venvs/ansible
 cd $BASE_PATH/src/
-[[ -d openstack-network-config ]] || git clone https://github.com/stackhpc/openstack-config-multinode.git -b geneve openstack-network-config
+[[ -d openstack-network-config ]] || git clone https://github.com/stackhpc/openstack-config-multinode.git openstack-network-config
 cd openstack-network-config
 if [[ ! -d $VENV_DIR ]]; then
     # Using virtualenv causes a strange bug with python3.6 where 
@@ -24,4 +24,5 @@ ansible-galaxy collection install -p ansible/collections -r requirements.yml
 
 source $BASE_PATH/src/kayobe-config/etc/kolla/public-openrc.sh
 
-tools/openstack-config #Run script to configure openstack cloud
+# Run script to configure openstack cloud
+tools/openstack-config 

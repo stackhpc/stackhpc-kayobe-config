@@ -22,9 +22,6 @@ seed_hv_private_ip=$(ip a show dev $iface | awk '$1 == "inet" { gsub(/\/[0-9]*/,
 # 6080: VNC console
 forwarded_ports="80 6080"
 
-# IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
-public_ip="10.0.2.1"
-
 # Install iptables.
 if $(which dnf >/dev/null 2>&1); then
     sudo dnf -y install iptables
@@ -41,11 +38,6 @@ fi
 if ! sudo ip l show brcloud >/dev/null 2>&1; then
     sudo ip l add brcloud type bridge
     sudo ip l set brcloud up
-fi
-
-# Configure an IP on the 'public' network to allow access to/from the cloud.
-if ! sudo ip a show dev brcloud | grep $public_ip/24 >/dev/null 2>&1; then
-  sudo ip a add $public_ip/24 dev brcloud
 fi
 
 # On CentOS 8, bridges without a port are DOWN, which causes network

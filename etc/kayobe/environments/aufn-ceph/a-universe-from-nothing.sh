@@ -86,17 +86,11 @@ kayobe seed vm provision
 # Configure the seed host, and deploy a local registry.
 kayobe seed host configure
 
-
 # Deploy local pulp server as a container on the seed VM
 kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
 
 # Deploying the seed restarts networking interface, run configure-local-networking.sh again to re-add routes.
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
-
-#####################################################################
-# NEED TO ADD $PULP_HOST pulp-server pulp-server.internal.sms-cloud #
-# TO ETC/HOSTS OF DOCKER CONTAINER BEFORE SYNCING WITH UPSTEAM PULP #
-#####################################################################
 
 # Add sms lab test pulp to /etc/hosts of seed vm's pulp container
 SEED_IP=192.168.33.5
@@ -109,15 +103,8 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
 
-kayobe seed container image build bifrost_deploy
-
 # Re-run full task to set up bifrost_deploy etc. using newly-populated pulp repo
 kayobe seed service deploy
-
-
-# Deploying the seed restarts networking interface, run configure-local-networking.sh again to re-add routes.
-$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
-
 
 # NOTE: Make sure to use ./tenks, since just ‘tenks’ will install via PyPI.
 (export TENKS_CONFIG_PATH=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/tenks.yml && \
@@ -140,8 +127,8 @@ kayobe overcloud post configure
 source $KOLLA_CONFIG_PATH/public-openrc.sh
 
 
-# Use Jack's openstack-config-multinode here instead of init-runonce.sh
-####### Old verson: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/init-runonce.sh
+# Use Jack's openstack-config-multinode here instead of init-runonce.sh script from standard aufn
+
 #Deactivate current kayobe venv
 set +u
 deactivate
