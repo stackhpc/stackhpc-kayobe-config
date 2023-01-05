@@ -38,6 +38,7 @@ Define VM sizing in ``etc/kayobe/inventory/group_vars/wazuh-master/infra-vms``:
   # Capacity of the infra VM data volume.
   infra_vm_data_capacity: "200G"
 
+
 Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-master/lvm``:
 
 .. code-block:: console
@@ -83,7 +84,6 @@ with the network defined in network.yml as usual.
 
 
 Add group mappings to the inventory ``etc/kayobe/inventory/groups``:
-####################################################################
 
 .. code-block:: console
 
@@ -178,7 +178,7 @@ You may need to modify some of the variables, including:
 * private_ip
 
 Secrets
-===========================
+=======
 
 Add the following playbook to ``etc/kayobe/ansible/wazuh-secrets.yml``:
 
@@ -256,12 +256,12 @@ Generate and encrypt Wazuh secrets:
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-master/wazuh-secrets.yml
 
 
-====
+===
 TLS
-====
+===
 
 By default, Wazuh Ansible uses `wazuh-cert-tool.sh <https://documentation.wazuh.com/current/user-manual/certificates.html>`__
- to automatically
+to automatically
 generate certificates for wazuh-indexer (previously Elasticsearch and opendistro)
 and wazuh-dashbooard (previously Kibana) using a local CA. 
 If the certificates directory ``etc/kayobe/ansible/vars/certificates``
@@ -312,7 +312,7 @@ Verification
 ==============
 
 The Kibana portal should be accessible on port 5601 of the Wazuh
- master’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/vars/certificates/root-ca.pem``).
+master’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/vars/certificates/root-ca.pem``).
 The first login should be as the admin (not wazuh_admin) user, 
 with the opendistro_admin_password password in ``etc/kayobe/inventory/group_vars/wazuh-master/wazuh-secrets.yml``. 
 This will create the necessary indices.
