@@ -86,6 +86,7 @@ Add group mappings to the inventory ``etc/kayobe/inventory/groups``:
 ####################################################################
 
 .. code-block:: console
+
   # Infra VM groups.
 
 
