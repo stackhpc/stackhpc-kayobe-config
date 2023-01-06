@@ -32,3 +32,4 @@ Contents
    configuration/index
    release-notes
    contributor/index
+   operations/index
