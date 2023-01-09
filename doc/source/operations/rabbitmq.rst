@@ -1,26 +1,47 @@
-===============================
-Rolling out changes to RabbitMQ
-===============================
+========
+RabbitMQ
+========
 
-Prior to upgrading, some changes need to be rolled out for RabbitMQ.
-This should make RabbitMQ more stable during the upgrade(s). These changes
-are:
+High Availability
+=================
 
+In order to improve the stability of RabbitMQ, some changes need to be rolled,
+out. These changes are:
+
+* Update RabbitMQ to version 3.9.22, if you are running old images on Wallaby
+  or Xena, by synchronising and then pulling a new RabbitMQ container from
+  Pulp.
 * Enable the high availability setting via Kolla-Ansible
   ``om_enable_rabbitmq_high_availability``.
-* Update RabbitMQ to version 3.9.22
+
+By default in Kolla-Ansible, two key options for the high availability of
+RabbitMQ are disabled. These are durable queues, where messages are persisted
+to disk; and classic queue mirroring, where messages are replicated across
+multiple exchanges. Without these, a deployment will be a poor state for
+managing any updates for RabbitMQ, or any outages that cause it to be stopped.
+Messages held in RabbitMQ nodes that are stopped will be lost, which causes
+knock-on effects to the OpenStack services which either sent or were expecting
+to receive them. The Kolla-Ansible flag
+``om_enable_rabbitmq_high_availability`` can be used to enable both of these
+options. This will default to ``true`` from Xena onwards.
+
+While the `RabbitMQ docs <https://www.rabbitmq.com/queues.html#durability>`_ do
+say "throughput and latency of a queue is not affected by whether a queue is
+durable or not in most cases", it should be mentioned that there could be a
+potential performance hit from replicating all messages to the disk within
+large deployments. These changes would therefore be a tradeoff of performance
+for stability.
 
 **NOTE:** There is guaranteed to be downtime during this procedure, as it
 requires restarting RabbitMQ and all the OpenStack services that use it. The
-state of RabbitMQ may also need to be reset.
+state of RabbitMQ will also be reset.
 
 Instructions
 ------------
 
-If you are upgrading from Wallaby to Xena, you will need to enable the HA
-config option in
-``/home/ubuntu/kayobe/config/src/kolla-ansible/ansible/group_vars/all.yml``.
-This will default to ``true`` from Xena onwards.
+If you are upgrading from Wallaby to Xena, or if you're on Wallaby and want
+RabbitMQ to be more stable, you will need to enable the HA config option in
+``etc/kayobe/kolla/globals.yml``.
 
 .. code-block:: console
 
@@ -36,7 +57,7 @@ Generate the new config files for the overcloud services.
 
 .. code-block:: console
 
-  kayobe overcloud servuce configuration generate
+  kayobe overcloud service configuration generate
 
 Pull the RabbitMQ container image.
 
@@ -48,7 +69,7 @@ Stop all the OpenStack services which use RabbitMQ.
 
 .. code-block:: console
 
-  kayobe overcloud host command run --command 'docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print $NF }' | xargs docker stop'
+  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print $NF }' | xargs docker stop"
 
 Upgrade RabbitMQ.
 
@@ -56,13 +77,20 @@ Upgrade RabbitMQ.
 
   kayobe overcloud service upgrade -kt rabbitmq --skip-prechecks
 
+In order to convert the queues to be durable, you will need to reset the state
+of RabbitMQ, and restart the services which use it. This can be done with the
+RabbitMQ hammer playbook:
+
+.. code-block:: console
+
+  kayobe playbook run stackhpc-kayobe-config/etc/kayobe/ansible/rabbitmq-reset.yml
+
 Check to see if RabbitMQ is functioning as expected.
 
 .. code-block:: console
 
-  kayobe overcloud service upgrade -kt rabbitmq --skip-prechecks
-  kayobe overcloud host command run --command 'docker exec rabbitmq rabbitmqctl cluster_status'
-  kayobe overcloud host command run --command 'docker exec rabbitmq rabbitmqctl list_queues name durable'
+  kayobe overcloud host command run --show-output --command 'docker exec rabbitmq rabbitmqctl cluster_status'
+  kayobe overcloud host command run --show-output --command 'docker exec rabbitmq rabbitmqctl list_queues name durable'
 
 The cluster status should list all controllers. The queues listed should be
 durable if their names do not start with the following:
@@ -71,20 +99,5 @@ durable if their names do not start with the following:
 * .\*\_fanout\_
 * reply\_
 
-At this stage, you may find that the above is not correct. If this is the case,
-running the rabbitmq hammer playbook will reset the state of the RabbitMQ
-nodes, and then bring the services which use RabbitMQ back up.
-
-.. code-block:: console
-
-  kayobe playbook run stackhpc-kayobe-config/etc/kayobe/ansible/rabbitmq-reset.yml
-
-If you do not need to use the playbook here, then you will need to bring the
-services back up yourself:
-
-.. code-block:: console
-
-  kayobe overcloud host command run --command 'docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print $NF }' | xargs docker start'
-
-If there are issues with the services after this, you may still need to run the
-hammer playbook.
+If there are issues with the services after this, particularly during upgrades,
+you may find it useful to reuse the hammer playbook.
