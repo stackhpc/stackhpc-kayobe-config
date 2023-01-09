@@ -127,7 +127,7 @@ kayobe overcloud post configure
 source $KOLLA_CONFIG_PATH/public-openrc.sh
 
 
-# Use Jack's openstack-config-multinode here instead of init-runonce.sh script from standard aufn
+# Use openstack-config-multinode here instead of init-runonce.sh script from standard aufn
 
 #Deactivate current kayobe venv
 set +u
@@ -138,14 +138,14 @@ $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-openstack.sh $BAS
 # Create a test vm 
 VENV_DIR=$BASE_PATH/venvs/openstack
 if [[ ! -d $VENV_DIR ]]; then
-    virtualenv $VENV_DIR
+    python3 -m venv $VENV_DIR
 fi
 source $VENV_DIR/bin/activate
 pip install -U pip
 pip install python-openstackclient
 source $KOLLA_CONFIG_PATH/public-openrc.sh
 echo "Creating openstack key:"
-openstack keypair create --private-key ~/.ssh/id_rsa mykey
+openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey
 echo "Creating test vm:"
 openstack server create --key-name mykey --flavor m1.tiny --image cirros --network admin-geneve test-vm-1
 echo "Attaching floating IP:"
