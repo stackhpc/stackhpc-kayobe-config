@@ -147,7 +147,7 @@ source $KOLLA_CONFIG_PATH/public-openrc.sh
 echo "Creating openstack key:"
 openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey
 echo "Creating test vm:"
-openstack server create --key-name mykey --flavor m1.tiny --image cirros --network admin-geneve test-vm-1
+openstack server create --key-name mykey --flavor m1.tiny --image cirros --network admin-tenant test-vm-1
 echo "Attaching floating IP:"
 openstack floating ip create external
 openstack server add floating ip test-vm-1 `openstack floating ip list -c ID  -f value`

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-BASE_PATH=~
+BASE_PATH=$1
 VENV_DIR=$BASE_PATH/venvs/ansible
 cd $BASE_PATH/src/
-[[ -d openstack-config ]] || git clone https://github.com/stackhpc/openstack-config-multinode.git -b geneve openstack-config
+[[ -d openstack-config ]] || git clone https://github.com/stackhpc/openstack-config-multinode.git -b generic-network openstack-config
 cd openstack-config
 if [[ ! -d $VENV_DIR ]]; then
     # Using virtualenv causes a strange bug with python3.6 where 
