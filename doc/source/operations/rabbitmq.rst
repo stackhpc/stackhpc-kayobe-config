@@ -84,6 +84,13 @@ RabbitMQ hammer playbook:
 
   kayobe playbook run stackhpc-kayobe-config/etc/kayobe/ansible/rabbitmq-reset.yml
 
+The hammer playbook only targets the services which are known to have issues
+when RabbitMQ breaks. You will still need to start the remaining services:
+
+.. code-block:: console
+
+  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cloudkitty|designate|manila|masakari|octavia)' | awk '{ print $NF }' | xargs docker start"
+
 Check to see if RabbitMQ is functioning as expected.
 
 .. code-block:: console
