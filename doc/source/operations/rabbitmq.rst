@@ -17,13 +17,13 @@ out. These changes are:
 By default in Kolla-Ansible, two key options for the high availability of
 RabbitMQ are disabled. These are durable queues, where messages are persisted
 to disk; and classic queue mirroring, where messages are replicated across
-multiple exchanges. Without these, a deployment will be a poor state for
-managing any updates for RabbitMQ, or any outages that cause it to be stopped.
+multiple exchanges. Without these, a deployment has a higher risk of experiencing
+issues when updating RabbitMQ, or recovering from network outages.
 Messages held in RabbitMQ nodes that are stopped will be lost, which causes
 knock-on effects to the OpenStack services which either sent or were expecting
 to receive them. The Kolla-Ansible flag
 ``om_enable_rabbitmq_high_availability`` can be used to enable both of these
-options. This will default to ``true`` from Xena onwards.
+options. The default will be overridden to ``true`` from Xena onwards in StackHPC Kayobe configuration.
 
 While the `RabbitMQ docs <https://www.rabbitmq.com/queues.html#durability>`_ do
 say "throughput and latency of a queue is not affected by whether a queue is
@@ -38,16 +38,15 @@ state of RabbitMQ will also be reset.
 
 Instructions
 ------------
-
-If you are upgrading from Wallaby to Xena, or if you're on Wallaby and want
-RabbitMQ to be more stable, you will need to enable the HA config option in
+If you are planning to perform an upgrade, it is recommended to first roll out these changes.
+If you are currently running Wallaby, you will need to enable the HA config option in
 ``etc/kayobe/kolla/globals.yml``.
 
 .. code-block:: console
 
   om_enable_rabbitmq_high_availability: true
 
-Synchronise the Pulp containers.
+If you are running Wallaby or Xena, synchronise the Pulp containers.
 
 .. code-block:: console
 
