@@ -39,7 +39,7 @@ groups:
       severity: warning
     annotations:
       summary: Blackbox SSL certificate will expire soon (instance {{ $labels.instance }})
-      description: "SSL certificate expires in 30 days"
+      description: "SSL certificate expires in less than 30 days"
 
   - alert: BlackboxSslCertificateWillExpireSoon
     expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 3
@@ -48,7 +48,7 @@ groups:
       severity: critical
     annotations:
       summary: Blackbox SSL certificate will expire soon (instance {{ $labels.instance }})
-      description: "SSL certificate expires in 3 days"
+      description: "SSL certificate expires in less than 3 days"
 
   - alert: BlackboxSslCertificateExpired
     expr: probe_ssl_earliest_cert_expiry - time() <= 0
