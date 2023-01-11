@@ -251,8 +251,9 @@ to pass to ``cephadm shell -- ceph``. For example:
    # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
    # for format.
    cephadm_commands:
-     - "fs new cephfs cephfs_metadata cephfs_data"
-     - "orch apply mds cephfs --placement 3"
+    # Configure Prometheus exporter to listen on a specific interface. The default
+    # is to listen on all interfaces.
+    - "config set mgr mgr/prometheus/server_addr 10.0.0.1"
 
 Deployment
 ==========
