@@ -11,7 +11,7 @@ set -eu
 
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/yoga
-KAYOBE_CONFIG_BRANCH=yoga-aufn
+KAYOBE_CONFIG_BRANCH=stackhpc/yoga
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
