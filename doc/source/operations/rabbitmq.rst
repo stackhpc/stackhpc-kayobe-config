@@ -151,3 +151,25 @@ following:
 
 If there are issues with the services after this, particularly during upgrades,
 you may find it useful to reuse the hammer playbook, ``rabbitmq-reset.yml``.
+
+Known issues
+------------
+
+If there are any OpenStack services running without durable queues enabled
+while the RabbitMQ cluster is reset, they are likely to create non-durable
+queues before the other OpenStack services start. This leads to an error
+such as the following when other OpenStack services start::
+
+    Unable to connect to AMQP server on <IP>:5672 after inf tries:
+    Exchange.declare: (406) PRECONDITION_FAILED - inequivalent arg 'durable'
+    for exchange 'neutron' in vhost '/': received 'true' but current is
+    'false': amqp.exceptions.PreconditionFailed: Exchange.declare: (406)
+    PRECONDITION_FAILED - inequivalent arg 'durable' for exchange 'neutron' in
+    vhost '/': received 'true' but current is 'false'
+
+This may happen if a host is not in the inventory, leading to them not being
+targeted by the ``docker stop`` command. If this does happen, look for the
+hostname of the offending node in the queues created after the RabbitMQ reset.
+
+Once the rogue services have been stopped, reset the RabbitMQ cluster again to
+clear the queues.
