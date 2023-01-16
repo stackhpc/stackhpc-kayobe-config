@@ -8,10 +8,6 @@ concurrency:
 on:
   pull_request:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   config-diff:
     runs-on: self-hosted
@@ -35,7 +31,7 @@ jobs:
         run: |
             sudo cp -rf $GITHUB_WORKSPACE/ /src
             sudo chown stack:stack -Rf /src
-     
+
       - name: Run config diff
         run: |
             sudo -E -u stack bash -c '/src/.automation/pipeline/config-diff.sh ${{ github.event.pull_request.base.sha }}'

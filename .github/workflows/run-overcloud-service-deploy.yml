@@ -3,14 +3,6 @@ name: Run overcloud service deploy
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: |
-          Force the job to use a particular environment. Use this when not using a
-          recognised branch e.g to test a change before merging.
-        type: choice
-        options:
-          - habrok
-          - merlin
       kayobeLimit:
         description: |
           The ansible limit to use when running kayobe playbooks.
@@ -24,14 +16,10 @@ on:
         description: |
           The ansible tags to use when running kolla-ansible playbooks.
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   overcloud-service-deploy:
     runs-on: self-hosted
-    concurrency: ${{ github.event.inputs.environment }}-overcloud
+    concurrency: overcloud
     permissions:
       pull-requests: write
       contents: write
@@ -42,11 +30,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Print workflow inputs
-        run: echo "$INPUTS"
-        env:
-          INPUTS: ${{ toJSON(github.event.inputs) }}
-
       - name: Checkout kayobe config
         uses: actions/checkout@v2
         with:
@@ -59,13 +42,13 @@ jobs:
         run: |
           /src/.automation/pipeline/overcloud-service-deploy.sh
         env:
+          KAYOBE_ENVIRONMENT: habrok
+          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
           KOLLA_LIMIT: "${{ github.event.inputs.kollaLimit }}"
           KOLLA_TAGS: "${{ github.event.inputs.kollaTags }}"
           KAYOBE_TAGS: "${{ github.event.inputs.kayobeTags }}"
           KAYOBE_LIMIT: "${{ github.event.inputs.kayobeLimit }}"
-          KAYOBE_ENVIRONMENT: "${{ github.event.inputs.environment }}"
-          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
           KAYOBE_AUTOMATION_PR_TARGET_BRANCH: ${{ github.event.ref }}
           KAYOBE_AUTOMATION_PR_REMOTE: https://${KAYOBE_AUTOMATION_PR_GITHUB_USER}:${KAYOBE_AUTOMATION_PR_AUTH_TOKEN}@github.com/${{ github.repository }}
           KAYOBE_AUTOMATION_PR_GITHUB_USER: ${{ github.actor }}
