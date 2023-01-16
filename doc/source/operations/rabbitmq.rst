@@ -39,6 +39,29 @@ state of RabbitMQ will also be reset.
 Instructions
 ------------
 If you are planning to perform an upgrade, it is recommended to first roll out these changes.
+
+The configuration should be merged with StackHPC Kayobe configuration. If
+bringing in the latest changes is not possible for some reason, you may cherry
+pick the following changes:
+
+RabbitMQ hammer playbook (all releases):
+
+* ``3933e4520ba512b5bf095a28b791c0bac12c5dd0``
+* ``d83cceb2c41c18c2406032dac36cf90e57f37107``
+* ``097c98565dd6bd0eb16d49b87e4da7e2f2be3a5c``
+
+RabbitMQ tags (Wallaby):
+
+* ``69c245dc91a2eb4d34590624760c32064c3ac07b``
+
+RabbitMQ tags & HA flag (Xena):
+
+* ``2fd1590eb8ac739a07ad9cccbefc7725ea1a3855``
+
+RabbitMQ HA flag (Yoga):
+
+* ``31406648544372187352e129d2a3b4f48498267c``
+
 If you are currently running Wallaby, you will need to enable the HA config option in
 ``etc/kayobe/kolla/globals.yml``.
 
@@ -52,11 +75,18 @@ If you are running Wallaby or Xena, synchronise the Pulp containers.
 
   kayobe playbook run etc/kayobe/ansible/pulp-container-sync.yml pulp-container-publish.yml -e stackhpc_pulp_images_kolla_filter=rabbitmq
 
-Generate the new config files for the overcloud services.
+Ensure that Kolla Ansible is up to date.
 
 .. code-block:: console
 
-  kayobe overcloud service configuration generate
+   kayobe control host bootstrap
+
+Generate the new config files for the overcloud services. This ensures that
+queues are created as durable.
+
+.. code-block:: console
+
+  kayobe overcloud service configuration generate --node-config-dir /etc/kolla
 
 Pull the RabbitMQ container image.
 
@@ -68,7 +98,7 @@ Stop all the OpenStack services which use RabbitMQ.
 
 .. code-block:: console
 
-  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print $NF }' | xargs docker stop"
+  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$NF }' | xargs docker stop"
 
 Upgrade RabbitMQ.
 
@@ -77,33 +107,69 @@ Upgrade RabbitMQ.
   kayobe overcloud service upgrade -kt rabbitmq --skip-prechecks
 
 In order to convert the queues to be durable, you will need to reset the state
-of RabbitMQ, and restart the services which use it. This can be done with the
-RabbitMQ hammer playbook:
+of RabbitMQ. This can be done with the RabbitMQ hammer playbook:
 
 .. code-block:: console
 
-  kayobe playbook run stackhpc-kayobe-config/etc/kayobe/ansible/rabbitmq-reset.yml
-
-The hammer playbook only targets the services which are known to have issues
-when RabbitMQ breaks. You will still need to start the remaining services:
-
-.. code-block:: console
-
-  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cloudkitty|designate|manila|masakari|octavia)' | awk '{ print $NF }' | xargs docker start"
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rabbitmq-reset.yml --skip-tags restart-openstack
 
 Check to see if RabbitMQ is functioning as expected.
 
 .. code-block:: console
 
-  kayobe overcloud host command run --show-output --command 'docker exec rabbitmq rabbitmqctl cluster_status'
-  kayobe overcloud host command run --show-output --command 'docker exec rabbitmq rabbitmqctl list_queues name durable'
+  kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl cluster_status'
 
-The cluster status should list all controllers. The queues listed should be
-durable if their names do not start with the following:
+The cluster status should list all controllers.
+
+Check to see if all OpenStack queues and exchanges have been removed from the RabbitMQ cluster.
+
+.. code-block:: console
+
+  kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl list_queues name'
+  kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl list_exchanges name'
+
+Start the OpenStack services which use RabbitMQ. Note that this will start all
+matching services, even if they weren't running prior to starting this
+procedure.
+
+.. code-block:: console
+
+  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$NF }' | xargs docker start"
+
+Check to see if the expected queues are durable.
+
+.. code-block:: console
+
+  kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl list_queues name durable'
+
+The queues listed should be durable if their names do not start with the
+following:
 
 * amq.
 * .\*\_fanout\_
 * reply\_
 
 If there are issues with the services after this, particularly during upgrades,
-you may find it useful to reuse the hammer playbook.
+you may find it useful to reuse the hammer playbook, ``rabbitmq-reset.yml``.
+
+Known issues
+------------
+
+If there are any OpenStack services running without durable queues enabled
+while the RabbitMQ cluster is reset, they are likely to create non-durable
+queues before the other OpenStack services start. This leads to an error
+such as the following when other OpenStack services start::
+
+    Unable to connect to AMQP server on <IP>:5672 after inf tries:
+    Exchange.declare: (406) PRECONDITION_FAILED - inequivalent arg 'durable'
+    for exchange 'neutron' in vhost '/': received 'true' but current is
+    'false': amqp.exceptions.PreconditionFailed: Exchange.declare: (406)
+    PRECONDITION_FAILED - inequivalent arg 'durable' for exchange 'neutron' in
+    vhost '/': received 'true' but current is 'false'
+
+This may happen if a host is not in the inventory, leading to them not being
+targeted by the ``docker stop`` command. If this does happen, look for the
+hostname of the offending node in the queues created after the RabbitMQ reset.
+
+Once the rogue services have been stopped, reset the RabbitMQ cluster again to
+clear the queues.
