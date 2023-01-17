@@ -1,0 +1,50 @@
+name: Generate kolla config diff
+
+# Cancel previous diff if PR updated.
+concurrency:
+  group: kolla-diff-${{ github.head_ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+
+jobs:
+  config-diff:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout kayobe config
+        uses: actions/checkout@v2
+        with:
+           submodules: true
+           fetch-depth: 0
+           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Copy checkout to expected location
+        run: |
+            sudo cp -rf $GITHUB_WORKSPACE/ /src
+            sudo chown stack:stack -Rf /src
+
+      - name: Run config diff
+        run: |
+            sudo -E -u stack bash -c '/src/.automation/pipeline/config-diff.sh ${{ github.event.pull_request.base.sha }}'
+        env:
+          KAYOBE_ENVIRONMENT: habrok
+          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
+          HOME: /stack
+
+      - name: Show summary of changes
+        run: |
+          diffstat < /tmp/kayobe-config-diff
+
+      - name: Print diff
+        run: |
+          cat /tmp/kayobe-config-diff

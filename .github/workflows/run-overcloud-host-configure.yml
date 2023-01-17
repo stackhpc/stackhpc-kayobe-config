@@ -1,4 +1,4 @@
-name: Run overcloud service deploy
+name: Run overcloud host configure
 
 on:
   workflow_dispatch:
@@ -17,12 +17,11 @@ on:
           The ansible tags to use when running kolla-ansible playbooks.
 
 jobs:
-  overcloud-service-deploy:
+  overcloud-host-configure:
     runs-on: self-hosted
     concurrency: overcloud
     permissions:
-      pull-requests: write
-      contents: write
+      contents: read
       packages: read
     container:
       image: ghcr.io/${{ github.repository }}:latest
@@ -38,9 +37,9 @@ jobs:
       - name: Symlink source checkout to expected location
         run: sudo ln -s $PWD /src
 
-      - name: Run overcloud service deploy
+      - name: Run overcloud host configure
         run: |
-          /src/.automation/pipeline/overcloud-service-deploy.sh
+          /src/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_ENVIRONMENT: habrok
           KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
@@ -49,11 +48,4 @@ jobs:
           KOLLA_TAGS: "${{ github.event.inputs.kollaTags }}"
           KAYOBE_TAGS: "${{ github.event.inputs.kayobeTags }}"
           KAYOBE_LIMIT: "${{ github.event.inputs.kayobeLimit }}"
-          KAYOBE_AUTOMATION_PR_TARGET_BRANCH: ${{ github.event.ref }}
-          KAYOBE_AUTOMATION_PR_REMOTE: https://${KAYOBE_AUTOMATION_PR_GITHUB_USER}:${KAYOBE_AUTOMATION_PR_AUTH_TOKEN}@github.com/${{ github.repository }}
-          KAYOBE_AUTOMATION_PR_GITHUB_USER: ${{ github.actor }}
-          KAYOBE_AUTOMATION_PR_AUTH_TOKEN: ${{ github.token }}
-          KAYOBE_AUTOMATION_PR_TYPE: github
-          KAYOBE_AUTOMATION_PR_TITLE: "[kayobe-automation] ${{ github.workflow }} #${{ github.run_id }}"
-          KAYOBE_AUTOMATION_PR_URL: https://api.github.com/repos/${{ github.repository }}/pulls
           HOME: /stack

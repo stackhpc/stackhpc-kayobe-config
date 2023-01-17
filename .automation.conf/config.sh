@@ -31,3 +31,28 @@ fi
 
 export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
 export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=tempest-full
+
+KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
+)
+
+
+KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/glance/ceph.client.glance.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/nova/ceph.client.cinder.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-volume/ceph.client.cinder.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/hb-openstack-controller01-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/haproxy-internal.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/hb-openstack-controller03-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/hb-openstack-controller02-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/issuing.key"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/seed-vault-keys.json"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/overcloud-vault-keys.json"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/rootCA.crt"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/issuing.csr"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/issuing-bundle.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.key"
+)
+

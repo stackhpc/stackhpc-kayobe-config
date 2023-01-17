@@ -9,15 +9,18 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  KAYOBE_USER_UID: 1015
+  KAYOBE_USER_GID: 1015
 
 jobs:
   build:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: self-hosted
     container: docker:20.10.21-git
     permissions:
       contents: read
       packages: write
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout kayobe config
         uses: actions/checkout@v2
         with:
@@ -53,9 +56,8 @@ jobs:
           context: .
           build-args: |
              KAYOBE_DOCKER_SSH_CONFIG_PATH=.automation/docker/kayobe/ssh_config
-             KAYOBE_USER_UID=1015
-             KAYOBE_USER_GID=1015
+             KAYOBE_USER_UID=${{ env.KAYOBE_USER_UID }}
+             KAYOBE_USER_GID=${{ env.KAYOBE_USER_UID }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
