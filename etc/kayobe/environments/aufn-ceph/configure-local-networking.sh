@@ -58,6 +58,7 @@ sudo sysctl -w net.ipv4.conf.all.forwarding=1
 
 # FIXME: IP MASQUERADE from control plane fails without this on Ubuntu.
 if ! $(which dnf >/dev/null 2>&1); then
+    sudo modprobe br_netfilter
     echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-iptables
 fi
 
