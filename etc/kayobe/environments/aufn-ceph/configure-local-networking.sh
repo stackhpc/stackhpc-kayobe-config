@@ -25,6 +25,9 @@ forwarded_ports="80 6080"
 # Install iptables.
 if $(which dnf >/dev/null 2>&1); then
     sudo dnf -y install iptables
+else
+    sudo apt update
+    sudo apt -y install iptables
 fi
 
 # Configure local networking.
