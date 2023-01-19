@@ -1,10 +1,22 @@
 ---
 ###############################################################################
-# Local Pulp access credentials
+# Local Pulp server configuration
 
 # Base URL of the local Pulp service.
 # Default uses the seed node's IP on the admin network.
-pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
+pulp_url: "{{ 'https' if pulp_enable_tls else 'http' }}://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
+
+# Whether to enable TLS for Pulp.
+pulp_enable_tls: false
+
+# Path to a TLS certificate to use when TLS is enabled.
+#pulp_cert_path:
+
+# Path to a TLS key to use when TLS is enabled.
+#pulp_key_path:
+
+###############################################################################
+# Local Pulp access credentials
 
 # Credentials used to access the local Pulp REST API.
 pulp_username: admin
