@@ -96,6 +96,7 @@ neutron
 
 [neutron-ovn-metadata-agent:children]
 compute
+network
 
 [neutron-bgp-dragent:children]
 neutron
@@ -152,16 +153,6 @@ ironic
 
 [tgtd:children]
 storage
-
-# Karbor
-[karbor-api:children]
-karbor
-
-[karbor-protection:children]
-karbor
-
-[karbor-operationengine:children]
-karbor
 
 # Manila
 [manila-api:children]
@@ -287,13 +278,6 @@ magnum
 
 [magnum-conductor:children]
 magnum
-
-# Qinling
-[qinling-api:children]
-qinling
-
-[qinling-engine:children]
-qinling
 
 # Sahara
 [sahara-api:children]
@@ -422,15 +406,11 @@ senlin
 [senlin-health-manager:children]
 senlin
 
-# Searchlight
-[searchlight-api:children]
-searchlight
-
-[searchlight-listener:children]
-searchlight
-
 # Octavia
 [octavia-api:children]
+octavia
+
+[octavia-driver-agent:children]
 octavia
 
 [octavia-health-manager:children]
@@ -555,13 +535,22 @@ elasticsearch
 [prometheus-blackbox-exporter:children]
 monitoring
 
+[prometheus-libvirt-exporter:children]
+compute
+
+[prometheus-msteams:children]
+prometheus-alertmanager
+
 [masakari-api:children]
 control
 
 [masakari-engine:children]
 control
 
-[masakari-monitors:children]
+[masakari-hostmonitor:children]
+control
+
+[masakari-instancemonitor:children]
 compute
 
 [ovn-controller:children]
