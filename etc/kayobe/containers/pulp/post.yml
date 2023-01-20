@@ -17,3 +17,13 @@
   register: pulp_manager_result
   failed_when:
     - "'Successfully set password' not in pulp_manager_result.stdout"
+
+- name: Manage Pulp content checksums
+  become: true
+  command: >-
+    docker exec -u root pulp
+    bash -c
+      'pulpcore-manager handle-artifact-checksums'
+  when:
+    - stackhpc_pulp_sync_for_local_container_build | bool
+    - pulp_settings.changed
