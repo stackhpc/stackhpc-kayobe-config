@@ -219,16 +219,28 @@ switch_interface_config_ceph_osd_template: |-
 switch_interface_config_proxmox: []
 
 # Lustre MDS interface configuration
-# TODO
-switch_interface_config_mds: []
+switch_interface_config_mds:
+  - no shutdown
+  - mtu {{ switch_fabric_mtu }}
+  - switchport mode access
+  - switchport access vlan {{ lustre_storage_vlan }}
+  - spanning-tree port type edge
 
 # Lustre OSS interface configuration
-# TODO
-switch_interface_config_oss: []
+switch_interface_config_oss:
+  - no shutdown
+  - mtu {{ switch_fabric_mtu }}
+  - switchport mode access
+  - switchport access vlan {{ lustre_storage_vlan }}
+  - spanning-tree port type edge
 
 # Lustre Robinhood interface configuration
-# TODO
-switch_interface_config_robinhood: []
+switch_interface_config_robinhood:
+  - no shutdown
+  - mtu {{ switch_fabric_mtu }}
+  - switchport mode access
+  - switchport access vlan {{ lustre_storage_vlan }}
+  - spanning-tree port type edge
 
 # VLANs to trunk to controllers
 switch_controller_trunk_vlans:
