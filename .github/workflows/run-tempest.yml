@@ -11,14 +11,12 @@ on:
           .automation.conf/tempest/load-lists. Defaults to running
           refstack.
         required: false
-        default: 'compute.2020.11'
+        default: 'default'
         type: choice
         options: 
-          - compute.2020.11
-          - baremetal
           - default
-          - octavia
-          - single-test
+          - refstack-2019.11-test-list.txt
+          - tempest-full
       tempestPattern:
         description: |
           Limit tests to this regex. Takes precedence over testSuite.
@@ -44,7 +42,7 @@ jobs:
       - name: Symlink source checkout to expected location
         run: sudo ln -s $PWD /src
 
-      - name: Run ${{ github.event.inputs.testSuite }} tempest testsuite on platform ${{ env.runs_on }} and branch ${{ env.branch }}
+      - name: Run ${{ github.event.inputs.testSuite }} tempest testsuite
         run: |
           /src/.automation/pipeline/tempest.sh
         env:
