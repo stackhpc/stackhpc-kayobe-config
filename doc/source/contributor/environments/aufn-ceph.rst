@@ -32,8 +32,8 @@ As a workaround for SMS lab's lack of DNS, add the following lines to ``/etc/hos
 
 .. parsed-literal::
 
-    PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
-    PULP_HOST="10.205.3.187 pulp-server pulp-server.internal.sms-cloud"
+    10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
+    10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 
 Configure the system firewall and security settings:
 
