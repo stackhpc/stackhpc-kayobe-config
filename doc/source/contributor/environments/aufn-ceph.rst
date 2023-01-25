@@ -22,11 +22,21 @@ Setup
 
 --- 
 
-To begin the manual setup, access the baremetal node via SSH and install some basic dependencies:
+To begin the manual setup, access the baremetal node via SSH and install some basic dependencies.
+
+CentOS:
 
 .. parsed-literal::
 
    sudo dnf install -y gcc python3-dev python3-virtualenv
+
+Ubuntu:
+
+.. parsed-literal::
+
+    sudo apt update
+    sudo apt -y install gcc libffi-dev python3-dev python-is-python3 python3-virtualenv
+
 
 As a workaround for SMS lab's lack of DNS, add the following lines to ``/etc/hosts`` of the baremetal node:
 
