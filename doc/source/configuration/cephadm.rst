@@ -239,6 +239,22 @@ for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
          mgr: "profile rbd pool=images"
        state: present
 
+Ceph Commands
+~~~~~~~~~~~~~
+
+It is possible to run an arbitrary list of commands against the cluster after deployment
+by setting the ``cephadm_commands`` variable. ``cephadm_commands`` should be a list of commands
+to pass to ``cephadm shell -- ceph``. For example:
+
+.. code:: yaml
+
+   # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
+   # for format.
+   cephadm_commands:
+    # Configure Prometheus exporter to listen on a specific interface. The default
+    # is to listen on all interfaces.
+    - "config set mgr mgr/prometheus/server_addr 10.0.0.1"
+
 Deployment
 ==========
 
