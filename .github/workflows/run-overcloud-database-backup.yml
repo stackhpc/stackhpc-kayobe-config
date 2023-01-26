@@ -1,0 +1,51 @@
+name: Run overcloud database backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      kayobeLimit:
+        description: |
+          The ansible limit to use when running kayobe playbooks.
+      kayobeTags:
+        description: |
+          The ansible tags to use when running kayobe playbooks.
+      kollaLimit:
+        description: |
+          The ansible limit to use for kolla-ansible playbooks.
+      kollaTags:
+        description: |
+          The ansible tags to use when running kolla-ansible playbooks.
+
+jobs:
+  overcloud-database-backup:
+    runs-on: self-hosted
+    concurrency: overcloud
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout kayobe config
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Symlink source checkout to expected location
+        run: sudo ln -s $PWD /src
+
+      - name: Run overcloud database backup
+        run: |
+          /src/.automation/pipeline/overcloud-database-backup.sh
+        env:
+          KAYOBE_ENVIRONMENT: habrok
+          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
+          KOLLA_LIMIT: "${{ github.event.inputs.kollaLimit }}"
+          KOLLA_TAGS: "${{ github.event.inputs.kollaTags }}"
+          KAYOBE_TAGS: "${{ github.event.inputs.kayobeTags }}"
+          KAYOBE_LIMIT: "${{ github.event.inputs.kayobeLimit }}"
+          HOME: /stack

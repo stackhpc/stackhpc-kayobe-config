@@ -1,0 +1,43 @@
+name: Run overcloud host package update
+
+on:
+  workflow_dispatch:
+    inputs:
+      kayobeLimit:
+        description: |
+          The ansible limit to use when running kayobe playbooks.
+      kayobeTags:
+        description: |
+          The ansible tags to use when running kayobe playbooks.
+
+jobs:
+  overcloud-host-package-update:
+    runs-on: self-hosted
+    concurrency: overcloud
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout kayobe config
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Symlink source checkout to expected location
+        run: sudo ln -s $PWD /src
+
+      - name: Run overcloud host package update
+        run: |
+          /src/.automation/pipeline/overcloud-host-package-update.sh
+        env:
+          KAYOBE_ENVIRONMENT: habrok
+          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
+          KAYOBE_TAGS: "${{ github.event.inputs.kayobeTags }}"
+          KAYOBE_LIMIT: "${{ github.event.inputs.kayobeLimit }}"
+          HOME: /stack
