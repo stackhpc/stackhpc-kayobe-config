@@ -2,7 +2,7 @@
 A universe from nothing with Ceph
 =================================
 
-This environment creates a Universe-from-nothing_-style deployment of Kayobe consisting of multiple 'virtual baremetal nodes' running as VMs on a single physical hypervisor. 
+This environment creates a Universe-from-nothing_-style deployment of Kayobe consisting of multiple 'virtual baremetal nodes' running as VMs on a single physical hypervisor.
 
 .. _Universe-from-nothing: https://github.com/stackhpc/a-universe-from-nothing
 
@@ -20,7 +20,7 @@ Setup
 
 **Note**: The steps detailed below are combined into a convenient script which is packaged with this repo at ``etc/kayobe/environments/aufn-ceph/a-universe-from-nothing.sh``. For an automated deployment, this script can simply be copied to the baremetal host and then executed as ``bash ~/a-universe-from-nothing.sh``.
 
---- 
+---
 
 To begin the manual setup, access the baremetal node via SSH and install some basic dependencies.
 
@@ -70,7 +70,7 @@ Clone the Kayobe, Kayobe configuration (this one) and Tenks repositories:
    pushd src
    git clone https://github.com/stackhpc/kayobe.git -b |current_release_git_branch_name|
    git clone https://github.com/stackhpc/stackhpc-kayobe-config -b |current_release_git_branch_name| kayobe-config
-   pushd kayobe 
+   pushd kayobe
    git clone https://opendev.org/openstack/tenks.git
    popd
    popd
@@ -134,7 +134,7 @@ We can now sync the contents of the local pulp server with that of SMS test pulp
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
-    kayobe seed service deploy    
+    kayobe seed service deploy
 
 With the seed VM configured, we use Tenks_ to deploy an additional set of VMs on the same baremetal node and configure them as 'virual baremetal' hosts in order to replicate a true multi-node kayobe deployment within a single node.
 
@@ -149,7 +149,7 @@ With the seed VM configured, we use Tenks_ to deploy an additional set of VMs on
     ./dev/tenks-deploy-overcloud.sh ./tenks
     popd
 
-These nodes can then be provisioned as overcloud control, compute and storage hosts with 
+These nodes can then be provisioned as overcloud control, compute and storage hosts with
 
 .. parsed-literal::
 
