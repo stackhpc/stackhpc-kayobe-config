@@ -144,9 +144,9 @@ See the Kayobe :kayobe-doc:`custom playbook documentation
   packages have been validated in a development or staging environment.
 * ``pulp-container-sync.yml``: Pull container images from Ark to the local
   Pulp. This will create a new repository version (snapshot) for each
-  repository in the local Pulp server when new image tags are available. The
-  new image tags will not be available to cloud nodes until they have been
-  published.
+  repository in the local Pulp server when new image tags are available. If
+  these are new container image repositories, then the new image tags will not
+  be available to cloud nodes until they have been published.
 * ``pulp-container-publish.yml``: Publish synchronised container images in the
   local Pulp. This will make synchonised container images available to cloud
   nodes.
