@@ -167,16 +167,14 @@ jobs:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
           OS_DISTRIBUTION: ${{ inputs.os_distribution }}
 
-      # https://renehernandez.io/snippets/multiline-strings-as-a-job-output-in-github-actions/
+      # Use a heredoc to define a multiline string output
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
       - name: Set SSH key output
         id: ssh_key
         run: |
-          ssh_key="$(cat terraform/aio/id_rsa)"
-          ssh_key="${ssh_key//'%'/'%25'}"
-          ssh_key="${ssh_key//$'\n'/'%0A'}"
-          ssh_key="${ssh_key//$'\r'/'%0D'}"
-          echo "::add-mask::$ssh_key"
-          echo "ssh_key=$ssh_key" >> $GITHUB_OUTPUT
+          echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
+          cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
