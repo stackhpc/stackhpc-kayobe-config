@@ -1,0 +1,30 @@
+---
+###############################################################################
+# Network interface definitions for the compute group.
+
+external_net_names:
+  - provision_oc
+  - lustre_storage
+
+provision_oc_interface: breno12409
+provision_oc_bridge_ports:
+  - eno12409
+
+# The tunnel interface has MTU 9000, so requires the parent interface to have
+# at least the same.
+provision_oc_mtu: 9000
+
+internal_interface: "eno12409.{{ internal_vlan }}"
+
+storage_interface: "eno12399.{{ storage_vlan }}"
+
+lustre_storage_interface: breno1
+lustre_storage_bridge_ports:
+  - eno12399
+lustre_storage_mtu: 9000
+
+tunnel_interface: "eno12409.{{ tunnel_vlan }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
