@@ -21,7 +21,6 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   fi
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
       # Increase concurrency for multinode environment. Eight has proven to high, leading to failing tests due to poor CEPH performance.
-      export TEMPEST_CONCURRENCY=6
       export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
       export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
   fi
