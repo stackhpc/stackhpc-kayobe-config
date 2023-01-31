@@ -78,4 +78,12 @@ groups:
       summary: "Host EDAC Uncorrectable Errors detected (instance {{ $labels.instance }})"
       description: "{{ $labels.instance }} has had {{ printf \"%.0f\" $value }} uncorrectable memory errors reported by EDAC in the last 5 minutes."
 
+  - alert: HostConntrackLimit
+    expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host conntrack limit (instance {{ $labels.instance }})
+      description: "The number of conntrack is approaching limit"
 {% endraw %}
