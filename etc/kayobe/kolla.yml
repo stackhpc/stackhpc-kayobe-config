@@ -224,23 +224,6 @@ kolla_build_blocks:
     {% endif %}
     {% endfor %}
     {% endif %}
-  base_debian_after_sources_list: |
-    RUN echo "\
-    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
-    > /etc/apt/sources.list.d/uca-yoga.list
-    RUN echo "\
-    Package: *\n\
-    Pin: release focal-updates/yoga\n\
-    Pin-Priority: -1\n\
-    \n\
-    Package: ovn*\n\
-    Pin: release focal-updates/yoga\n\
-    Pin-Priority: 500\n\
-    \n\
-    Package: openvswitch* python3-openvswitch\n\
-    Pin: release focal-updates/yoga\n\
-    Pin-Priority: 500"\
-    > /etc/apt/preferences.d/uca-yoga
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
