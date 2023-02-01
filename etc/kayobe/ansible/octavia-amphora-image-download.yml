@@ -1,0 +1,21 @@
+---
+- name: Ensure Octavia images are downloaded
+  hosts: "{{ amphora_builder_group | default('seed') }}"
+  tags:
+    - amphora-download
+  vars:
+    version: 'ussuri-20230201T184806-3c815d24'
+  tasks:
+    - name: Download files from generic package registry
+      uri:
+        url: '{{ gitlab_api_v4_url }}/projects/{{ gitlab_kayobe_config_project_id }}/packages/generic/amphora-x64-haproxy/{{ version }}/{{ item.name }}'
+        method: GET
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        dest: "{{ item.path }}"
+        status_code: 200
+        force_basic_auth: true
+      loop:
+       - name: "amphora-x64-haproxy-{{ version }}.qcow2"
+         path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
