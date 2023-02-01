@@ -123,10 +123,18 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
+  cinder-base:
+    type: git
+    location: https://github.com/stackhpc/cinder.git
+    reference: stackhpc/{{ openstack_release }}
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
     reference: stackhpc/wallaby
+  glance-base:
+    type: git
+    location: https://github.com/stackhpc/glance.git
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -144,6 +152,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: wallaby/wip-trunk-support
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -237,6 +249,27 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
+  # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
+  # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
+  # packages.
+  base_debian_after_sources_list: |
+    RUN echo "\
+    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
+    > /etc/apt/sources.list.d/uca-yoga.list
+    RUN echo "\
+    Package: *\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: -1\n\
+    \n\
+    Package: ovn*\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500\n\
+    \n\
+    Package: openvswitch* python3-openvswitch\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500"\
+    > /etc/apt/preferences.d/uca-yoga
   # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
   # Ark does not work if the upstream mirror pulls packages (which it does
   # sometimes).
@@ -271,6 +304,14 @@ kolla_build_blocks:
     ARG mysqld_exporter_version='0.13.0'
   prometheus_blackbox_exporter_repository_version: |
     ARG blackbox_exporter_version='0.19.0'
+  nova_base_footer: |
+    # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
+    {% raw %}
+    {% if base_package_type == 'rpm' %}
+    RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
+    {% endif %}
+    {% endraw %}
 
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
