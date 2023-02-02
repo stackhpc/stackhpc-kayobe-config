@@ -11,6 +11,21 @@
   vars:
     - container_name: rabbitmq
   tasks:
+    - name: Checking timedatectl status
+      become: true
+      command: timedatectl status
+      register: timedatectl_status
+      changed_when: false
+
+    - name: Fail if the clock is not synchronized
+      fail:
+        msg: >-
+          timedatectl sees the system clock as unsynchronized.
+          You may need to force synchronisation using `chronyc makestep`.
+          Otherwise, please wait for synchronization.
+      when:
+        - "'synchronized: yes' not in timedatectl_status.stdout"
+
     - name: Inspect the {{ container_name }} container
       shell:
         cmd: "docker container inspect --format '{{ '{{' }} .State.Running {{ '}}' }}' {{ container_name }}"
