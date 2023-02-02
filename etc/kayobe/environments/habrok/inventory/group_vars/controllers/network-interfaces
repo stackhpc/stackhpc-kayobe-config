@@ -17,12 +17,11 @@ external_net_names:
 provision_oc_interface: "breno8303"
 provision_oc_bridge_ports:
   - "eno8303"
-# NOTE: This is a static route to the switch management network via a router on
-# the PVE cluster. We may be able to avoid this when the spine-core link passes
-# our VLANs again.
+# The public gateway doesn't have access to internal VLANs, so add another
+# route via this router on the provisioning network.
 provision_oc_routes:
-  - cidr: "{{ 'switch_mgmt' | net_cidr }}"
-    gateway: "172.23.9.240"
+  - cidr: "172.23.0.0/16"
+    gateway: "172.23.9.251"
 
 # The Lustre storage network on physnet2 has MTU 9000, so requires the parent
 # interface to have at least the same.
