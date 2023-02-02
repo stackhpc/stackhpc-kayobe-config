@@ -1,0 +1,29 @@
+---
+- name: Ensure Octavia images are built and uploaded
+  hosts: "{{ amphora_builder_group | default('seed') }}"
+  tags:
+    - amphora-upload
+  vars:
+    version: '{{ openstack_release }}-{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
+  tasks:
+    - name: Generate checksum
+      shell: sha256sum "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2" >
+        "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2.sha256"
+
+    - name: Upload files to generic package registry
+      uri:
+        url: '{{ gitlab_api_v4_url }}/projects/{{ gitlab_kayobe_config_project_id }}/packages/generic/amphora-x64-haproxy/{{ version }}/{{ item.name }}'
+        method: PUT
+        src: "{{ item.path }}"
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+        force_basic_auth: true
+      loop:
+        - path: /var/log/octavia-amphora-image-build.log
+          name: amphora-x64-haproxy-{{ version }}.log
+        - name: "amphora-x64-haproxy-{{ version }}.qcow2"
+          path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
+        - name: "amphora-x64-haproxy-{{ version }}.qcow2.sha256"
+          path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2.sha256"
