@@ -1,0 +1,99 @@
+# Taken from https://awesome-prometheus-alerts.grep.to/rules
+
+{% raw %}
+
+groups:
+- name: Elasticsearch
+  rules:
+
+  - alert: ElasticsearchHeapUsageTooHigh
+    expr: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 > 90
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Elasticsearch Heap Usage Too High (instance {{ $labels.instance }})"
+      description: "The heap usage is over 90%"
+
+  - alert: ElasticsearchHeapUsageWarning
+    expr: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch Heap Usage warning (instance {{ $labels.instance }})"
+      description: "The heap usage is over 80%"
+
+  - alert: ElasticsearchDiskOutOfSpace
+    expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 10
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Elasticsearch disk out of space (instance {{ $labels.instance }})"
+      description: "The disk usage is over 90%"
+
+  - alert: ElasticsearchDiskSpaceLow
+    expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 20
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch disk space low (instance {{ $labels.instance }})"
+      description: "The disk usage is over 80%"
+
+  - alert: ElasticsearchClusterRed
+    expr: elasticsearch_cluster_health_status{color="red"} == 1
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Elasticsearch Cluster Red (instance {{ $labels.instance }})"
+      description: "Elastic Cluster Red status"
+
+  - alert: ElasticsearchClusterYellow
+    expr: elasticsearch_cluster_health_status{color="yellow"} == 1
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch Cluster Yellow (instance {{ $labels.instance }})"
+      description: "Elastic Cluster Yellow status"
+
+  - alert: ElasticsearchRelocatingShardsTooLong
+    expr: elasticsearch_cluster_health_relocating_shards > 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch relocating shards too long (instance {{ $labels.instance }})"
+      description: "Elasticsearch has been relocating shards for 15min"
+
+  - alert: ElasticsearchInitializingShardsTooLong
+    expr: elasticsearch_cluster_health_initializing_shards > 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch initializing shards too long (instance {{ $labels.instance }})"
+      description: "Elasticsearch has been initializing shards for 15 min"
+
+  - alert: ElasticsearchUnassignedShards
+    expr: elasticsearch_cluster_health_unassigned_shards > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Elasticsearch unassigned shards (instance {{ $labels.instance }})"
+      description: "Elasticsearch has unassigned shards"
+
+  - alert: ElasticsearchPendingTasks
+    expr: elasticsearch_cluster_health_number_of_pending_tasks > 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Elasticsearch pending tasks (instance {{ $labels.instance }})"
+      description: "Elasticsearch has pending tasks. Cluster works slowly."
+
+{% endraw %}
