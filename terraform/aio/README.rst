@@ -82,11 +82,9 @@ Generate Terraform variables:
 .. code-block:: console
 
    cat << EOF > terraform.tfvars
-   ssh_private_key = "id_rsa"
    ssh_public_key = "id_rsa.pub"
    aio_vm_name = "kayobe-aio"
    aio_vm_image = "CentOS-stream8"
-   aio_vm_keypair = "kayobe-aio"
    aio_vm_flavor = "general.v1.medium"
    aio_vm_network = "stackhpc-ipv4-geneve"
    aio_vm_subnet = "stackhpc-ipv4-geneve-subnet"
@@ -103,12 +101,6 @@ Apply the changes:
 .. code-block:: console
 
    terraform apply -auto-approve
-
-Use the ci-aio environment:
-
-.. code-block:: console
-
-   export KAYOBE_ENVIRONMENT=ci-aio
 
 Write Terraform outputs to a Kayobe config file:
 
@@ -151,6 +143,12 @@ Build a Kayobe image:
 .. code-block:: console
 
    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+
+Use the ci-aio environment:
+
+.. code-block:: console
+
+   export KAYOBE_ENVIRONMENT=ci-aio
 
 Set the Kayobe Vault password env var:
 

@@ -66,6 +66,14 @@ jobs:
           sudo ip l set dummy1 up
           sudo ip l set dummy1 master breth1
 
+      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
+      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
+      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
+      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
+      - name: Kill dhclient (workaround)
+        run: |
+          (sudo killall dhclient || true) && sudo systemctl restart network
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -143,9 +151,9 @@ jobs:
           retention-days: 7
         if: github.event.inputs.seed == 'true'
 
-      - name: Prune local Kolla container images
+      - name: Prune local Kolla container images over 1 week old
         run: |
-          sudo docker image prune --force --filter="label=kolla_version"
+          sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
 
   sync-container-repositories:
     name: Trigger container image repository sync

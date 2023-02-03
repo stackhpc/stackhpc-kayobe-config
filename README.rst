@@ -13,7 +13,7 @@ StackHPC provides packages and container images for OpenStack via `Ark
 
 Deployments should use a local `Pulp <https://pulpproject.org/>`__ repository
 server to synchronise content from Ark and serve it locally. Access to the
-repositories on Ark is controlled via X.509 certificates issued by StackHPC.
+repositories on Ark is controlled via user accounts issued by StackHPC.
 
 This configuration is a base, and should be merged with any existing Kayobe
 configuration. It currently provides the following:
@@ -103,19 +103,13 @@ Pulp startup.
 StackHPC Ark
 ------------
 
-The container image registry credentials issued by StackHPC should be
-configured in ``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the
-password:
+The Ark pulp credentials issued by StackHPC should be configured in
+``etc/kayobe/pulp.yml``, using Ansible Vault to encrypt the password:
 
 .. code-block:: yaml
 
    stackhpc_release_pulp_username: <username>
    stackhpc_release_pulp_password: <password>
-
-The client certificate and private key issued by StackHPC should be stored in
-``etc/kayobe/ansible/certs/ark.stackhpc.com/client-cert.pem`` and
-``etc/kayobe/ansible/certs/ark.stackhpc.com/client-key.pem``, respectively,
-with the private key encrypted via Ansible Vault.
 
 The distribution name for the environment should be configured as either
 ``development`` or ``production`` via ``stackhpc_repo_distribution`` in
@@ -207,7 +201,7 @@ see this message when you later try to run ``pulp-container-sync.yml``:
 The issue is that pushing an image automatically creates a `container-push repository
 <https://docs.pulpproject.org/pulp_container/restapi.html#tag/Repositories:-Container-Push>`__
 which conflicts with the creation of a regular container repository of the same
-name. You can resolve this conflict by deleting the distribution associated 
+name. You can resolve this conflict by deleting the distribution associated
 with the push repository using the pulp CLI:
 
 .. code-block:: console
@@ -215,6 +209,31 @@ with the push repository using the pulp CLI:
     (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/centos-source-prometheus-jiralert
     Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
     .Done.
+
+HTTP Error 404: Not Found
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your login credentials are incorrect, or lack the required permissions,
+you will see a 404 error during ``pulp-repo-sync.yml``:
+
+.. code-block:: console
+    TASK [stackhpc.pulp.pulp_repository : Sync RPM remotes into repositories] ****************************************************************************************************************************************
+    An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435'))
+    failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false
+      ansible_loop_var: item
+      item:
+        name: centos-stream-8-baseos-development
+        policy: on_demand
+        proxy_url: __omit_place_holder__d35452c39719f081229941a64fd2cdce1188a287
+        remote_password: <password>
+        remote_username: <username>
+        required: true
+        state: present
+        sync_policy: mirror_complete
+        url: https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435
+      msg: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435')) '''
+The issue can be rectified by updating the ``stackhpc_release_pulp_username``
+and ``stackhpc_release_pulp_password`` variables
 
 Environments
 ============
