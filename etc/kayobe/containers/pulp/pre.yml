@@ -19,3 +19,24 @@
     dest: /opt/kayobe/containers/pulp/settings.py
     mode: 0644
   become: true
+
+- name: Configure TLS for local Pulp
+  when: pulp_enable_tls | bool
+  become: true
+  block:
+    - name: Ensure /opt/kayobe/containers/pulp/certs exists
+      file:
+        path: "/opt/kayobe/containers/pulp/certs"
+        state: directory
+
+    - name: Copy TLS cert and key into container directory
+      template:
+        src: "{{ item.src }}"
+        dest: "/opt/kayobe/containers/pulp/certs/{{ item.dest }}"
+        mode: 0644
+      become: true
+      loop:
+        - src: "{{ pulp_cert_path }}"
+          dest: 'pulp_webserver.crt'
+        - src: "{{ pulp_key_path }}"
+          dest: 'pulp_webserver.key'
