@@ -96,4 +96,12 @@ groups:
       summary: Host clock not synchronising (instance {{ $labels.instance }})
       description: "Clock not synchronising. Ensure NTP is configured on this host."
 
+  - alert: HostConntrackLimit
+    expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host conntrack limit (instance {{ $labels.instance }})
+      description: "The number of conntrack is approaching limit"
 {% endraw %}
