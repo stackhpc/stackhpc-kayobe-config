@@ -1,0 +1,31 @@
+---
+
+- name: Set fact containing version
+  set_fact:
+    pulp_packages_repo_version: "{{ pulp_packages_repo_definition.url.split('/')[-1] }}"
+    pulp_packages_relative_url: "{{ pulp_packages_repo_definition.url.replace(stackhpc_release_pulp_content_url ,'')[1:] }}"
+
+- name: Ensure output directory exists
+  file:
+    state: directory
+    path: "{{ pulp_packages_output_path }}/{{ pulp_packages_relative_url }}"
+
+- debug:
+    msg: "{{ pulp_packages_repo_version }}"
+
+- debug:
+    msg: "{{ pulp_packages_relative_url }}"
+
+- name: Get package versions
+  script: get-packages.py {{ pulp_packages_relative_url }}
+  vars:
+    ansible_connection: local
+  register: versions_result
+  changed_when: false
+
+- name: Write packages to file
+  vars:
+    variable: "{{ versions_result.stdout | from_json | to_nice_json }}"
+  template:
+   src: "variable.j2"
+   dest: "{{ pulp_packages_output_path }}/{{ pulp_packages_relative_url }}/packages.json"

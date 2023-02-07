@@ -1,0 +1,13 @@
+---
+
+- hosts: localhost
+  vars:
+    # Stop ansible blowing up
+    os_distribution:
+  tasks:
+    - include_role:
+        name: pulp-packages
+      vars:
+        pulp_packages_repo_definition: "{{ item }}"
+      loop: "{{ stackhpc_pulp_repository_rpm_repos }}"
+
