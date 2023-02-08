@@ -19,6 +19,10 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # Seem to get servers failing to spawn with higher concurrency
     export TEMPEST_CONCURRENCY=1
   fi
+  if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
+      export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
+      export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
+  fi
 fi
 
 if [[ -z "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES:+x}" ]] || [[ ! -e "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" ]]; then
