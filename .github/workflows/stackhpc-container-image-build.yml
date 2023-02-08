@@ -166,10 +166,15 @@ jobs:
       # stackhpc-release-train repository.
       - name: Trigger container image repository sync
         run: |
+          filter='${{ inputs.regexes }}'
+          if [[ -n $filter ]] && [[ ${{ github.event.inputs.seed }} == 'true' ]]; then
+            filter="$filter bifrost"
+          fi
           gh workflow run \
           container-sync.yml \
           --repo stackhpc/stackhpc-release-train \
-          --ref main
+          --ref main \
+          -f filter="$filter"
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 
