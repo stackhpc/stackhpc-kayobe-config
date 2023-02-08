@@ -23,7 +23,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
     # SMSLab is currently running with 1G switches. This causes tests using volumes and images to fail if
     # the concurrency is set too high.
-    export TEMPEST_CONCURRENCY=2
+    export TEMPEST_CONCURRENCY=1
   fi
 
 fi
