@@ -66,6 +66,7 @@ switch_config_vxlan_networks:
   # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
   - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "lustre_storage"
+  - "hb_slurm_mgmt"
 
 # VXLAN virtual networks
 switch_config_vxlans_template: |
@@ -297,6 +298,12 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - mtu {{ lustre_storage_mtu }}
       - virtual-network {{ 'lustre_storage' | net_vlan + switch_vxlan_offset }}
+  vlan {{ hb_slurm_mgmt_vlan }}:
+    description: HB-Slurm-management
+    config:
+      - no shutdown
+      - mtu {{ hb_slurm_mgmt_mtu }}
+      - virtual-network {{ hb_slurm_mgmt_vlan + switch_vxlan_offset }}
   vlan {{ internal_net_name | net_vlan }}:
     description: internal-API
     config:
