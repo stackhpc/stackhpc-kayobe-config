@@ -1,0 +1,22 @@
+---
+- name: Copy keystone mellon files
+  hosts: controllers
+  become: true
+
+  tags:
+    - keystone-mellon
+  tasks:
+    - name: Ensure /opt/kayobe/keystone/mellon exists
+      file:
+        path: "/opt/kayobe/keystone/mellon"
+        state: directory
+        owner: 33
+        group: 33
+    - name: Copy mellon files
+      copy:
+        src: "../environments/{{ kayobe_environment }}/kolla/config/keystone/mellon/{{ item }}"
+        dest: "/opt/kayobe/keystone/mellon/{{ item }}"
+        mode: 0600
+        owner: 33
+        group: 33
+      with_items: "{{ keystone_mellon_files }}"
