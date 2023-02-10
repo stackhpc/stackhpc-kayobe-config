@@ -41,6 +41,7 @@ KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder.keyring"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/glance/ceph.client.glance.keyring"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/keystone/mellon/https_hb_openstack.hpc.rug.nl_5000.key"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/nova/ceph.client.cinder.keyring"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-volume/ceph.client.cinder.keyring"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/hb-openstack-controller01-key.pem"
