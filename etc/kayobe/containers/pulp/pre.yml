@@ -19,6 +19,7 @@
     dest: /opt/kayobe/containers/pulp/settings.py
     mode: 0644
   become: true
+  register: pulp_settings
 
 - name: Configure TLS for local Pulp
   when: pulp_enable_tls | bool
@@ -33,7 +34,7 @@
       template:
         src: "{{ item.src }}"
         dest: "/opt/kayobe/containers/pulp/certs/{{ item.dest }}"
-        mode: 0644
+        mode: 0600
       become: true
       loop:
         - src: "{{ pulp_cert_path }}"

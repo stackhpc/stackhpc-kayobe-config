@@ -35,12 +35,17 @@ pulp_proxy_url: "{{ omit }}"
 # Base URL of the StackHPC Pulp service.
 stackhpc_release_pulp_url: "https://ark.stackhpc.com"
 
-# Credentials used to access the StackHPC Ark pulp server.
+# Credentials used to access the StackHPC Pulp service.
 stackhpc_release_pulp_username:
 stackhpc_release_pulp_password:
 
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
+
+# Sync all repositories required for building Kolla images from the
+# StackHPC Ark Pulp service to local Pulp.
+# NOTE: Only RPM repositories are supported.
+stackhpc_pulp_sync_for_local_container_build: false
 
 ###############################################################################
 # Debs
@@ -333,6 +338,128 @@ stackhpc_pulp_repository_rpm_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_el_8 }}"
 
+  # Additional repositories required to build Kolla containers from local Pulp service.
+  - name: CentOS Stream 8 - OpenStack Yoga
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/cloud/x86_64/openstack-yoga/{{ stackhpc_pulp_repo_centos_stream_8_openstack_yoga_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: CentOS Stream 8 - Advanced Virtualization
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/virt/x86_64/advancedvirt-common/{{ stackhpc_pulp_repo_centos_stream_8_advanced_virtualization_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: CentOS Stream 8 - NFV OpenvSwitch
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_8_nfv_openvswitch_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: CentOS Stream 8 - PowerTools
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/PowerTools/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_powertools_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: CentOS 8 - OpsTools - collectd
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/opstools/x86_64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_8_opstools_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: CentOS Stream 8 - Ceph Pacific
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/storage/x86_64/ceph-pacific/{{ stackhpc_pulp_repo_centos_stream_8_storage_ceph_pacific_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: ELK repository for 7.x packages
+    url: "{{ stackhpc_release_pulp_content_url }}/elasticsearch/oss-7.x/{{ stackhpc_pulp_repo_elasticsearch_logstash_kibana_7_x_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: Grafana
+    url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: RabbitMQ - Erlang
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: RabbitMQ - Server
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  - name: TreasureData 4
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/8/x86_64/{{ stackhpc_pulp_repo_treasuredata_4_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_development }}"
 
@@ -404,6 +531,63 @@ stackhpc_pulp_distribution_rpm_development:
     state: present
     required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
+  # Additional repositories required to build Kolla containers from local Pulp service.
+  - name: "centos-stream-8-openstack-yoga-development"
+    base_path: "centos/8-stream/cloud/x86_64/openstack-yoga/development"
+    repository: CentOS Stream 8 - OpenStack Yoga
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-advanced-virtualization-development"
+    base_path: "centos/8-stream/virt/x86_64/advancedvirt-common/development"
+    repository: CentOS Stream 8 - Advanced Virtualization
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-nfv-openvswitch-development"
+    base_path: "centos/8-stream/nfv/x86_64/openvswitch-2/development"
+    repository: CentOS Stream 8 - NFV OpenvSwitch
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-powertools-development"
+    base_path: "centos/8-stream/PowerTools/x86_64/os/development"
+    repository: CentOS Stream 8 - PowerTools
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-8-opstools-collectd-development"
+    base_path: "centos/8-stream/opstools/x86_64/collectd-5/development"
+    repository: CentOS 8 - OpsTools - collectd
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-ceph-pacific-development"
+    base_path: "centos/8-stream/storage/x86_64/ceph-pacific/development"
+    repository: CentOS Stream 8 - Ceph Pacific
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "elasticsearch-logstash-kibana-7.x-development"
+    base_path: "elasticsearch/oss-7.x/development"
+    repository: ELK repository for 7.x packages
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "grafana-development"
+    base_path: "grafana/oss/rpm/development"
+    repository: Grafana
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "rabbitmq-erlang-development"
+    base_path: "rabbitmq/erlang/el/8/x86_64/development"
+    repository: RabbitMQ - Erlang
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "rabbitmq-server-development"
+    base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/development"
+    repository: RabbitMQ - Server
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "treasuredata-4-development"
+    base_path: "treasuredata/4/redhat/8/x86_64/development"
+    repository: TreasureData 4
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
 # Development gets promoted to production.
 stackhpc_pulp_distribution_rpm_production:
   # Base CentOS 8 Stream repositories
@@ -468,6 +652,63 @@ stackhpc_pulp_distribution_rpm_production:
     distribution: "docker-ce-for-centos-8-development"
     state: present
     required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
+
+  # Additional repositories required to build Kolla containers from local Pulp service.
+  - name: "centos-stream-8-openstack-yoga-production"
+    base_path: "centos/8-stream/cloud/x86_64/openstack-yoga/production"
+    repository: CentOS Stream 8 - OpenStack Yoga
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-advanced-virtualization-production"
+    base_path: "centos/8-stream/virt/x86_64/advancedvirt-common/production"
+    repository: CentOS Stream 8 - Advanced Virtualization
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-nfv-openvswitch-production"
+    base_path: "centos/8-stream/nfv/x86_64/openvswitch-2/production"
+    repository: CentOS Stream 8 - NFV OpenvSwitch
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-powertools-production"
+    base_path: "centos/8-stream/PowerTools/x86_64/os/production"
+    repository: CentOS Stream 8 - PowerTools
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-8-opstools-collectd-production"
+    base_path: "centos/8-stream/opstools/x86_64/collectd-5/production"
+    repository: CentOS 8 - OpsTools - collectd
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "centos-stream-8-ceph-pacific-production"
+    base_path: "centos/8-stream/storage/x86_64/ceph-pacific/production"
+    repository: CentOS Stream 8 - Ceph Pacific
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "elasticsearch-logstash-kibana-7.x-production"
+    base_path: "elasticsearch/oss-7.x/production"
+    repository: ELK repository for 7.x packages
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "grafana-production"
+    base_path: "grafana/oss/rpm/production"
+    repository: Grafana
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "rabbitmq-erlang-production"
+    base_path: "rabbitmq/erlang/el/8/x86_64/production"
+    repository: RabbitMQ - Erlang
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "rabbitmq-server-production"
+    base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/production"
+    repository: RabbitMQ - Server
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+  - name: "treasuredata-4-production"
+    base_path: "treasuredata/4/redhat/8/x86_64/production"
+    repository: TreasureData 4
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
 
 ###############################################################################
 # Containers
