@@ -67,6 +67,7 @@ switch_config_vxlan_networks:
   - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
   - "lustre_storage"
   - "hb_slurm_mgmt"
+  - "dh4_lustre"
 
 # VXLAN virtual networks
 switch_config_vxlans_template: |
@@ -304,6 +305,12 @@ switch_interface_config_vlans_template: |-
       - no shutdown
       - mtu {{ hb_slurm_mgmt_mtu }}
       - virtual-network {{ hb_slurm_mgmt_vlan + switch_vxlan_offset }}
+  vlan {{ dh4_lustre_vlan }}:
+    description: DH4-Lustre
+    config:
+      - no shutdown
+      - mtu {{ dh4_lustre_mtu }}
+      - virtual-network {{ dh4_lustre_vlan + switch_vxlan_offset }}
   vlan {{ internal_net_name | net_vlan }}:
     description: internal-API
     config:
