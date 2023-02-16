@@ -116,6 +116,16 @@ switch_interface_config_ethernet_template: |
   "{{ switch_vlti_interface_2 }}":
     description: VLTi
     config: {{ switch_interface_config_vlti }}
+  {% if inventory_hostname == 'hb-sw-leaf01-h07' %}
+  # NOTE: This link will be moved to hb-sw-spine01-h04.
+  "Ethernet 1/1/22:1":
+    description: tmp-downlink-to-hb-sw-mgmt01-h07
+    config: {{ switch_interface_config_mgmt_downlink }}
+  # NOTE: This link will be moved to hb-sw-spine01-h04.
+  "Ethernet 1/1/22:2":
+    description: tmp-downlink-to-hb-sw-mgmt01-h08
+    config: {{ switch_interface_config_mgmt_downlink }}
+  {% endif %}
 
 switch_interface_config_fabric: "{{ switch_interface_config_fabric_links_template | from_yaml }}"
 switch_interface_config_fabric_links_template: |
@@ -260,6 +270,7 @@ switch_hypervisor_data_trunk_vlans:
   - "{{ tunnel_net_name | net_vlan }}"
   - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
   - "{{ hb_slurm_mgmt_vlan }}"
+  - "{{ dh4_lustre_vlan }}"
 
 # VLANs to trunk to compute storage interface
 switch_hypervisor_storage_trunk_vlans:
