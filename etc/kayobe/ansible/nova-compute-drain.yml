@@ -17,6 +17,8 @@
         extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
       run_once: true
       delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
 
     - block:
         - name: Query instances
