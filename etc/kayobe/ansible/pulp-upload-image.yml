@@ -54,12 +54,7 @@
         present_content:
           - relative_path: "{{ found_files.files[0].path | basename }}"
             sha256: "{{ file_stats.stat.checksum }}"
-      register: repo_details
 
-    # Squeezer wants the version as an int. The previous play only returns the
-    # href of the latest version.
-    # The version can be returned by querying that href, however the last
-    # number in the href is the version. regex_search is used to extract it
     - name: Create a new publication to point to this version
       pulp.squeezer.file_publication:
         pulp_url: "{{ remote_pulp_url }}"
@@ -67,7 +62,6 @@
         password: "{{ remote_pulp_password }}"
         repository: "{{ repository_name }}"
         state: present
-        version: "{{ repo_details.repository_version | regex_search('(\\d+)(?!.*\\d)') }}"
       register: publication_details
 
     - name: Update distribution for latest version
@@ -92,7 +86,7 @@
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
-      when: latest_distribution_details.changed is true
+      when: latest_distribution_details.changed
 
     - name: Update new images file with versioned path
       lineinfile:
@@ -100,11 +94,11 @@
         line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
         {{ ansible_facts.date_time.iso8601_basic_short }}/{{ found_files.files[0].path | basename }}"
         create: true
-      when: latest_distribution_details.changed is true
+      when: latest_distribution_details.changed
 
     - name: Update new images file with latest path
       lineinfile:
         path: /tmp/updated_images.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
-      when: latest_distribution_details.changed is true
+      when: latest_distribution_details.changed
