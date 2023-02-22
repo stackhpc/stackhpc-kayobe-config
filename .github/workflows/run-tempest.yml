@@ -49,20 +49,18 @@ jobs:
 
       - name: Run kayobe control host bootstrap
         run: |
-          source /stack/kayobe-automation-env/venvs/kayobe/bin/activate &&
-          kayobe control host bootstrap
+          source /src/.automation/functions &&
+          kayobe_install
         env:
           KAYOBE_ENVIRONMENT: habrok
           KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
-          KAYOBE_VENV_PATH: /stack/kayobe-automation-env/venvs/kayobe/
-          KAYOBE_CONFIG_PATH: /src/etc/kayobe
-          KOLLA_CONFIG_PATH: /src/etc/kolla
+          USER: stack
           HOME: /stack
 
       - name: Run ${{ github.event.inputs.testSuite }} tempest testsuite
         run: |
-          TEMPEST_OPENRC=$(cat /src/etc/kolla/public-openrc.sh) && /src/.automation/pipeline/tempest.sh
+          TEMPEST_OPENRC=$(cat /stack/kayobe-automation-env/src/kayobe-config/etc/kolla/public-openrc.sh) && /src/.automation/pipeline/tempest.sh
         env:
           KAYOBE_ENVIRONMENT: habrok
           KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
