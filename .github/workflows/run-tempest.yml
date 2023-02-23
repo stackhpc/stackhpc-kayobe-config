@@ -53,6 +53,11 @@ jobs:
           USER: stack
           HOME: /stack
 
+      - name: Symlink kolla into /src/etc
+        run: |
+          mkdir -p /src/etc/kolla &&
+          ln -s /stack/kayobe-automation-env/src/kayobe-config/etc/kolla /src/etc
+
       - name: Run ${{ github.event.inputs.testSuite }} tempest testsuite
         run: |
           /src/.automation/pipeline/tempest.sh
