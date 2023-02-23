@@ -42,6 +42,22 @@ jobs:
       - name: Symlink source checkout to expected location
         run: sudo ln -s $PWD /src
 
+      - name: Run kayobe control host bootstrap
+        run: |
+          source /src/.automation/functions &&
+          kayobe_install
+        env:
+          KAYOBE_ENVIRONMENT: habrok
+          KAYOBE_VAULT_PASSWORD: "${{ secrets.KAYOBE_VAULT_PASSWORD }}"
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: "${{ secrets.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
+          USER: stack
+          HOME: /stack
+
+      - name: Symlink kolla into /src/etc
+        run: |
+          mkdir -p /src/etc &&
+          ln -s /stack/kayobe-automation-env/src/kayobe-config/etc/kolla /src/etc
+
       - name: Run ${{ github.event.inputs.testSuite }} tempest testsuite
         run: |
           /src/.automation/pipeline/tempest.sh
