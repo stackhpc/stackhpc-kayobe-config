@@ -29,9 +29,6 @@ if [[ -f ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh ]]; then
     export TEMPEST_OPENRC="$(< ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh)"
 fi
 
-export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
-export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=tempest-full
-
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
 )
