@@ -49,7 +49,7 @@ In some environments we have found that squid’s preference for IPv6 can
 cause problems. It can be forced to prefer IPv4, by adding the following
 in ``etc/kayobe/containers/squid_proxy/squid.conf``:
 
-.. code:: none
+.. code::
 
    dns_v4_first on
 
