@@ -29,6 +29,13 @@ if [[ -f ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh ]]; then
     export TEMPEST_OPENRC="$(< ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh)"
 fi
 
+if [ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}"  == "baremetal" ]; then
+  # Need to force baremetal specific flavors.
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok-baremetal.overrides.conf"
+else
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok.overrides.conf"
+fi
+
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
 )
