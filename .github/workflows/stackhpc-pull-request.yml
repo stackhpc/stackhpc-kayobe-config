@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Tox 📦
@@ -72,7 +72,9 @@ jobs:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: rocky
       neutron_plugin: ovs
-      vm_image: Rocky8
+      # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
+      # train snapshots, causing failures installing some packages.
+      vm_image: Rocky8-2022-11-08
       vm_interface: ens3
       OS_CLOUD: sms-lab-release
     secrets: inherit
@@ -87,7 +89,9 @@ jobs:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: rocky
       neutron_plugin: ovn
-      vm_image: Rocky8
+      # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
+      # train snapshots, causing failures installing some packages.
+      vm_image: Rocky8-2022-11-08
       vm_interface: ens3
       OS_CLOUD: sms-lab-release
     secrets: inherit

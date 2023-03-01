@@ -66,6 +66,14 @@ jobs:
           sudo ip l set dummy1 up
           sudo ip l set dummy1 master breth1
 
+      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
+      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
+      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
+      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
+      - name: Kill dhclient (workaround)
+        run: |
+          (sudo killall dhclient || true) && sudo systemctl restart network
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -158,10 +166,15 @@ jobs:
       # stackhpc-release-train repository.
       - name: Trigger container image repository sync
         run: |
+          filter='${{ inputs.regexes }}'
+          if [[ -n $filter ]] && [[ ${{ github.event.inputs.seed }} == 'true' ]]; then
+            filter="$filter bifrost"
+          fi
           gh workflow run \
           container-sync.yml \
           --repo stackhpc/stackhpc-release-train \
-          --ref main
+          --ref main \
+          -f filter="$filter"
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 

@@ -5,17 +5,17 @@
 # Kolla installation.
 
 # Type of Kolla control installation. One of 'binary' or 'source'.
-kolla_ctl_install_type: source
+#kolla_ctl_install_type:
 
 # Path to directory for kolla source code checkout.
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-kolla_source_url: https://github.com/stackhpc/kolla
+kolla_source_url: "{{ stackhpc_kolla_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-kolla_source_version: stackhpc/12.7.0.3
+kolla_source_version: "{{ stackhpc_kolla_source_version }}"
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -28,7 +28,7 @@ kolla_source_version: stackhpc/12.7.0.3
 
 # Type of Kolla-ansible control installation. One of 'binary' or 'source'.
 # Default is 'source'.
-kolla_ansible_ctl_install_type: source
+#kolla_ansible_ctl_install_type:
 
 # Path to directory for kolla-ansible source code checkout.
 # Default is $KOLLA_SOURCE_PATH, or $PWD/src/kolla-ansible if
@@ -37,11 +37,11 @@ kolla_ansible_ctl_install_type: source
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-kolla_ansible_source_url: https://github.com/stackhpc/kolla-ansible
+kolla_ansible_source_url: "{{ stackhpc_kolla_ansible_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-kolla_ansible_source_version: stackhpc/12.8.0.14
+kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
@@ -80,29 +80,26 @@ kolla_install_type: source
 
 # URL of docker registry to use for Kolla images. Default is not set, in which
 # case Dockerhub will be used.
-kolla_docker_registry: '{{ docker_registry }}'
+#kolla_docker_registry:
 
 # Docker namespace to use for Kolla images. Default is 'kolla'.
-kolla_docker_namespace: scientific-openstack/infrastructure/kayobe-config
+kolla_docker_namespace: stackhpc
 
 # Username to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_username:
+kolla_docker_registry_username: "{{ stackhpc_docker_registry_username }}"
 
 # Password to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_password:
+kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: wallaby-20221207T112329
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20230207T161158{% else %}wallaby-20230215T134157{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
-kolla_tag: >-
-        {{ openstack_release }}-{{- lookup('env', 'KOLLA_IMAGE_VERSION ')
-        | default(ansible_facts.date_time.iso8601_basic_short, true) -}}
-        {{ ('-' ~ kolla_tag_suffix) if kolla_tag_suffix is defined else '' }}
+#kolla_tag:
 
 # Dict mapping names of sources to their definitions for
 # kolla_install_type=source. See kolla.common.config for details.
@@ -126,30 +123,18 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  neutron-base-plugin-networking-generic-switch:
+  cinder-base:
     type: git
-    location: https://github.com/stackhpc/networking-generic-switch
-    reference: stackhpc/wallaby-batching
-  nova-base:
-    type: git
-    location: https://github.com/stackhpc/nova
-    reference: stackhpc/wallaby
-  blazar-base:
-    type: git
-    location: https://github.com/stackhpc/blazar.git
-    reference: 1d069b29127fc80d5281b3a05e21f2287147b393
+    location: https://github.com/stackhpc/cinder.git
+    reference: stackhpc/{{ openstack_release }}
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
     reference: stackhpc/wallaby
-  horizon:
+  glance-base:
     type: git
-    location: https://github.com/stackhpc/horizon.git
-    reference: stackhpc/wallaby
-  horizon-plugin-blazar-dashboard:
-    type: git
-    location: https://github.com/stackhpc/blazar-dashboard.git
-    reference: stackhpc/wallaby
+    location: https://github.com/stackhpc/glance.git
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -163,56 +148,60 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/magnum.git
     reference: stackhpc/wallaby
-  nova-base-plugin-blazar:
+  neutron-base-plugin-networking-generic-switch:
     type: git
-    location: https://github.com/stackhpc/blazar-nova.git
-    reference: cumulus/wallaby
+    location: https://github.com/stackhpc/networking-generic-switch.git
+    reference: stackhpc/wallaby
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
 
 # List of repositories for CentOS Stream.
 stackhpc_centos_stream_repos:
-  - url: "{{ scientific_openstack_repo_centos_stream_baseos_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_baseos_url }}"
     file: "CentOS-Stream-BaseOS.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_appstream_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_appstream_url }}"
     file: "CentOS-Stream-AppStream.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_extras_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_extras_url }}"
     file: "CentOS-Stream-Extras.repo"
 
 # List of repositories for EPEL.
 stackhpc_epel_repos:
-  - url: "{{ scientific_openstack_repo_epel_url }}"
+  - url: "{{ stackhpc_repo_epel_url }}"
     file: "epel.repo"
-  - url: "{{ scientific_openstack_repo_epel_modular_url }}"
+  - url: "{{ stackhpc_repo_epel_modular_url }}"
     file: "epel-modular.repo"
 
 # List of additional CentOS Stream repositories.
 stackhpc_centos_additional_repos:
-  - url: "{{ scientific_openstack_repo_centos_stream_advanced_virtualization_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_advanced_virtualization_url }}"
     file: "CentOS-Advanced-Virtualization.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_nfv_openvswitch_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_openstack_wallaby_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
     file: "CentOS-OpenStack-wallaby.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_opstools_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
     file: "CentOS-OpsTools.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_powertools_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ scientific_openstack_repo_centos_stream_storage_ceph_pacific_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
 
 # List of third-party repositories.
 stackhpc_third_party_repos:
-  - url: "{{ scientific_openstack_repo_elasticsearch_logstash_kibana_7_x_url }}"
+  - url: "{{ stackhpc_repo_elasticsearch_logstash_kibana_7_x_url }}"
     file: "elasticsearch.repo"
-  - url: "{{ scientific_openstack_repo_grafana_url }}"
+  - url: "{{ stackhpc_repo_grafana_url }}"
     file: "grafana.repo"
-  - url: "{{ scientific_openstack_repo_rabbitmq_erlang_url }}"
+  - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
-  - url: "{{ scientific_openstack_repo_rabbitmq_server_url }}"
+  - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
-  - url: "{{ scientific_openstack_repo_treasuredata_4_url }}"
+  - url: "{{ stackhpc_repo_treasuredata_4_url }}"
     file: "td.repo"
 
 # List of repositories for Ubuntu focal.
@@ -243,6 +232,27 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
+  # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
+  # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
+  # packages.
+  base_debian_after_sources_list: |
+    RUN echo "\
+    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
+    > /etc/apt/sources.list.d/uca-yoga.list
+    RUN echo "\
+    Package: *\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: -1\n\
+    \n\
+    Package: ovn*\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500\n\
+    \n\
+    Package: openvswitch* python3-openvswitch\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500"\
+    > /etc/apt/preferences.d/uca-yoga
   # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
   # Ark does not work if the upstream mirror pulls packages (which it does
   # sometimes).
@@ -277,6 +287,14 @@ kolla_build_blocks:
     ARG mysqld_exporter_version='0.13.0'
   prometheus_blackbox_exporter_repository_version: |
     ARG blackbox_exporter_version='0.19.0'
+  nova_base_footer: |
+    # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
+    {% raw %}
+    {% if base_package_type == 'rpm' %}
+    RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
+    {% endif %}
+    {% endraw %}
 
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
@@ -325,18 +343,6 @@ kolla_build_customizations_centos:
   openvswitch_base_packages_append:
     - openvswitch2.17
     - python3-openvswitch2.17
-  keystone_packages_append:
-    # Allow custom packages to be installed via pip.
-    # Allow manual install of openidc for federation
-    - 'jansson-devel'
-    - 'openssl-devel'
-    - 'hiredis'
-  neutron_server_packages_append:
-    # Allow custom packages to be installed via pip.
-    - 'gcc'
-    - 'python3-devel'
-  neutron_server_pip_packages_append:
-    - etcd3gw
 
 kolla_build_customizations_ubuntu: {}
 
@@ -570,6 +576,7 @@ kolla_enable_ironic: false
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
+kolla_enable_nova_libvirt_container: "{{ os_distribution not in ['rocky'] }}"
 kolla_enable_magnum: true
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
@@ -602,7 +609,6 @@ kolla_enable_neutron_provider_networks: true
 #kolla_enable_neutron_trunk:
 #kolla_enable_neutron_vpnaas:
 #kolla_enable_nova:
-kolla_enable_nova_libvirt_container: "{{ ansible_facts.distribution != 'Rocky' }}"
 #kolla_enable_nova_fake:
 #kolla_enable_nova_horizon_policy_file:
 #kolla_enable_nova_serialconsole_proxy:
