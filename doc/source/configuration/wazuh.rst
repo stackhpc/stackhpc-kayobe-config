@@ -159,8 +159,8 @@ Your wazuh-manager VM needs to have network connection with servers which will h
 Add to ``etc/kayobe/network-allocation.yml``:
 
 .. code-block:: console
-provision_oc_net_ips:
-  <wazuh.vm.hostname>: <wazuh.vm.ip>
+  provision_oc_net_ips:
+    <wazuh.vm.hostname>: <wazuh.vm.ip>
 
 
 Required ports
@@ -212,9 +212,8 @@ Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
 
 .. code-block:: console
 
-    [wazuh-master]
-      <wazuh.vm.name>
-
+  [wazuh-master]
+    <wazuh.vm.name>
 
 
 Deploying Wazuh Manager services
