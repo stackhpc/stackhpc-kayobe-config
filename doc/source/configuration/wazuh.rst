@@ -3,7 +3,10 @@ Wazuh
 =====
 
 Wazuh Manager
-============= 
+=============
+
+Provision using infra-vms
+-------------------------
 
 Provisioning an infra VM for Wazuh Manager.
 
@@ -125,7 +128,7 @@ In case where you can't use infra-vms to deploy your wazuh-manager.
 
 
 VM sizing
-~~~~~~~~~
+---------
 
 .. code-block:: console
 
@@ -149,7 +152,7 @@ VM sizing
 
 
 Network Setup
-~~~~~~~~~~~~~
+-------------
 
 Your wazuh-manager VM needs to have network connection with servers which will have the wazuh-agent installed, preferably it should be in the `provision_oc_net`.
 
@@ -161,7 +164,7 @@ provision_oc_net_ips:
 
 
 Required ports
-~~~~~~~~~~~~~~
+--------------
 
 Several services are used for the communication of Wazuh components. Below is the list of default ports used by these services.
 
@@ -195,7 +198,7 @@ Make sure group mappings for wazuh-master are added to the inventory ``etc/kayob
 .. code-block:: console
 
   # Infra VM groups.
-...
+
   [wazuh:children]
   wazuh-master
 
@@ -203,7 +206,6 @@ Make sure group mappings for wazuh-master are added to the inventory ``etc/kayob
   [wazuh-master]
   # Empty group to provide declaration of wazuh-master group.
 
-...
 
 Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
 
