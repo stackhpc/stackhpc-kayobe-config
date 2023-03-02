@@ -159,6 +159,7 @@ Your wazuh-manager VM needs to have network connection with servers which will h
 Add to ``etc/kayobe/network-allocation.yml``:
 
 .. code-block:: console
+
   provision_oc_net_ips:
     <wazuh.vm.hostname>: <wazuh.vm.ip>
 
