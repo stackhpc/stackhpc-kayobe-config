@@ -155,7 +155,7 @@ provision_oc_net_ips:
   <wazuh.vm.hostname>: <wazuh.vm.ip>
 
 
-#### Required ports
+#### H4 Required ports
 
 Several services are used for the communication of Wazuh components. Below is the list of default ports used by these services.
 
