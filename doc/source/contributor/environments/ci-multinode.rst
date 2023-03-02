@@ -1,5 +1,5 @@
 ==========================
-Multinode Test Environment 
+Multinode Test Environment
 ==========================
 
 Set up hosts
@@ -21,7 +21,7 @@ Basic Kayobe Setup
 2. ``sudo dnf install -y python3-virtualenv``
 3. ``mkdir src`` and ``cd src``
 4. Clone https://github.com/stackhpc/stackhpc-kayobe-config.git, then checkout
-   commit f31df6256f1b1fea99c84547d44f06c4cb74b161 
+   commit f31df6256f1b1fea99c84547d44f06c4cb74b161
 5. ``cd ..`` and ``mkdir venvs``
 6. ``virtualenv venvs/kayobe`` and source ``venvs/kayobe/bin/activate``
 7. ``pip install -U pip``
@@ -39,8 +39,8 @@ Config changes
 4. Also under vxlan_interfaces, check vxlan_dstport is not 4789 (this causes
    conflicts, change to 4790)
 5. In /etc/kayobe/environments/ci-multinode/tf-networks.yml, edit admin_ips so
-   that the compute and controller IPs line up with the 
-   instances that were created earlier, remove the other IPs for seed and 
+   that the compute and controller IPs line up with the
+   instances that were created earlier, remove the other IPs for seed and
    cephOSD
 6. In /etc/kayobe/environments/ci-multinode/network-allocation.yml, remove all
    the entries and just assign ``aio_ips:`` an empty set ``[]``
