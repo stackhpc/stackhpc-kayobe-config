@@ -117,6 +117,95 @@ Add the wazuh master VM to the inventory ``etc/kayobe/inventory/hosts``:
 
 Follow the Kayobe instructions to `provision the VM <https://docs.openstack.org/kayobe/latest/deployment.html#infrastructure-vms>`__ and configure the host.
 
+## Manually provisioned VM
+
+In case where you can't use infra-vms to deploy your wazuh-manager.
+
+### VM sizing
+
+.. code-block:: console
+
+  ---
+  # Memory in MB.
+  memory_mb: 16384
+
+
+  # Number of vCPUs.
+  vcpus: 8
+
+
+  # Capacity of the infra VM data volume.
+  capacity: "200G"
+
+
+.. note::
+
+    NOTE: 
+    Logs will be stored in /var/ossec/ so it's a good idea to make it an LVM filesystem to make it futureproof.
+
+
+### Network Setup
+
+Your wazuh-manager VM needs to have network connection with servers which will have the wazuh-agent installed, preferably it should be in the `provision_oc_net`.
+
+Add to ``etc/kayobe/network-allocation.yml``:
+
+.. code-block:: console
+provision_oc_net_ips:
+  <wazuh.vm.hostname>: <wazuh.vm.ip>
+
+
+#### Required ports
+
+Several services are used for the communication of Wazuh components. Below is the list of default ports used by these services.
+
++-----------------+-----------+----------------+------------------------------------------------+
+|  Component      | Port      | Protocol       | Purpose                                        |
++=================+===========+================+================================================+
+|                 | 1514      | TCP (default)  | Agent connection service                       |
++                 +-----------+----------------+------------------------------------------------+
+|                 | 1514      | UDP (optional) | Agent connection service (disabled by default) |
++                 +-----------+----------------+------------------------------------------------+
+| Wazuh server    | 1515      | TCP            | Agent enrollment service                       |
++                 +-----------+----------------+------------------------------------------------+
+|                 | 1516      | TCP            | Wazuh cluster daemon                           |
++                 +-----------+----------------+------------------------------------------------+
+|                 | 514       | UDP (default)  | Wazuh Syslog collector (disabled by default)   |
++                 +-----------+----------------+------------------------------------------------+
+|                 | 514       | TCP (optional) | Wazuh Syslog collector (disabled by default)   |
++                 +-----------+----------------+------------------------------------------------+
+|                 | 55000     | TCP            | Wazuh server RESTful API                       |
++-----------------+-----------+----------------+------------------------------------------------+
+|                 | 9200      | TCP            | Wazuh indexer RESTful API                      |
++ Wazuh indexer   +-----------+----------------+------------------------------------------------+
+|                 | 9300-9400 | TCP            | Wazuh indexer cluster communication            |
++-----------------+-----------+----------------+------------------------------------------------+
+| Wazuh dashboard | 443       | TCP            | Wazuh web user interface                       |
++-----------------+-----------+----------------+------------------------------------------------+
+
+
+Make sure group mappings for wazuh-master are added to the inventory ``etc/kayobe/inventory/groups``:
+
+.. code-block:: console
+
+  # Infra VM groups.
+...
+  [wazuh:children]
+  wazuh-master
+
+
+  [wazuh-master]
+  # Empty group to provide declaration of wazuh-master group.
+
+...
+
+Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
+
+.. code-block:: console
+
+[wazuh-master]
+<wazuh.vm.name>
+
 
 Deploying Wazuh Manager services
 ================================
@@ -124,14 +213,14 @@ Deploying Wazuh Manager services
 Setup
 ================================
 
-Add to ``etc/kayobe/ansible/requirements.yml``:
+To install specific version modify wazuh-ansible entry in ``etc/kayobe/ansible/requirements.yml``:
 
 .. code-block:: console
 
   roles:
     - name: wazuh-ansible
       src: https://github.com/wazuh/wazuh-ansible.git
-      version: version: v4.3.10
+      version: <version_number>
 
 
 .. note::
@@ -164,12 +253,19 @@ You might wish to add the following to .gitignore in kayobe-config:
 
 Edit the playbook and variables to your needs: 
 
-Configuration
-============= 
+# Wazuh manager configuration
 
-``vi wazuh-manager.yml``
+Wazuh manager playbook is located in ``etc/kayobe/ansible/wazuh-manager.yml``.
+Running this playbook will:
 
-``vi vars/wazuh-manager.yml``
+* generate certificates for wazuh-master
+* setup and deploy filebeat on wazuh-master vm
+* setup and deploy wazuh-indexer on wazuh-master vm
+* setup and deploy wazuh-manager on wazuh-master vm
+* setup and deploy wazuh-dashboard on wazuh-master vm
+* copy certificates over to wazuh-master vm
+
+Wazuh manager variables file is located in ``etc/kayobe/inventory/group_vars/wazuh/wazuh-master/wazuh-manager``.
 
 You may need to modify some of the variables, including:
 
@@ -180,86 +276,25 @@ You may need to modify some of the variables, including:
 Secrets
 =======
 
-Add the following playbook to ``etc/kayobe/ansible/wazuh-secrets.yml``:
+Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
+Running this playbook will generate and put pertinent security items into secrets 
+vault file which will be placed in ``inventory/group_vars/wazuh/wazuh-master/wazuh-secrets``.
 
-.. code-block:: console
+Wazuh secrets template is located in ``etc/kayobe/ansible/templates/wazuh-secrets.yml.j2``.
+It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 
-  ---
-  - hosts: localhost
-    gather_facts: false
-    vars:
-      wazuh_secrets_path: "{{ kayobe_env_config_path }}/inventory/group_vars/wazuh/wazuh-secrets.yml"
-    tasks:
-      - name: install passlib[bcrypt]
-        pip:
-          name: passlib[bcrypt]
-          virtualenv: "{{ ansible_playbook_python | dirname | dirname }}"
-
-
-      - name: Include existing secrets if they exist
-        include_vars: "{{ wazuh_secrets_path }}"
-        ignore_errors: true
-
-
-      - name: Ensure secrets directory exists
-        file:
-          path: "{{ wazuh_secrets_path | dirname }}"
-          state: directory
-
-
-      - name: Template new secrets
-        template:
-          src: wazuh-secrets.yml.j2
-          dest: "{{ wazuh_secrets_path }}"
-
-
-Create a ``etc/kayobe/ansible/templates/`` directory if it does not exist.
-
-Add the following template to ``etc/kayobe/ansible/templates/wazuh-secrets.yml.j2``:
-
-.. code-block:: console
-
-  ---
-  {% set wazuh_admin_pass = secrets_wazuh.wazuh_admin_pass | default(lookup('password', '/dev/null'), true) -%}
-  {%- set wazuh_user_pass = secrets_wazuh.wazuh_user_pass | default(lookup('password', '/dev/null'), true) -%}
-
-
-  # Secrets used by Wazuh managers and agents
-  # Store these securely and use lookups here
-  secrets_wazuh:
-    # Wazuh agent authd pass
-    authd_pass: "{{ secrets_wazuh.authd_pass | default(lookup('password', '/dev/null'), true) }}"
-    # Strengthen default wazuh api user pass
-    wazuh_api_users:
-      - username: "wazuh"
-        password: "{{ secrets_wazuh.wazuh_api_users[0].password | default(lookup('password', '/dev/null length=30' ), true) }}"
-    # Elasticsearch 'admin' user pass
-    opendistro_admin_password: "{{ secrets_wazuh.opendistro_admin_password | default(lookup('password', '/dev/null'), true) }}"
-    # Elasticsearch 'kibanaserver' user pass
-    opendistro_kibana_password: "{{ secrets_wazuh.opendistro_kibana_password | default(lookup('password', '/dev/null'), true) }}"
-    # Wazuh/Kibana 'wazuh_admin' custom user pass
-    wazuh_admin_pass: "{{ wazuh_admin_pass }}"
-    # Wazuh/Kibana 'wazuh_admin' custom user pass has
-    # bcrypt ($2y) hash
-    wazuh_admin_hash: "{{ secrets_wazuh.wazuh_admin_hash | default(wazuh_admin_pass | password_hash('bcrypt'), true) }}"
-    # Wazuh/Kibana 'wazuh_user' custom user pass
-    # bcrypt ($2y) hash
-    wazuh_user_pass: "{{ wazuh_user_pass }}"
-    wazuh_user_hash: "{{ secrets_wazuh.wazuh_user_hash | default(wazuh_user_pass | password_hash('bcrypt'), true) }}"
-
-
-Generate and encrypt Wazuh secrets:
 
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml -e wazuh_user_pass=$(uuidgen) -e wazuh_admin_pass=$(uuidgen)
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-master/wazuh-secrets.yml
+  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-master/wazuh-secrets
 
 
-===
-TLS
-===
+==============
+TLS (optional)
+==============
 
+You can generate your own TLS certificates, otherwise skip this section.
 By default, Wazuh Ansible uses `wazuh-cert-tool.sh <https://documentation.wazuh.com/current/user-manual/certificates.html>`__
 to automatically
 generate certificates for wazuh-indexer (previously Elasticsearch and opendistro)
@@ -311,22 +346,21 @@ Encrypt the keys (and remember to commit to git):
 Verification
 ==============
 
-The Kibana portal should be accessible on port 5601 of the Wazuh
+The Wazuh portal should be accessible on port 443 of the Wazuh
 master’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/vars/certificates/root-ca.pem``).
-The first login should be as the admin (not wazuh_admin) user, 
-with the opendistro_admin_password password in ``etc/kayobe/inventory/group_vars/wazuh-master/wazuh-secrets.yml``. 
+The first login should be as the admin user, 
+with the opendistro_admin_password password in ``etc/kayobe/inventory/group_vars/wazuh/wazuh-master/wazuh-secrets``. 
 This will create the necessary indices.
-Log in as the wazuh_admin user, with the wazuh_admin_pass password in ``etc/kayobe/inventory/group_vars/wazuh-master/wazuh-secrets.yml``.
 
 Troubleshooting
 
-Logs are in ``/var/log/elasticsearch/wazuh.log``. There are also logs in the journal.
+Logs are in ``/var/log/wazuh-indexer/wazuh.log``. There are also logs in the journal.
 
 ============
 Wazuh agents
 ============
 
-Add a wazuh-agent group to the inventory in ``etc/kayobe/inventory/groups``:
+Make sure group mappings for wazuh-agent are added to the inventory ``etc/kayobe/inventory/groups``:
 
 .. code-block:: console
 
@@ -338,48 +372,13 @@ Add a wazuh-agent group to the inventory in ``etc/kayobe/inventory/groups``:
   [wazuh:children]
   wazuh-agent
 
+Wazuh agent playbook is located in ``etc/kayobe/ansible/wazuh-agent.yml``.
 
-Add some group variables for hosts in the wazuh-agent group in ``etc/kayobe/inventory/group_vars/wazuh-agent/wazuh-agent.yml``:
-
-.. code-block:: console
-
-  ---
-  # Wazuh-Agent role configuration
-  # Reference: https://documentation.wazuh.com/4.3/deploying-with-ansible/reference.html#wazuh-agent
-  # Defaults: https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-wazuh-agent/defaults/main.yml
-
-
-  # Wazuh-Manager IP address
-  # Convenience var not used by wazuh-agent role
-  wazuh_manager_address: "{{ admin_oc_net_name | net_ip(groups['wazuh-master'][0]) }}"
-
-
-  # Wazuh-Manager API config
-  wazuh_managers:
-    - address: "{{ wazuh_manager_address }}"
-      port: 1514
-      protocol: tcp
-      api_port: 55000
-
-
-  # Wazuh-Agent authd config
-  wazuh_agent_authd:
-    registration_address: "{{ wazuh_manager_address }}"
-    enable: true
-    port: 1515
-    ssl_agent_ca: null
-    ssl_auto_negotiate: 'no'
-
-
-  # Wazuh-Agent authd password
-  authd_pass: "{{ secrets_wazuh.authd_pass }}"
-
-
+Wazuh agent variables file is located in ``etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent``.
 
 You may need to modify some variables, including:
 
 * wazuh_manager_address
-
 
 Deploy the Wazuh agents:
 
@@ -388,7 +387,7 @@ Deploy the Wazuh agents:
 Verification
 =============
 
-The Wazuh agents should register with the Wazuh master. This can be verified via the agents page in kibana.
-Download CIS benchmarks.
+The Wazuh agents should register with the Wazuh master. This can be verified via the agents page in Wazuh Portal.
+Check CIS benchmark output in agent section.
 
 
