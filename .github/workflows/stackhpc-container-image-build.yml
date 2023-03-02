@@ -18,6 +18,11 @@ on:
         type: boolean
         required: false
         default: false
+      scan_images:
+        description: Scan images?
+        type: boolean
+        required: false
+        default: false
       distro:
         description: Container image OS distribution
         type: choice
@@ -51,6 +56,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo dnf -y install python3-virtualenv
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.18.3
 
       - name: Setup networking
         run: |
@@ -116,6 +125,33 @@ jobs:
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
         if: github.event.inputs.overcloud == 'true'
+
+      - name: Generate the images to scan
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" > images-to-scan.txt
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
+      - name: Scan built overcloud container images
+        run: |
+          cat /home/images-to-scan.txt | while read i; do
+          echo $i
+          trivy image --format sarif --severity HIGH,CRITICAL $i >> trivy-results.sarif
+          done
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
+      # - name: Upload scan output artefact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: Trivy Scan txt
+      #     path: scan.txt
+      #     retention-days: 7
+      #   if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
 
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
