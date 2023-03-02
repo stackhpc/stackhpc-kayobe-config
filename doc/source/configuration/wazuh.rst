@@ -117,11 +117,15 @@ Add the wazuh master VM to the inventory ``etc/kayobe/inventory/hosts``:
 
 Follow the Kayobe instructions to `provision the VM <https://docs.openstack.org/kayobe/latest/deployment.html#infrastructure-vms>`__ and configure the host.
 
-## Manually provisioned VM
+
+Manually provisioned VM
+-----------------------
 
 In case where you can't use infra-vms to deploy your wazuh-manager.
 
-### VM sizing
+
+VM sizing
+~~~~~~~~~
 
 .. code-block:: console
 
@@ -144,7 +148,8 @@ In case where you can't use infra-vms to deploy your wazuh-manager.
     Logs will be stored in /var/ossec/ so it's a good idea to make it an LVM filesystem to make it futureproof.
 
 
-### Network Setup
+Network Setup
+~~~~~~~~~~~~~
 
 Your wazuh-manager VM needs to have network connection with servers which will have the wazuh-agent installed, preferably it should be in the `provision_oc_net`.
 
@@ -155,7 +160,8 @@ provision_oc_net_ips:
   <wazuh.vm.hostname>: <wazuh.vm.ip>
 
 
-#### H4 Required ports
+Required ports
+~~~~~~~~~~~~~~
 
 Several services are used for the communication of Wazuh components. Below is the list of default ports used by these services.
 
@@ -389,5 +395,4 @@ Verification
 
 The Wazuh agents should register with the Wazuh master. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
-
 
