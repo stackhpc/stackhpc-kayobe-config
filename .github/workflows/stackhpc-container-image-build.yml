@@ -133,16 +133,17 @@ jobs:
 
       - name: Scan built overcloud container images
         run: |
+          mkdir sarif-upload
           cat images-to-scan.txt | while read i; do
-          echo $i
-          sudo trivy image --format sarif --severity HIGH,CRITICAL $i >> trivy-results.sarif
+          filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+          sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
           done
         if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'sarif-upload/'
         if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
 
       # - name: Upload scan output artefact
