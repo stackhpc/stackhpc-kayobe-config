@@ -193,6 +193,7 @@ Several services are used for the communication of Wazuh components. Below is th
 +-----------------+-----------+----------------+------------------------------------------------+
 
 
+
 Make sure group mappings for wazuh-master are added to the inventory ``etc/kayobe/inventory/groups``:
 
 .. code-block:: console
@@ -211,8 +212,9 @@ Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
 
 .. code-block:: console
 
-[wazuh-master]
-<wazuh.vm.name>
+    [wazuh-master]
+      <wazuh.vm.name>
+
 
 
 Deploying Wazuh Manager services
