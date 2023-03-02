@@ -1,9 +1,6 @@
 ---
 # Certificates generation
 - hosts: localhost
-  vars_files:
-    - "{{ playbook_dir }}/vars/wazuh-manager.yml"
-    - "{{ playbook_dir }}/vars/wazuh-secrets.yml"
   roles:
     - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
       perform_installation: false
@@ -13,8 +10,6 @@
     - generate-certs
 # Single node
 - hosts: wazuh-master
-  vars_files:
-    - "{{ playbook_dir }}/vars/wazuh-manager.yml"
   become: yes
   become_user: root
   roles:
@@ -57,14 +52,3 @@
       when: custom_certificates_folder.stat.exists
       notify:
         - Restart wazuh-dashboard
-
-  handlers:
-    - name: Restart wazuh
-      service:
-        name: wazuh-manager
-        state: restarted
-
-    - name: Restart wazuh-dashboard
-      service:
-        name: wazuh-dashboard
-        state: restarted

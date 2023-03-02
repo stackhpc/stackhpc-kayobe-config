@@ -1,9 +1,7 @@
 ---
-- hosts: seed:overcloud:!wazuh
+- name: Deploy Wazuh agent
+  hosts: wazuh-agent
   become: yes
-  pre_tasks:
-    - name: Include wazuh-agent vars
-      include_vars:
-        file: "{{ playbook_dir }}/vars/wazuh-agent.yml"
-  roles:
-    - "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-agent"
+  tasks:
+    - import_role:
+        name: "wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-agent"
