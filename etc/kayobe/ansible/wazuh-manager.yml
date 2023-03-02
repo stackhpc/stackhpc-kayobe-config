@@ -2,7 +2,7 @@
 # Certificates generation
 - hosts: localhost
   roles:
-    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
+    - role: "{{ playbook_dir }}"/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
       perform_installation: false
   become: no
   #become_user: root
@@ -13,10 +13,10 @@
   become: yes
   become_user: root
   roles:
-    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
-    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager"
-    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss"
-    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard"
+    - role: "{{ playbook_dir }}"/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
+    - role: "{{ playbook_dir }}"/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager
+    - role: "{{ playbook_dir }}"/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss
+    - role: "{{ playbook_dir }}"/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard
   post_tasks:
     - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
       blockinfile:
@@ -52,3 +52,14 @@
       when: custom_certificates_folder.stat.exists
       notify:
         - Restart wazuh-dashboard
+
+  handlers:
+    - name: Restart wazuh
+      service:
+        name: wazuh-manager
+        state: restarted
+
+    - name: Restart wazuh-dashboard
+      service:
+        name: wazuh-dashboard
+        state: restarted
