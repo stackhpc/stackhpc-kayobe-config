@@ -132,6 +132,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
     reference: stackhpc/{{ openstack_release }}
+  horizon:
+    type: git
+    location: https://github.com/stackhpc/horizon.git
+    reference: bump-angular-yoga
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -256,6 +260,13 @@ kolla_build_blocks:
     {% raw %}
     {% if base_package_type == 'rpm' %}
     RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
+    {% endif %}
+    {% endraw %}
+  horizon_header: |
+    # Fix for https://bugs.launchpad.net/horizon/+bug/1997545
+    {% raw %}
+    {% if base_package_type == 'rpm' %}
+    RUN sed -i 's/^XStatic-Angular===1.5.8.0/XStatic-Angular===1.8.2.2/' /requirements/upper-constraints.txt
     {% endif %}
     {% endraw %}
 
