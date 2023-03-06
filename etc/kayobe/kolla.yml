@@ -5,17 +5,17 @@
 # Kolla installation.
 
 # Type of Kolla control installation. One of 'binary' or 'source'.
-kolla_ctl_install_type: source
+#kolla_ctl_install_type:
 
 # Path to directory for kolla source code checkout.
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-kolla_source_url: https://github.com/stackhpc/kolla
+kolla_source_url: "{{ stackhpc_kolla_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-kolla_source_version: stackhpc/12.7.0.3
+kolla_source_version: "{{ stackhpc_kolla_source_version }}"
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -28,7 +28,7 @@ kolla_source_version: stackhpc/12.7.0.3
 
 # Type of Kolla-ansible control installation. One of 'binary' or 'source'.
 # Default is 'source'.
-kolla_ansible_ctl_install_type: source
+#kolla_ansible_ctl_install_type:
 
 # Path to directory for kolla-ansible source code checkout.
 # Default is $KOLLA_SOURCE_PATH, or $PWD/src/kolla-ansible if
@@ -37,24 +37,27 @@ kolla_ansible_ctl_install_type: source
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-kolla_ansible_source_url: https://github.com/stackhpc/kolla-ansible
+kolla_ansible_source_url: "{{ stackhpc_kolla_ansible_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-kolla_ansible_source_version: stackhpc/12.8.0.14
+kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-#kolla_ansible_venv_extra_requirements:
+kolla_ansible_venv_extra_requirements:
+  # NOTE(wszumski): Fork with support for Rocky Linux target hosts. Remove in
+  # Xena as kayobe supports ansible 2.11 which has Rocky Support out of the
+  # box.
+  - 'ansible-base@git+https://github.com/stackhpc/ansible@stackhpc/2.10/rocky'
 
-# Pip requirement specifier for the ansible package. Default is:
-# 'ansible>=2.10.0,<5.0'. NOTE: Limit the version of ansible used by
-# kolla-ansible to avoid new releases from breaking tested code. Changes to
-# this limit should be tested.
-kolla_ansible_venv_ansible: 'ansible@git+https://github.com/stackhpc/ansible@stackhpc/2.9/rocky'
+# Pip requirement specifier for the ansible package. NOTE: This limits the
+# version of ansible used by kolla-ansible to avoid new releases from breaking
+# tested code. Changes to this limit should be tested.
+#kolla_ansible_venv_ansible:
 
 # Path to Kolla-ansible configuration directory. Default is $KOLLA_CONFIG_PATH
 # or /etc/kolla if $KOLLA_CONFIG_PATH is not set.
@@ -68,7 +71,8 @@ kolla_ansible_venv_ansible: 'ansible@git+https://github.com/stackhpc/ansible@sta
 # Kolla configuration.
 
 # Kolla base container image distribution. Options are "centos", "debian",
-# "ubuntu". Default is {{ os_distribution }}.
+# "ubuntu". Default is
+# {{ 'centos' if os_distribution == 'rocky' else os_distribution }}.
 #kolla_base_distro:
 
 # Kolla container image type: binary or source. Default is 'binary'.
@@ -76,29 +80,26 @@ kolla_install_type: source
 
 # URL of docker registry to use for Kolla images. Default is not set, in which
 # case Dockerhub will be used.
-kolla_docker_registry: '{{ docker_registry }}'
+#kolla_docker_registry:
 
 # Docker namespace to use for Kolla images. Default is 'kolla'.
-kolla_docker_namespace: scientific-openstack/infrastructure/kayobe-config
+kolla_docker_namespace: stackhpc
 
 # Username to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_username:
+kolla_docker_registry_username: "{{ stackhpc_docker_registry_username }}"
 
 # Password to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_password:
+kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: wallaby-20230209174630
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20230207T161158{% else %}wallaby-20230215T134157{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
-kolla_tag: >-
-        {{ openstack_release }}-{{- lookup('env', 'KOLLA_IMAGE_VERSION ')
-        | default(ansible_facts.date_time.iso8601_basic_short, true) -}}
-        {{ ('-' ~ kolla_tag_suffix) if kolla_tag_suffix is defined else '' }}
+#kolla_tag:
 
 # Dict mapping names of sources to their definitions for
 # kolla_install_type=source. See kolla.common.config for details.
@@ -109,47 +110,52 @@ kolla_tag: >-
 #     location: https://github.com/openstack/ironic
 #     reference: master
 kolla_sources:
+  barbican-base:
+    type: git
+    location: "https://github.com/stackhpc/barbican.git"
+    reference: stackhpc/wallaby
+  bifrost-base:
+    type: git
+    location: "{{ kolla_bifrost_source_url }}"
+    reference: "{{ kolla_bifrost_source_version }}"
+  bifrost-base-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
+  cinder-base:
+    type: git
+    location: https://github.com/stackhpc/cinder.git
+    reference: stackhpc/{{ openstack_release }}
+  cloudkitty-base:
+    type: git
+    location: https://github.com/stackhpc/cloudkitty.git
+    reference: stackhpc/wallaby
+  glance-base:
+    type: git
+    location: https://github.com/stackhpc/glance.git
+    reference: stackhpc/{{ openstack_release }}
+  horizon-plugin-cloudkitty-dashboard:
+    type: git
+    location: https://github.com/stackhpc/cloudkitty-dashboard.git
+    reference: stackhpc/wallaby
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  neutron-base-plugin-networking-generic-switch:
-    type: git
-    location: https://github.com/stackhpc/networking-generic-switch
-    reference: stackhpc/wallaby-batching
-  nova-base:
-    type: git
-    location: https://github.com/stackhpc/nova
-    reference: stackhpc/wallaby
-  blazar-base:
-    type: git
-    location: https://github.com/stackhpc/blazar.git
-    reference: 1d069b29127fc80d5281b3a05e21f2287147b393
-  cloudkitty-base:
-    type: git
-    location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/wallaby
-  horizon:
-    type: git
-    location: https://github.com/stackhpc/horizon.git
-    reference: stackhpc/wallaby
-  horizon-plugin-blazar-dashboard:
-    type: git
-    location: https://github.com/stackhpc/blazar-dashboard.git
-    reference: stackhpc/wallaby
-  horizon-plugin-cloudkitty-dashboard:
-    type: git
-    location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/wallaby
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
     reference: stackhpc/wallaby
-  nova-base-plugin-blazar:
+  neutron-base-plugin-networking-generic-switch:
     type: git
-    location: https://github.com/stackhpc/blazar-nova.git
-    reference: cumulus/wallaby
+    location: https://github.com/stackhpc/networking-generic-switch.git
+    reference: stackhpc/wallaby
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -172,21 +178,44 @@ stackhpc_epel_repos:
 
 # List of additional CentOS Stream repositories.
 stackhpc_centos_additional_repos:
-  # Snapshots install broken repo file, so hardcode to one that works.
-  - url: "{{ stackhpc_repo_centos_storage_ceph_nautilus_url }}"
-    file: CentOS-Ceph-Nautilus.repo
+  - url: "{{ stackhpc_repo_centos_stream_advanced_virtualization_url }}"
+    file: "CentOS-Advanced-Virtualization.repo"
+  - url: "{{ stackhpc_repo_centos_stream_nfv_openvswitch_url }}"
+    file: "CentOS-NFV-OpenvSwitch.repo"
+  - url: "{{ stackhpc_repo_centos_stream_openstack_wallaby_url }}"
+    file: "CentOS-OpenStack-wallaby.repo"
+  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
-  - url: "{{ stackhpc_repo_centos_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
+  - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
+    file: "CentOS-Ceph-Pacific.repo"
 
 # List of third-party repositories.
-stackhpc_third_party_repos: []
+stackhpc_third_party_repos:
+  - url: "{{ stackhpc_repo_elasticsearch_logstash_kibana_7_x_url }}"
+    file: "elasticsearch.repo"
+  - url: "{{ stackhpc_repo_grafana_url }}"
+    file: "grafana.repo"
+  - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+  - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
+    file: "rabbitmq_rabbitmq-server.repo"
+  - url: "{{ stackhpc_repo_treasuredata_4_url }}"
+    file: "td.repo"
+
+# List of repositories for Ubuntu focal.
+stackhpc_ubuntu_focal_repos:
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
+  - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
+  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/wallaby main"
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
-#kolla_build_blocks:
 kolla_build_blocks:
   base_header: |
+    {% if kolla_base_distro == 'centos' %}
     RUN \
     {% for repo in stackhpc_centos_stream_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
@@ -194,6 +223,7 @@ kolla_build_blocks:
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
@@ -202,18 +232,51 @@ kolla_build_blocks:
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
+  # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
+  # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
+  # packages.
+  base_debian_after_sources_list: |
+    RUN echo "\
+    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
+    > /etc/apt/sources.list.d/uca-yoga.list
+    RUN echo "\
+    Package: *\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: -1\n\
+    \n\
+    Package: ovn*\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500\n\
+    \n\
+    Package: openvswitch* python3-openvswitch\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500"\
+    > /etc/apt/preferences.d/uca-yoga
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # base_ubuntu_package_sources_list: |
+  #   RUN \
+  #       rm -f /etc/apt/sources.list && \
+  #   {% for repo in stackhpc_ubuntu_focal_repos %}
+  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+  #   {% endif %}
+  #   {% endfor %}
+  bifrost_base_header: |
+    ADD additions-archive /
   grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel
+    RUN grafana-cli plugins install vonage-status-panel \
+        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
-  prometheus_server_repository_version: |
-    # Avoid the pain of porting 1.x rules and migrating data to 2.x
+  prometheus_v2_server_repository_version: |
     ARG prometheus_version='2.35.0'
-  prometheus_cadvisor_repository_version: |
-    ARG prometheus_cadvisor_version=0.40.0
-    ARG prometheus_cadvisor_sha256sum='8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0'
   prometheus_alertmanager_repository_version: |
     ARG prometheus_alertmanager_version='0.24.0'
+  prometheus_cadvisor_repository_version: |
+    ARG prometheus_cadvisor_version='0.40.0'
+    ARG prometheus_cadvisor_sha256sum='8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0'
   node_exporter_repository_version: |
     ARG node_exporter_version='1.3.1'
   prometheus_memcached_exporter_repository_version: |
@@ -224,48 +287,72 @@ kolla_build_blocks:
     ARG mysqld_exporter_version='0.13.0'
   prometheus_blackbox_exporter_repository_version: |
     ARG blackbox_exporter_version='0.19.0'
-  prometheus_openstack_exporter_install: |
-    ARG prometheus_openstack_exporter_url=https://github.com/stackhpc/openstack-exporter/archive/refs/heads
-    ARG prometheus_openstack_exporter_version=aggregates
-    ENV GOPATH=/build
-    RUN dnf install -y make go && dnf clean all \
-        && rm -f /root/.curlrc \
-        && mkdir /build \
-        && cd /build \
-        && curl -L -o openstack-exporter.tar.gz ${prometheus_openstack_exporter_url}/${prometheus_openstack_exporter_version}.tar.gz  \
-        && tar xvf openstack-exporter.tar.gz \
-        && cd openstack-exporter-${prometheus_openstack_exporter_version} \
-        && make common-build \
-        && mv openstack-exporter-${prometheus_openstack_exporter_version} openstack-exporter \
-        && mkdir /opt/openstack-exporter \
-        && install -m 0755 openstack-exporter /opt/openstack-exporter/ \
-        && rm -rf /build
+  nova_base_footer: |
+    # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
+    {% raw %}
+    {% if base_package_type == 'rpm' %}
+    RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
+    {% endif %}
+    {% endraw %}
+
+kolla_build_customizations_common:
+  bifrost_base_pip_packages_append:
+    - /additions/*
+  ironic_inspector_pip_packages_append:
+    - /additions/*
+  bifrost_packages_append:
+    - 'jq'
+
+kolla_build_customizations_centos:
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  nova_compute_packages_remove:
+    - openvswitch
+  nova_compute_packages_append:
+    - openvswitch2.17
+  octavia_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  octavia_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+  ovn_base_packages_override:
+    - ovn22.06
+  ovn_controller_packages_override:
+    - ovn22.06-host
+  ovn_nb_db_server_packages_override:
+    - ovn22.06-central
+  ovn_northd_packages_override:
+    - ovn22.06-central
+  ovn_sb_db_server_packages_override:
+    - ovn22.06-central
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch2.17
+    - python3-openvswitch2.17
+
+kolla_build_customizations_ubuntu: {}
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
 # <image name>_<customization>_<operation>
-# Hyphens in the image name are replaced with underscores. The customization is
-# most commonly packages. The operation should be one of override, append or
-# remove. The value should be a list.
-kolla_build_customizations:
-  bifrost_packages_append:
-    - 'jq'
-  keystone_packages_append:
-    # Allow custom packages to be installed via pip.
-    # Allow manual install of openidc for federation
-    - 'jansson-devel'
-    - 'openssl-devel'
-    - 'hiredis'
-  neutron_server_packages_append:
-    # Allow custom packages to be installed via pip.
-    - 'gcc'
-    - 'python3-devel'
-  bifrost_pip_packages_append:
-    - git+https://github.com/stackhpc/stackhpc-inspector-plugins@1.3.0
-  neutron_server_pip_packages_append:
-    - etcd3gw
-  ironic_inspector_pip_packages_append:
-    - /additions/*
+# Hyphens in the image name must be replaced with underscores. The
+# customization is most commonly packages. The operation should be one of
+# override, append or remove. The value should be a list.
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
@@ -413,9 +500,11 @@ kolla_overcloud_inventory_pass_through_host_vars_map_extra:
 
 #kolla_enable_aodh:
 kolla_enable_barbican: true
-kolla_enable_blazar: true
+# Disabled due to missing images in release-train
+#kolla_enable_blazar: true
 #kolla_enable_cadf_notifications:
-kolla_enable_caso: true
+# Disabled due to missing images in release-train
+#kolla_enable_caso: true
 #kolla_enable_ceilometer:
 #kolla_enable_ceilometer_horizon_policy_file:
 #kolla_enable_ceilometer_ipmi:
@@ -428,7 +517,6 @@ kolla_enable_chrony: false
 #kolla_enable_cinder_backend_lvm:
 #kolla_enable_cinder_backend_nfs:
 #kolla_enable_cinder_backend_quobyte:
-#kolla_enable_cinder_backend_zfssa_iscsi:
 #kolla_enable_cinder_backup:
 #kolla_enable_cinder_horizon_policy_file:
 #kolla_enable_cloudkitty:
@@ -490,6 +578,7 @@ kolla_enable_ironic: false
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
+kolla_enable_nova_libvirt_container: "{{ os_distribution not in ['rocky'] }}"
 kolla_enable_magnum: true
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
@@ -522,7 +611,6 @@ kolla_enable_neutron_provider_networks: true
 #kolla_enable_neutron_trunk:
 #kolla_enable_neutron_vpnaas:
 #kolla_enable_nova:
-kolla_enable_nova_libvirt_container: "{{ ansible_facts.distribution != 'Rocky' }}"
 #kolla_enable_nova_fake:
 #kolla_enable_nova_horizon_policy_file:
 #kolla_enable_nova_serialconsole_proxy:
@@ -544,6 +632,7 @@ kolla_enable_prometheus: true
 #kolla_enable_prometheus_ceph_mgr_exporter:
 #kolla_enable_prometheus_elasticsearch_exporter:
 #kolla_enable_prometheus_haproxy_exporter:
+#kolla_enable_prometheus_libvirt_exporter:
 #kolla_enable_prometheus_memcached_exporter:
 #kolla_enable_prometheus_mysqld_exporter:
 #kolla_enable_prometheus_node_exporter:
@@ -710,6 +799,21 @@ kolla_ansible_custom_passwords: >-
 # in admin-openrc.sh file when TLS is enabled, instead of Kolla-Ansible's
 # default.
 #kolla_internal_fqdn_cacert:
+
+###############################################################################
+# Proxy configuration
+
+# HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port) used by
+# Kolla. Default value is "{{ http_proxy }}".
+#kolla_http_proxy:
+
+# HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port) used by
+# Kolla. Default value is "{{ https_proxy }}".
+#kolla_https_proxy:
+
+# List of domains, hostnames, IP addresses and networks for which no proxy is
+# used. Default value is "{{ no_proxy }}".
+#kolla_no_proxy:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

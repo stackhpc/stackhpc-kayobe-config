@@ -2,87 +2,20 @@
 # Don't automatically mount ephemeral disk
 mounts:
   - [/dev/vdb, null]
-
-fqdn: ${fqdn}
+# WORKAROUND: internal DNS missing from SMS lab.
+runcmd:
+  - 'echo "10.0.0.34 pelican pelican.service.compute.sms-lab.cloud" >> /etc/hosts'
+  - 'echo "10.205.3.187 pulp-server pulp-server.internal.sms-cloud" >> /etc/hosts'
+# Configure SSH keys here, to avoid creating an ephemeral keypair.
+# This means only the instance needs to be cleaned up if the destroy fails.
+ssh_authorized_keys:
+  - ${ssh_public_key}
 
 write_files:
-  # Make sure the public IP survives a reboot
-  # See: https://access.redhat.com/discussions/4221861
-  # TODO: Addd multiple IP addresses to michael rigart?
-  - content: |
-      DEVICE=breth1:1
-      ONPARENT=on
-      IPADDR=10.0.2.1
-      PREFIX=24
-    path: /etc/sysconfig/network-scripts/ifcfg-breth1:1
+  # WORKAROUND: https://bugs.launchpad.net/kolla-ansible/+bug/1995409
   - content: |
       #!/bin/bash
-
-      # IP of the seed hypervisor on the OpenStack 'public' network created by init-runonce.sh.
-      public_ip="10.0.2.1"
-
-      # IP addresses on the all-in-one Kayobe cloud network.
-      # These IP addresses map to those statically configured in
-      # etc/kayobe/network-allocation.yml and etc/kayobe/networks.yml.
-      controller_vip=192.168.33.2
-
-      # Forward the following ports to the controller.
-      # 80: Horizon
-      # 6080: VNC console
-      forwarded_ports="80 6080"
-
-      sudo ip l add breth1 type bridge
-      sudo ip l set breth1 up
-      sudo ip a add 192.168.33.3/24 dev breth1
-      sudo ip l add eth1 type dummy
-      sudo ip l set eth1 up
-      sudo ip l set eth1 master breth1
-
-      iface=$(ip route | awk '$1 == "default" {print $5; exit}')
-
-      #sudo iptables -A POSTROUTING -t nat -o $iface -j MASQUERADE
-      sudo sysctl -w net.ipv4.conf.all.forwarding=1
-
-      # Install iptables.
-      if $(which dnf >/dev/null 2>&1); then
-          sudo dnf -y install iptables
-      fi
-
-      # Configure port forwarding from the hypervisor to the Horizon GUI on the
-      # controller.
-      sudo iptables -A FORWARD -i $iface -o breth1 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-      sudo iptables -A FORWARD -i breth1 -o $iface -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-      for port in $forwarded_ports; do
-        # Allow new connections.
-        sudo iptables -A FORWARD -i $iface -o breth1 -p tcp --syn --dport $port -m conntrack --ctstate NEW -j ACCEPT
-        # Destination NAT.
-        sudo iptables -t nat -A PREROUTING -i $iface -p tcp --dport $port -j DNAT --to-destination $controller_vip
-      done
-
-      # Configure an IP on the 'public' network to allow access to/from the cloud.
-      if ! sudo ip a show dev breth1 | grep $public_ip/24 >/dev/null 2>&1; then
-        sudo ip a add $public_ip/24 dev breth1
-      fi
-
-      # This prevents network.service from restarting correctly.
-      sudo killall dhclient || true
-    path: /usr/bin/configure-local-networking.sh
+      docker exec openvswitch_vswitchd ovs-vsctl "$@"
+    owner: root:root
+    path: /usr/bin/ovs-vsctl
     permissions: '0755'
-  - content: |
-      [Unit]
-      Description=Local networking for kayobe AIO
-      Before=docker.service
-      Before=sshd.service
-
-      [Service]
-      Type=oneshot
-      ExecStart=/usr/bin/configure-local-networking.sh
-      RemainAfterExit=yes
-
-      [Install]
-      WantedBy=multi-user.target
-    path: /etc/systemd/system/configure-local-networking.service
-
-runcmd:
-  - sudo systemctl daemon-reload
-  - sudo systemctl enable --now configure-local-networking.service

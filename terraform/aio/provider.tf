@@ -1,10 +1,10 @@
 #provider "openstack" {
-  # use environment variables
+# use environment variables
 #}
 
 terraform {
   required_version = ">= 0.14"
-  backend "http" {
+  backend "local" {
   }
   required_providers {
     openstack = {

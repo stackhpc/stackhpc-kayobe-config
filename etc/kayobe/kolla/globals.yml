@@ -1,5 +1,7 @@
+# yamllint disable-file
 ---
 # Add extra Kolla global configuration here.
+
 
 # Tell kolla to use the extra volume in this location
 nova_instance_datadir_volume: '/var/lib/nova'
@@ -55,9 +57,6 @@ fernet_token_expiry: 3600
 # Custom exporters
 enable_prometheus_libvirt_exporter: True
 
-# Using gitlab registry with TLS
-docker_registry_insecure: false
-
 {% if scientific_openstack_trait_all_in_one %}
 keepalived_vip_prechecks: false
 {% endif %}
@@ -66,21 +65,19 @@ keepalived_vip_prechecks: false
 neutron_plugin_agent: 'ovn'
 {% endif %}
 
-#FIXME: new container images need
-libvirt_enable_sasl: false
-
-# On EL8 use kayobe configured docker repo
-enable_docker_repo: false
-
 enable_prometheus_libvirt_exporter: "yes"
 
 # Disable kolla managed NTP clients
 enable_chrony: false
 enable_host_ntp: false
 
-# This is templated on localhost, so use raw tags.
-enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.distribution != 'Rocky' }}{% endraw %}"
-
 # Custom container image tags.
 # These should be allowed to change independently, as services are updated.
 # If there are no custom images this comment serves as a placeholder
+{% if kolla_base_distro == 'centos' %}
+bifrost_tag: wallaby-20230207T194135
+{% else %}
+bifrost_tag: wallaby-20230215T160405
+{% endif %}
+glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
+neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
