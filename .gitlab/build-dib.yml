@@ -48,7 +48,7 @@ Build Rocky Image:
   script:
     - exit_code=0
     - !reference [.prelude_kayobe_setup, script]
-    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-rocky-deployment-image.yml || exit_code=$?
+    - .automation/pipeline/playbook-run.sh etc/kayobe/ansible/build-deployment-image.yml -e os_distribution=rocky || exit_code=$?
     - mkdir ${CI_PROJECT_DIR}/artifacts
     - cp /opt/kayobe/images/deployment_image/deployment_image.{stdout,stderr} ${CI_PROJECT_DIR}/artifacts/
     - if [ ${exit_code} -ne 0 ];then exit $exit_code; fi
