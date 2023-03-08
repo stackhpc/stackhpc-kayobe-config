@@ -18,8 +18,13 @@ on:
         type: boolean
         required: false
         default: false
-      scan:
-        description: Scan images?
+      scan_artefact:
+        description: Scan images? output=artefact
+        type: boolean
+        required: false
+        default: false
+      scan_sarif:
+        description: Scan images? output=github
         type: boolean
         required: false
         default: false
@@ -133,11 +138,22 @@ jobs:
 
       - name: Scan built overcloud container images
         run: |
-          mkdir sarif-upload
-          cat images-to-scan.txt | while read i; do
-          filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-          sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
-          done
+            if ${{ toJSON(
+                  (  fromJSON(inputs.scan_artefact)
+                ) }}; then
+                mkdir sarif-upload
+                cat images-to-scan.txt | while read i; do
+                filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+                sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
+                done
+            if ${{ toJSON(
+                  (  fromJSON(inputs.sarif)
+                ) }}; then
+                mkdir artefact-upload
+                cat images-to-scan.txt | while read i; do
+                filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+                sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
+                done
         if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
 
       - name: Upload Trivy scan results to GitHub Security tab
