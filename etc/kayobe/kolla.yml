@@ -274,6 +274,14 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
+  keystone_base_footer: |
+    {% raw %}
+    {% if base_package_type == 'deb' %}
+    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
+        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
+        rm -f liblasso3_2.7.0-2build3_amd64.deb
+    {% endif %}
+    {% endraw %}
   prometheus_v2_server_repository_version: |
     ARG prometheus_version='2.35.0'
   prometheus_alertmanager_repository_version: |
