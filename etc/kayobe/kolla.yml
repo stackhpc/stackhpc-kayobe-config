@@ -275,6 +275,14 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
+  keystone_base_footer: |
+    {% raw %}
+    {% if base_package_type == 'deb' %}
+    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
+        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
+        rm -f liblasso3_2.7.0-2build3_amd64.deb
+    {% endif %}
+    {% endraw %}
   nova_base_footer: |
     # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
     # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
