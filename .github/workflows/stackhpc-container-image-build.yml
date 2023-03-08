@@ -138,22 +138,37 @@ jobs:
 
       - name: Scan built overcloud container images
         run: |
-            if ${{ toJSON(
-                  (  fromJSON(inputs.scan_artefact)
-                ) }}; then
-                mkdir upload
-                # cat images-to-scan.txt | while read i; do
-                # filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-                sudo trivy image --severity HIGH,CRITICAL $i >> upload/scan.txt
-                done
-            if ${{ toJSON(
-                  (  fromJSON(inputs.scan_sarif)
-                ) }}; then
+            # if ${{ toJSON(
+            #       (  fromJSON(inputs.scan_artefact)
+            #     ) }}; then
+            #     mkdir upload
+            #     # cat images-to-scan.txt | while read i; do
+            #     # filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+            #     sudo trivy image --severity HIGH,CRITICAL $i >> upload/scan.txt
+            #     done
+            # if ${{ toJSON(
+            #       (  fromJSON(inputs.scan_sarif)
+            #     ) }}; then
+            #     mkdir artefact-upload
+            #     cat images-to-scan.txt | while read i; do
+            #     filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+            #     sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
+            #     done
+            if [[ ${{ github.event.inputs.scan_sarif }} == true ]]; then
                 mkdir artefact-upload
                 cat images-to-scan.txt | while read i; do
                 filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
                 sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
                 done
+            fi
+            if [[ ${{ github.event.inputs.scan_artefact }} == true ]]; then
+                mkdir upload
+                cat images-to-scan.txt | while read i; do
+                # filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+                sudo trivy image --severity HIGH,CRITICAL $i >> upload/scan.txt
+                done
+            fi
+        shell: bash
         if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan_artefact == 'true') || (github.event.inputs.scan_sarif == 'true') }}
 
       - name: Upload Trivy scan results to GitHub Security tab
