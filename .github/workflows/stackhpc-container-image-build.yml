@@ -134,41 +134,41 @@ jobs:
       - name: Generate the images to scan
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" > images-to-scan.txt
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan_artefact == 'true') || (github.event.inputs.scan_sarif == 'true') }}
 
       - name: Scan built overcloud container images
         run: |
             if ${{ toJSON(
                   (  fromJSON(inputs.scan_artefact)
                 ) }}; then
-                mkdir sarif-upload
-                cat images-to-scan.txt | while read i; do
-                filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-                sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
+                mkdir upload
+                # cat images-to-scan.txt | while read i; do
+                # filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+                sudo trivy image --severity HIGH,CRITICAL $i >> upload/scan.txt
                 done
             if ${{ toJSON(
-                  (  fromJSON(inputs.sarif)
+                  (  fromJSON(inputs.scan_sarif)
                 ) }}; then
                 mkdir artefact-upload
                 cat images-to-scan.txt | while read i; do
                 filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
                 sudo trivy image --format sarif --severity HIGH,CRITICAL $i > sarif-upload/${filename}.sarif
                 done
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan_artefact == 'true') || (github.event.inputs.scan_sarif == 'true') }}
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'sarif-upload/'
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan_sarif == 'true') }}
 
-      # - name: Upload scan output artefact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: Trivy Scan txt
-      #     path: scan.txt
-      #     retention-days: 7
-      #   if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+      - name: Upload scan output artefact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "Trivy Scan txt"
+          path: 'upload/scan.txt'
+          retention-days: 7
+        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan_artefact == 'true') }}
 
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
