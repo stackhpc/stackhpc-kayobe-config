@@ -16,7 +16,14 @@
         state: present
       become: true
 
-    - name: Install python openstack client
+    - name: Ensure latest version of pip is installed
+      pip:
+        name: pip
+        state: latest
+        virtualenv: '{{ venv }}'
+        virtualenv_command: "/usr/bin/python3 -m venv"
+
+    - name: Ensure python openstack client is installed
       pip:
         name: python-openstackclient
         virtualenv: '{{ venv }}'
