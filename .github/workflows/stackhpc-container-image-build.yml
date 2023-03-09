@@ -18,16 +18,11 @@ on:
         type: boolean
         required: false
         default: false
-      scan_artefact:
-        description: Scan images? output=artefact
+      scan:
+        description: Scan images?
         type: boolean
         required: false
-        default: false
-      scan_sarif:
-        description: Scan images? output=github
-        type: boolean
-        required: false
-        default: false
+        default: true
       distro:
         description: Container image OS distribution
         type: choice
@@ -64,7 +59,7 @@ jobs:
 
       - name: Install Trivy
         run: |
-          sudo curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.38.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.38.0
 
       - name: Setup networking
         run: |
@@ -131,44 +126,6 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
         if: github.event.inputs.overcloud == 'true'
 
-      - name: Generate the images to scan
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" > images-to-scan.txt
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan_artefact == 'true') || (github.event.inputs.scan_sarif == 'true') }}
-
-      - name: Scan built overcloud container images
-        run: |
-          if [[ ${{ github.event.inputs.scan_sarif }} == true ]]; then
-              mkdir upload
-              cat images-to-scan.txt | while read i; do
-              filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-              sudo trivy image --format sarif --severity HIGH,CRITICAL $i > upload/${filename}.sarif
-              done
-          fi
-          if [[ ${{ github.event.inputs.scan_artefact }} == true ]]; then
-              mkdir upload
-              cat images-to-scan.txt | while read i; do
-              # filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-              sudo trivy image --severity HIGH,CRITICAL $i >> upload/scan.txt
-              done
-          fi
-        shell: bash
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan_artefact == 'true') || (github.event.inputs.scan_sarif == 'true') }}
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'sarif-upload/'
-        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan_sarif == 'true') }}
-
-      - name: Upload scan output artefact
-        uses: actions/upload-artifact@v3
-        with:
-          name: "Trivy Scan txt"
-          path: 'upload/scan.txt'
-          retention-days: 7
-        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan_artefact == 'true') }}
-
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -203,6 +160,31 @@ jobs:
           path: seed-container-images
           retention-days: 7
         if: github.event.inputs.seed == 'true'
+
+      - name: Generate the images to scan
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" > images-to-scan.txt
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') || (github.event.inputs.scan_html == 'true') }}
+
+      - name: Scan built overcloud container images
+        run: |
+          if [[ ${{ github.event.inputs.scan }} == true ]]; then
+              mkdir upload
+              cat images-to-scan.txt | while read i; do
+                filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
+                sudo trivy image --severity HIGH,CRITICAL $i > upload/${filename}.txt
+              done
+          fi
+        shell: bash
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
+      - name: Upload scan output artefact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "Trivy Scan txt"
+          path: 'upload/'
+          retention-days: 7
+        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan == 'true') }}
 
       - name: Prune local Kolla container images over 1 week old
         run: |
