@@ -1,0 +1,47 @@
+---
+global:
+  resolve_timeout: 5m
+  smtp_require_tls: true
+  slack_api_url: 'https://hooks.slack.com/services/example/alerts/webhook'
+
+route:
+  receiver: 'slack-notifications'
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    - matchers:
+        - severity=~"critical|alert"
+      receiver: 'slack-critical-notifications'
+
+ 
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+    - channel: '#notifications'
+      actions:
+      - type: button
+        text: 'Silence 🔕'
+        url: {{ '{% raw %}' }}{% raw %} '{{ template "__alert_silence_link" . }}' 
+{% endraw %}{{ '{% endraw %}' }}
+      send_resolved: true
+      http_config:
+        proxy_url: http://1.2.3.4:3128
+  - name: 'slack-critical-notifications'
+    slack_configs:
+    - channel: '#notifications-critical'
+      actions:
+      - type: button
+        text: 'Silence 🔕'
+        url: {{ '{% raw %}' }}{% raw %} '{{ template "__alert_silence_link" . }}' 
+{% endraw %}{{ '{% endraw %}' }}
+      send_resolved: true
+      http_config:
+        proxy_url: http://1.2.3.4:3128
+      api_url: 'https://hooks.slack.com/services/example/alerts/webhook-critical'
+
+
+templates:
+  - '/etc/prometheus/*.tmpl'

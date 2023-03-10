@@ -1,10 +1,26 @@
 ---
 ###############################################################################
-# Local Pulp access credentials
+# Local Pulp server configuration
 
 # Base URL of the local Pulp service.
 # Default uses the seed node's IP on the admin network.
-pulp_url: "http://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:80"
+pulp_url: "{{ 'https' if pulp_enable_tls | bool else 'http' }}://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:{{ pulp_port }}"
+
+# Port on the seed node's interface on the admin network that the Pulp service
+# listens on.
+pulp_port: "{{ '443' if pulp_enable_tls | bool else '80' }}"
+
+# Whether to enable TLS for Pulp.
+pulp_enable_tls: false
+
+# Path to a TLS certificate to use when TLS is enabled.
+#pulp_cert_path:
+
+# Path to a TLS key to use when TLS is enabled.
+#pulp_key_path:
+
+###############################################################################
+# Local Pulp access credentials
 
 # Credentials used to access the local Pulp REST API.
 pulp_username: admin
@@ -83,7 +99,7 @@ stackhpc_pulp_repository_deb_repos:
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
     components: main
-    distributions: focal-updates/wallaby
+    distributions: "focal-updates/{{ openstack_release }}"
     mirror: true
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
@@ -323,8 +339,8 @@ stackhpc_pulp_repository_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_8 }}"
 
   # Additional repositories required to build Kolla containers from local Pulp service.
-  - name: CentOS Stream 8 - OpenStack Wallaby
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/cloud/x86_64/openstack-wallaby/{{ stackhpc_pulp_repo_centos_stream_8_openstack_wallaby_version }}"
+  - name: CentOS Stream 8 - OpenStack Xena
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/cloud/x86_64/openstack-xena/{{ stackhpc_pulp_repo_centos_stream_8_openstack_xena_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
     remote_password: "{{ stackhpc_release_pulp_password }}"
     client_cert: ""
@@ -516,9 +532,9 @@ stackhpc_pulp_distribution_rpm_development:
     required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Additional repositories required to build Kolla containers from local Pulp service.
-  - name: "centos-stream-8-openstack-wallaby-development"
-    base_path: "centos/8-stream/cloud/x86_64/openstack-wallaby/development"
-    repository: CentOS Stream 8 - OpenStack Wallaby
+  - name: "centos-stream-8-openstack-xena-development"
+    base_path: "centos/8-stream/cloud/x86_64/openstack-xena/development"
+    repository: CentOS Stream 8 - OpenStack Xena
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
   - name: "centos-stream-8-advanced-virtualization-development"
@@ -638,9 +654,9 @@ stackhpc_pulp_distribution_rpm_production:
     required: "{{ stackhpc_pulp_sync_el_8 | bool }}"
 
   # Additional repositories required to build Kolla containers from local Pulp service.
-  - name: "centos-stream-8-openstack-wallaby-production"
-    base_path: "centos/8-stream/cloud/x86_64/openstack-wallaby/production"
-    repository: CentOS Stream 8 - OpenStack Wallaby
+  - name: "centos-stream-8-openstack-xena-production"
+    base_path: "centos/8-stream/cloud/x86_64/openstack-xena/production"
+    repository: CentOS Stream 8 - OpenStack Xena
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
   - name: "centos-stream-8-advanced-virtualization-production"
@@ -701,26 +717,20 @@ stackhpc_pulp_distribution_rpm_production:
 stackhpc_release_pulp_registry_url: "{{ stackhpc_release_pulp_url }}"
 
 # List of all image names.
-stackhpc_pulp_images:
+stackhpc_pulp_images_kolla:
   - barbican-api
-  - barbican-base
   - barbican-keystone-listener
   - barbican-worker
-  - base
-  - bifrost-base
   - bifrost-deploy
   - cinder-api
   - cinder-backup
-  - cinder-base
   - cinder-scheduler
   - cinder-volume
   - cloudkitty-api
-  - cloudkitty-base
   - cloudkitty-processor
   - cron
   - designate-api
   - designate-backend-bind9
-  - designate-base
   - designate-central
   - designate-mdns
   - designate-producer
@@ -732,17 +742,14 @@ stackhpc_pulp_images:
   - etcd
   - fluentd
   - glance-api
-  - glance-base
   - grafana
   - haproxy
   - heat-api
   - heat-api-cfn
-  - heat-base
   - heat-engine
   - horizon
   - influxdb
   - ironic-api
-  - ironic-base
   - ironic-conductor
   - ironic-inspector
   - ironic-neutron-agent
@@ -750,24 +757,19 @@ stackhpc_pulp_images:
   - iscsid
   - keepalived
   - keystone
-  - keystone-base
   - keystone-fernet
   - keystone-ssh
   - kibana
   - kolla-toolbox
   - magnum-api
-  - magnum-base
   - magnum-conductor
   - manila-api
-  - manila-base
   - manila-data
   - manila-scheduler
   - manila-share
-  - mariadb-base
   - mariadb-clustercheck
   - mariadb-server
   - memcached
-  - neutron-base
   - neutron-dhcp-agent
   - neutron-l3-agent
   - neutron-metadata-agent
@@ -775,7 +777,6 @@ stackhpc_pulp_images:
   - neutron-server
   - neutron-sriov-agent
   - nova-api
-  - nova-base
   - nova-compute
   - nova-compute-ironic
   - nova-conductor
@@ -785,25 +786,19 @@ stackhpc_pulp_images:
   - nova-serialproxy
   - nova-ssh
   - octavia-api
-  - octavia-base
   - octavia-driver-agent
   - octavia-health-manager
   - octavia-housekeeping
   - octavia-worker
-  - openstack-base
-  - openvswitch-base
   - openvswitch-db-server
   - openvswitch-netcontrold
   - openvswitch-vswitchd
-  - ovn-base
   - ovn-controller
   - ovn-nb-db-server
   - ovn-northd
   - ovn-sb-db-server
   - placement-api
-  - placement-base
   - prometheus-alertmanager
-  - prometheus-base
   - prometheus-blackbox-exporter
   - prometheus-cadvisor
   - prometheus-elasticsearch-exporter
@@ -816,45 +811,83 @@ stackhpc_pulp_images:
   - prometheus-mysqld-exporter
   - prometheus-node-exporter
   - prometheus-openstack-exporter
-  - prometheus-server
   - prometheus-v2-server
   - rabbitmq
   - redis
-  - redis-base
   - redis-sentinel
   - skydive-agent
   - skydive-analyzer
-  - skydive-base
+
+# Whitespace-separated list of regular expressions matching Kolla image names.
+# Usage is similar to kolla-build CLI arguments.
+# Example:
+# kayobe playbook run ... -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
+stackhpc_pulp_images_kolla_filter: ".*"
+
+# Filtered list of Kolla container image names.
+stackhpc_pulp_images_kolla_filtered: "{{ stackhpc_pulp_images_kolla | select('search', '(' ~ stackhpc_pulp_images_kolla_filter.split() | join('|') ~ ')') | list }}"
 
 # Common parameters for container image repositories.
-stackhpc_pulp_repository_container_repos_common:
+stackhpc_pulp_repository_container_repos_kolla_common:
   url: "{{ stackhpc_release_pulp_registry_url }}"
   policy: on_demand
   proxy_url: "{{ pulp_proxy_url }}"
   remote_username: "{{ stackhpc_release_pulp_username }}"
   remote_password: "{{ stackhpc_release_pulp_password }}"
   state: present
+  required: true
 
-# List of container image repositories.
-stackhpc_pulp_repository_container_repos: >-
+# List of Kolla container image repositories.
+stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
-  {%- for image in stackhpc_pulp_images -%}
+  {%- for image in stackhpc_pulp_images_kolla_filtered -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set repo = {"name": image_repo} -%}
-  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_common | combine(repo)) -%}
+  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
   {%- endfor -%}
   {{ repos }}
 
-# Common parameters for container image distributions.
-stackhpc_pulp_distribution_container_common:
+# Common parameters for Kolla container image distributions.
+stackhpc_pulp_distribution_container_kolla_common:
   state: present
+  required: true
+
+# List of Kolla container image distributions.
+stackhpc_pulp_distribution_container_kolla: >-
+  {%- set distributions = [] -%}
+  {%- for image in stackhpc_pulp_images_kolla_filtered -%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
+  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
+  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
+  {%- endfor -%}
+  {{ distributions }}
+
+# Whether to sync Ceph container images.
+stackhpc_sync_ceph_images: false
+
+# List of Ceph container image repositories.
+stackhpc_pulp_repository_container_repos_ceph:
+  - name: "ceph/ceph"
+    url: "https://quay.io"
+    policy: on_demand
+    state: present
+    include_tags: "{{ cephadm_image_tag }}"
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+
+# List of Ceph container image distributions.
+stackhpc_pulp_distribution_container_ceph:
+  - name: ceph
+    repository: ceph/ceph
+    base_path: ceph/ceph
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+
+# List of container image repositories.
+stackhpc_pulp_repository_container_repos: >-
+  {{ (stackhpc_pulp_repository_container_repos_kolla +
+      stackhpc_pulp_repository_container_repos_ceph) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
-  {%- set distributions = [] -%}
-  {%- for image in stackhpc_pulp_images -%}
-  {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
-  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
-  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_common | combine(distribution)) -%}
-  {%- endfor -%}
-  {{ distributions }}
+  {{ (stackhpc_pulp_distribution_container_kolla +
+      stackhpc_pulp_distribution_container_ceph) | selectattr('required') }}
