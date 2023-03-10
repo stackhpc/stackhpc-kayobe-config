@@ -3,7 +3,11 @@ scrape_configs:
   - job_name: alertmanager
     static_configs:
       - targets:
-{% for host in groups['monitoring'] %}
-        - '{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:9093'
+{% for host in groups['prometheus-alertmanager'] %}
+        - "{{ host }}:{{ prometheus_alertmanager_port }}"
 {% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
 {% endraw %}
