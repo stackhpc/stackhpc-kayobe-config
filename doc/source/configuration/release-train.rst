@@ -78,10 +78,11 @@ Currently, Ark does not provide package repositories for Ubuntu - only
 container images. For this reason, ``stackhpc_pulp_sync_ubuntu_focal`` in
 ``etc/kayobe/pulp.yml`` is set to ``false`` by default.
 
-CentOS Stream 8 and Rocky Linux 8 package repositories are synced based on the
+CentOS Stream 8 and Rocky Linux 8/9 package repositories are synced based on the
 value of ``os_distribution``. If you need to sync multiple distributions,
-``stackhpc_pulp_sync_centos_stream8`` and ``stackhpc_pulp_sync_rocky_8`` in
-``etc/kayobe/pulp.yml`` may be set to ``true``.
+``stackhpc_pulp_sync_centos_stream8``, ``stackhpc_pulp_sync_rocky_8`` and
+``stackhpc_pulp_sync_rocky_9`` in ``etc/kayobe/pulp.yml`` may be set to
+``true``.
 
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
