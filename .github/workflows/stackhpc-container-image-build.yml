@@ -111,7 +111,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build ${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }}
+          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push -e kolla_base_distro=${{ inputs.distro }}
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
