@@ -57,5 +57,22 @@ om_enable_rabbitmq_high_availability: true
 keystone_extra_volumes:
   - "/opt/kayobe/keystone/mellon:/etc/apache2/mellon"
 
+keystone_tag: wallaby-20230308T104024
+
+keystone_identity_providers:
+  - name: testidp
+    openstack_domain: federated_users
+    protocol: saml2
+    identifier: https://tst-idp.id.rug.nl/nidp/saml2/metadata
+    public_name: "Test IdP"
+    attribute_mapping: mappingId1
+    metadata_folder: "{{ kolla_node_custom_config_path }}/keystone/mellon"
+
+keystone_identity_mappings:
+  - name: "mappingId1"
+    file: "{{ kolla_node_custom_config_path }}/keystone/mellon/mapping.json"
+
+keystone_container_federation_oidc_attribute_mappings_folder: /etc/apache2/mellon
+
 designate_ns_record: "hb.hpc.rug.nl"
 designate_backend: "bind9"
