@@ -65,7 +65,7 @@ jobs:
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-rocky-ovs:
+  all-in-one-rocky-8-ovs:
     name: aio (Rocky OVS)
     needs:
       - build-kayobe-image
@@ -73,6 +73,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: rocky
+      os_release: "8"
       neutron_plugin: ovs
       # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
       # train snapshots, causing failures installing some packages.
@@ -82,7 +83,7 @@ jobs:
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-rocky-ovn:
+  all-in-one-rocky-8-ovn:
     name: aio (Rocky OVN)
     needs:
       - build-kayobe-image
@@ -90,6 +91,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: rocky
+      os_release: "8"
       neutron_plugin: ovn
       # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
       # train snapshots, causing failures installing some packages.
@@ -107,6 +109,8 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
+      os_release: focal
+      ssh_username: ubuntu
       neutron_plugin: ovs
       vm_image: Ubuntu-20.04
       OS_CLOUD: sms-lab-release
@@ -121,8 +125,44 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
+      os_release: focal
+      ssh_username: ubuntu
       neutron_plugin: ovn
       vm_image: Ubuntu-20.04
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-rocky-9-ovs:
+    name: aio (Rocky 9 OVS)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: rocky
+      os_release: "9"
+      ssh_username: rocky
+      neutron_plugin: ovs
+      vm_image: Rocky9
+      vm_interface: ens3
+      OS_CLOUD: sms-lab-release
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-rocky-9-ovn:
+    name: aio (Rocky 9 OVN)
+    needs:
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: rocky
+      os_release: "9"
+      ssh_username: rocky
+      neutron_plugin: ovn
+      vm_image: Rocky9
+      vm_interface: ens3
       OS_CLOUD: sms-lab-release
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
