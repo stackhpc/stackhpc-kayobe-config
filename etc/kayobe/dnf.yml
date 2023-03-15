@@ -47,23 +47,26 @@
 # To use these repos, set dnf_custom_repos to the value of stackhpc_dnf_repos.
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
-stackhpc_dnf_repos: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
+stackhpc_dnf_repos_8: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
+stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) }}"
 
-# Custom repositories shared between all RHEL derivatives.
+stackhpc_dnf_repos: "{{ stackhpc_dnf_repos_9 if os_release == '9' else stackhpc_dnf_repos_8 }}"
+
+# Custom repositories shared between all RHEL 8 derivatives.
 dnf_custom_repos_el8:
   epel:
     baseurl: "{{ stackhpc_repo_epel_url }}"
     description: "Extra Packages for Enterprise Linux $releasever - $basearch"
     enabled: "{{ dnf_enable_epel | bool }}"
     file: epel
-    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgkey: "{{ dnf_epel_8_gpg_key_url }}"
     gpgcheck: yes
   epel-modular:
     baseurl: "{{ stackhpc_repo_epel_modular_url }}"
     description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
     enabled: "{{ dnf_enable_epel | bool }}"
     file: epel-modular
-    gpgkey: "{{ dnf_epel_gpg_key_url }}"
+    gpgkey: "{{ dnf_epel_8_gpg_key_url }}"
     gpgcheck: yes
   docker:
     baseurl: "{{ stackhpc_repo_docker_url }}"
@@ -115,11 +118,52 @@ dnf_custom_repos_rocky:
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
 
+# Custom repositories shared between all RHEL 9 derivatives.
+dnf_custom_repos_el9:
+  epel:
+    baseurl: "{{ stackhpc_repo_epel_9_url }}"
+    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
+    enabled: "{{ dnf_enable_epel | bool }}"
+    file: epel
+    gpgkey: "{{ dnf_epel_9_gpg_key_url }}"
+    gpgcheck: yes
+  docker:
+    baseurl: "{{ stackhpc_repo_centos_stream_9_docker_url }}"
+    description: "Package repository for installing docker"
+    enabled: "{{ dnf_enable_docker | bool }}"
+    file: docker
+    gpgkey: "{{ dnf_docker_gpg_key_url }}"
+    gpgcheck: yes
+
+# Rocky 9 specific repositories
+dnf_custom_repos_rocky_9:
+  appstream:
+    baseurl: "{{ stackhpc_repo_rocky_9_appstream_url }}"
+    description: "Rocky Linux $releasever - AppStream"
+    file: rocky
+    gpgkey: "{{ rocky_9_gpg_key }}"
+    gpgcheck: yes
+  baseos:
+    baseurl: "{{ stackhpc_repo_rocky_9_baseos_url }}"
+    description: "Rocky Linux $releasever - BaseOS"
+    file: rocky
+    gpgkey: "{{ rocky_9_gpg_key }}"
+    gpgcheck: yes
+  extras:
+    baseurl: "{{ stackhpc_repo_rocky_9_extras_url }}"
+    description: "Rocky Linux $releasever - Extras"
+    file: rocky-extras
+    gpgkey: "{{ rocky_9_gpg_key }}"
+    gpgcheck: yes
+
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
 
-# URL of EPEL GPG key.
-dnf_epel_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
+# URL of EPEL GPG keys.
+dnf_epel_8_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
+dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
+
+rocky_9_gpg_key: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'false'.
