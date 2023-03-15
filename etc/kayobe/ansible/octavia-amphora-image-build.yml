@@ -2,9 +2,7 @@
 - name: Build an Octavia Amphora image
   hosts: "{{ amphora_builder_group | default('seed') }}"
   vars:
-    # NOTE: Ussuri-Wallably upper constraints all fail to build the image.
-    # This is just for diskimage-builder, and doesn't affect the version of amphora.
-    amphora_dib_upper_constraints_file: "https://opendev.org/openstack/requirements/raw/branch/stable/xena/upper-constraints.txt"
+    amphora_dib_upper_constraints_file: "{{ pip_upper_constraints_file }}"
   tasks:
     - name: Ensure packages are installed
       become: true
