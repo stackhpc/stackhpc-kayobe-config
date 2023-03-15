@@ -126,6 +126,11 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
         if: github.event.inputs.overcloud == 'true'
 
+      - name: Generate the images to scan
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" >> images-to-scan.txt
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -153,6 +158,11 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
         if: github.event.inputs.seed == 'true'
 
+      - name: Generate the images to scan
+        run: |
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" >> images-to-scan.txt
+        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+
       - name: Upload seed-container-images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -160,11 +170,6 @@ jobs:
           path: seed-container-images
           retention-days: 7
         if: github.event.inputs.seed == 'true'
-
-      - name: Generate the images to scan
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" > images-to-scan.txt
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') || (github.event.inputs.scan_html == 'true') }}
 
       - name: Scan built overcloud container images
         run: |
