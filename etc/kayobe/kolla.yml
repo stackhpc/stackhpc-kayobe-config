@@ -697,6 +697,24 @@ kolla_ansible_custom_passwords: >-
      combine(kolla_ansible_custom_passwords_extra) }}
 
 ###############################################################################
+# Kolla config merging rules (Scientific OpenStack only)
+
+kolla_openstack_custom_config_rules_extra:
+  # Some files cannot be merged, fall back to templating...
+  - glob: "prometheus/prometheus-alertmanager.yml"
+    strategy: template
+    priority: 1
+    enabled: true
+  - glob: "prometheus/prometheus.yml"
+    strategy: template
+    priority: 1
+    enabled: true
+  - glob: "prometheus/prometheus.yml.d/*"
+    strategy: template
+    priority: 1
+    enabled: true
+
+###############################################################################
 # OpenStack API addresses.
 
 # Virtual IP address of OpenStack internal API. Default is the vip_address
