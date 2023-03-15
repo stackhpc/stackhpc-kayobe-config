@@ -43,7 +43,7 @@ The 3 partitions are:
 * p0: EFI ESP bootloader
 * p1: EFI BSP
 * p2: LVM PV (``rootpv``)
- 
+
 The LVM Logical Volumes are:
 
 ============== ================== =========
