@@ -8,13 +8,16 @@
   tasks:
     - name: Install python build dependencies
       package:
-        name:
-          - "{% if ansible_facts.os_family == 'RedHat' %}gcc{% else %}build-essential{% endif %}"
-          - "python3-dev{% if ansible_facts.os_family == 'RedHat' %}el{% endif %}"
+        name: "{{ packages | select | list }}"
         cache_valid_time: "{{ apt_cache_valid_time if ansible_facts.os_family == 'Debian' else omit }}"
         update_cache: "{{ True if ansible_facts.os_family == 'Debian' else omit }}"
         state: present
       become: true
+      vars:
+        packages:
+          - "{% if ansible_facts.os_family == 'RedHat' %}gcc{% else %}build-essential{% endif %}"
+          - "python3-dev{% if ansible_facts.os_family == 'RedHat' %}el{% endif %}"
+          - "{% if ansible_facts.os_family == 'Debian' %}python3-venv{% endif %}"
 
     - name: Ensure latest version of pip is installed
       pip:
