@@ -1,0 +1,16 @@
+{% raw %}
+
+groups:
+- name: Smart
+  rules:
+
+  - alert: DiskSmartStatusUnhealthy
+    expr: smartmon_device_smart_healthy < 1
+    for: 10m
+    labels:
+      severity: alert
+    annotations:
+      summary: "SMART monitor reports bad disk on (instance {{ $labels.instance }})"
+      description: "{{ $labels.instance }} is reporting unhealthy for the disk at {{ $labels.disk }}. Disk serial number is: {{ $labels.serial_number }}"
+
+{% endraw %}

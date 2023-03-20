@@ -25,7 +25,7 @@ groups:
       description: "Container CPU usage is above 300%"
 
   - alert: ContainerVolumeUsage
-    expr: (1 - (sum(container_fs_inodes_free) BY (instance) / sum(container_fs_inodes_total) BY (instance)) * 100) > 80
+    expr: (1 - (sum(container_fs_inodes_free{name!=""}) BY (instance) / sum(container_fs_inodes_total{name!=""}) BY (instance)) * 100) > 80
     for: 1m
     labels:
       severity: warning
@@ -34,7 +34,7 @@ groups:
       description: "Container Volume usage is above 80%"
 
   - alert: ContainerVolumeIoUsage
-    expr: (sum(container_fs_io_current) BY (instance, name) * 100) > 80
+    expr: (sum(container_fs_io_current{name!=""}) BY (instance, name) * 100) > 80
     for: 5m
     labels:
       severity: warning

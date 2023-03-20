@@ -1,12 +1,8 @@
 ---
-- name: Run cephadm collection roles
-  any_errors_fatal: True
-  gather_facts: True
-  hosts: ceph
-  become: true
-  roles:
-    - role: stackhpc.cephadm.cephadm
-    - role: stackhpc.cephadm.ec_profiles
-    - role: stackhpc.cephadm.crush_rules
-    - role: stackhpc.cephadm.pools
-    - role: stackhpc.cephadm.keys
+# Deploy Ceph via Cephadm. Create EC profiles, CRUSH rules, pools and keys.
+- import_playbook: cephadm-deploy.yml
+- import_playbook: cephadm-commands.yml
+- import_playbook: cephadm-ec-profiles.yml
+- import_playbook: cephadm-crush-rules.yml
+- import_playbook: cephadm-pools.yml
+- import_playbook: cephadm-keys.yml

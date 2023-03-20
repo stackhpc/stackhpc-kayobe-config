@@ -2,6 +2,10 @@
 ---
 # Add extra Kolla global configuration here.
 
+# To work around issue of trying to install docker from
+# empty pulp server, use upstream docker dnf repo on
+# non-overcloud hosts
+enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}"{% endraw %}
 
 # Tell kolla to use the extra volume in this location
 nova_instance_datadir_volume: '/var/lib/nova'
@@ -40,22 +44,31 @@ elasticsearch_curator_soft_retention_period_days: 30
 # Hard delete index after around 3 years
 elasticsearch_curator_hard_retention_period_days: 1100
 
-# Takes longer than the default 10 seconds, we poll every 1m
-prometheus_openstack_exporter_timeout: 30s
 
-rabbitmq_remove_ha_all_policy: true
+om_enable_rabbitmq_high_availability: true
 
 # Needed to launch VM instances in aio environment without nested virt
 nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
 
+#############################################################################
+# Monitoring and alerting related settings
 # Increase the default prometheus retention period
 prometheus_cmdline_extras: '--storage.tsdb.retention.time=90d --storage.tsdb.retention.size=50GB'
 
-# Reduce the kolla-ansible token expiry default from one day to one hour
-fernet_token_expiry: 3600
+# Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
+prometheus_node_exporter_extra_volumes:
+  - "textfile:/var/lib/node_exporter/textfile_collector"
+prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
 
 # Custom exporters
 enable_prometheus_libvirt_exporter: True
+
+# Takes longer than the default 10 seconds, we poll every 1m
+prometheus_openstack_exporter_timeout: 30s
+
+#############################################################################
+# Reduce the kolla-ansible token expiry default from one day to one hour
+fernet_token_expiry: 3600
 
 {% if scientific_openstack_trait_all_in_one %}
 keepalived_vip_prechecks: false
@@ -73,15 +86,17 @@ enable_host_ntp: false
 # These should be allowed to change independently, as services are updated.
 # If there are no custom images this comment serves as a placeholder
 {% if kolla_base_distro == 'centos' %}
-bifrost_tag: wallaby-20230207T194135
-blazar_tag: wallaby-20230303T172322
-caso_tag: wallaby-20230303T172322
-neutron_tag: wallaby-20230307T113517
+bifrost_tag: xena-20230214T165534
+blazar_tag: xena-20230315T122920
+caso_tag: xena-20230315T122920
+neutron_tag: xena-20230307T142413
 {% else %}
-bifrost_tag: wallaby-20230215T160405
-blazar_tag: wallaby-20230303T172458
-caso_tag: wallaby-20230303T172458
-neutron_tag: wallaby-20230307T121824
+bifrost_tag: xena-20230215T195824
+blazar_tag: xena-20230315T122918
+caso_tag: xena-20230315T122918
+keystone_tag: xena-20230308T120251
+neutron_tag: xena-20230307T142414
 {% endif %}
+
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
