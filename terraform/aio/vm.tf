@@ -13,7 +13,7 @@ variable "aio_vm_name" {
 
 variable "aio_vm_image" {
   type    = string
-  default = "bb8c0a34-533f-42fb-a49b-3461e677f3f6"
+  default = "7efda0b1-e296-447f-896e-c066d0af5c53"
 }
 
 variable "aio_vm_interface" {
