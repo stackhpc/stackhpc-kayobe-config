@@ -216,7 +216,7 @@ Manually provisioned VM
 
 In case where you can’t use infra-vms to deploy your wazuh-manager but you want to configure
 host using kayobe, there are some tips (note that depending on your setup this don’t have to always apply):
- 
+
 * Depending on preferences host have to be part of some group in inventory. ``infra vm`` group still seems as best choice
   You can use ``kayobe infra vm host configure`` to configure host in this case.
   Bellow tips are based on assumption that infra-vm will be used.
