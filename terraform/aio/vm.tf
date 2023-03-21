@@ -13,12 +13,12 @@ variable "aio_vm_name" {
 
 variable "aio_vm_image" {
   type    = string
-  default = "7efda0b1-e296-447f-896e-c066d0af5c53"
+  default = "CentOS-stream8"
 }
 
 variable "aio_vm_interface" {
   type = string
-  default = "ens3"
+  default = "eth0"
 }
 
 variable "aio_vm_flavor" {
