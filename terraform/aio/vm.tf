@@ -18,7 +18,7 @@ variable "aio_vm_image" {
 
 variable "aio_vm_interface" {
   type = string
-  default = "eth0"
+  default = "ens3"
 }
 
 variable "aio_vm_flavor" {
