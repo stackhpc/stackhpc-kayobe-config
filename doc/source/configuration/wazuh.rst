@@ -214,15 +214,17 @@ Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
 Manually provisioned VM
 -----------------------
 
-In case where you can’t use infra-vms to deploy your wazuh-manager but you want to configure 
+In case where you can’t use infra-vms to deploy your wazuh-manager but you want to configure
 host using kayobe, there are some tips (note that depending on your setup this don’t have to always apply):
-  
-* Depending on preferences host have to be part of some group in inventory. ``infra vm`` group still seems as best choice. 
-  You can use ``kayobe infra vm host configure`` to configure host in this case. Bellow tips are based on assumption that infra-vm will be used.
-* user ``stack`` with password less sudo and accessible with ssh keys needs to be present on host. It can be achieved in many different ways, depending on your setup.
+ 
+* Depending on preferences host have to be part of some group in inventory. ``infra vm`` group still seems as best choice
+  You can use ``kayobe infra vm host configure`` to configure host in this case.
+  Bellow tips are based on assumption that infra-vm will be used.
+* user ``stack`` with password less sudo and accessible with ssh keys needs to be present on host.
+  It can be achieved in many different ways, depending on your setup.
 * lvm configuration should be placed in ``host_vars/<host_name>``
 * wazuh-manager host have to be part of ``infra-vms`` group (directly or as child)
-* network used on host needs to be defined in ``networks.yml`` and, 
+* network used on host needs to be defined in ``networks.yml`` and
   if you have pre-alocated IP, it should be added to ``network-allocation.yml``. For example:
 
 
@@ -234,7 +236,7 @@ host using kayobe, there are some tips (note that depending on your setup this d
     undercloud_admin_net_allocation_pool_start: 10.10.224.3
     undercloud_admin_net_allocation_pool_end: 10.10.224.200
     undercloud_admin_net_gateway: 10.10.224.254
-  
+
 
 ``network-allocation.yml``:
 
