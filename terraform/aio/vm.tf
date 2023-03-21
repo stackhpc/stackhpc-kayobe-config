@@ -13,7 +13,7 @@ variable "aio_vm_name" {
 
 variable "aio_vm_image" {
   type    = string
-  default = "CentOS-stream8"
+  default = "CentOS-stream8.2023-03-20"
 }
 
 variable "aio_vm_interface" {
