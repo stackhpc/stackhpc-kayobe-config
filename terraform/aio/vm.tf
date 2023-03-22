@@ -57,7 +57,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   }
 
   block_device {
-    uuid                  = local.image_is_uuid ? var.aio_vm_image: data.openstack_images_image_v2.image.id
+    uuid                  = local.image_is_uuid ? var.aio_vm_image: data.openstack_images_image_v2.image[0].id
     source_type           = "image"
     volume_size           = 100
     boot_index            = 0
