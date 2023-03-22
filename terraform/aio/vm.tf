@@ -34,7 +34,7 @@ variable "aio_vm_subnet" {
 }
 
 locals {
-  image_is_uuid = length(regexall('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', var.aio_vm_image)) > 0
+  image_is_uuid = length(regexall("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", var.aio_vm_image)) > 0
 }
 
 data "openstack_images_image_v2" "image" {
