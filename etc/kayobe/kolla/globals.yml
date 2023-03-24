@@ -82,20 +82,29 @@ neutron_plugin_agent: 'ovn'
 enable_chrony: false
 enable_host_ntp: false
 
-# Custom container image tags.
-# These should be allowed to change independently, as services are updated.
-# If there are no custom images this comment serves as a placeholder
 {% if kolla_base_distro == 'centos' %}
-bifrost_tag: xena-20230214T165534
-blazar_tag: xena-20230315T122920
-caso_tag: xena-20230315T122920
-neutron_tag: xena-20230307T142413
+bifrost_tag: yoga-20230217T160618
+blazar_tag: yoga-20230315T125157
+caso_tag: yoga-20230315T125157
+ironic_tag: yoga-20230316T154655
+ironic_dnsmasq_tag: yoga-20230217T135826
+neutron_tag: yoga-20230309T123152
+prometheus_node_exporter_tag: yoga-20230310T173747
+{% elif kolla_base_distro == 'rocky' %}
+bifrost_tag: yoga-20230310T194732
+blazar_tag: yoga-20230315T130918
+caso_tag: yoga-20230315T130918
+ironic_tag: yoga-20230316T170311
+ironic_dnsmasq_tag: yoga-20230310T170929
+prometheus_node_exporter_tag: yoga-20230315T170614
 {% else %}
-bifrost_tag: xena-20230215T195824
-blazar_tag: xena-20230315T122918
-caso_tag: xena-20230315T122918
-keystone_tag: xena-20230308T120251
-neutron_tag: xena-20230307T142414
+bifrost_tag: yoga-20230220T184947
+blazar_tag: yoga-20230315T125441
+caso_tag: yoga-20230315T125441
+neutron_tag: yoga-20230309T123143
+ironic_tag: yoga-20230316T154704
+ironic_dnsmasq_tag: yoga-20230220T181235
+prometheus_node_exporter_tag: yoga-20230315T170541
 {% endif %}
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"

@@ -1,0 +1,17 @@
+---
+# Kayobe Kolla configuration.
+
+###############################################################################
+# Kolla-ansible inventory configuration.
+
+# Custom overcloud inventory containing a mapping from services to components.
+kolla_overcloud_inventory_custom_services: "{{ lookup('template', kayobe_env_config_path ~ '/kolla/inventory/overcloud-services.j2') }}"
+
+# Don't give storage nodes to kolla-ansible - we're using Ceph-ansible.
+# kolla_overcloud_inventory_storage_groups: []
+
+###############################################################################
+# Kolla feature flag configuration.
+kolla_enable_cinder: true
+kolla_enable_ovn: true
+kolla_enable_neutron_provider_networks: true
