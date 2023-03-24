@@ -102,3 +102,8 @@
         line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
+
+    - name: Print version tag
+      debug:
+        msg: "New tag: {{ ansible_facts.date_time.iso8601_basic_short }}"
+      when: latest_distribution_details.changed
