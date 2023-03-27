@@ -5,7 +5,7 @@
 # Network role to network mappings.
 
 # Name of the network used for admin access to the overcloud
-#admin_oc_net_name:
+admin_oc_net_name: internal_net
 
 # Name of the network used by the seed to manage the bare metal overcloud
 # hosts via their out-of-band management controllers.
@@ -13,7 +13,7 @@
 
 # Name of the network used by the seed to provision the bare metal overcloud
 # hosts.
-#provision_oc_net_name:
+provision_oc_net_name: internal_net
 
 # Name of the network used by the overcloud hosts to manage the bare metal
 # compute hosts via their out-of-band management controllers.
@@ -31,7 +31,8 @@
 # Deprecated name: external_net_name
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
-#external_net_names:
+external_net_names:
+  - internal_net
 
 # Name of the network used to expose the public OpenStack API endpoints.
 #public_net_name:
@@ -40,7 +41,7 @@
 #tunnel_net_name:
 
 # Name of the network used to carry storage data traffic.
-#storage_net_name:
+storage_net_name: storage_net
 
 # Name of the network used to carry storage management traffic.
 #storage_mgmt_net_name:
@@ -122,17 +123,17 @@
 # Internal network IP information.
 internal_net_vip_address: "172.23.41.170"
 # internal_net_fqdn:
-# internal_net_cidr:
+internal_net_cidr: "172.23.41.0/24"
 # internal_net_allocation_pool_start:
 # internal_net_allocation_pool_end:
-# internal_net_gateway:
+internal_net_gateway: "172.23.41.250"
 # internal_net_vlan:
 # internal_net_mtu:
 # internal_net_routes:
 
 # External network IP information.
-external_net_vip_address: "129.125.2.34"
-external_net_fqdn: "merlin.hpc.rug.nl"
+# external_net_vip_address:
+# external_net_fqdn:
 # external_net_cidr:
 # external_net_allocation_pool_start:
 # external_net_allocation_pool_end:
@@ -143,14 +144,31 @@ external_net_fqdn: "merlin.hpc.rug.nl"
 # external_net_mtu:
 # external_net_routes:
 
+# Octavia network IP information.
+octavia_net_cidr: 10.42.37.0/24
+octavia_net_allocation_pool_start: 10.42.37.1
+octavia_net_allocation_pool_end: 10.42.37.1
+octavia_net_vlan: 1067
+
 # Storage network IP information.
-# storage_net_cidr:
-# storage_net_allocation_pool_start:
-# storage_net_allocation_pool_end:
+storage_net_cidr: 172.23.59.0/24
+storage_net_allocation_pool_start: 172.23.59.1
+storage_net_allocation_pool_end: 172.23.59.1
 # storage_net_gateway:
-# storage_net_vlan:
-# storage_net_mtu:
+storage_net_vlan: 985
+storage_net_mtu: 9000
 # storage_net_routes:
+
+# Tunnel network IP information.
+tunnel_net_cidr: 172.23.43.0/24
+tunnel_net_allocation_pool_start: 172.23.43.1
+tunnel_net_allocation_pool_end: 172.23.43.1
+tunnel_net_vlan: 1064
+tunnel_net_mtu: 9000
+
+trunk_net_no_ip: true
+trunk_net_bond_mode: 802.3ad
+trunk_net_mtu: 9000
 
 # Storage management network IP information.
 # storage_mgmt_net_cidr:
