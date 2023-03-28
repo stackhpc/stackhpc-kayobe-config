@@ -98,22 +98,24 @@ echo Registering cluster templates
 $KOLLA_OPENSTACK_COMMAND coe cluster template create new_driver \
   --coe kubernetes \
   --image $(openstack image show ubuntu-2004-kube-v1.25.5 -c id -f value) \
-  --external-network public \
+  --external-network public1 \
   --label kube_tag=v1.25.5 \
   --master-flavor ds2G20 \
   --flavor ds2G20 \
   --public \
   --master-lb-enabled
 
+curl -O https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/35.20220116.3.0/x86_64/fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2.xz
+unxz fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2.xz
+
 #old driver 
 $KOLLA_OPENSTACK_COMMAND coe cluster template create old_driver \
   --coe kubernetes \
   --image fedora-coreos-35.20220116.3.0-openstack.x86_64 \
-  --external-network public \
+  --external-network public1 \
   --master-flavor ds2G \
   --flavor ds2G \
   --public \
-  --master-lb-enabled
 
 
 echo Configuring neutron.
