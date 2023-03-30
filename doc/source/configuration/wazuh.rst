@@ -432,4 +432,4 @@ Additional resources:
 ---------------------
 
 For times when you need to upgrade wazuh with elasticsearch to version with opensearch or you just need to deinstall all wazuh compotnents:
-Wazuh purge script: https://github.com/g0rgamesh/wazuh-server-purge
+Wazuh purge script: https://github.com/stackhpc/wazuh-server-purge
