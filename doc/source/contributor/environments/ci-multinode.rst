@@ -70,7 +70,7 @@ And re-run ``kayobe overcloud service deploy`` if you are working on an existing
 deployment.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
-kernel client, so you will need to use a different image. Any regular Linux 
+kernel client, so you will need to use a different image. Any regular Linux
 distribution should work. As an example, we will use Ubuntu 20.04.
 
 Download the image locally:
@@ -124,7 +124,7 @@ Associate the floating IPs to the instances:
 Then SSH into each instance and install the Ceph client:
 
 .. code-block:: bash
-   
+
       sudo apt update
       sudo apt install -y ceph-common
 

@@ -69,7 +69,9 @@ cephadm_keys:
     state: "{{ 'present' if (kolla_enable_manila | bool and kolla_enable_manila_backend_cephfs_native | bool) else 'absent' }}"
 
 # List of Cephadm commands to run. See stackhpc.cephadm.commands role for format.
-cephadm_commands: "{{ cephadm_commands_manila_cephfs_native if (kolla_enable_manila | bool and kolla_enable_manila_backend_cephfs_native | bool) else [] }}"
+cephadm_commands_pre: []
+
+cephadm_commands_post: "{{ cephadm_commands_manila_cephfs_native if (kolla_enable_manila | bool and kolla_enable_manila_backend_cephfs_native | bool) else [] }}"
 cephadm_commands_manila_cephfs_native:
   - "fs new manila-cephfs cephfs_metadata cephfs_data"
   - "orch apply mds manila-cephfs"
