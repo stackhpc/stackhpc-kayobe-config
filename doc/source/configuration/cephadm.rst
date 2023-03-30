@@ -242,18 +242,25 @@ for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 Ceph Commands
 ~~~~~~~~~~~~~
 
-It is possible to run an arbitrary list of commands against the cluster after deployment
-by setting the ``cephadm_commands`` variable. ``cephadm_commands`` should be a list of commands
-to pass to ``cephadm shell -- ceph``. For example:
+It is possible to run an arbitrary list of commands against the cluster after
+deployment by setting the ``cephadm_commands_pre`` and ``cephadm_commands_post``
+variables. Each should be a list of commands to pass to ``cephadm shell --
+ceph``. For example:
 
 .. code:: yaml
 
    # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
    # for format.
-   cephadm_commands:
+   cephadm_commands_pre:
     # Configure Prometheus exporter to listen on a specific interface. The default
     # is to listen on all interfaces.
     - "config set mgr mgr/prometheus/server_addr 10.0.0.1"
+
+Both variables have the same format, however commands in the
+``cephadm_commands_pre`` list are executed before the rest of the Ceph
+post-deployment configuration is applied. Commands in the
+``cephadm_commands_post`` list are executed after the rest of the Ceph
+post-deployment configuration is applied.
 
 Deployment
 ==========
