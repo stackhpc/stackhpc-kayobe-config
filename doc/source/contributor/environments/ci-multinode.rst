@@ -38,11 +38,11 @@ Config changes
 3. Also under vxlan_interfaces, add vni:x where x is between 500 and 1000
 4. Also under vxlan_interfaces, check vxlan_dstport is not 4789 (this causes
    conflicts, change to 4790)
-5. In /etc/kayobe/environments/ci-multinode/tf-networks.yml, edit admin_ips so
+5. In etc/kayobe/environments/ci-multinode/tf-networks.yml, edit admin_ips so
    that the compute and controller IPs line up with the
    instances that were created earlier, remove the other IPs for seed and
    cephOSD
-6. In /etc/kayobe/environments/ci-multinode/network-allocation.yml, remove all
+6. In etc/kayobe/environments/ci-multinode/network-allocation.yml, remove all
    the entries and just assign ``aio_ips:`` an empty set ``[]``
 7. In etc/kayobe/environments/ci-multinode/inventory/hosts, remove the seed
 8. run stackhpc-kayobe-config/etc/kayobe/ansible/growroot.yml (if this fails,
@@ -59,7 +59,7 @@ Manila
 ======
 The Multinode environment supports Manila with the CephFS native backend, but it
 is not enabled by default. To enable it, set the following in
-``/etc/kayobe/environments/ci-multinode/kolla.yml``:
+``etc/kayobe/environments/ci-multinode/kolla.yml``:
 
 .. code-block:: yaml
 
@@ -71,7 +71,7 @@ deployment.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
 kernel client, so you will need to use a different image. Any regular Linux
-distribution should work. As an example, we will use Ubuntu 20.04.
+distribution should work. As an example, this guide will use Ubuntu 20.04.
 
 Download the image locally:
 
@@ -133,7 +133,7 @@ Back on the host, install the Manila client:
 
 .. code-block:: bash
 
-      sudo dnf install -y python-manilaclient
+      pip install python-manilaclient
 
 Then create a share type and share:
 

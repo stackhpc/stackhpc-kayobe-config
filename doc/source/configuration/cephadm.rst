@@ -262,6 +262,50 @@ post-deployment configuration is applied. Commands in the
 ``cephadm_commands_post`` list are executed after the rest of the Ceph
 post-deployment configuration is applied.
 
+Manila & CephFS
+~~~~~~~~~~~~~~~
+
+Using Manila with the CephFS backend requires the configuration of additional
+resources.
+
+A Manila key should be added to cephadm_keys:
+
+.. code:: yaml
+
+  # Append the following to cephadm_keys:
+  - name: client.manila
+    caps:
+      mon: "allow r"
+      mgr: "allow rw"
+    state: present
+
+A CephFS filesystem requires two pools, one for metadata and one for data:
+
+.. code:: yaml
+
+  # Append the following to cephadm_pools:
+  - name: cephfs_data
+    application: cephfs
+    state: present
+  - name: cephfs_metadata
+    application: cephfs
+    state: present
+
+Finally, the CephFS filesystem itself should be created:
+
+.. code:: yaml
+
+  # Append the following to cephadm_commands_post:
+  - "fs new manila-cephfs cephfs_metadata cephfs_data"
+  - "orch apply mds manila-cephfs"
+
+In this example, the filesystem is named ``manila-cephfs``. This name
+should be used in the Kolla Manila configuration e.g.:
+
+.. code:: yaml
+
+  manila_cephfs_filesystem_name: manila-cephfs
+
 Deployment
 ==========
 
