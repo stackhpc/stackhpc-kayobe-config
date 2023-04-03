@@ -171,9 +171,9 @@ jobs:
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
-          if ${{ inputs.push }} == 'true'; then
-            args="$args --push"
-          fi
+          #if ${{ inputs.push }} == 'true'; then
+          #  args="$args --push"
+          #fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
@@ -185,9 +185,9 @@ jobs:
         run: |
           args="kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
-          if ${{ inputs.push }} == 'true'; then
-            args="$args --push"
-          fi
+          #if ${{ inputs.push }} == 'true'; then
+          #  args="$args --push"
+          #fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
@@ -241,6 +241,7 @@ jobs:
           -f filter="$filter"
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+        # FIXME:
         if: false
 
       - name: Display link to container image repository sync workflows
