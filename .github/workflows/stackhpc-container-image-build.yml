@@ -35,10 +35,41 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
+  generate-tag:
+    name: Generate container image tag
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    permissions: {}
+    outputs:
+      openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
+      kolla_tag: ${{ steps.kolla_tag.outputs.kolla_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+
+      # Generate a tag to apply to all built container images.
+      # Without this, each kayobe * container image build command would use a different tag.
+      - name: Generate container image tag
+        id: kolla_tag
+        run: |
+          echo "kolla_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Display container image tag
+        run: |
+          echo "${{ steps.kolla_tag.outputs.kolla_tag }}"
+
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    needs:
+      - generate-tag
     steps:
       - uses: actions/checkout@v3
         with:
@@ -48,7 +79,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/wallaby
+          ref: refs/heads/stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
           path: src/kayobe
 
       # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
@@ -104,13 +135,13 @@ jobs:
 
       - name: Build and push kolla overcloud images
         run: |
-          args="${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }}"
+          args="${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }} -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build "$args"
+          kayobe overcloud container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
@@ -135,13 +166,13 @@ jobs:
 
       - name: Build and push kolla seed images
         run: |
-          args="kolla_base_distro=${{ inputs.distro }}"
+          args="kolla_base_distro=${{ inputs.distro }} -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed container image build "$args"
+          kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
