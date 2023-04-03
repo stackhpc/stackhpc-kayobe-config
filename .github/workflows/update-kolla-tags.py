@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 def main():
     # tail -n +2 centos-container-images/container-images | \
@@ -9,3 +9,4 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
