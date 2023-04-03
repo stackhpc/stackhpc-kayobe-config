@@ -26,6 +26,11 @@ on:
         options:
           - centos
           - ubuntu
+      push:
+        description: Whether to push images
+        type: boolean
+        required: false
+        default: true
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -99,9 +104,13 @@ jobs:
 
       - name: Build and push kolla overcloud images
         run: |
+          args="${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }}"
+          if ${{ inputs.push }} == 'true'; then
+            args="$args --push"
+          fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push -e kolla_base_distro=${{ inputs.distro }}
+          kayobe overcloud container image build "$args"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
@@ -126,9 +135,13 @@ jobs:
 
       - name: Build and push kolla seed images
         run: |
+          args="kolla_base_distro=${{ inputs.distro }}"
+          if ${{ inputs.push }} == 'true'; then
+            args="$args --push"
+          fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed container image build --push -e kolla_base_distro=${{ inputs.distro }}
+          kayobe seed container image build "$args"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
@@ -159,7 +172,7 @@ jobs:
     name: Trigger container image repository sync
     needs:
       - container-image-build
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
     runs-on: ubuntu-latest
     steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
