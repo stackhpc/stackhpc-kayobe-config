@@ -18,14 +18,16 @@ on:
         type: boolean
         required: false
         default: false
-      distro:
-        description: Container image OS distribution
-        type: choice
+      centos-stream-8:
+        description: Build CentOS Stream 8 images?
+        type: boolean
         required: false
-        default: centos
-        options:
-          - centos
-          - ubuntu
+        default: true
+      ubuntu-focal:
+        description: Build Ubuntu Focal 20.04 images?
+        type: boolean
+        required: false
+        default: true
       push:
         description: Whether to push images
         type: boolean
@@ -41,8 +43,9 @@ jobs:
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
     permissions: {}
     outputs:
-      openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
       kolla_tag: ${{ steps.kolla_tag.outputs.kolla_tag }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -60,6 +63,24 @@ jobs:
         run: |
           echo "kolla_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
+      # Dynamically define job matrix.
+      # We need a separate matrix entry for each distribution, when the relevant input is true.
+      # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+      - name: Generate build matrix
+        id: set-matrix
+        run: |
+          comma=""
+          echo -n "matrix={\"distro\": [" >> $GITHUB_OUTPUT
+          if [[ ${{ inputs.centos-stream-8 }} == 'true' ]]; then
+            echo -n "$comma\"centos\"" >> $GITHUB_OUTPUT
+            comma=", "
+          fi
+          if [[ ${{ inputs.ubuntu-focal }} == 'true' ]]; then
+            echo -n "$comma\"ubuntu\"" >> $GITHUB_OUTPUT
+            comma=", "
+          fi
+          echo "]}" >> $GITHUB_OUTPUT
+
       - name: Display container image tag
         run: |
           echo "${{ steps.kolla_tag.outputs.kolla_tag }}"
@@ -69,6 +90,8 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
     permissions: {}
+    strategy:
+      matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
     needs:
       - generate-tag
     steps:
@@ -136,7 +159,9 @@ jobs:
 
       - name: Build and push kolla overcloud images
         run: |
-          args="${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }} -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="${{ github.event.inputs.regexes }}"
+          args="$args -e kolla_base_distro=${{ matrix.distro }}"
+          args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -147,27 +172,10 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
 
-      - name: Display the overcloud container image tag
-        run: |
-          echo "$(cat ~/kolla_tag)"
-        if: github.event.inputs.overcloud == 'true'
-
-      - name: Get built overcloud container images
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
-        if: github.event.inputs.overcloud == 'true'
-
-      - name: Upload overcloud-container-images artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: Overcloud container images
-          path: overcloud-container-images
-          retention-days: 7
-        if: github.event.inputs.overcloud == 'true'
-
       - name: Build and push kolla seed images
         run: |
-          args="kolla_base_distro=${{ inputs.distro }} -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="kolla_base_distro=${{ matrix.distro }}"
+          args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -178,23 +186,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
 
-      - name: Display the seed container image tag
+      - name: Get built container images
         run: |
-          echo "$(cat ~/kolla_tag)"
-        if: github.event.inputs.seed == 'true'
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
 
-      - name: Get built seed container images
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
-        if: github.event.inputs.seed == 'true'
-
-      - name: Upload seed-container-images artifact
+      - name: Upload container images artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Seed container images
-          path: seed-container-images
+          name: ${{ matrix.distro }} container images
+          path: ${{ matrix.distro }}-container-images
           retention-days: 7
-        if: github.event.inputs.seed == 'true'
 
       - name: Prune local Kolla container images over 1 week old
         run: |
