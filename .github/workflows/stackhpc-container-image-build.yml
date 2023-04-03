@@ -33,9 +33,18 @@ on:
         type: boolean
         required: false
         default: true
+      create-pr:
+        description: Whether to create a pull request
+        type: boolean
+        required: false
+        default: true
 
 env:
   ANSIBLE_FORCE_COLOR: True
+defaults:
+  run:
+    # Adds set -eo pipefail by default
+    shell: bash
 jobs:
   generate-tag:
     name: Generate container image tag
@@ -194,6 +203,10 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/container-images
           echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
 
+      - name: Generate updated container image tags
+        run: |
+          python .github/workflows/update-kolla-tags.py etc/kayobe/kolla/tags/${{ matrix.distro }}.yml ${{ matrix.distro }}-container-images/container-images artifacts/tags.yml
+
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -228,22 +241,48 @@ jobs:
           -f filter="$filter"
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+        if: false
 
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
 
+  create-pr:
+    name: Create a pull request
+    needs:
+      - generate-tag
+      - container-image-build
+      - sync-container-repositories
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.create-pr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # FIXME: Need to wait for container image sync
+
       - name: Download container image artifacts
         uses: actions/download-artifact@v3
 
-      - name: Test centos
+      - name: Update CentOS Stream 8 container image tags
         run: |
-          cat centos-container-images/kolla_tag
-          cat centos-container-images/container-images
-        if: inputs.centos
+          cp centos-container-images/tags.yml etc/kayobe/kolla/tags/centos.yml
+        if: inputs.centos-stream-8
 
-      - name: Test ubuntu
+      - name: Update Ubuntu Focal container image tags
         run: |
-          cat ubuntu-container-images/kolla_tag
-          cat ubuntu-container-images/container-images
-        if: inputs.ubuntu
+          cp ubuntu-container-images/tags.yml etc/kayobe/kolla/tags/ubuntu.yml
+        if: inputs.ubuntu-focal
+
+      - name: Commit updated container image tags
+        run: |
+          git add -u
+          git commit -m "Update container image tags"
+
+      - name: Push updated container image tags
+        run: |
+          git push
+
+      - name: Create a pull request
+        run: |
+          gh pr create -f -a @me -B stackhpc/${{ needs.generate-tag.outputs.openstack_release }} -t 'Update container image tags'
