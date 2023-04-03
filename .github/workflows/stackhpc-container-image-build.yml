@@ -28,14 +28,38 @@ on:
         type: boolean
         required: false
         default: true
-      push:
-        description: Whether to push images
+      push-images:
+        description: Push images?
         type: boolean
         required: false
         default: true
+      push-branch:
+        description: Push updated tags to a branch?
+        type: boolean
+        required: false
+        default: true
+      branch-name:
+        description: Name of branch to push to (if different)
+        type: string
+        required: false
+        default: ""
+      create-pr:
+        description: Create a pull request?
+        type: boolean
+        required: false
+        default: true
+      pr-title:
+        description: Title for pull request
+        type: string
+        required: false
+        default: Update container images
 
 env:
   ANSIBLE_FORCE_COLOR: True
+defaults:
+  run:
+    # Adds set -eo pipefail by default
+    shell: bash
 jobs:
   generate-tag:
     name: Generate container image tag
@@ -162,7 +186,7 @@ jobs:
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
-          if ${{ inputs.push }} == 'true'; then
+          if ${{ inputs.push-images }} == 'true'; then
             args="$args --push"
           fi
           source venvs/kayobe/bin/activate &&
@@ -176,7 +200,7 @@ jobs:
         run: |
           args="kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
-          if ${{ inputs.push }} == 'true'; then
+          if ${{ inputs.push-images }} == 'true'; then
             args="$args --push"
           fi
           source venvs/kayobe/bin/activate &&
@@ -186,16 +210,33 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
 
-      - name: Get built container images
+      - name: Generate artifacts
         run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
+          mkdir artifacts
+          # The tag for all built images
+          echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
+          # Table of of built images for this distro
+          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" > artifacts/container-images
+          # And again in JSON
+          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" --format "{{json .}}" > artifacts/container-images.json
+        env:
+          IMAGE_FILTER: "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}"
+
+      - name: Generate updated container image tags
+        run: |
+          python3 src/kayobe-config/.github/workflows/kolla-tags.py update \
+            --images-file artifacts/container-images.json \
+            --tags-file src/kayobe-config/etc/kayobe/kolla/tags/${{ matrix.distro }}.yml \
+            --output-file artifacts/tags.yml
 
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.distro }} container images
-          path: ${{ matrix.distro }}-container-images
+          name: ${{ matrix.distro }}-container-images
+          path: artifacts
           retention-days: 7
+        # FIXME?
+        if: always()
 
       - name: Prune local Kolla container images over 1 week old
         run: |
@@ -205,7 +246,7 @@ jobs:
     name: Trigger container image repository sync
     needs:
       - container-image-build
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push-images
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -225,6 +266,78 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 
+      - name: Query container image repository sync workflow run ID
+        id: run_id
+        run: |
+          run_id=$(gh --repo stackhpc/stackhpc-release-train run list  --limit 1 --workflow container-sync.yml --json databaseId --jq '.[] | .databaseId')
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
       - name: Display link to container image repository sync workflows
         run: |
-          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/runs/${{ steps.run_id.outputs.run_id }}"
+
+      # If we're creating a pull request then the images need to be synced to
+      # test pulp before CI will pass.
+      - name: Wait for container image repository sync workflow to complete
+        run: |
+          gh --repo stackhpc/stackhpc-release-train run watch ${{ steps.run_id.outputs.run_id }} --exit-status
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+        if: inputs.create-pr
+
+  create-pr:
+    name: Create a branch/pull request
+    needs:
+      - generate-tag
+      - container-image-build
+      - sync-container-repositories
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push-images && inputs.push-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download container image artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Update CentOS Stream 8 container image tags
+        run: |
+          cp centos-container-images/tags.yml etc/kayobe/kolla/tags/centos.yml
+        if: inputs.centos-stream-8
+
+      - name: Update Ubuntu Focal container image tags
+        run: |
+          cp ubuntu-container-images/tags.yml etc/kayobe/kolla/tags/ubuntu.yml
+        if: inputs.ubuntu-focal
+
+      - name: Commit updated container image tags
+        run: |
+          git config user.email "stackhpc-ci@users.noreply.github.com"
+          git config user.name "StackHPC CI bot"
+          git add -u
+          git commit -m "Update container image tags"
+
+      - name: Checkout new branch
+        run: |
+          git checkout -b ${{ inputs.branch-name }}
+        if: inputs.branch-name
+
+      - name: Push updated container image tags
+        run: |
+          git push
+
+      - name: Create a pull request
+        run: |
+          gh pr create \
+            --base stackhpc/${{ needs.generate-tag.outputs.openstack_release }} \
+            --title "$PR_TITLE" \
+            --body ""
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ inputs.pr-title }}
+        if: inputs.create-pr
