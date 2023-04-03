@@ -186,15 +186,19 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
 
+      - name: Create artifacts directory
+        run: mkdir artifacts
+
       - name: Get built container images
         run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/container-images
+          echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
 
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.distro }} container images
-          path: ${{ matrix.distro }}-container-images
+          name: ${{ matrix.distro }}-container-images
+          path: artifacts
           retention-days: 7
 
       - name: Prune local Kolla container images over 1 week old
@@ -228,3 +232,18 @@ jobs:
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
+
+      - name: Download container image artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Test centos
+        run: |
+          cat centos-container-images/kolla_tag
+          cat centos-container-images/container-images
+        if: inputs.centos
+
+      - name: Test ubuntu
+        run: |
+          cat ubuntu-container-images/kolla_tag
+          cat ubuntu-container-images/container-images
+        if: inputs.ubuntu
