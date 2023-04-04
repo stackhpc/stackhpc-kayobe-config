@@ -44,7 +44,7 @@ def get_updated_images(images_file: str) -> typing.Dict[str, str]:
             image = json.loads(image_json)
         except json.decoder.JSONDecodeError:
             print("Failed to decode image as JSON")
-            print(image)
+            print(image_json)
             raise
         repo = image["Repository"]
         if repo.endswith("base"):

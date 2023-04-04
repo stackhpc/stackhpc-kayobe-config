@@ -203,7 +203,7 @@ jobs:
           # Table of of built images for this distro
           sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" > artifacts/container-images
           # And again in JSON
-          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" --format json > artifacts/container-images.json
+          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" --format "{{json .}}" > artifacts/container-images.json
         env:
           IMAGE_FILTER: "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}"
 
