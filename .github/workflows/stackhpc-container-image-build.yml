@@ -195,17 +195,24 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
 
-      - name: Create artifacts directory
-        run: mkdir artifacts
-
-      - name: Get built container images
+      - name: Generate artifacts
         run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/container-images
+          mkdir artifacts
+          # The tag for all built images
           echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
+          # Table of of built images for this distro
+          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" > artifacts/container-images
+          # And again in JSON
+          sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" --format json > artifacts/container-images.json
+        env:
+          IMAGE_FILTER: "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}"
 
       - name: Generate updated container image tags
         run: |
-          python3 .github/workflows/update-kolla-tags.py etc/kayobe/kolla/tags/${{ matrix.distro }}.yml ${{ matrix.distro }}-container-images/container-images > artifacts/tags.yml
+          python3 .github/workflows/kolla-tags.py update \
+            --images-file ${{ matrix.distro }}-container-images/container-images.json \
+            --tags-file etc/kayobe/kolla/tags/${{ matrix.distro }}.yml \
+            > artifacts/tags.yml
 
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
