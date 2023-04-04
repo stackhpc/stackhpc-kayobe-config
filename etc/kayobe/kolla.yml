@@ -321,16 +321,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
-  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
-  # Ark does not work if the upstream mirror pulls packages (which it does
-  # sometimes).
-  # base_ubuntu_package_sources_list: |
-  #   RUN \
-  #       rm -f /etc/apt/sources.list && \
-  #   {% for repo in stackhpc_ubuntu_focal_repos %}
-  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
-  #   {% endif %}
-  #   {% endfor %}
+  base_ubuntu_package_sources_list: |
+    RUN \
+        rm -f /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_focal_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
