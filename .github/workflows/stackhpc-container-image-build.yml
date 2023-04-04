@@ -259,14 +259,14 @@ jobs:
           -f filter="$filter"
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
-        # FIXME:
-        if: false
 
       - name: Query container image repository sync workflow run ID
         id: run_id
         run: |
           run_id=$(gh --repo stackhpc/stackhpc-release-train run list  --limit 1 --workflow container-sync.yml --json databaseId --jq '.[] | .databaseId')
           echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 
       - name: Display link to container image repository sync workflows
         run: |
