@@ -38,8 +38,14 @@ def get_updated_images(images_file: str) -> typing.Dict[str, str]:
         images = f.readlines()
 
     updated = {}
+    # Each line is a JSON blob for an image containing at least Repository and Tag keys.
     for image_json in images:
-        image = json.loads(image_json)
+        try:
+            image = json.loads(image_json)
+        except json.decoder.JSONDecodeError:
+            print("Failed to decode image as JSON")
+            print(image)
+            raise
         repo = image["Repository"]
         if repo.endswith("base"):
             continue
