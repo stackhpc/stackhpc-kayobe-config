@@ -253,9 +253,29 @@ jobs:
         # FIXME:
         if: false
 
+      - name: Query container image repository sync workflow run ID
+        id: run_id
+        run: |
+          run_id=$(gh --repo stackhpc/stackhpc-release-train run list  --limit 1 --workflow container-sync.yml --json databaseId --jq '.[] | .databaseId')
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+        # FIXME:
+        if: false
+
       - name: Display link to container image repository sync workflows
         run: |
-          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/runs/${{ steps.run_id.outputs.run_id }}"
+        # FIXME:
+        if: false
+
+      # If we're creating a pull request then the images need to be synced to
+      # test pulp before CI will pass.
+      - name: Wait for container image repository sync workflow to complete
+        run: |
+          gh --repo stackhpc/stackhpc-release-train run watch ${{ steps.run_id.outputs.run_id }} --exit-status
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+        # FIXME:
+        if: inputs.create-pr && false
 
   create-pr:
     name: Create a pull request
@@ -269,8 +289,6 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      # FIXME: Need to wait for container image sync
-
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -300,4 +318,6 @@ jobs:
 
       - name: Create a pull request
         run: |
-          gh pr create -f -a @me -B stackhpc/${{ needs.generate-tag.outputs.openstack_release }} -t 'Update container image tags'
+          gh pr create -f -a @me -B stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
