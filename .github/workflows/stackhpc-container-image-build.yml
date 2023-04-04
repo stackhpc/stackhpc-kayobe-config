@@ -267,14 +267,10 @@ jobs:
         run: |
           run_id=$(gh --repo stackhpc/stackhpc-release-train run list  --limit 1 --workflow container-sync.yml --json databaseId --jq '.[] | .databaseId')
           echo "run_id=$run_id" >> $GITHUB_OUTPUT
-        # FIXME:
-        if: false
 
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/runs/${{ steps.run_id.outputs.run_id }}"
-        # FIXME:
-        if: false
 
       # If we're creating a pull request then the images need to be synced to
       # test pulp before CI will pass.
@@ -283,8 +279,7 @@ jobs:
           gh --repo stackhpc/stackhpc-release-train run watch ${{ steps.run_id.outputs.run_id }} --exit-status
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
-        # FIXME:
-        if: inputs.create-pr && false
+        if: inputs.create-pr
 
   create-pr:
     name: Create a pull request
