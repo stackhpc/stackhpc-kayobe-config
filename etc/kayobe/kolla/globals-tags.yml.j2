@@ -1,0 +1,26 @@
+{# The following tags are named differently than the corresponding images. #}
+{% set image_to_container = {
+    "dnsmasq": "ironic_dnsmasq",
+    "mariadb-server": "mariadb",
+    "openvswitch-db-server": "openvswitch_db",
+    "ovn-nb-db-server": "ovn_nb_db",
+    "ovn-sb-db-server": "ovn_sb_db",
+} %}
+{# The following containers reuse an image. #}
+{% set container_to_image = {
+    "glance_tls_proxy": "haproxy",
+    "neutron_ovn_metadata_agent": "neutron_metadata_agent",
+    "neutron_tls_proxy": "haproxy",
+} %}
+{# Generate a mapping of container names to the corresponding tag to deploy. #}
+{% set container_tags = {} %}
+{% for image, tag in (lookup('file', kayobe_config_path ~ '/kolla/tags/' ~ kolla_base_distro ~ '.yml') | from_yaml).items() %}
+{% set _ = container_tags.update({image_to_container.get(image, image) | replace('-', '_'): tag }) %}
+{% endfor %}
+{% for container, image in container_to_image.items() %}
+{% set _ = container_tags.update({container: container_tags[image]}) %}
+{% endfor %}
+{# Write out tag variables. #}
+{% for container in container_tags | sort %}
+{{ container }}_tag: {{ container_tags[container] }}
+{% endfor %}
