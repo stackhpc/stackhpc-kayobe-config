@@ -38,6 +38,11 @@ on:
         type: boolean
         required: false
         default: true
+      pr-title:
+        description: Title for pull request
+        type: string
+        required: false
+        default: Update container images
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -318,6 +323,7 @@ jobs:
 
       - name: Create a pull request
         run: |
-          gh pr create -f -a @me -B stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
+          gh pr create -a @me -B stackhpc/${{ needs.generate-tag.outputs.openstack_release }} -t "$PR_TITLE"
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ inputs.pr-title }}
