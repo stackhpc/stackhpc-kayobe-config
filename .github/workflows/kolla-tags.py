@@ -13,7 +13,7 @@ import yaml
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
     update = subparsers.add_parser("update", help="Print updated tags YAML")
     update.add_argument("--images-file", help="Path to updated image list JSON file", required=True)
     update.add_argument("--tags-file", help="Path to tags YAML file", required=True)
