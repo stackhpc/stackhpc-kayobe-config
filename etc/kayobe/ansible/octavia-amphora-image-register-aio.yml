@@ -1,0 +1,101 @@
+---
+- name: Register an Octavia Amphora image in Glance
+  gather_facts: yes
+  hosts: "{{ amphora_builder_group | default('seed') }}"
+  vars:
+    venv: "{{ virtualenv_path }}/octavia-amphora"
+    OS_PROJECT_DOMAIN_NAME: Default
+    OS_USER_DOMAIN_NAME: Default
+    OS_PROJECT_NAME: service
+    OS_USERNAME: octavia
+    OS_PASSWORD: "{{ kolla_passwords.octavia_keystone_password | mandatory('Could\
+      \ not find octavia_keystone_password in passwords.yml') }}"
+    # Use kolla_external_fqdn in wallaby 
+    OS_AUTH_URL: http://{{ kolla_external_fqdn | default(public_net_name
+      | net_fqdn) | default(public_net_name | net_vip_address, true) }}:35357/v3
+    OS_INTERFACE: internal
+    OS_ENDPOINT_TYPE: internalURL
+    OS_IDENTITY_API_VERSION: 3
+    OS_REGION_NAME: RegionOne
+    OS_AUTH_PLUGIN: password
+    openstack_auth:
+      auth_url: "{{ OS_AUTH_URL }}"
+      username: "{{ OS_USERNAME }}"
+      password: "{{ OS_PASSWORD }}"
+      project_name: "{{ OS_PROJECT_NAME }}"
+      user_domain_name: "{{ OS_USER_DOMAIN_NAME }}"
+      project_domain_name: "{{ OS_PROJECT_DOMAIN_NAME }}"
+  tasks:
+    - name: Include kolla secrets
+      include_vars:
+        dir: '{{ kayobe_env_config_path }}/kolla/'
+        files_matching: passwords.yml
+        name: kolla_passwords
+    
+    - name: Set up openstack virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - openstacksdk
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+    
+    - debug: 
+        msg: "{{ OS_AUTH_URL }}"
+
+    - name: Query Octavia Amphora image
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+      os_image_info:
+        auth_type: password
+        auth: 
+          auth_url: "{{ OS_AUTH_URL }}"
+          username: "{{ OS_USERNAME }}"
+          password: "{{ OS_PASSWORD }}"
+          project_name: "{{ OS_PROJECT_NAME }}"
+          user_domain_name: "{{ OS_USER_DOMAIN_NAME }}"
+          project_domain_name: "{{ OS_PROJECT_DOMAIN_NAME }}"
+        ca_cert: "{{ openstack_cacert }}"
+        interface: "{{ openstack_interface }}"
+        image: amphora-x64-haproxy
+      register: image_info
+
+    - name: Get image checksum
+      stat:
+        path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
+        checksum_algorithm: md5
+      changed_when: false
+      register: image_checksum
+      when: image_info.openstack_image
+
+    - name: Ensure Octavia Amphora image is renamed
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+      shell:
+        cmd: >-
+          {{ venv }}/bin/openstack image set amphora-x64-haproxy --name amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}
+      when:
+        - image_info.openstack_image
+        - image_info.openstack_image.checksum != image_checksum.stat.checksum
+      changed_when: true
+      environment: "{{ openstack_auth_env }}"
+
+    - name: Ensure Octavia Amphora image is registered
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+      os_image:
+        auth_type: password
+        auth: "{{ openstack_auth }}"
+        ca_cert: "{{ openstack_cacert }}"
+        interface: "{{ openstack_interface }}"
+        name: amphora-x64-haproxy
+        container_format: bare
+        disk_format: qcow2
+        is_public: no
+        filename: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
+        properties:
+          hw_architecture: x86_64
+          hw_rng_model: virtio
+        tags:
+          - amphora
