@@ -139,7 +139,7 @@ host using kayobe, there are some tips (note that depending on your setup this d
 * lvm configuration should be placed in ``host_vars/<host_name>``
 * wazuh-manager host have to be part of ``infra-vms`` group (directly or as child)
 * network used on host needs to be defined in ``networks.yml`` and
-  if you have pre-alocated IP, it should be added to ``network-allocation.yml``. 
+  if you have pre-alocated IP, it should be added to ``network-allocation.yml``.
   For example, if using host with IP 10.10.224.5 in network 10.10.224.0/24 one have to add:
 
 
@@ -160,7 +160,7 @@ host using kayobe, there are some tips (note that depending on your setup this d
     undercloud_admin_net_ips:
       nesmetprd01: 10.10.224.5
 
-Note that in this example network name is ``undercloud`` to demonstrate that this network isn't "standard" kayobe network. 
+Note that in this example network name is ``undercloud`` to demonstrate that this network isn't "standard" kayobe network.
 
 
 Deploying Wazuh Manager services
@@ -205,7 +205,7 @@ Wazuh manager variables file is located in ``etc/kayobe/inventory/group_vars/waz
 You may need to modify some of the variables, including:
 
 * wazuh_manager_ip
-  
+
 
 .. note::
 
