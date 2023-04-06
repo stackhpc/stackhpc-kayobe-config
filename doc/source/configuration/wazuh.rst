@@ -86,76 +86,13 @@ with the network defined in network.yml as usual.
   extra_net_interface: "ens2"
 
 
-Add group mappings to the inventory ``etc/kayobe/inventory/groups``:
-
-.. code-block:: console
-
-  # Infra VM groups.
-
-
-  [hypervisors:children]
-  # Group that contains all hypervisors used for infra VMs
-  seed-hypervisor
-
-
-  [infra-vms:children]
-  wazuh-manager
-
-
-  [wazuh:children]
-  wazuh-manager
-
-
-  [wazuh-manager]
-  # Empty group to provide declaration of wazuh-manager group.
-
-
-Add the wazuh manager VM to the inventory ``etc/kayobe/inventory/hosts``:
-
-.. code-block:: console
-
-  [wazuh-manager]
-  os-wazuh
-
-
 Follow the Kayobe instructions to :kayobe-doc:`provision the VM <deployment.html#infrastructure-vms>` and configure the host.
-
-
-VM sizing
----------
-
-.. code-block:: console
-
-  ---
-  # Memory in MB.
-  memory_mb: 16384
-
-
-  # Number of vCPUs.
-  vcpus: 8
-
-
-  # Capacity of the infra VM data volume.
-  capacity: "200G"
-
-
-.. note::
-
-    NOTE:
-    Logs will be stored in /var/ossec/ so it's a good idea to make it an LVM filesystem to make it futureproof.
 
 
 Network Setup
 -------------
 
 Your wazuh-manager VM needs to have network connection with servers which will have the wazuh-agent installed, preferably it should be in the `provision_oc_net`.
-
-Add to ``etc/kayobe/network-allocation.yml``:
-
-.. code-block:: console
-
-  provision_oc_net_ips:
-    <wazuh.vm.hostname>: <wazuh.vm.ip>
 
 
 Required ports
@@ -188,29 +125,6 @@ Several services are used for the communication of Wazuh components. Below is th
 +-----------------+-----------+----------------+------------------------------------------------+
 
 
-
-Make sure group mappings for wazuh-manager are added to the inventory ``etc/kayobe/inventory/groups``:
-
-.. code-block:: console
-
-  # Infra VM groups.
-
-  [wazuh:children]
-  wazuh-manager
-
-
-  [wazuh-manager]
-  # Empty group to provide declaration of wazuh-manager group.
-
-
-Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
-
-.. code-block:: console
-
-  [wazuh-manager]
-    <wazuh.vm.name>
-
-
 Manually provisioned VM
 -----------------------
 
@@ -225,7 +139,8 @@ host using kayobe, there are some tips (note that depending on your setup this d
 * lvm configuration should be placed in ``host_vars/<host_name>``
 * wazuh-manager host have to be part of ``infra-vms`` group (directly or as child)
 * network used on host needs to be defined in ``networks.yml`` and
-  if you have pre-alocated IP, it should be added to ``network-allocation.yml``. For example:
+  if you have pre-alocated IP, it should be added to ``network-allocation.yml``. 
+  For example, if using host with IP 10.10.224.5 in network 10.10.224.0/24 one have to add:
 
 
 ``networks.yml``:
@@ -244,6 +159,8 @@ host using kayobe, there are some tips (note that depending on your setup this d
 
     undercloud_admin_net_ips:
       nesmetprd01: 10.10.224.5
+
+Note that in this example network name is ``undercloud`` to demonstrate that this network isn't "standard" kayobe network. 
 
 
 Deploying Wazuh Manager services
@@ -267,15 +184,6 @@ Install the role:
 
 ``kayobe control host bootstrap``
 
-You might wish to add the following to .gitignore in kayobe-config:
-
-.. code-block:: console
-
-  # Wazuh
-  etc/kayobe/ansible/roles/wazuh-ansible/
-  etc/kayobe/ansible/vars/certificates/*
-  etc/kayobe/ansible/vars/certificates/custom_certificates/*
-
 
 Edit the playbook and variables to your needs:
 
@@ -296,9 +204,8 @@ Wazuh manager variables file is located in ``etc/kayobe/inventory/group_vars/waz
 
 You may need to modify some of the variables, including:
 
-* domain_name
 * wazuh_manager_ip
-* private_ip
+  
 
 .. note::
 
@@ -307,7 +214,7 @@ You may need to modify some of the variables, including:
     for example `~/deployment/src/kayobe-config/etc/kayobe/environments/production/inventory/group_vars/`
     Files to be moved:
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
-    - inventory/group_vars/wazuh/wazuh-manager/wazuh-secrets
+    - etc/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 Secrets
@@ -316,6 +223,7 @@ Secrets
 Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
 vault file which will be placed in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
+If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/wazuh-secrets.yml``
 Remember to encrypt!
 
 Wazuh secrets template is located in ``etc/kayobe/ansible/templates/wazuh-secrets.yml.j2``.
@@ -396,17 +304,6 @@ Logs are in ``/var/log/wazuh-indexer/wazuh.log``. There are also logs in the jou
 Wazuh agents
 ============
 
-Make sure group mappings for wazuh-agent are added to the inventory ``etc/kayobe/inventory/groups``:
-
-.. code-block:: console
-
-  [wazuh-agent:children]
-  seed
-  overcloud
-
-
-  [wazuh:children]
-  wazuh-agent
 
 Wazuh agent playbook is located in ``etc/kayobe/ansible/wazuh-agent.yml``.
 
