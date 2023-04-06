@@ -328,9 +328,8 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-manager/wazuh-secrets
 
 
-==============
 TLS (optional)
-==============
+--------------
 
 You can generate your own TLS certificates, otherwise skip this section.
 By default, Wazuh Ansible uses `wazuh-cert-tool.sh <https://documentation.wazuh.com/current/user-manual/certificates.html>`__
