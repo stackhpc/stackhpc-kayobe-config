@@ -118,7 +118,7 @@ Add the wazuh manager VM to the inventory ``etc/kayobe/inventory/hosts``:
   os-wazuh
 
 
-Follow the Kayobe instructions to `provision the VM <https://docs.openstack.org/kayobe/latest/deployment.html#infrastructure-vms>`__ and configure the host.
+Follow the Kayobe instructions to :kayobe-doc:`provision the VM <deployment.html#infrastructure-vms>` and configure the host.
 
 
 VM sizing
