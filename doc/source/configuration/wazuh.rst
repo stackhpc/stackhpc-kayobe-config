@@ -10,7 +10,7 @@ Provision using infra-vms
 
 Provisioning an infra VM for Wazuh Manager.
 
-From Xena, Kayobe supports `provisioning infra VMs <https://docs.openstack.org/kayobe/latest/deployment.html#infrastructure-vms>`__ . The StackHPC fork of Kayobe has backported this to Wallaby.
+From Xena, Kayobe supports :kayobe-doc:`provisioning infra VMs <deployment.html#infrastructure-vms>`. The StackHPC fork of Kayobe has backported this to Wallaby.
 The following configuration may be used as a guide. Config for infra VMs is documented `here <https://docs.openstack.org/kayobe/latest/configuration/reference/infra-vms.html>`__ .
 
 
