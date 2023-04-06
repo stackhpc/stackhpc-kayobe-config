@@ -214,7 +214,7 @@ Add hosts group mappings to the inventory ``etc/kayobe/inventory/hosts``:
 Manually provisioned VM
 -----------------------
 
-In case where you can’t use infra-vms to deploy your wazuh-manager but you want to configure
+In case where you can’t use infra-vms to deploy your wazuh-manager VM but you want to configure
 host using kayobe, there are some tips (note that depending on your setup this don’t have to always apply):
 
 * Depending on preferences host have to be part of some group in inventory. ``infra vm`` group still seems as best choice
