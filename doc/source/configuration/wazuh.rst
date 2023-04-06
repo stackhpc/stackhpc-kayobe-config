@@ -311,7 +311,7 @@ You may need to modify some of the variables, including:
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 Secrets
-=======
+------
 
 Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
