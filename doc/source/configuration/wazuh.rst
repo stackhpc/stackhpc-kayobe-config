@@ -383,7 +383,7 @@ Verification
 ==============
 
 The Wazuh portal should be accessible on port 443 of the Wazuh
-manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/qwazuh/certificates/root-ca.pem``).
+manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/wazuh/certificates/root-ca.pem``).
 The first login should be as the admin user,
 with the opendistro_admin_password password in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
 This will create the necessary indices.
