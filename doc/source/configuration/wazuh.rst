@@ -250,7 +250,7 @@ Deploying Wazuh Manager services
 ================================
 
 Setup
-================================
+-----
 
 To install specific version modify wazuh-ansible entry in ``etc/kayobe/ansible/requirements.yml``:
 
