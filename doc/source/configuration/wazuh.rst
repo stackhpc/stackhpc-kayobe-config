@@ -218,7 +218,7 @@ You may need to modify some of the variables, including:
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 Secrets
-------
+-------
 
 Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
@@ -324,7 +324,7 @@ The Wazuh agents should register with the Wazuh manager. This can be verified vi
 Check CIS benchmark output in agent section.
 
 Additional resources:
-=================
+=====================
 
 For times when you need to upgrade wazuh with elasticsearch to version with opensearch or you just need to deinstall all wazuh components:
 Wazuh purge script: https://github.com/stackhpc/wazuh-server-purge
