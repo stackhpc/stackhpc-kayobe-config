@@ -365,9 +365,8 @@ Example OpenSSL rune to convert to PKCS#8:
 
 TODO: document how to use a local certificate. Do we need to override all certificates?
 
-=======
 Deploy
-=======
+------
 
 Deploy Wazuh manager:
 
