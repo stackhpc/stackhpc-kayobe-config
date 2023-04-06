@@ -27,3 +27,21 @@ enable_external_api_firewalld: true
 
 # Elasticsearch memory tuning
 es_heap_size: 1g
+
+##############################################################################
+# Octavia networking
+octavia_network_interface: breth1
+octavia_amp_network:
+  name: lb-mgmt-net
+  provider_network_type: vlan
+  provider_segmentation_id: 1000
+  provider_physical_network: physnet1
+  external: false
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "10.1.2.0/24"
+    allocation_pool_start: "10.1.2.100"
+    allocation_pool_end: "10.1.2.200"
+    gateway_ip: "10.1.2.1"
+    enable_dhcp: yes
