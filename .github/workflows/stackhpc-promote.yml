@@ -1,5 +1,5 @@
 ---
-name: Promote package repositories
+name: Promote package repositories and containers
 on:
   push:
     branches:
@@ -8,12 +8,12 @@ on:
       - stackhpc/wallaby
 jobs:
   promote:
-    name: Trigger package repository promotion
+    name: Trigger package repository and container promotion
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      # NOTE(mgoddard): Trigger another CI workflow in the
+      # NOTE(mgoddard): Trigger CI workflows in the
       # stackhpc-release-train repository.
       - name: Trigger package repository promotion
         run: |
@@ -25,6 +25,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 
+      - name: Trigger container image promotion
+        run: |
+          gh workflow run \
+          container-promote.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main \
+          -f kayobe_config_branch=${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
       - name: Display link to package repository promotion workflows
         run: |
           echo "::notice Package repository promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/package-promote.yml"
+
+      - name: Display link to container repository promotion workflows
+        run: |
+          echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
