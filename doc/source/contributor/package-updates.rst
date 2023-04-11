@@ -2,10 +2,12 @@
 Package and Container Updates
 =============================
 
+This section describes the Release Train process of creating new package repository snapshots and updating the container images to use these new packages. It includes instructions on the recommended way to test these updates, using the multinode test environment.
+
 Preparations
 ============
 
-1. Before building images, you should check for any outstanding PRs into the “base branch“. Below are the links for the Wallaby branches.
+1. Before building images, you should check for any outstanding PRs into the earliest supported release. Below are the links for the Wallaby branches.
 
  kayobe-config: https://github.com/stackhpc/stackhpc-kayobe-config/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fwallaby
 
@@ -15,16 +17,30 @@ Preparations
 
  You should also check any referenced source trees in etc/kayobe/kolla.yml.
 
- e.g: https://github.com/stackhpc/stackhpc-kayobe-config/blob/stackhpc/wallaby/etc/kayobe/kolla.yml#L112-L158
+ e.g: https://github.com/stackhpc/stackhpc-kayobe-config/blob/320ba8b28da879917beec0ce7c4c90c478aaeaf7/etc/kayobe/kolla.yml#L112-L158
 
-2. Follow the workflows documented `here <https://stackhpc.github.io/stackhpc-release-train/usage/content-howto/#update-package-repositories>`_. Sync the package repositories. Then, for each release: update the Kayobe package repository versions, build and push Kolla container images, open a draft PR with the updated container image tags. The rest of this document describes the stage "Test".
+2. Follow the workflows documented `here <https://stackhpc.github.io/stackhpc-release-train/usage/content-howto/#update-package-repositories>`_. Sync the package repositories. Then, for each release:
+
+* Make sure the nightly sync of package repositories has succeeded.
+
+* Update the Kayobe package repository versions.
+
+* Build and push Kolla container images.
+
+* Open a draft PR into ``stackhpc/kayobe-config`` with the updated container image tags.
+
+* Test.
+
+* Review the PR. Once approved, promote the container images before then merging the PR.
+
+The rest of this document describes the final "test" stage.
 
 Testing
 =======
 
 The following steps describe the process to test the new package and container repositories. See the subsections beneath for further explanations.
 
-1. Build two multinode environments for OVS and OVN, both on the "base branch".
+1. Build two multinode environments for OVS and OVN, both on the earliest supported release.
 
 2. Run tests on current package versions as a baseline.
 
@@ -53,14 +69,27 @@ There is a comprehensive guide to setting up a multinode environment with Terraf
 
 * Remember to set different vxlan_vnis for each.
 
-* Before running deploy-openstack.sh, run distro sync on each host to ensure you are using the same snapshots as in the release train.
+* Before starting any tests, run ``dnf distro-sync`` on each host to ensure you are using the same snapshots as in the release train. You can do this using the following commands:
+
+.. code-block:: console
+
+   kayobe seed host command run -b --command "dnf distro-sync"
+   kayobe overcloud host command run -b --command "dnf distro-sync"
 
 * The tempest tests run automatically at the end of deploy-openstack.sh. If you have the time, it is worth fixing any failing tests you can so that there is greater coverage for the package updates. (Also remember to propose these fixes in the relevant repos where applicable.)
 
 Upgrading host packages
 -----------------------
 
-Bump the snapshot versions in /etc/yum/repos.d with
+Checkout the new kayobe-config branch (from the draft PR):
+
+.. code-block:: console
+
+   cd $KAYOBE_CONFIG_ROOT
+   git fetch
+   git checkout <branch-name>
+
+Bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
@@ -94,6 +123,14 @@ Perform a rolling reboot of hosts:
 Upgrading containers within a release
 -------------------------------------
 
+Checkout the new kayobe-config branch (from the draft PR):
+
+.. code-block:: console
+
+   cd $KAYOBE_CONFIG_ROOT
+   git fetch
+   git checkout <branch-name>
+
 Deploy the services, once the new tags are set in the kayobe_config:
 
 .. code-block:: console
@@ -103,7 +140,7 @@ Deploy the services, once the new tags are set in the kayobe_config:
 Upgrading OpenStack to the next release in a multinode environment
 ------------------------------------------------------------------
 
-As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with Wallaby as the base branch:
+As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 
 .. code-block:: console
 
@@ -128,6 +165,7 @@ As this is not a full production system, only a reduced number of steps need to 
    kayobe overcloud service configuration generate --node-config-dir /tmp/kolla-xena-config
    kayobe overcloud service configuration save --output-dir config/xena --node-config-dir /tmp/kolla-xena-config
    kayobe overcloud host command run --command 'rm -rf /tmp/kolla-xena-config' --become
+   # Check the diff between the old and new configs
    ---
 
    kayobe overcloud service upgrade
