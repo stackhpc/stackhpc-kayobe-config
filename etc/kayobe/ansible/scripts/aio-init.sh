@@ -185,4 +185,12 @@ $KOLLA_OPENSTACK_COMMAND coe cluster template create old_driver \
   --flavor m1.medium \
   --public \
 
+#setup octavia management network to be reachable from control plane 
+$KOLLA_OPENSTACK_COMMAND router create lb-rtr --disable-snat --external-gateway public1
+$KOLLA_OPENSTACK_COMMAND router add subnet lb-rtr lb-mgmt-subnet
+ROUTER_IP=$($KOLLA_OPENSTACK_COMMAND router show lb-rtr -f json | jq '.external_gateway_info.external_fixed_ips[].ip_address')
+SUBNET_CIDR=$($KOLLA_OPENSTACK_COMMAND subnet show lb-mgmt-subnet -f json | jq '.cidr')
+
+sudo ip r add $SUBNET_CIDR via $ROUTER_IP
+
 touch /tmp/.init-runonce
