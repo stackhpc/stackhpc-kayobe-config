@@ -76,6 +76,15 @@ There is a comprehensive guide to setting up a multinode environment with Terraf
    kayobe seed host command run -b --command "dnf distro-sync"
    kayobe overcloud host command run -b --command "dnf distro-sync"
 
+* This may have installed a new kernel version. If so, you will need to reboot the overcloud hosts. You can check the installed kernels and the currently running kernel with the following commands. If the latest listed version is not running, you will need to reboot.
+
+.. code-block:: console
+
+   kayobe seed host command run -b --show-output --command "dnf list installed kernel"
+   kayobe seed host command run -b --show-output --command "uname -a"
+
+   kayobe playbook run --limit seed,overcloud $KAYOBE_CONFIG_PATH/ansible/reboot.yml
+
 * The tempest tests run automatically at the end of deploy-openstack.sh. If you have the time, it is worth fixing any failing tests you can so that there is greater coverage for the package updates. (Also remember to propose these fixes in the relevant repos where applicable.)
 
 Upgrading host packages
