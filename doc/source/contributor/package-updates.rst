@@ -27,7 +27,7 @@ Preparations
 
 * Build and push Kolla container images.
 
-* Open a draft PR into ``stackhpc/kayobe-config`` with the updated container image tags.
+* Open a draft PR into ``stackhpc-kayobe-config`` with the updated container image tags.
 
 * Test.
 
@@ -71,10 +71,10 @@ There is a comprehensive guide to setting up a multinode environment with Terraf
 
 * Before starting any tests, run ``dnf distro-sync`` on each host to ensure you are using the same snapshots as in the release train. You can do this using the following commands:
 
-.. code-block:: console
+   .. code-block:: console
 
-   kayobe seed host command run -b --command "dnf distro-sync"
-   kayobe overcloud host command run -b --command "dnf distro-sync"
+      kayobe seed host command run -b --command "dnf distro-sync"
+      kayobe overcloud host command run -b --command "dnf distro-sync"
 
 * This may have installed a new kernel version. If so, you will need to reboot the overcloud hosts. You can check the installed kernels and the currently running kernel with the following commands. If the latest listed version is not running, you will need to reboot.
 
