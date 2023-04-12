@@ -253,7 +253,7 @@ does not exist, it will generate the following certificates in ``etc/kayobe/ansi
    * admin-key.pem,  admin.pem
 * Node certificate
    * os-wazuh-key.pem,  os-wazuh.pem
-* HTTP certificate for Kibana (port 5601) & Elasticsearch (port 9200)
+* HTTP certificate for wazuh-dashboard (port 5601) & wazuh-indexer (port 9200)
    * os-wazuh_http.key, os-wazuh_http.pem
 * Root CA certificate
    * root-ca.key  root-ca.pem
