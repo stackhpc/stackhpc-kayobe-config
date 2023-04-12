@@ -105,10 +105,7 @@ At this point you are ready to build and push some container images.
    kayobe seed container image build --push
    kayobe overcloud container image build --push
 
-The container images are tagged as |current_release|-<datetime>. This Kayobe
-configuration includes a hook that writes the tag to ``~/kolla_tag``, since
-it is not always simple to determine which tag was last applied to built
-images.
+The container images are tagged as |current_release|-<datetime>.
 
 To use the new images, edit
 ``~/src/kayobe-config/etc/kayobe/kolla.yml`` to set the above
