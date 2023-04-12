@@ -210,11 +210,11 @@ You may need to modify some of the variables, including:
 .. note::
 
     NOTE:
-    If you are using multiple environments you will need to move variable files to pertinent directory,
-    for example `~/deployment/src/kayobe-config/etc/kayobe/environments/production/inventory/group_vars/`
-    Files to be moved:
+    If you are using multiple environments, and you need to customise Wazuh in each environement, create override files in an appropriate directory,
+    for example `etc/kayobe/environments/production/inventory/group_vars/`
+    Files which values can be overridden (in context of Wazuh):
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
-    - etc/wazuh-manager.yml
+    - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 Secrets
@@ -291,7 +291,7 @@ Verification
 ==============
 
 The Wazuh portal should be accessible on port 443 of the Wazuh
-manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/wazuh/certificates/root-ca.pem``).
+manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/wazuh/certificates/wazuh-certificates/root-ca.pem``).
 The first login should be as the admin user,
 with the opendistro_admin_password password in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
 This will create the necessary indices.
