@@ -106,6 +106,7 @@ parse_smartctl_scsi_attributes() {
 }
 
 parse_smartctl_info() {
+  shopt -s nocasematch
   local -i smart_available=0 smart_enabled=0 smart_healthy=
   local disk="$1" disk_type="$2"
   local model_family='' device_model='' serial_number='' fw_version='' vendor='' product='' revision='' lun_id=''

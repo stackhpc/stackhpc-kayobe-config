@@ -76,7 +76,7 @@ another LV needs to be grown at a later date.
 Growroot playbook
 =================
 
-A ``growroot.yml`` custom playbook is provied that can be used to grow the
+A ``growroot.yml`` custom playbook is provided that can be used to grow the
 partition and LVM Physical Volume (PV) of the root Volume Group (VG). This
 allows for expansion of Logical Volumes (LVs) in that VG.
 
