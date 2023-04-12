@@ -140,9 +140,12 @@ provision_wl_vlan: 1069
 provision_wl_zone: provision_wl
 
 internal_cidr: 172.23.20.0/22
+# NOTE: This subnet overlaps with the storage_mgmt network which has 172.23.21.0/24.
+# We work around this by avoiding the storage_mgmt subnet in the internal
+# allocation pool.
 # 172.23.23.241-172.23.23.250 reserved for neutron
 internal_allocation_pool_start: 172.23.20.2
-internal_allocation_pool_end: 172.23.23.240
+internal_allocation_pool_end: 172.23.20.255
 # Next hop on the internal API network to access Ironic provisioning network.
 # This is a virtual router in the switch fabric.
 internal_provision_wl_gateway: 172.23.23.250
@@ -177,6 +180,9 @@ storage_mtu: 9000
 storage_vlan: 1071
 storage_zone: storage
 
+# NOTE: This subnet overlaps with the internal network which has 172.23.20.0/22.
+# We work around this by avoiding the storage_mgmt subnet in the internal
+# allocation pool.
 storage_mgmt_cidr: 172.23.21.0/24
 storage_mgmt_allocation_pool_start: 172.23.21.1
 storage_mgml_allocation_pool_end: 172.23.21.250
