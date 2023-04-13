@@ -54,6 +54,7 @@ on:
         required: false
         default: Update container images
 
+timeout: ?
 env:
   ANSIBLE_FORCE_COLOR: True
 defaults:
@@ -192,6 +193,9 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
+          # TODO: handle failure
+          # Report any images that failed to build
+          # Fail if all images failed to build
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
@@ -206,12 +210,17 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
+          # TODO: handle failure
+          # Report any images that failed to build
+          # Fail if all images failed to build
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
 
       - name: Generate artifacts
         run: |
+          # TODO: report failures
+          # Add build logs?
           mkdir artifacts
           # The tag for all built images
           echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
@@ -224,6 +233,7 @@ jobs:
 
       - name: Generate updated container image tags
         run: |
+          # TODO: output only updated images?
           python3 src/kayobe-config/.github/workflows/kolla-tags.py update \
             --images-file artifacts/container-images.json \
             --tags-file src/kayobe-config/etc/kayobe/kolla/tags/${{ matrix.distro }}.yml \
@@ -307,11 +317,13 @@ jobs:
 
       - name: Update CentOS Stream 8 container image tags
         run: |
+          # TODO: merge in?
           cp centos-container-images/tags.yml etc/kayobe/kolla/tags/centos.yml
         if: inputs.centos-stream-8
 
       - name: Update Ubuntu Focal container image tags
         run: |
+          # TODO: merge in?
           cp ubuntu-container-images/tags.yml etc/kayobe/kolla/tags/ubuntu.yml
         if: inputs.ubuntu-focal
 
@@ -320,6 +332,7 @@ jobs:
           git config user.email "stackhpc-ci@users.noreply.github.com"
           git config user.name "StackHPC CI bot"
           git add -u
+          # TODO: Comment about build failures?
           git commit -m "Update container image tags"
 
       - name: Checkout new branch
@@ -341,3 +354,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PR_TITLE: ${{ inputs.pr-title }}
         if: inputs.create-pr
+
+      # Comment on PR about failures?
+      # Fail job on build failures?
