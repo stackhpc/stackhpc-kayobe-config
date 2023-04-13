@@ -10,3 +10,4 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
    documentation
    release-notes
    environments/index
+   package-updates
