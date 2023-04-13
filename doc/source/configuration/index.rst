@@ -15,3 +15,4 @@ the various features provided.
    swap
    cephadm
    monitoring
+   wazuh
