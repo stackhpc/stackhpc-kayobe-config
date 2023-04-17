@@ -203,3 +203,124 @@ instance:
       ls testdir
 
 If it shows the test file then the share is working correctly.
+
+Magnum
+======
+
+The Multinode environment has Magnum enabled by default. To test it, you will
+need to create a Kubernetes cluster. It is recommended that you use the
+specified Fedora 35 image, as others may not work. Download the image locally,
+then extract it and upload it to glance:
+
+.. code-block:: bash
+
+      wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/35.20220410.3.1/x86_64/fedora-coreos-35.20220410.3.1-openstack.x86_64.qcow2.xz
+      unxz fedora-coreos-35.20220410.3.1-openstack.x86_64.qcow2.xz
+      openstack image create --container-format bare --disk-format qcow2 --property os_distro='fedora-coreos' --property os_version='35' --file fedora-coreos-35.20220410.3.1-openstack.x86_64.qcow2 fedora-coreos-35 --progress
+
+Create a keypair:
+
+.. code-block:: bash
+
+      openstack keypair create --private-key ~/.ssh/id_rsa id_rsa
+
+Install the Magnum, Heat, and Octavia clients:
+
+.. code-block:: bash
+
+      pip install python-magnumclient
+      pip install python-heatclient
+      pip install python-octaviaclient
+
+Create a cluster template:
+
+.. code-block:: bash
+
+      openstack coe cluster template create test-template --image fedora-coreos-35 --external-network external --labels etcd_volume_size=8,boot_volume_size=50,cloud_provider_enabled=true,heat_container_agent_tag=wallaby-stable-1,kube_tag=v1.23.6,cloud_provider_tag=v1.23.1,monitoring_enabled=true,auto_scaling_enabled=true,auto_healing_enabled=true,auto_healing_controller=magnum-auto-healer,magnum_auto_healer_tag=v1.23.0.1-shpc,etcd_tag=v3.5.4,master_lb_floating_ip_enabled=true,cinder_csi_enabled=true,container_infra_prefix=ghcr.io/stackhpc/,min_node_count=1,max_node_count=50,octavia_lb_algorithm=SOURCE_IP_PORT,octavia_provider=ovn --dns-nameserver 8.8.8.8 --flavor m1.medium --master-flavor m1.medium --network-driver calico --volume-driver cinder --docker-storage-driver overlay2 --floating-ip-enabled --master-lb-enabled --coe kubernetes
+
+Create a cluster:
+
+.. code-block:: bash
+
+      openstack coe cluster create --keypair id_rsa --master-count 1 --node-count 1 --floating-ip-enabled test-cluster
+
+This command will take a while to complete. You can monitor the progress with
+the following command:
+
+.. code-block:: bash
+
+      watch "openstack --insecure coe cluster list ; openstack --insecure stack list ; openstack --insecure server list"
+
+Once the cluster is created, you can SSH into the master node and check that
+there are no failed containers:
+
+.. code-block:: bash
+
+      ssh core@{master-ip}
+
+List the podman and docker containers:
+
+.. code-block:: bash
+
+      sudo docker ps
+      sudo podman ps
+
+If there are any failed containers, you can check the logs with the following
+commands:
+
+.. code-block:: bash
+
+      sudo docker logs {container-id}
+      sudo podman logs {container-id}
+
+Or look at the logs under ``/var/log``. In particular, pay close attention to
+``/var/log/heat-config`` on the master and
+``/var/log/kolla/{magnum,heat,neutron}/*`` on the controllers.
+
+Otherwise, the ``state`` of the cluster should eventually become
+``CREATE_COMPLETE`` and the ``health_status`` should be ``HEALTHY``.
+
+You can interact with the cluster using ``kubectl``. The instructions for
+installing ``kubectl`` are available `here
+<https://kubernetes.io/docs/tasks/tools/install-kubectl/>`_. You can then
+configure ``kubectl`` to use the cluster, and check that the pods are all
+running:
+
+.. code-block:: bash
+
+      openstack coe cluster config test-cluster --dir $PWD
+      export KUBECONFIG=$PWD/config
+      kubectl get pods -A
+
+Finally, you can optionally use sonobuoy to run a complete set of Kubernetes
+conformance tests.
+
+Find the latest release of sonobuoy on their `github releases page
+<https://github.com/vmware-tanzu/sonobuoy/releases>`_. Then download it with wget, e.g.:
+
+.. code-block:: bash
+
+      wget https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.56.16/sonobuoy_0.56.16_linux_amd64.tar.gz
+
+Extract it with tar:
+
+.. code-block:: bash
+
+      tar -xvf sonobuoy_0.56.16_linux_amd64.tar.gz
+
+And run it:
+
+.. code-block:: bash
+
+      ./sonobuoy run --wait
+
+This will take a while to complete. Once it is done you can check the results
+with:
+
+.. code-block:: bash
+
+      results=$(./sonobuoy retrieve)
+      ./sonobuoy results $results
+
+There are various other options for sonobuoy, see the `documentation
+<https://sonobuoy.io/docs/>`_ for more details.
