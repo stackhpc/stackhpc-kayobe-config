@@ -1,0 +1,103 @@
+- name: Run hashicorp-vault role seed
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  vars:
+    # Consul and Vault Server Options
+    vault_api_addr: "http://{{ admin_oc_net_ips[ansible_hostname] }}:8200"
+    vault_vip_url: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    vault_keys: "{{ secrets_vault_keys | from_json }}"
+
+    # Root CA Options
+    vault_pki_root_create: false
+    vault_pki_root_ca_name: "arcus-{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}-internal-tls-root"
+
+    # Intermediate CA Options
+    vault_pki_intermediate_create: false
+    vault_pki_intermediate_ca_name: "arcus-{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}-internal-tls-int"
+
+    # Certificate options
+    vault_pki_generate_certificates: True
+    vault_pki_write_certificate_files: True
+    vault_pki_certificates_directory: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}/"
+    vault_pki_generate_pulp_cert: true
+    # Certificates to create
+    # Add additional certificates here
+    # e.g.
+    #vault_pki_certificate_subject:
+    #  - role: 'ClientServer'
+    #    common_name: "seed-tls-cert-test"
+    #    extra_params:
+    #      ttl: "8760h"
+    #      ip_sans: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    #      alt_sans: "{{ admin_oc_net_ips[ansible_hostname] }}"
+
+
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Unseal vault
+      vars:
+        vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
+      import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      when:
+        - vault_keys is defined
+
+    - name: Add the Pulp certificate attributes
+      vars:
+        pulp_cert:
+          - role: 'ClientServer'
+            common_name: "seed-tls-cert"
+            extra_params:
+              ttl: "8760h"
+              ip_sans: "{{ admin_oc_net_ips[ansible_hostname] }}"
+              alt_sans: "{{ admin_oc_net_ips[ansible_hostname] }}"
+      set_fact:
+        vault_pki_certificate_subject: "{{ vault_pki_certificate_subject | d([]) + [vault_pki_certificate_subject|combine(item)] }}"
+      loop:
+        - "{{ pulp_cert }}"
+      when:
+        - vault_pki_generate_pulp_cert | bool and secrets_pulp_tls_cert is not defined
+
+    - name: Create Certificates
+      vars:
+        vault_token: "{{ vault_keys.root_token }}"
+      import_role:
+        name: stackhpc.hashicorp.vault_pki
+      when:
+        - vault_pki_certificate_subject != none
+
+    - name: Set facts about pulp certificate and key
+      vars:
+        cert_name: "{{ item.item.common_name if item.item.common_name | length > 0 else item.item.extra_params.ip_sans }}"
+      set_fact:
+        new_secrets:
+          secrets_pulp_tls_cert: |
+            {{ item.data.certificate }}
+            {{ item.data.issuing_ca }}
+          secrets_pulp_tls_key: |
+            {{ item.data.private_key }}
+      loop: "{{ certificate_data.results }}"
+      when:
+        - vault_pki_generate_pulp_cert | bool and secrets_pulp_tls_cert is not defined
+        - item.item.common_name == 'seed-tls-cert'
+
+    - name: "Add to vault secrets"
+      blockinfile:
+        content: |
+          {{ new_secrets | to_nice_yaml(default_style='|') }}
+        dest: "{{ vault_pki_certificates_directory }}vault-secrets.yml"
+        marker: ""
+        marker_begin: ""
+        marker_end: ""
+        insertafter: "EOF"
+        mode: 0660
+      delegate_to: localhost
+      when: vault_pki_generate_pulp_cert | bool and secrets_pulp_tls_cert is not defined

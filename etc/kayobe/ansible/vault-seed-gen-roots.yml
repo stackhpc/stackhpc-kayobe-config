@@ -1,0 +1,108 @@
+---
+- name: Run hashicorp-vault role seed
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  vars:
+    # Consul and Vault Server Options
+    vault_api_addr: "http://{{ admin_oc_net_ips[ansible_hostname] }}:8200"
+    vault_vip_url: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    vault_keys: "{{ secrets_vault_keys | from_json }}"
+
+    # Root CA Options
+    vault_pki_root_create: true
+    vault_pki_root_ca_name: "arcus-{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}-internal-tls-root"
+    vault_pki_root_ca_common_name: "{{ vault_pki_root_ca_name }}"
+    vault_pki_write_root_ca_to_file: true
+    vault_pki_certificates_directory: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}/"
+    vault_pki_root_default_lease_ttl: "43830h"
+    vault_pki_root_max_lease_ttl: "43830h"
+    vault_pki_root_ttl: "43830h"
+    vault_pki_root_key_bits: 4096
+
+    # Intermediate CA Options
+    vault_pki_intermediate_create: true
+    vault_pki_intermediate_import: false
+    vault_pki_intermediate_export: false
+    vault_pki_intermediate_ca_name: "arcus-{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}-internal-tls-int"
+    vault_pki_intermediate_ca_common_name: "{{ vault_pki_intermediate_ca_name }}"
+    vault_pki_intermediate_default_lease_ttl: "43830h"
+    vault_pki_intermediate_max_lease_ttl: "43830h"
+    vault_pki_intermediate_ttl: "43830h"
+    vault_pki_intermediate_key_bits: 4096
+
+    # Certificate Roles to Create
+    vault_pki_intermediate_roles:
+      - name: 'ClientServer'
+        config:
+          max_ttl: "8760h"
+          ttl: "8760h"
+          require_cn: false
+          allow_localhost: true
+          allow_any_name: true
+          allow_ip_sans: true
+          server_flag: true
+          client_flag: true
+          key_type: rsa
+          key_bits: 4096
+          country: ["GB"]
+          locality: ["England"]
+          organization: ["arcus"]
+          ou: ["ops"]
+
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Unseal vault
+      vars:
+        vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
+      import_role:
+        name: stackhpc.hashicorp.vault_unseal
+
+    - name: Generate Roots
+      vars:
+        vault_token: "{{ vault_keys.root_token }}"
+      import_role:
+        name: stackhpc.hashicorp.vault_pki
+
+    - name: "Collect the root Cert"
+      slurp:
+        src: "{{vault_pki_certificates_directory}}{{vault_pki_root_ca_name}}.pem"
+      delegate_to: localhost
+      register: vault_root
+      when:
+        - secrets_vault_root_cert is not defined
+
+    - name: "Delete the root cert from the file system"
+      file:
+        path: "{{ vault_pki_certificates_directory }}{{vault_pki_root_ca_name}}.pem"
+        state: absent
+      delegate_to: localhost
+      when: not vault_root.skipped | default('false') | bool
+
+    - name: Set root cert
+      set_fact:
+        new_secrets:
+          secrets_vault_root_cert: "{{ vault_root.content| b64decode }}"
+      when:
+        - secrets_vault_root_cert is not defined
+
+    - name: add vault secrets
+      blockinfile:
+        content: |
+          {{ new_secrets | to_nice_yaml(default_style='|') }}
+        dest: "{{vault_pki_certificates_directory}}vault-secrets.yml"
+        marker: ""
+        marker_begin: ""
+        marker_end: ""
+        insertafter: "EOF"
+        mode: 0660
+      delegate_to: localhost
+      when:
+        - new_secrets is defined

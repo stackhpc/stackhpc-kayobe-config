@@ -1,0 +1,78 @@
+---
+- name: Run hashicorp-vault role seed
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  vars:
+    # Consul and Vault Server Options
+    consul_bind_interface: "{{ ansible_default_ipv4.interface }}"
+    consul_bind_ip: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    consul_vip_address: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    vault_bind_address: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    vault_api_addr: "http://{{ admin_oc_net_ips[ansible_hostname] }}:8200"
+    vault_config_dir: "/opt/kayobe/vault"
+    vault_cluster_name: "vault_{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}"
+    vault_vip_url: "{{ admin_oc_net_ips[ansible_hostname] }}"
+    # Vault initalise keys
+    vault_write_keys_file: true
+    vault_write_keys_file_host: localhost
+    vault_write_keys_file_path: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/{{ lookup('env', 'KAYOBE_ENVIRONMENT') }}/keys.json"
+
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      pip:
+        name: hvac
+        state: latest
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - import_role:
+        name: stackhpc.hashicorp.vault
+
+    - name: "Collect the vault keys"
+      slurp:
+        src: "{{ vault_write_keys_file_path }}"
+      delegate_to: localhost
+      register: vault_keys
+      when:
+        - secrets_vault_keys is not defined
+
+    - name: "Delete the vault keys from the file system"
+      file:
+        path: "{{ vault_write_keys_file_path }}"
+        state: absent
+      delegate_to: localhost
+      when: not vault_keys.skipped | default('false') | bool
+
+    - name: Set Vault keys
+      set_fact:
+        new_secrets:
+          secrets_vault_keys: "{{ vault_keys.content| b64decode | from_json | to_nice_json(indent=2) }}"
+      when:
+        - secrets_vault_keys is not defined
+
+    - name: Touch vault-secrets.yml
+      file:
+        path: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/staging/vault-secrets.yml"
+        state: touch
+        mode: 0660
+      delegate_to: localhost
+      when:
+        - new_secrets is defined
+
+    - name: "Store vault keys securely"
+      copy:
+        content: |
+          {{ new_secrets | to_nice_yaml(default_style='|', explicit_start=True) }}
+        dest: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/staging/vault-secrets.yml"
+      delegate_to: localhost
+      when:
+        - new_secrets is defined

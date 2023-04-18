@@ -1,0 +1,15 @@
+---
+- name: Install CA into system trust store
+  hosts: seed:overcloud
+  tasks:
+    - name: Copy the rootCA
+      copy:
+        content: |
+          {{ secrets_vault_root_cert }}
+        dest: "{{ '/etc/pki/ca-trust/source/anchors/rootCA.crt' if ansible_os_family == 'RedHat' else '/usr/local/share/ca-certificates/rootCA.crt' }}"
+        mode: 0600
+      become: true
+
+    - name: update system CA
+      become: true
+      shell: "{{ 'update-ca-trust' if ansible_os_family == 'RedHat' else 'update-ca-certificates' }}"
