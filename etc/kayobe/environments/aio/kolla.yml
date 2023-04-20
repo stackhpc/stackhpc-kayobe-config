@@ -1,0 +1,42 @@
+---
+# Kayobe Kolla configuration.
+
+# Whether TLS is enabled for the external API endpoints. Default is 'no'.
+kolla_enable_tls_external: false
+
+###############################################################################
+# Kolla feature flag configuration.
+
+kolla_enable_neutron_agent_ha: false
+kolla_enable_prometheus: true
+kolla_enable_ironic: false
+kolla_enable_etcd: true
+
+###############################################################################
+# TLS certificate bundle management
+
+# External API certificate bundle.
+#
+# When kolla_enable_tls_external is true, this should contain an X.509
+# certificate bundle for the external API.
+#
+# Note that this should be formatted as a literal style block scalar.
+#
+# NOTE: kolla_tls_cert has been renamed to kolla_external_tls_cert. Support for
+# the deprecated name kolla_tls_cert will be removed in a future release.
+kolla_external_tls_cert:
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
+
+##############################################################################
+# Octavia networking
+octavia_amp_network:
+  name: lb-mgmt-net
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "{{ octavia_amp_network_cidr }}"
+    gateway_ip: "10.1.2.1"
+    enable_dhcp: yes

@@ -5,7 +5,7 @@
 # Ironic Python Agent (IPA) image build configuration.
 
 # Whether to build IPA images from source.
-#ipa_build_images:
+ipa_build_images: false
 
 # URL of IPA source repository.
 #ipa_build_source_url:
@@ -31,7 +31,10 @@
 # List of Diskimage Builder (DIB) elements to use when building IPA images.
 # Default is combination of ipa_build_dib_elements_default and
 # ipa_build_dib_elements_extra.
-#ipa_build_dib_elements:
+ipa_build_dib_elements_extra:
+  - "extra-hardware"
+  - "disable-selinux"
+  - "stable-interface-names"
 
 # Dictionary of default environment variables to provide to Diskimage Builder
 # (DIB) during IPA image build.
@@ -39,7 +42,10 @@
 
 # Dictionary of additional environment variables to provide to Diskimage
 # Builder (DIB) during IPA image build.
-#ipa_build_dib_env_extra:
+ipa_build_dib_env_extra:
+  YUM: dnf
+  DIB_RELEASE: "8-stream"
+  DIB_DHCP_TIMEOUT: 120
 
 # Dictionary of environment variables to provide to Diskimage Builder (DIB)
 # during IPA image build.
@@ -52,6 +58,11 @@
 # List of additional git repositories containing Diskimage Builder (DIB)
 # elements. See stackhpc.os-images role for usage. Default is empty.
 #ipa_build_dib_git_elements_extra:
+ipa_build_dib_git_elements_extra:
+  - repo: "https://github.com/stackhpc/stackhpc-image-elements"
+    local: "{{ source_checkout_path }}/stackhpc-image-elements"
+    version: "master"
+    elements_path: "elements"
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
 # stackhpc.os-images role for usage. Default is a combination of
@@ -60,6 +71,9 @@
 
 # List of DIB packages to install. Default is none.
 #ipa_build_dib_packages:
+ipa_build_dib_packages:
+  - jq
+  - sysstat
 
 # Upper constraints file for installing packages in the virtual environment
 # used for building IPA images. Default is {{ pip_upper_constraints_file }}.
@@ -67,6 +81,9 @@
 
 ###############################################################################
 # Ironic Python Agent (IPA) images configuration.
+
+# Common path for all of the image URLs.
+ipa_images_base_url: 'https://gitlab.com/api/v4/projects/25160749/packages/generic/ironic-python-agent/victoria-20221028T141413-7e739f9'
 
 # Suffix of upstream Ironic deployment image files. Default is based on
 # {{ openstack_branch }}.
@@ -76,10 +93,10 @@
 #ipa_images_kernel_name:
 
 # URL of Ironic deployment kernel image to download.
-#ipa_kernel_upstream_url:
+ipa_kernel_upstream_url: '{{ ipa_images_base_url }}/ipa.kernel?access_token={{ ipa_access_token }}'
 
 # URL of checksum of Ironic deployment kernel image.
-#ipa_kernel_checksum_url:
+ipa_kernel_checksum_url: '{{ ipa_images_base_url }}/ipa.kernel.sha256?access_token={{ ipa_access_token }}'
 
 # Algorithm of checksum of Ironic deployment kernel image.
 #ipa_kernel_checksum_algorithm:
@@ -88,13 +105,16 @@
 #ipa_images_ramdisk_name:
 
 # URL of Ironic deployment ramdisk image to download.
-#ipa_ramdisk_upstream_url:
+ipa_ramdisk_upstream_url: '{{ ipa_images_base_url }}/ipa.initramfs?access_token={{ ipa_access_token }}'
 
 # URL of checksum of Ironic deployment ramdisk image.
-#ipa_ramdisk_checksum_url:
+ipa_ramdisk_checksum_url: '{{ ipa_images_base_url }}/ipa.initramfs.sha256?access_token={{ ipa_access_token }}'
 
 # Algorithm of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_algorithm:
+
+# Access token for downloading the IPA images.
+ipa_access_token: '{{ secrets_scientific_openstack_ipa_token }}'
 
 ###############################################################################
 # Ironic Python Agent (IPA) deployment configuration.

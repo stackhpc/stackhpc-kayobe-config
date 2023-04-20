@@ -1,0 +1,121 @@
+---
+# Build and install overcloud host disk images for the seed host's ironic
+# service.
+
+- name: Ensure overcloud host disk images are built and installed
+  hosts: localhost
+  tags:
+    - overcloud-host-image-build
+  vars:
+    ansible_become: true
+    overcloud_host_image_force_rebuild: True
+    overcloud_host_image_push: False
+    version: '{{ ansible_date_time.iso8601_basic_short }}-{{ lookup("pipe", "cd $KAYOBE_CONFIG_PATH && git rev-parse --short HEAD") }}'
+    overcloud_host_image_push_image: "{{ lookup('env', 'KAYOBE_AUTOMATION_PUSH_IMAGE') | \
+                                       default(false, true) | bool }}"
+  tasks:
+    - block:
+        - name: Validate overcloud host disk image configuration
+          assert:
+            that:
+              - overcloud_dib_host_images is sequence
+              - overcloud_dib_host_images | selectattr('name', 'undefined') | list | length == 0
+              - overcloud_dib_host_images | selectattr('elements', 'undefined') | list | length == 0
+            msg: "overcloud_dib_host_images set to invalid value"
+
+        - name: Ensure overcloud host disk images are built
+          include_role:
+            name: stackhpc.os-images
+          vars:
+            os_images_venv: "{{ virtualenv_path }}/overcloud-host-image-dib"
+            os_images_package_state: latest
+            os_images_upper_constraints_file: "{{ overcloud_dib_upper_constraints_file }}"
+            os_images_cache: "{{ image_cache_path }}"
+            os_images_common: ""
+            os_images_list: "{{ overcloud_dib_host_images }}"
+            os_images_git_elements: "{{ overcloud_dib_git_elements }}"
+            os_images_upload: False
+            os_images_force_rebuild: "{{ overcloud_host_image_force_rebuild }}"
+
+    - name: Generate checksums
+      vars:
+        directory: '{{ image_cache_path }}/{{ image.name }}/'
+      shell: >-
+        sha256sum {{ directory }}/{{ image.name }}.{{ image.type | default('qcow2') }}
+        > {{ directory }}/{{ image.name }}.{{ image.type | default('qcow2') }}.sha256
+      loop: '{{ overcloud_dib_host_images }}'
+      loop_control:
+        loop_var: image
+        label: "{{ image.name }}"
+
+    - name: Upload image to generic package registry
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/\
+             {{ gitlab_kayobe_config_project_id }}/\
+             packages/generic/{{ os_distribution }}-{{ overcloud_dib_os_release }}/{{ version }}/\
+             {{ os_distribution }}-{{ overcloud_dib_os_release }}-{{ version }}.qcow2"
+        method: PUT
+        src: '{{ image_cache_path }}/{{ image.name }}/{{ image.name }}.{{ image.type | default("qcow2") }}'
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+      loop: '{{ overcloud_dib_host_images }}'
+      loop_control:
+        loop_var: image
+        label: "{{ image.name }}"
+      when: overcloud_host_image_push_image
+
+    - name: Upload checksum to generic package registry
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/\
+             {{ gitlab_kayobe_config_project_id }}/\
+             packages/generic/{{ os_distribution }}-{{ overcloud_dib_os_release }}/{{ version }}/\
+             {{ os_distribution }}-{{ overcloud_dib_os_release }}-{{ version }}.qcow2.sha256"
+        method: PUT
+        src: '{{ image_cache_path }}/{{ image.name }}/{{ image.name }}.{{ image.type | default("qcow2") }}.sha256'
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+      loop: '{{ overcloud_dib_host_images }}'
+      loop_control:
+        loop_var: image
+        label: "{{ image.name }}"
+      when: overcloud_host_image_push_image
+
+    - name: Upload build logs to generic package registry (stdout)
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/\
+             {{ gitlab_kayobe_config_project_id }}/\
+             packages/generic/{{ os_distribution }}-{{ overcloud_dib_os_release }}/{{ version }}/\
+             {{ os_distribution }}-{{ overcloud_dib_os_release }}-{{ version }}.stdout"
+        method: PUT
+        src: '{{ image_cache_path }}/{{ image.name }}/{{ image.name }}.stdout'
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+      loop: '{{ overcloud_dib_host_images }}'
+      loop_control:
+        loop_var: image
+        label: "{{ image.name }}"
+      when: overcloud_host_image_push_image
+
+    - name: Upload build logs to generic package registry (stdout)
+      uri:
+        url: "{{ gitlab_api_v4_url }}/projects/\
+             {{ gitlab_kayobe_config_project_id }}/\
+             packages/generic/{{ os_distribution }}-{{ overcloud_dib_os_release }}/{{ version }}/\
+             {{ os_distribution }}-{{ overcloud_dib_os_release }}-{{ version }}.stderr"
+        method: PUT
+        src: '{{ image_cache_path }}/{{ image.name }}/{{ image.name }}.stderr'
+        # Set 30 minute timeout for large files
+        timeout: '{{ 60 * 30 }}'  # seconds
+        headers: '{{ gitlab_auth_headers }}'
+        status_code: 201
+      loop: '{{ overcloud_dib_host_images }}'
+      loop_control:
+        loop_var: image
+        label: "{{ image.name }}"
+      when: overcloud_host_image_push_image

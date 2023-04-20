@@ -1,0 +1,47 @@
+---
+# COMMENTED for linter {% raw %}
+keystone_identity_providers:
+  - name: "openstack"
+    openstack_domain: "Default"
+    protocol: "openid"
+    identifier: "http://10.60.210.1:8080/auth/realms/openstack"
+    public_name: "Authenticate via keycloak"
+    attribute_mapping: "attribute_mapping_keycloak_openstack"
+    metadata_folder: "{{ node_custom_config }}/keystone/identity-metadata"
+    certificate_file: "{{ node_custom_config }}/keystone/identity-certificate.pem"
+keystone_identity_mappings:
+  - name: "attribute_mapping_keycloak_openstack"
+    file: "{{ node_custom_config }}/keystone/identity-mappings.json"
+# COMMENTED for linter {% endraw %}
+
+# Disabled until keycloak installation is automated
+enable_keystone_federation: false
+
+# List of projects to add the caso user to.
+caso_projects:
+  - service
+
+# Get kolla-ansible to configure firewalld
+disable_firewall: false
+enable_external_api_firewalld: true
+
+# Elasticsearch memory tuning
+es_heap_size: 1g
+
+##############################################################################
+# Octavia networking
+octavia_network_interface: breth1
+octavia_amp_network:
+  name: lb-mgmt-net
+  provider_network_type: vlan
+  provider_segmentation_id: 1000
+  provider_physical_network: physnet1
+  external: false
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "10.1.2.0/24"
+    allocation_pool_start: "10.1.2.100"
+    allocation_pool_end: "10.1.2.200"
+    gateway_ip: "10.1.2.1"
+    enable_dhcp: yes

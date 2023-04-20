@@ -142,4 +142,55 @@ if ! $KOLLA_OPENSTACK_COMMAND flavor list | grep -q m1.tiny; then
     $KOLLA_OPENSTACK_COMMAND flavor create --id 5 --ram 16384 --disk 160 --vcpus 8 m1.xlarge
 fi
 
+echo Downloading ubuntu k8s image
+
+#curl -L --fail -o ${IMAGE_PATH}/ubuntu-2004-kube-v1.25.5.qcow2 https://minio.services.osism.tech/openstack-k8s-capi-images/ubuntu-2004-kube-v1.25/ubuntu-2004-kube-v1.25.5.qcow2
+#$KOLLA_OPENSTACK_COMMAND image create ubuntu-2004-kube-v1.25.5 \
+#  --file ${IMAGE_PATH}/ubuntu-2004-kube-v1.25.5.qcow2 \
+#  --disk-format qcow2 \
+#  --container-format bare \
+#  --public
+$KOLLA_OPENSTACK_COMMAND image set ubuntu-2004-kube-v1.25.5 --os-distro ubuntu --os-version 20.04
+
+echo Creating flavor ds2G20 for ubuntu image
+#$KOLLA_OPENSTACK_COMMAND flavor create ds2G20 --ram 2048 --disk 20 --id d5 --vcpus 2 --public
+
+echo Registering cluster templates 
+$KOLLA_OPENSTACK_COMMAND coe cluster template create new_driver \
+  --coe kubernetes \
+  --image ubuntu-2004-kube-v1.25.5 \
+  --external-network public1 \
+  --label kube_tag=v1.25.5 \
+  --master-flavor ds2G20 \
+  --flavor ds2G20 \
+  --public \
+  --master-lb-enabled
+
+#old driver
+curl -L --fail -o ${IMAGE_PATH}/fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2.xz  https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/35.20220116.3.0/x86_64/fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2.xz
+unxz ${IMAGE_PATH}/fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2.xz
+ 
+$KOLLA_OPENSTACK_COMMAND image create fedora-coreos-35.20220116.3.0-openstack.x86_64 \
+  --file ${IMAGE_PATH}/fedora-coreos-35.20220116.3.0-openstack.x86_64.qcow2 \
+  --disk-format qcow2 \
+  --container-format bare \
+  --public
+$KOLLA_OPENSTACK_COMMAND image set fedora-coreos-35.20220116.3.0-openstack.x86_64 --os-distro fedora-coreos
+
+$KOLLA_OPENSTACK_COMMAND coe cluster template create old_driver \
+  --coe kubernetes \
+  --image fedora-coreos-35.20220116.3.0-openstack.x86_64 \
+  --external-network public1 \
+  --master-flavor m1.medium \
+  --flavor m1.medium \
+  --public \
+
+#setup octavia management network to be reachable from control plane 
+$KOLLA_OPENSTACK_COMMAND router create lb-rtr --disable-snat --external-gateway public1
+$KOLLA_OPENSTACK_COMMAND router add subnet lb-rtr lb-mgmt-subnet
+ROUTER_IP=$($KOLLA_OPENSTACK_COMMAND router show lb-rtr -f json | jq '.external_gateway_info.external_fixed_ips[].ip_address')
+SUBNET_CIDR=$($KOLLA_OPENSTACK_COMMAND subnet show lb-mgmt-subnet -f json | jq '.cidr')
+
+sudo ip r add $SUBNET_CIDR via $ROUTER_IP
+
 touch /tmp/.init-runonce

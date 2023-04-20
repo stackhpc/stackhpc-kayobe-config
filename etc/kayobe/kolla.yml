@@ -131,7 +131,7 @@ kolla_sources:
     reference: 1.3.0
   magnum-base:
     type: git
-    location: https://github.com/stackhpc/magnum.git
+    location: https://github.com/scrungus/magnum.git
     reference: stackhpc/{{ openstack_release }}
   neutron-base:
     type: git
@@ -323,14 +323,6 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
-  keystone_base_footer: |
-    {% raw %}
-    {% if base_package_type == 'deb' %}
-    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
-        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
-        rm -f liblasso3_2.7.0-2build3_amd64.deb
-    {% endif %}
-    {% endraw %}
   nova_base_footer: |
     # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
     # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
@@ -339,6 +331,11 @@ kolla_build_blocks:
     RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
     {% endif %}
     {% endraw %}
+  #workaround for broken kubernetes client https://github.com/kubernetes-client/python/issues/1893
+  magnum_base_footer: |
+    RUN pip install kubernetes>=24.2.0 
+    RUN pip show kubernetes | grep -o /.*/site-packages | sed 's/$/\/kubernetes\/config\/__init__.py/' | xargs sed -i 's/kube_config_path/config_file/g'
+    RUN curl -fsL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -462,9 +459,12 @@ kolla_build_args:
 # Custom overcloud inventory containing a mapping from components to top level
 # groups.
 #kolla_overcloud_inventory_custom_components:
+kolla_overcloud_inventory_custom_components: "{{ lookup('template', kayobe_config_path\
+  \ ~ '/kolla/overcloud-components.j2') }}"
 
 # Custom overcloud inventory containing a mapping from services to components.
-#kolla_overcloud_inventory_custom_services:
+kolla_overcloud_inventory_custom_services: "{{ lookup('template', kayobe_config_path\
+  \ ~ '/kolla/overcloud-services.j2') }}"
 
 # Full custom overcloud inventory contents. By default this will be the
 # concatenation of the top level, component, and service inventories.
@@ -489,7 +489,10 @@ kolla_build_args:
 # List of names of additional host variables to pass through from kayobe hosts
 # to kolla-ansible hosts, if set. See also
 # kolla_overcloud_inventory_pass_through_host_vars_map.
-#kolla_overcloud_inventory_pass_through_host_vars_extra:
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - gpu_nova_pci_passthrough_whitelist
+  - gpu_nova_pci_aliases
+  - sriov_physnet_mappings
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
@@ -506,7 +509,10 @@ kolla_build_args:
 # kolla_overcloud_inventory_pass_through_host_vars to the variable to use in
 # kolla-ansible. If a variable name is not in this mapping the kayobe name is
 # used.
-#kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+  gpu_nova_pci_passthrough_whitelist: nova_pci_passthrough_whitelist_extra
+  gpu_nova_pci_aliases: nova_pci_passthrough_aliases_extra
+  sriov_physnet_mappings: neutron_sriov_physnet_mappings
 
 # Dict mapping names of variables in
 # kolla_overcloud_inventory_pass_through_host_vars to the variable to use in
@@ -552,8 +558,9 @@ kolla_build_args:
 # Kolla feature flag configuration.
 
 #kolla_enable_aodh:
-#kolla_enable_barbican:
-#kolla_enable_blazar:
+kolla_enable_barbican: true
+kolla_enable_blazar: true
+kolla_enable_caso: true
 #kolla_enable_ceilometer:
 #kolla_enable_ceilometer_horizon_policy_file:
 #kolla_enable_ceilometer_ipmi:
@@ -574,7 +581,7 @@ kolla_enable_central_logging: true
 #kolla_enable_collectd:
 #kolla_enable_container_healthchecks:
 #kolla_enable_cyborg:
-#kolla_enable_designate:
+kolla_enable_designate: true
 #kolla_enable_destroy_images:
 #kolla_enable_elasticsearch:
 kolla_enable_elasticsearch_curator: true
@@ -591,9 +598,9 @@ kolla_enable_grafana: true
 #kolla_enable_hacluster:
 #kolla_enable_haproxy:
 #kolla_enable_haproxy_memcached:
-#kolla_enable_heat:
+kolla_enable_heat: true
 #kolla_enable_heat_horizon_policy_file:
-#kolla_enable_horizon:
+kolla_enable_horizon: true
 #kolla_enable_horizon_blazar:
 #kolla_enable_horizon_cloudkitty:
 #kolla_enable_horizon_designate:
@@ -617,7 +624,7 @@ kolla_enable_grafana: true
 #kolla_enable_horizon_watcher:
 #kolla_enable_horizon_zun:
 #kolla_enable_influxdb:
-#kolla_enable_ironic:
+kolla_enable_ironic: false
 #kolla_enable_ironic_neutron_agent:
 #kolla_enable_ironic_pxe_uefi:
 #kolla_enable_iscsid:
@@ -629,14 +636,14 @@ kolla_enable_grafana: true
 #kolla_enable_kibana:
 #kolla_enable_kuryr:
 #kolla_enable_loadbalancer:
-#kolla_enable_magnum:
+kolla_enable_magnum: true
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
 #kolla_enable_manila_backend_cephfs_nfs:
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_glusterfs_nfs:
 #kolla_enable_manila_backend_hnas:
-kolla_enable_mariabackup: True
+kolla_enable_mariabackup: true
 #kolla_enable_mariadb:
 #kolla_enable_masakari:
 #kolla_enable_memcached:
@@ -645,7 +652,7 @@ kolla_enable_mariabackup: True
 #kolla_enable_multipathd:
 #kolla_enable_murano:
 #kolla_enable_neutron:
-#kolla_enable_neutron_agent_ha:
+kolla_enable_neutron_agent_ha: true
 #kolla_enable_neutron_bgp_dragent:
 #kolla_enable_neutron_dvr:
 #kolla_enable_neutron_horizon_policy_file:
@@ -654,7 +661,7 @@ kolla_enable_mariabackup: True
 #kolla_enable_neutron_mlnx:
 #kolla_enable_neutron_packet_logging:
 #kolla_enable_neutron_port_forwarding:
-#kolla_enable_neutron_provider_networks:
+kolla_enable_neutron_provider_networks: true
 #kolla_enable_neutron_qos:
 #kolla_enable_neutron_segments:
 #kolla_enable_neutron_sfc:
@@ -667,13 +674,13 @@ kolla_enable_mariabackup: True
 #kolla_enable_nova_libvirt_container:
 #kolla_enable_nova_serialconsole_proxy:
 #kolla_enable_nova_ssh:
-#kolla_enable_octavia:
+kolla_enable_octavia: true
 #kolla_enable_octavia_driver_agent:
 #kolla_enable_openstack_core:
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
 #kolla_enable_outward_rabbitmq:
-#kolla_enable_ovn:
+kolla_enable_ovn: '{{ scientific_openstack_trait_ovn }}'
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
 kolla_enable_prometheus: true
@@ -694,7 +701,7 @@ kolla_enable_prometheus: true
 #kolla_enable_prometheus_server:
 #kolla_enable_qdrouterd:
 #kolla_enable_rabbitmq:
-#kolla_enable_redis:
+kolla_enable_redis: true
 #kolla_enable_sahara:
 #kolla_enable_senlin:
 #kolla_enable_skydive:
@@ -722,7 +729,33 @@ kolla_enable_prometheus: true
 
 # Dictionary containing custom passwords to add or override in the Kolla
 # passwords file.
-#kolla_ansible_custom_passwords:
+kolla_ansible_custom_passwords_extra:
+  libvirt_sasl_password: "{{ secrets_libvirt_sasl_password }}"
+  docker_registry_password: "{{ kolla_docker_registry_password }}"
+
+# Extend the defaults with the above extra passwords
+# TODO: might be able to drop this in Victoria
+kolla_ansible_custom_passwords: >-
+  {{ kolla_ansible_default_custom_passwords |
+     combine(kolla_ansible_custom_passwords_extra) }}
+
+###############################################################################
+# Kolla config merging rules (Scientific OpenStack only)
+
+kolla_openstack_custom_config_rules_extra:
+  # Some files cannot be merged, fall back to templating...
+  - glob: "prometheus/prometheus-alertmanager.yml"
+    strategy: template
+    priority: 1
+    enabled: true
+  - glob: "prometheus/prometheus.yml"
+    strategy: template
+    priority: 1
+    enabled: true
+  - glob: "prometheus/prometheus.yml.d/*"
+    strategy: template
+    priority: 1
+    enabled: true
 
 ###############################################################################
 # OpenStack API addresses.

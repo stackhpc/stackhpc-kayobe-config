@@ -350,6 +350,18 @@ stackhpc_pulp_repository_rpm_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_el_8 }}"
 
+  - name: CentOS 8 - Ceph Nautilus
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8/storage/x86_64/ceph-nautilus/{{ stackhpc_pulp_repo_centos_8_storage_ceph_nautilus_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+
   # Additional repositories required to build Kolla containers from local Pulp service.
   - name: CentOS Stream 8 - OpenStack Yoga
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/cloud/x86_64/openstack-yoga/{{ stackhpc_pulp_repo_centos_stream_8_openstack_yoga_version }}"
@@ -657,6 +669,11 @@ stackhpc_pulp_distribution_rpm_development:
     base_path: "rocky/8/PowerTools/x86_64/os/development"
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "ceph-nautilus-development"
+    repository: CentOS 8 - Ceph Nautilus
+    base_path: "centos/8/storage/x86_64/ceph-nautilus/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
 
   # EPEL 8 repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-development"
@@ -854,6 +871,11 @@ stackhpc_pulp_distribution_rpm_production:
   - name: "rocky-8-powertools-production"
     distribution: "rocky-8-powertools-development"
     base_path: "rocky/8/PowerTools/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
+  - name: "ceph-nautilus-production"
+    distribution: "ceph-nautilus-development"
+    base_path: "centos/8/storage/x86_64/ceph-nautilus/production"
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
 

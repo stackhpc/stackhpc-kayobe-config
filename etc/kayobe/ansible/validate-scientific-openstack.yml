@@ -1,0 +1,28 @@
+---
+
+- name: Validate scientific openstack configuration
+  hosts: localhost
+  vars:
+    failed: false
+  tasks:
+    - block:
+        - name: Check that secrets are defined
+          assert:
+            that: undefined | length == 0
+            fail_msg: >-
+              The following secrets are undefined: {{ undefined }}. Please
+              define them in secrets.yml.
+          vars:
+            undefined: "{{ secrets | rejectattr('test', 'true') | map(attribute='name')\
+              \ | list }}"
+            secrets:
+              - name: secrets_ipmi_password
+                test: '{{ secrets_ipmi_password is defined }}'
+              - name: secrets_slack_notification_channel_url
+                test: '{{ secrets_slack_notification_channel_url is defined }}'
+      rescue:
+        - set_fact:
+            failed: true
+    - fail:
+        msg: Some checks are failing. Please check the output above.
+      when: failed

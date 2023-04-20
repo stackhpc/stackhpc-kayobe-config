@@ -138,11 +138,12 @@
 #controller_firewalld_enabled:
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-#controller_firewalld_zones:
+controller_firewalld_zones:
+  - zone: public
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-#controller_firewalld_default_zone:
+controller_firewalld_default_zone: trusted
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -150,7 +151,12 @@
 # - offline: true
 # - permanent: true
 # - state: enabled
-#controller_firewalld_rules:
+controller_firewalld_rules:
+  # Use this default drop rule in conjunction with enable_external_api_firewalld
+  - zone: public
+    state: present
+    permanent: yes
+    target: DROP
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

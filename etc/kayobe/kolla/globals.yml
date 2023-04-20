@@ -1,11 +1,86 @@
 # yamllint disable-file
 ---
+# Add extra Kolla global configuration here.
 
 # To work around issue of trying to install docker from
 # empty pulp server, use upstream docker dnf repo on
 # non-overcloud hosts
 enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}"{% endraw %}
 
+# Tell kolla to use the extra volume in this location
+nova_instance_datadir_volume: '/var/lib/nova'
+
+# Make glance use a file backend
+glance_backend_swift: "no"
+glance_file_backend: "yes"
+
+# Enable CADF notifications in Keystone
+enable_cadf_notifications: "yes"
+
+# Projects to extracts metrics from with cASO
+#caso_projects:
+#  - iris
+#  - iris-euclid
+caso_messengers:
+  - caso.messenger.logstash.LogstashMessenger
+  - caso.messenger.ssm.SSMMessengerV04
+caso_site_name: "CHANGE_ME_CASO_SITE_NAME"
+
+# Designate (DNSaaS) configuration
+designate_backend: "bind9"
+designate_ns_record: "CHANGEME_DESIGNATE_NS_RECORD"
+
+# Default size causes ES to fall over very easily
+{% if scientific_openstack_trait_all_in_one %}
+es_heap_size: 8g
+{% else %}
+es_heap_size: "24g"
+{% endif %}
+
+# Look after elasticserach indexes, as required
+enable_elasticsearch_curator: true
+# Close index after 30 days
+elasticsearch_curator_soft_retention_period_days: 30
+# Hard delete index after around 3 years
+elasticsearch_curator_hard_retention_period_days: 1100
+
+
+om_enable_rabbitmq_high_availability: true
+
+# Needed to launch VM instances in aio environment without nested virt
+nova_compute_virt_type: "{{ 'qemu' if scientific_openstack_trait_all_in_one else 'kvm' }}"
+
+#############################################################################
+# Monitoring and alerting related settings
+# Increase the default prometheus retention period
+prometheus_cmdline_extras: '--storage.tsdb.retention.time=90d --storage.tsdb.retention.size=50GB'
+
+# Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
+prometheus_node_exporter_extra_volumes:
+  - "textfile:/var/lib/node_exporter/textfile_collector"
+prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
+
+# Custom exporters
+enable_prometheus_libvirt_exporter: True
+
+# Takes longer than the default 10 seconds, we poll every 1m
+prometheus_openstack_exporter_timeout: 30s
+
+#############################################################################
+# Reduce the kolla-ansible token expiry default from one day to one hour
+fernet_token_expiry: 3600
+
+{% if scientific_openstack_trait_all_in_one %}
+keepalived_vip_prechecks: false
+{% endif %}
+
+{% if scientific_openstack_trait_ovn %}
+neutron_plugin_agent: 'ovn'
+{% endif %}
+
+# Disable kolla managed NTP clients
+enable_chrony: false
+enable_host_ntp: false
 
 {% if kolla_base_distro == 'centos' %}
 bifrost_tag: yoga-20230217T160618
@@ -40,20 +115,3 @@ prometheus_node_exporter_tag: yoga-20230315T170541
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
-
-om_enable_rabbitmq_high_availability: true
-
-#############################################################################
-# Monitoring and alerting related settings
-
-es_heap_size: 8g
-prometheus_cmdline_extras: "--storage.tsdb.retention.time=30d"
-
-# Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
-prometheus_node_exporter_extra_volumes:
-  - "textfile:/var/lib/node_exporter/textfile_collector"
-prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
-
-
-#############################################################################
-

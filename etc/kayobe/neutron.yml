@@ -4,13 +4,26 @@
 
 # List of Neutron ML2 mechanism drivers to use. If unset the kolla-ansible
 # defaults will be used.
-#kolla_neutron_ml2_mechanism_drivers:
+kolla_neutron_ml2_mechanism_drivers: "{{ _kolla_neutron_ml2_mechanism_drivers | select }}"
+
+# Pre-filtered version of the above.
+_kolla_neutron_ml2_mechanism_drivers:
+  - openvswitch
+  - genericswitch
+  - l2population
+  - "{{ 'ovn' if scientific_openstack_trait_ovn | bool else '' }}"
 
 # List of Neutron ML2 type drivers to use.
-#kolla_neutron_ml2_type_drivers:
+kolla_neutron_ml2_type_drivers:
+  - vxlan
+  - vlan
+  - flat
 
 # List of Neutron ML2 tenant network types to use.
-#kolla_neutron_ml2_tenant_network_types:
+kolla_neutron_ml2_tenant_network_types:
+  - vxlan
+  - vlan
+  - flat
 
 # List of Neutron ML2 network VLAN ranges to use. Each item should be a dict
 # containing the following items:
@@ -18,9 +31,12 @@
 # range: Range of allowed VLANs on this physical network (format <min>:<max>,
 # optional)
 #kolla_neutron_ml2_network_vlan_ranges:
+kolla_neutron_ml2_network_vlan_ranges:
+  - physical_network: physnet1
 
 # List of Neutron ML2 extention drivers to use.
-#kolla_neutron_ml2_extension_drivers:
+kolla_neutron_ml2_extension_drivers:
+  - dns
 
 ###############################################################################
 # Neutron ML2 generic switch driver configuration.
@@ -45,7 +61,8 @@
 # password: ansible_ssh_pass
 # key_file: not currently supported
 # secret: not currently supported
-#kolla_neutron_ml2_generic_switch_hosts:
+kolla_neutron_ml2_generic_switch_hosts: "{{ groups['kolla_neutron_ml2_generic_switch_hosts']\
+  \ | default([]) }}"
 
 # Dict containing additional configuration for switches managed by the
 # genericswitch ML2 mechanism driver. For per-switch configuration of switches

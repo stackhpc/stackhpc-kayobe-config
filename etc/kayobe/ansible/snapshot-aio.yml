@@ -1,0 +1,91 @@
+---
+
+- name: Snapshot AIO
+  gather_facts: true
+  hosts:
+    localhost
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    snapshot_name: "{{ terraform_state_snapshot_name }}-{{ openstack_release }}-{{ ansible_date_time.iso8601_basic_short }}"
+    snapshot_local: "{{ not snapshot_volume }}"
+    snapshot_volume: "{{ terraform_state_boot_from_volume }}"
+    venv: '~/.kayobe-venv-openstack'
+  tasks:
+    - name: Print terraform outputs
+      debug:
+        msg: "{{ terraform_state.outputs }}"
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        virtualenv: '{{ venv }}'
+        state: latest
+
+    - name: Install python openstack client
+      pip:
+        # https://review.opendev.org/c/openstack/python-openstackclient/+/854847
+        name: 'python-openstackclient@git+https://github.com/stackhpc/python-openstackclient@scientific-openstack/wallaby'
+        virtualenv: '{{ venv }}'
+        #extra_args: -c "{{ pip_upper_constraints_file }}"
+
+    - name: Shutdown AIO to ensure all data flushed to disk
+      command: "{{ venv }}/bin/openstack server stop {{ terraform_state_instance_uuid }}"
+      register: result
+      failed_when: "result.rc != 0 and 'while it is in vm_state stopped' not in result.stderr"
+      changed_when: "'while it is in vm_state stopped' not in result.stderr"
+
+    - name: Ensure VM has stopped
+      command: "{{ venv }}/bin/openstack server show {{ terraform_state_instance_uuid }} -f value -c status"
+      register: result
+      changed_when: result.attempts > 1
+      until: result.stdout == 'SHUTOFF'
+
+    - block:
+        # NOTE: You can reduce the size of these snapshots by converting to a volume and back
+        - name: Snapshot AIO
+          command: "{{ venv }}/bin/openstack server image create --name {{ snapshot_name }} {{ terraform_state_instance_uuid }} --wait -f json"
+          register: result
+      when: snapshot_local
+
+    - block:
+        - name: Retrive volume id
+          command: "{{ venv }}/bin/openstack server show {{ terraform_state_instance_uuid }} -f json -c volumes_attached"
+          register: volume_result
+
+        - name: Create clone of volume
+          command: "{{ venv }}/bin/openstack volume create --source {{ volume_id }} {{ snapshot_name }}"
+          register: volume_clone
+
+        - name: Wait for volume to become available
+          command: "{{ venv }}/bin/openstack volume show {{ snapshot_name }} -f value -c status"
+          register: result
+          retries: 200
+          until: result.stdout == 'available'
+
+        - name: Create image from volume
+          # Quirk with openstack CLI: Uploading data and using container are not allowed at the same time
+          # https://review.opendev.org/c/openstack/python-openstackclient/+/854847
+          shell: "{{ venv }}/bin/openstack image create --disk-format qcow2 --force --volume {{ snapshot_name }} {{ snapshot_name }} 0<&-"
+
+        - name: Wait for image to become active
+          command: "{{ venv }}/bin/openstack image show {{ snapshot_name }} -f value -c status"
+          register: result
+          retries: 200
+          until: result.stdout == 'active'
+
+      always:
+        - name: Delete volume clone
+          shell: "{{ venv }}/bin/openstack volume delete {{ snapshot_name }}"
+          when: volume_clone is defined and volume_clone is success
+      vars:
+        # Format of this changes between versions of openstackclient
+        # volumes_attached: id='761ea4ba-65c9-498d-ba06-8e743d1e0b41'
+        # volume_id: "{{ (volume_result.stdout | from_json).volumes_attached.split('=')[1][1:-1] }}"
+        volume_id: "{{ (volume_result.stdout | from_json).volumes_attached.0.id }}"
+
+      when: snapshot_volume
+
+    - name: Print the snapshot name
+      debug:
+        msg: "The snapshot is now avaiable: {{ snapshot_name }}"

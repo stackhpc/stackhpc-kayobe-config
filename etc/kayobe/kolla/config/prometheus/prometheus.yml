@@ -1,0 +1,173 @@
+{% raw %}
+global:
+  scrape_interval: 60s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+{% if prometheus_alert_rules.files is defined and prometheus_alert_rules.files | length  > 0 %}
+rule_files:
+{% for rule in prometheus_alert_rules.files %}
+  - "/etc/prometheus/{{ rule.path | basename }}"
+{% endfor %}
+{% endif %}
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+{% for host in groups['prometheus'] %}
+        - '{{ host }}:{{ prometheus_port }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+
+{% if enable_prometheus_node_exporter | bool %}
+  - job_name: node
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-node-exporter'] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_node_exporter_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_mysqld_exporter | bool %}
+  - job_name: mysqld
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-mysqld-exporter'] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_mysqld_exporter_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_haproxy_exporter | bool %}
+  - job_name: haproxy
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-haproxy-exporter'] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_haproxy_exporter_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_memcached_exporter | bool %}
+  - job_name: memcached
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-memcached-exporter'] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_memcached_exporter_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_cadvisor | bool %}
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+{% for host in groups["prometheus-cadvisor"] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_cadvisor_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_ceph_mgr_exporter | bool %}
+  - job_name: ceph_mgr_exporter
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for exporter in prometheus_ceph_mgr_exporter_endpoints %}
+        - '{{ exporter }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_openstack_exporter | bool %}
+  - job_name: openstack_exporter
+    scrape_interval: {{ prometheus_openstack_exporter_interval }}
+    scrape_timeout: {{ prometheus_openstack_exporter_timeout }}
+    honor_labels: true
+    static_configs:
+      - targets:
+        - '{{ inventory_hostname }}:{{ hostvars[inventory_hostname]['prometheus_openstack_exporter_port'] }}'
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_elasticsearch_exporter | bool %}
+  - job_name: elasticsearch_exporter
+    scrape_interval: {{ prometheus_elasticsearch_exporter_interval }}
+    static_configs:
+      - targets:
+{% for host in groups["prometheus-elasticsearch-exporter"] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_elasticsearch_exporter_port'] }}'
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endif %}
+
+{% if enable_prometheus_blackbox_exporter | bool and prometheus_blackbox_exporter_endpoints | length > 0 | bool %}
+  - job_name: blackbox_exporter
+    metrics_path: /probe
+    honor_labels: true
+    static_configs:
+      - targets:
+{% for target in prometheus_blackbox_exporter_endpoints %}
+        - '{{ target }}'
+{% endfor %}
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: service
+        replacement: ${1}
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: __param_module
+        replacement: ${2}
+      - source_labels: [__param_module]
+        target_label: module
+      - source_labels: [__address__]
+        regex: (\w+):(\w+):(.+)
+        target_label: __param_target
+        replacement: ${3}
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: '{{ api_interface_address | put_address_in_context('url') }}:{{ prometheus_blackbox_exporter_port }}'
+{% endif %}
+
+{% if enable_prometheus_alertmanager | bool %}
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+{% for host in groups["prometheus-alertmanager"] %}
+        - '{{ host }}:{{ hostvars[host]['prometheus_alertmanager_port'] }}'
+{% endfor %}
+{% endif %}
+
+{% endraw %}

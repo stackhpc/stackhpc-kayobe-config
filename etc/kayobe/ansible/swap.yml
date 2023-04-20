@@ -11,11 +11,11 @@
 #                take precedence over any inventory variable.
 
 - name: Configure swap
-  hosts: "{{ swap_group | default('overcloud') }}"
+  hosts: swap_group
   tags:
     - swap
   vars:
-    swap_device: "/dev/rootvg/lv_swap"
+    swap_device: "/dev/vg/lv_swap"
   become: true
   tasks:
     - name: Ensure swap filesystem is present

@@ -1,0 +1,33 @@
+---
+global:
+  resolve_timeout: 5m
+  smtp_require_tls: true
+  slack_api_url: '{{ secrets_slack_notification_channel_url }}'
+
+route:
+  receiver: 'slack-notifications'
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: 'slack-notifications'
+    slack_configs: {{ '{% raw %}' }}{% raw %}
+    - channel: '#iris-notifications'
+      title: |-
+        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+      text: >-
+        {{ range .Alerts -}}
+        *Alert:* {{ .Annotations.summary }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+
+        *Description:* {{ .Annotations.description }}
+
+        *Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+        {{ end }}
+      send_resolved: true
+{% endraw %}{{ '{% endraw %}' }}
+
+templates: []

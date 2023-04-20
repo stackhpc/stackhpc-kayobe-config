@@ -1,0 +1,13 @@
+{% raw %}
+scrape_configs:
+  - job_name: alertmanager
+    static_configs:
+      - targets:
+{% for host in groups['prometheus-alertmanager'] %}
+        - "{{ host }}:{{ prometheus_alertmanager_port }}"
+{% endfor %}
+    relabel_configs:
+    - source_labels: [__address__]
+      regex: "([^:]+):\\d+"
+      target_label: instance
+{% endraw %}

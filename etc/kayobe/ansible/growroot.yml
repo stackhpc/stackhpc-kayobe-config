@@ -9,7 +9,7 @@
 # * growroot_vg: Name of the VG containing the PV to grow. Default is 'rootvg'.
 
 - name: Grow root PV
-  hosts: "{{ growroot_group | default('overcloud') }}"
+  hosts: growroot_group
   # Avoid using facts because this may be used as a pre overcloud host
   # configure hook, and we don't want to populate the fact cache (if one is in
   # use) with the bootstrap user's context.
@@ -24,7 +24,7 @@
     # Work around no known_hosts entry on first boot.
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     # Name of the LVM VG containing the root PV.
-    growroot_vg: "rootvg"
+    growroot_vg: "vg"
     # Don't assume facts are present.
     os_family: "{{ ansible_facts.os_family | default('Debian' if os_distribution == 'ubuntu' else 'RedHat') }}"
 

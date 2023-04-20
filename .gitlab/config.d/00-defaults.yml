@@ -1,0 +1,51 @@
+variables:
+  GITLAB_ENVIRONMENT: builder
+  KAYOBE_ENVIRONMENT: builder
+  FEATURE_ENABLE_TEMPEST_OCTAVIA: 'false'
+  FEATURE_ENABLE_TEMPEST_BAREMETAL: 'false'
+  FEATURE_ENABLE_TEMPEST_END_TO_END: 'false'
+  FEATURE_ENABLE_UPGRADE: 'false'
+  FEATURE_ENABLE_BUILD_JOBS: 'false'
+  KAYOBE_ENVIRONMENT_KOLLA_BUILD: builder
+  KAYOBE_ENVIRONMENT_DIB_BUILD: builder
+
+.environment:
+  environment: &dot_environment_environment
+    name: $GITLAB_ENVIRONMENT
+  variables: &dot_environment_variables
+    KAYOBE_AUTOMATION_TERRAFORM_STATE_NAME: $CI_ENVIRONMENT_SLUG
+
+.environment-prepare:
+  environment:
+    <<: *dot_environment_environment
+    action: prepare
+  variables:
+    <<: *dot_environment_variables
+
+.tags:
+  tags:
+    - arcus
+
+.config-diff-tags:
+  tags:
+    - arcus
+
+.tempest-tags:
+  tags:
+    - arcus
+
+.terraform-tags:
+  tags:
+    - arcus
+
+.dind-tags:
+  tags:
+    - arcus-builder
+
+.ipa-tags:
+  tags:
+    - arcus-builder
+
+.kolla-container-tags:
+  tags:
+    - arcus
