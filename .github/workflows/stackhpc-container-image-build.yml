@@ -182,6 +182,30 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: Create artifacts directory
+        run: |
+          mkdir artifacts
+
+      - name: Clean build logs directory
+        run: |
+          sudo rm -rf /var/log/kolla/
+
+      - name: Configure kolla-build.conf for overcloud
+        run: |
+          sudo mkdir -p /var/log/kolla/overcloud
+          sudo chown -R stack: /var/log/kolla/
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/kolla/kolla-build.conf
+          [DEFAULT]
+          # Print a summary in JSON format at the end of the build output
+          format = json
+          # Log to a separate file for each image
+          logs_dir = /var/log/kolla/overcloud
+          # Other kolla-build logs
+          log_dir = /var/log/kolla/overcloud
+          quiet = True
+          EOF
+        if: github.event.inputs.overcloud == 'true'
+
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
@@ -190,15 +214,33 @@ jobs:
           #if ${{ inputs.push-images }} == 'true'; then
           #  args="$args --push"
           #fi
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build $args
+          source venvs/kayobe/bin/activate
+          source src/kayobe-config/kayobe-env --environment ci-builder
+          if ! kayobe overcloud container image build $args; then
+            touch artifacts/failed
+          fi
           # TODO: handle failure
           # Report any images that failed to build
           # Fail if all images failed to build
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
+
+      - name: Configure kolla-build.conf for seed
+        run: |
+          sudo mkdir -p /var/log/kolla/seed
+          sudo chown -R stack: /var/log/kolla
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/kolla/kolla-build.conf
+          [DEFAULT]
+          # Print a summary in JSON format at the end of the build output
+          format = json
+          # Log to a separate file for each image
+          logs_dir = /var/log/kolla/seed
+          # Other kolla-build logs
+          log_dir = /var/log/kolla/seed
+          quiet = True
+          EOF
+        if: github.event.inputs.seed == 'true'
 
       - name: Build and push kolla seed images
         run: |
@@ -207,9 +249,11 @@ jobs:
           #if ${{ inputs.push-images }} == 'true'; then
           #  args="$args --push"
           #fi
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed container image build $args
+          source venvs/kayobe/bin/activate
+          source src/kayobe-config/kayobe-env --environment ci-builder
+          if ! kayobe seed container image build $args; then
+            touch artifacts/failed
+          fi
           # TODO: handle failure
           # Report any images that failed to build
           # Fail if all images failed to build
@@ -220,14 +264,16 @@ jobs:
       - name: Generate artifacts
         run: |
           # TODO: report failures
-          # Add build logs?
-          mkdir artifacts
           # The tag for all built images
           echo "${{ needs.generate-tag.outputs.kolla_tag }}" > artifacts/kolla_tag
           # Table of of built images for this distro
           sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" > artifacts/container-images
           # And again in JSON
           sudo docker image ls --filter "${{ env.IMAGE_FILTER }}" --format "{{json .}}" > artifacts/container-images.json
+          # Add build logs
+          mkdir -p artifacts/logs/
+          sudo mv /var/log/kolla/* artifacts/logs/
+          sudo chown -R $USER: artifacts/logs/
         env:
           IMAGE_FILTER: "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}"
 
@@ -356,4 +402,28 @@ jobs:
         if: inputs.create-pr
 
       # Comment on PR about failures?
-      # Fail job on build failures?
+
+  # NOTE: We can't fail individual build matrix jobs because that would prevent
+  # dependent jobs from running.
+
+  check-failures:
+    name: Check for failures
+    needs:
+      - generate-tag
+      - container-image-build
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download container image artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Fail job on build failures
+        run: |
+          if [[ -f *-container-images/failed ]]; then
+            echo "::error::Some images failed to build"
+            exit 1
+          fi
