@@ -6,37 +6,52 @@
 # non-overcloud hosts
 enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}"{% endraw %}
 
+kayobe_tags:
+  openstack:
+    centos: yoga-20230217T135826
+    rocky: yoga-20230310T170929
+    ubuntu: yoga-20230220T181235
+  bifrost:
+    centos: yoga-20230217T160618
+    rocky: yoga-20230310T194732
+    ubuntu: yoga-20230220T184947
+  blazar:
+    centos: yoga-20230315T125157
+    rocky: yoga-20230315T130918
+    ubuntu: yoga-20230315T125441
+  caso:
+    centos: yoga-20230315T125157
+    rocky: yoga-20230315T130918
+    ubuntu: yoga-20230315T125441
+  ironic:
+    centos: yoga-20230316T154655
+    rocky: yoga-20230316T170311
+    ubuntu: yoga-20230316T154704
+  ironic_dnsmasq:
+    centos: yoga-20230217T135826
+    rocky: yoga-20230310T170929
+    ubuntu: yoga-20230220T181235
+  neutron:
+    centos: yoga-20230309T123152
+    ubuntu: yoga-20230309T123143
+  opensearch:
+    centos: yoga-20230324T084510
+    rocky: yoga-20230324T090413
+    ubuntu: yoga-20230324T090345
+  prometheus_node_exporter:
+    centos: yoga-20230310T173747
+    rocky: yoga-20230315T170614
+    ubuntu: yoga-20230315T170541
 
-{% if kolla_base_distro == 'centos' %}
-bifrost_tag: yoga-20230217T160618
-blazar_tag: yoga-20230315T125157
-caso_tag: yoga-20230315T125157
-ironic_tag: yoga-20230316T154655
-ironic_dnsmasq_tag: yoga-20230217T135826
-neutron_tag: yoga-20230309T123152
-nova_tag: yoga-20230331T102705
-opensearch_tag: yoga-20230324T084510
-prometheus_node_exporter_tag: yoga-20230310T173747
-{% elif kolla_base_distro == 'rocky' %}
-bifrost_tag: yoga-20230310T194732
-blazar_tag: yoga-20230315T130918
-caso_tag: yoga-20230315T130918
-ironic_tag: yoga-20230316T170311
-ironic_dnsmasq_tag: yoga-20230310T170929
-nova_tag: yoga-20230331T113516
-opensearch_tag: yoga-20230324T090413
-prometheus_node_exporter_tag: yoga-20230315T170614
-{% else %}
-bifrost_tag: yoga-20230220T184947
-blazar_tag: yoga-20230315T125441
-caso_tag: yoga-20230315T125441
-neutron_tag: yoga-20230309T123143
-nova_tag: yoga-20230331T110423
-ironic_tag: yoga-20230316T154704
-ironic_dnsmasq_tag: yoga-20230220T181235
-opensearch_tag: yoga-20230324T090345
-prometheus_node_exporter_tag: yoga-20230315T170541
-{% endif %}
+bifrost_tag: "{% raw %}{{ kayobe_tags['bifrost'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+blazar_tag: "{% raw %}{{ kayobe_tags['blazar'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+caso_tag: "{% raw %}{{ kayobe_tags['caso'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+ironic_tag: "{% raw %}{{ kayobe_tags['ironic'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+ironic_dnsmasq_tag: "{% raw %}{{ kayobe_tags['ironic_dnsmasq'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+neutron_tag: "{% raw %}{{ kayobe_tags['neutron'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+opensearch_tag: "{% raw %}{{ kayobe_tags['opensearch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+prometheus_node_exporter_tag: "{% raw %}{{ kayobe_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
