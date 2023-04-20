@@ -96,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}yoga-20230217T135826{% elif kolla_base_distro == 'rocky' %}yoga-20230310T170929{% else %}yoga-20230220T181235{% endif %}"
+kolla_openstack_release: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
