@@ -54,7 +54,6 @@ on:
         required: false
         default: Update container images
 
-timeout: ?
 env:
   ANSIBLE_FORCE_COLOR: True
 defaults:
@@ -114,6 +113,7 @@ jobs:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    timeout-minutes: 720
     permissions: {}
     strategy:
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
