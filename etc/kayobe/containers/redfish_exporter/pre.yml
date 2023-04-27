@@ -1,0 +1,16 @@
+---
+
+- name: Ensure /opt/kayobe/containers/redfish_exporter exists
+  file:
+    path: "/opt/kayobe/containers/redfish_exporter"
+    state: directory
+    mode: 0770
+  become: true
+
+- name: Template redfish exporter configuration file
+  template:
+    src: "{{ kayobe_config_path }}/containers/redfish_exporter/redfish_exporter.yml"
+    dest: /opt/kayobe/containers/redfish_exporter/redfish-exporter.yml
+    mode: 0660
+  become: true
+  register: redfish_exporter_config

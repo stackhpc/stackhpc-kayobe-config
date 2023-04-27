@@ -1,0 +1,8 @@
+---
+- name: Restart redfish exporter container if config changed
+  become: true
+  docker_container:
+    name: redfish_exporter
+    state: restarted
+  when:
+    - redfish_exporter_config is changed

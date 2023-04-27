@@ -137,6 +137,22 @@ seed_squid_container:
       - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
       - /var/log/squid:/var/log/squid
 
+# Seed container running redfish exporter.
+# https://github.com/jenningsloy318/redfish_exporter
+# This can be be used for monitoring servers in bifrost.
+seed_redfish_exporter_container_enabled: false
+
+seed_redfish_exporter_container:
+  redfish_exporter:
+    image: ghcr.io/stackhpc/redfish-exporter
+    pre: "{{ kayobe_config_path }}/containers/redfish_exporter/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/redfish_exporter/post.yml"
+    tag: "v1.0.1"
+    network_mode: host
+    volumes:
+      - /opt/kayobe/containers/redfish_exporter/redfish-exporter.yml:/etc/prometheus/redfish-exporter.yml:ro"
+    restart_policy: unless-stopped
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -148,6 +164,7 @@ seed_squid_container:
 seed_containers: >-
   {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
         | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_redfish_exporter_container if seed_redfish_exporter_container_enabled | bool else {})
         | combine(seed_extra_containers) }}
 
 seed_extra_containers: {}
