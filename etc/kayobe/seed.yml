@@ -140,14 +140,14 @@ seed_squid_container:
 # Seed container running redfish exporter.
 # https://github.com/jenningsloy318/redfish_exporter
 # This can be be used for monitoring servers in bifrost.
-seed_redfish_exporter_container_enabled: false
+seed_redfish_exporter_container_enabled: true
 
 seed_redfish_exporter_container:
   redfish_exporter:
     image: ghcr.io/stackhpc/redfish-exporter
     pre: "{{ kayobe_config_path }}/containers/redfish_exporter/pre.yml"
     post: "{{ kayobe_config_path }}/containers/redfish_exporter/post.yml"
-    tag: "v1.0.1"
+    tag: "v1.0.2"
     network_mode: host
     command: ./main --config.file /redfish_exporter.yml
     volumes: "/opt/kayobe/containers/redfish_exporter/redfish_exporter.yml:/redfish_exporter.yml:ro"
