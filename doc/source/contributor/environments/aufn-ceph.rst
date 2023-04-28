@@ -30,6 +30,12 @@ CentOS:
 
    sudo dnf install -y gcc python3-virtualenv
 
+Rocky:
+
+.. parsed-literal::
+
+   sudo dnf install -y gcc
+
 Ubuntu:
 
 .. parsed-literal::
@@ -75,7 +81,8 @@ Clone the Kayobe, Kayobe configuration (this one) and Tenks repositories:
    popd
    popd
 
-Create a virtual environment and install Kayobe:
+Create a virtual environment and install Kayobe. Note, if you are using Rocky
+you will need to use ``python3 -m venv`` as ``virtualenv`` is not available.
 
 .. parsed-literal::
 
