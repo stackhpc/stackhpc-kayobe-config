@@ -28,7 +28,7 @@ CentOS:
 
 .. parsed-literal::
 
-   sudo dnf install -y gcc python3-dev python3-virtualenv
+   sudo dnf install -y gcc python3-virtualenv
 
 Ubuntu:
 
@@ -98,6 +98,7 @@ The following commands activate the correct kayobe environment and prepare the A
 
    pushd ~/src/kayobe-config
    source kayobe-env --environment aufn-ceph
+   $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-local-networking.sh
    kayobe control host bootstrap
 
 Deployment
@@ -122,9 +123,9 @@ Once the local pulp server is deployed, we need to add the address of SMS lab te
 
 .. parsed-literal::
 
-    SEED_IP=192.168.33.5
-    REMOTE_COMMAND="docker exec pulp sh -c 'echo $PULP_HOST | tee -a /etc/hosts'"
-    ssh stack@$SEED_IP $REMOTE_COMMAND
+    ssh stack@192.168.33.5
+    docker exec pulp sh -c 'echo "10.205.3.187 pulp-server pulp-server.internal.sms-cloud" | tee -a /etc/hosts'
+    exit
 
 We can now sync the contents of the local pulp server with that of SMS test pulp and then complete the seed VM setup:
 
@@ -169,7 +170,7 @@ Finally, we create the bare minimum cloud infrastructure (networks, images, flav
 
 .. parsed-literal::
 
-    $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-openstack.sh ~
+    $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-openstack.sh ~
 
 This completes the deployment process.
 
@@ -181,9 +182,8 @@ We can deploy a test VM to ensure that our 'universe' is up and running by first
 
 .. parsed-literal::
 
-    VENV_DIR=~/openstack-env
-    python -m venv $VENV_DIR
-    source $VENV_DIR/bin/activate
+    python -m venv ~/openstack-env
+    source ~/openstack-env/bin/activate
     pip install -U pip
     pip install python-openstackclient
 
@@ -192,10 +192,9 @@ We then use the CLI to create a keypair, floating IP and test VM:
 .. parsed-literal::
 
     openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey
-    openstack server create --key-name mykey --flavor m1.tiny \
-     --image cirros --network admin-tenant test-vm-1
+    openstack server create --key-name mykey --flavor m1.tiny --image cirros --network admin-tenant test-vm-1
     openstack floating ip create external
     openstack server add floating ip test-vm-1 `openstack floating ip list -c ID -f value`
     openstack server list
 
-which will create a VM named ``test-vm-1`` with a Cirros OS iamge and a default login password of 'gocubsgo'.
+which will create a VM named ``test-vm-1`` with a Cirros OS image and a default login password of 'gocubsgo'.
