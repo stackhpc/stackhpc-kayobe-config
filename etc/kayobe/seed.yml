@@ -149,8 +149,8 @@ seed_redfish_exporter_container:
     post: "{{ kayobe_config_path }}/containers/redfish_exporter/post.yml"
     tag: "v1.0.1"
     network_mode: host
-    volumes:
-      - /opt/kayobe/containers/redfish_exporter/redfish-exporter.yml:/etc/prometheus/redfish-exporter.yml:ro"
+    command: ./main --config.file /redfish_exporter.yml
+    volumes: "/opt/kayobe/containers/redfish_exporter/redfish_exporter.yml:/redfish_exporter.yml:ro"
     restart_policy: unless-stopped
 
 # Dict of container images to start
