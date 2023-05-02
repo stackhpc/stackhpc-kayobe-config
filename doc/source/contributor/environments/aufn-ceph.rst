@@ -28,7 +28,7 @@ CentOS:
 
 .. parsed-literal::
 
-   sudo dnf install -y gcc python3-virtualenv
+   sudo dnf install -y gcc
 
 Rocky:
 
@@ -41,7 +41,7 @@ Ubuntu:
 .. parsed-literal::
 
     sudo apt update
-    sudo apt -y install gcc libffi-dev python3-dev python-is-python3 python3-virtualenv
+    sudo apt -y install gcc libffi-dev python3-dev python-is-python3
 
 
 As a workaround for SMS lab's lack of DNS, add the following lines to ``/etc/hosts`` of the baremetal node:
@@ -81,15 +81,14 @@ Clone the Kayobe, Kayobe configuration (this one) and Tenks repositories:
    popd
    popd
 
-Create a virtual environment and install Kayobe. Note, if you are using Rocky
-you will need to use ``python3 -m venv`` as ``virtualenv`` is not available.
+Create a virtual environment and install Kayobe:
 
 .. parsed-literal::
 
    cd
    mkdir -p venvs
    pushd venvs
-   virtualenv kayobe
+   python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
    pip install ../src/kayobe
