@@ -242,7 +242,7 @@ Create a cluster:
 
 .. code-block:: bash
 
-      openstack coe cluster create --keypair id_rsa --master-count 1 --node-count 1 --floating-ip-enabled test-cluster
+      openstack coe cluster create --cluster-template test-template --keypair id_rsa --master-count 1 --node-count 1 --floating-ip-enabled test-cluster
 
 This command will take a while to complete. You can monitor the progress with
 the following command:
