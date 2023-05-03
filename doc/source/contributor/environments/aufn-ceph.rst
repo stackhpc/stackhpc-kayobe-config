@@ -24,17 +24,11 @@ Setup
 
 To begin the manual setup, access the baremetal node via SSH and install some basic dependencies.
 
-CentOS:
+CentOS or Rocky:
 
 .. parsed-literal::
 
-   sudo dnf install -y gcc
-
-Rocky:
-
-.. parsed-literal::
-
-   sudo dnf install -y gcc
+   sudo dnf install -y gcc python3-devel
 
 Ubuntu:
 
@@ -188,7 +182,7 @@ We can deploy a test VM to ensure that our 'universe' is up and running by first
 
 .. parsed-literal::
 
-    python -m venv ~/openstack-env
+    python3 -m venv ~/openstack-env
     source ~/openstack-env/bin/activate
     pip install -U pip
     pip install python-openstackclient
