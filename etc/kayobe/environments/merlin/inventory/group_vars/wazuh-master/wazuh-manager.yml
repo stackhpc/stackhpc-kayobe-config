@@ -1,0 +1,153 @@
+---
+# Wazuh-manager, Filebeat and Open Distro role configuration
+# Reference: https://documentation.wazuh.com/4.1/deploying-with-ansible/reference.html
+# Defaults:
+# - https://github.com/wazuh/wazuh-ansible/blob/v4.2.3/roles/opendistro/opendistro-elasticsearch/defaults/main.yml
+# - https://github.com/wazuh/wazuh-ansible/blob/v4.2.3/roles/wazuh/ansible-wazuh-manager/defaults/main.yml
+# - https://github.com/wazuh/wazuh-ansible/blob/v4.2.3/roles/wazuh/ansible-filebeat-oss/defaults/main.yml
+# - https://github.com/wazuh/wazuh-ansible/blob/v4.2.3/roles/opendistro/opendistro-kibana/defaults/main.yml
+
+# Domain name used to generate Search Guard CE certificates
+domain_name: wazuh.merlin.hpc.rug.nl
+
+# Wazuh IP accessible from nodes running agents
+# Change network as needed
+wazuh_manager_ip: "172.23.41.238"
+
+# Private IP used for internal cluster communication.
+private_ip: "{{ wazuh_manager_ip }}"
+
+# Single node Open Distro setup
+single_node: true
+minimum_master_nodes: 1
+
+# All nodes are masters in a single node setup
+elasticsearch_node_master: true
+
+# Elasticsearch node.name
+# Also used in certificate file paths
+elasticsearch_node_name: "{{ inventory_hostname }}"
+
+# Elasticsearch network.host
+elasticsearch_network_host: "{{ domain_name }}"
+
+# Filebeat node name used for certificate file paths
+filebeat_node_name: "{{ elasticsearch_node_name }}"
+
+# Elasticsearch target for filebeat
+filebeat_output_elasticsearch_hosts: "{{ elasticsearch_network_host }}:9200"
+
+# Used for Search Guard tls config, dict key (wazuh) unused
+instances:
+  wazuh:
+    name: "{{ elasticsearch_node_name }}"
+    ip: "{{ wazuh_manager_ip }}"
+
+# Ansible control host certificate directory
+local_certs_path: "{{ playbook_dir }}/vars/certificates"
+
+# Kibana node name used for certificate file paths
+kibana_node_name: "{{ elasticsearch_node_name }}"
+
+# Used by agents to authenticate to the manager
+authd_pass: "{{ secrets_wazuh.authd_pass }}"
+
+# Used to override the default Wazuh api user
+wazuh_api_users: "{{ secrets_wazuh.wazuh_api_users }}"
+
+# Kibana to Wazuh api credentials
+wazuh_api_credentials:
+  - id: "default"
+    url: "https://localhost"
+    port: 55000
+    username: "wazuh"
+    password: "{{ secrets_wazuh.wazuh_api_users | selectattr('username', 'match', 'wazuh') | map(attribute='password') | first }}"
+
+# Open Distro admin user pass
+opendistro_admin_password: "{{ secrets_wazuh.opendistro_admin_password }}"
+
+# Open Distro kibana user
+# role default is admin
+opendistro_kibana_user: "kibanaserver"
+
+# Open Distro kibana user pass
+opendistro_kibana_password: "{{ secrets_wazuh.opendistro_kibana_password }}"
+
+# Open Distro filebeat user
+# Role default is admin
+# TODO: create filebeat user
+elasticsearch_security_user: "admin"
+
+# Open Distro filebeat user pass
+elasticsearch_security_password: "{{ secrets_wazuh.opendistro_admin_password }}"
+
+# Perform hash_behaviour=merge at role runtime
+wazuh_manager_config_overlay: true
+
+# JSON formatted alerts to /var/ossec/logs/alerts/alerts.json
+wazuh_manager_json_output: 'yes'
+
+# Plain text alerts to /var/ossec/logs/alerts/alerts.log
+wazuh_manager_alerts_log: 'yes'
+
+# Store events that do not trip rules
+wazuh_manager_logall: 'no'
+
+# Email alert notifications
+wazuh_manager_email_notification: 'no'
+
+# Log format of /var/ossec/logs/ossec.{log|json}
+wazuh_manager_log_format: 'plain'
+
+# Wazuh-Manager listener settings
+wazuh_manager_connection:
+  - type: 'secure'
+    port: '1514'
+    protocol: 'tcp'
+    queue_size: 131072
+
+# Wazuh-Manager authd settings
+# TODO, enable SSL/TLS
+wazuh_manager_authd:
+  enable: true
+  port: 1515
+  use_source_ip: 'no'
+  force_insert: 'no'
+  force_time: 0
+  purge: 'no'
+  use_password: 'yes'
+  limit_maxagents: 'yes'
+  ciphers: 'HIGH:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH'
+  ssl_agent_ca: null
+  ssl_verify_host: 'no'
+  ssl_manager_cert: null
+  ssl_manager_key: null
+  ssl_auto_negotiate: 'no'
+
+# Disable TLS for testing purposes
+wazuh_tls: false
+
+# Wazuh-Manager Vulnerability Detector settings
+wazuh_manager_vulnerability_detector:
+  enabled: 'yes'
+  interval: '5m'
+  ignore_time: '6h'
+  run_on_start: 'yes'
+  providers:
+    - enabled: 'yes'
+      os:
+        - 'bionic'
+        - 'focal'
+      update_interval: '1h'
+      name: '"canonical"'
+    - enabled: 'yes'
+      os:
+        - '7'
+        - '8'
+      update_interval: '1h'
+      name: '"redhat"'
+    - enabled: 'yes'
+      update_from_year: '2010'
+      update_interval: '1h'
+      name: '"nvd"'
+

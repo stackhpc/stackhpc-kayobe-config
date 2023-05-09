@@ -1,3 +1,5 @@
+[ansible-control]
+
 [monitoring:children]
 controllers
 
@@ -8,3 +10,18 @@ controllers
 [compute:children]
 normal_compute
 liqid
+
+[infra-vms:children]
+ansible-control
+wazuh-master
+
+[wazuh:children]
+wazuh-master
+wazuh-agent
+
+[wazuh-master]
+
+[wazuh-agent]
+
+[wazuh-agent:children]
+overcloud
