@@ -4,15 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       centos:
-        description: Build CentOS Stream
+        description: Build CentOS Stream 8
         type: boolean
         default: true
-      rocky:
-        description: Build Rocky Linux
+      rocky8:
+        description: Build Rocky Linux 8
+        type: boolean
+        default: true
+      rocky9:
+        description: Build Rocky Linux 9
         type: boolean
         default: true
       ubuntu:
-        description: Build Ubuntu
+        description: Build Ubuntu Focal
         type: boolean
         default: true
 
@@ -123,10 +127,11 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud host image build --force-rebuild \
           -e os_distribution=rocky \
+          -e os_release='8' \
           -e stackhpc_overcloud_dib_name=overcloud-rocky-linux-8
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky
+        if: inputs.rocky8
 
       - name: Upload Rocky Linux 8 overcloud host image artifact
         run: |
@@ -136,9 +141,35 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
           -e image_path='/opt/kayobe/images/overcloud-rocky-linux-8' \
           -e os_distribution='rocky'
+          -e os_release='8' \
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky
+        if: inputs.rocky8
+
+      - name: Build a Rocky Linux 9 overcloud host image
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution=rocky \
+          -e os_release='9' \
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-linux-9
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9
+
+      - name: Upload Rocky Linux 9 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
+          -e image_path='/opt/kayobe/images/overcloud-rocky-linux-9' \
+          -e os_distribution='rocky' \
+          -e os_release='9'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9
 
       # FIXME: Need EPEL on CentOS for debootstrap. It is disabled by default.
       # Do this via config?
@@ -152,6 +183,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud host image build --force-rebuild \
           -e os_distribution=ubuntu \
+          -e os_release=focal \
           -e stackhpc_overcloud_dib_name=overcloud-ubuntu-focal
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -164,7 +196,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
           -e image_path='/opt/kayobe/images/overcloud-ubuntu-focal' \
-          -e os_distribution='ubuntu'
+          -e os_distribution='ubuntu' \
+          -e os_release=focal
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu
