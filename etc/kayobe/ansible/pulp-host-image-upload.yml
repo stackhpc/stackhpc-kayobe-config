@@ -1,0 +1,109 @@
+---
+- name: Upload and create a distribution for an image
+  hosts: localhost
+  vars:
+    remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
+    remote_pulp_username: "{{ stackhpc_image_repository_username }}"
+    remote_pulp_password: "{{ stackhpc_image_repository_password }}"
+    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+  tasks:
+    - name: Get filename
+      find:
+        paths: "{{ image_path }}"
+        patterns: '*.qcow2'
+      register: found_files
+
+    - name: Upload an artifact
+      pulp.squeezer.artifact:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        file: "{{ found_files.files[0].path }}"
+        state: present
+
+    - name: Get sha256 hash
+      ansible.builtin.stat:
+        path: "{{ found_files.files[0].path }}"
+        checksum_algorithm: sha256
+      register: file_stats
+
+    - name: Create file content from artifact
+      pulp.squeezer.file_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        sha256: "{{ file_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}"
+        state: present
+
+    - name: Ensure file repo exists
+      pulp.squeezer.file_repository:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}"
+        state: present
+
+    - name: Add content to file repo
+      pulp.squeezer.file_repository_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ repository_name }}"
+        present_content:
+          - relative_path: "{{ found_files.files[0].path | basename }}"
+            sha256: "{{ file_stats.stat.checksum }}"
+
+    - name: Create a new publication to point to this version
+      pulp.squeezer.file_publication:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ repository_name }}"
+        state: present
+      register: publication_details
+
+    - name: Update distribution for latest version
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_latest"
+        base_path: "{{ base_path }}/latest"
+        publication: "{{ publication_details.publication.pulp_href }}"
+        content_guard: development
+        state: present
+      register: latest_distribution_details
+
+    - name: Create distribution for given version
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ ansible_facts.date_time.iso8601_basic_short }}"
+        base_path: "{{ base_path }}/{{ ansible_facts.date_time.iso8601_basic_short }}"
+        publication: "{{ publication_details.publication.pulp_href }}"
+        content_guard: development
+        state: present
+      when: latest_distribution_details.changed
+
+    - name: Update new images file with versioned path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        {{ ansible_facts.date_time.iso8601_basic_short }}/{{ found_files.files[0].path | basename }}"
+        create: true
+      when: latest_distribution_details.changed
+
+    - name: Update new images file with latest path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        latest/{{ found_files.files[0].path | basename }}"
+      when: latest_distribution_details.changed
+
+    - name: Print version tag
+      debug:
+        msg: "New tag: {{ ansible_facts.date_time.iso8601_basic_short }}"
+      when: latest_distribution_details.changed
