@@ -15,8 +15,12 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
-      ubuntu:
-        description: Build Ubuntu Focal
+      ubuntu-focal:
+        description: Build Ubuntu 20.04 Focal
+        type: boolean
+        default: true
+      ubuntu-jammy:
+        description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
 
@@ -187,7 +191,7 @@ jobs:
           -e stackhpc_overcloud_dib_name=overcloud-ubuntu-focal
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu
+        if: inputs.ubuntu-focal
 
       - name: Upload Ubuntu Focal 20.04 overcloud host image artifact
         run: |
@@ -200,7 +204,32 @@ jobs:
           -e os_release=focal
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu
+        if: inputs.ubuntu-focal
+
+      - name: Build a Ubuntu Jammy 22.04 overcloud host image
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution=ubuntu \
+          -e os_release=jammy \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-jammy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
+
+      - name: Upload Ubuntu Jammy 22.04 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
+          -e image_path='/opt/kayobe/images/overcloud-ubuntu-jammy' \
+          -e os_distribution='ubuntu' \
+          -e os_release=jammy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
 
       - name: Upload updated images artifact
         uses: actions/upload-artifact@v3

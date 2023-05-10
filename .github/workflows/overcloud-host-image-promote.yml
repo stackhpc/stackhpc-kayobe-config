@@ -13,6 +13,7 @@ on:
           - 'Rocky Linux 8'
           - 'Rocky Linux 9'
           - 'Ubuntu Focal 20.04'
+          - 'Ubuntu Jammy 22.04'
       image_tag:
         description: Tag to promote
         type: string
@@ -140,3 +141,17 @@ jobs:
           OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: os_image == 'Ubuntu Focal 20.04'
+
+      - name: Promote Ubuntu Jammy 22.04 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-ubuntu-jammy' \
+          -e os_distribution='jammy' \
+          -e os_release='focal'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'Ubuntu Jammy 22.04'
