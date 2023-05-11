@@ -21,6 +21,8 @@ Resources
 
 -  https://docs.ceph.com/en/pacific/cephadm/index.html
 -  https://docs.ceph.com/en/pacific/
+-  https://docs.ceph.com/en/quincy/cephadm/index.html
+-  https://docs.ceph.com/en/quincy/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration
