@@ -92,6 +92,20 @@
         state: present
       when: latest_distribution_details.changed
 
+    - name: Update new images file with versioned path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+        create: true
+
+    - name: Update new images file with latest path
+      lineinfile:
+        path: /tmp/updated_images.txt
+        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        latest/{{ found_files.files[0].path | basename }}"
+      when: latest_distribution_details.changed
+
     - name: Print versioned path
       debug:
         msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
