@@ -1,0 +1,35 @@
+---
+# Custom playbook to grow the partition and LVM PV of the root VG. This allows
+# for expansion of LVs in that VG. This may be used as a pre-overcloud host
+# configure hook.
+#
+# Variables:
+# * growroot_group: Host pattern against which to target the playbook. Default
+#                   is 'overcloud'.
+# * growroot_vg: Name of the VG containing the PV to grow. Default is 'rootvg'.
+
+- name: Install curl
+  hosts: "{{ growroot_group | default('overcloud') }}"
+  # Avoid using facts because this may be used as a pre overcloud host
+  # configure hook, and we don't want to populate the fact cache (if one is in
+  # use) with the bootstrap user's context.
+  gather_facts: false
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    # We can't assume that a virtualenv exists at this point, so use the system
+    # python interpreter.
+    ansible_python_interpreter: /usr/bin/python3
+    # Work around no known_hosts entry on first boot.
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    # Name of the LVM VG containing the root PV.
+    # Don't assume facts are present.
+    os_family: "{{ ansible_facts.os_family | default('Debian' if os_distribution == 'ubuntu' else 'RedHat') }}"
+
+  tasks:
+    - name: Ensure curl is installed
+      package:
+        name: curl
+        state: present
+        cache_valid_time: "{{ apt_cache_valid_time if os_family == 'Debian' else omit }}"
+        update_cache: "{{ True if os_family == 'Debian' else omit }}"
+      become: True
