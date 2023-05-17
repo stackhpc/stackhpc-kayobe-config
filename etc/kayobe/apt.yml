@@ -47,7 +47,7 @@ apt_keys:
 # * architecture: whitespace-separated list of architectures that will be used
 #   (optional, default is unset)
 # Default is an empty list.
-apt_repositories:
+stackhpc_apt_repositories:
   - url: "{{ stackhpc_repo_ubuntu_focal_url }}"
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
@@ -62,10 +62,13 @@ apt_repositories:
     signed_by: docker.asc
     architecture: amd64
 
+# Disable pulp apt repos on Ubuntu Jammy until they are published.
+apt_repositories: "{{ [] if ansible_facts['distribution_release'] == 'jammy' else stackhpc_apt_repositories }}"
+
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
 # Default is false.
-apt_disable_sources_list: true
+apt_disable_sources_list: "{{ ansible_facts['distribution_release'] != 'jammy' }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
