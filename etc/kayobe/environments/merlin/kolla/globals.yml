@@ -109,69 +109,6 @@
 # CA certificate bundle in containers using oslo.messaging with RabbitMQ TLS.
 #om_rabbitmq_cacert: "{{ rabbitmq_cacert }}"
 
-##############################
-# Neutron - Networking Options
-##############################
-# This interface is what all your api services will be bound to by default.
-# Additionally, all vxlan/tunnel and storage network traffic will go over this
-# interface by default. This interface must contain an IP address.
-# It is possible for hosts to have non-matching names of interfaces - these can
-# be set in an inventory file per host or per group or stored separately, see
-#     http://docs.ansible.com/ansible/intro_inventory.html
-# Yet another way to workaround the naming problem is to create a bond for the
-# interface on all hosts and give the bond name here. Similar strategy can be
-# followed for other types of interfaces.
-#network_interface: "eth0"
-network_interface: "api0"
-
-# These can be adjusted for even more customization. The default is the same as
-# the 'network_interface'. These interfaces must contain an IP address.
-#kolla_external_vip_interface: "{{ network_interface }}"
-#api_interface: "{{ network_interface }}"
-#storage_interface: "{{ network_interface }}"
-#swift_storage_interface: "{{ storage_interface }}"
-#swift_replication_interface: "{{ swift_storage_interface }}"
-#tunnel_interface: "{{ network_interface }}"
-tunnel_interface: "api0" # Trunk0 not working...yet
-#dns_interface: "{{ network_interface }}"
-#octavia_network_interface: "{{ api_interface }}"
-octavia_network_interface: "vlan.1067"
-
-# Configure the address family (AF) per network.
-# Valid options are [ ipv4, ipv6 ]
-#network_address_family: "ipv4"
-#api_address_family: "{{ network_address_family }}"
-#storage_address_family: "{{ network_address_family }}"
-#swift_storage_address_family: "{{ storage_address_family }}"
-#swift_replication_address_family: "{{ swift_storage_address_family }}"
-#migration_address_family: "{{ api_address_family }}"
-#tunnel_address_family: "{{ network_address_family }}"
-#octavia_network_address_family: "{{ api_address_family }}"
-#bifrost_network_address_family: "{{ network_address_family }}"
-#dns_address_family: "{{ network_address_family }}"
-
-# This is the raw interface given to neutron as its external network port. Even
-# though an IP address can exist on this interface, it will be unusable in most
-# configurations. It is recommended this interface not be configured with any IP
-# addresses for that reason.
-#neutron_external_interface: "eth1"
-neutron_external_interface: "trunk0"
-
-# Valid options are [ openvswitch, ovn, linuxbridge, vmware_nsxv, vmware_nsxv3, vmware_dvs ]
-# if vmware_nsxv3 is selected, enable_openvswitch MUST be set to "no" (default is yes)
-#neutron_plugin_agent: "openvswitch"
-
-# Valid options are [ internal, infoblox ]
-#neutron_ipam_driver: "internal"
-
-# Configure Neutron upgrade option, currently Kolla support
-# two upgrade ways for Neutron: legacy_upgrade and rolling_upgrade
-# The variable "neutron_enable_rolling_upgrade: yes" is meaning rolling_upgrade
-# were enabled and opposite
-# Neutron rolling upgrade were enable by default
-#neutron_enable_rolling_upgrade: "yes"
-
-
 ####################
 # keepalived options
 ####################
