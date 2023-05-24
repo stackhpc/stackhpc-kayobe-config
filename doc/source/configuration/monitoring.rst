@@ -48,8 +48,8 @@ environment, create the following symbolic links:
 .. code-block:: console
 
     cd $KAYOBE_CONFIG_PATH
-    ln -s kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
 
 and commit them to the config repository.
 
