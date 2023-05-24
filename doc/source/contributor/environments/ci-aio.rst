@@ -5,14 +5,52 @@ ci-aio
 This environment deploys an all-in-one converged control/compute cloud for
 testing.
 
+There are two ways to set up the environment. The automated setup script
+automates the manual setup steps below, and is recommended for most users.
+The manual setup steps are provided for reference, and for users who wish to
+make changes to the setup process.
+
 Prerequisites
 =============
 
 * a CentOS Stream 8 or Ubuntu Focal 20.04 host
 * access to the Test Pulp server on SMS lab
 
-Setup
-=====
+Automated Setup
+===============
+
+Access the host via SSH.
+
+Download the setup script:
+
+.. parsed-literal::
+
+   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/yoga/etc/kayobe/environments/ci-aio/automated-setup.sh
+
+Change the permissions on the script:
+
+.. parsed-literal::
+
+   sudo chmod 700 automated-setup.sh
+
+Acquire the Ansible Vault password for this repository, and store a
+copy at ``~/vault-pw``.
+
+Run the setup script:
+
+.. parsed-literal::
+
+   ./automated-setup.sh
+
+The script will pull the current version of Kayobe and this repository, and
+then run the manual setup steps below. The script can be easily edited to use
+a different branch of Kayobe or this repository.
+
+Manual Setup
+============
+
+Host Configuration
+------------------
 
 Access the host via SSH.
 
@@ -67,7 +105,7 @@ Add initial network configuration:
    sudo ip l set dummy1 master breth1
 
 Installation
-============
+------------
 
 Acquire the Ansible Vault password for this repository, and store a copy at
 ``~/vault-pw``.
@@ -86,7 +124,7 @@ Ansible control host.
    kayobe control host bootstrap
 
 Deployment
-==========
+----------
 
 Next, configure the host OS & services.
 
@@ -103,7 +141,7 @@ Finally, deploy the overcloud services.
 The control plane should now be running.
 
 Testing
-=======
+-------
 
 Run a smoke test:
 
