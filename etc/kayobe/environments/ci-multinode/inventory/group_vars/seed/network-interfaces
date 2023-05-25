@@ -2,13 +2,17 @@
 ###############################################################################
 # Network interface definitions for the seed group.
 
-admin_oc_interface: "{{ 'ens2' if os_distribution == 'ubuntu' else 'ens3' }}"
+admin_oc_interface: "{{ 'ens2' if (os_distribution == 'ubuntu' and ansible_facts['distribution_release'] != 'jammy') else 'ens3' }}"
 
 provision_oc_interface: "{{ vxlan_interfaces[0].device}}.{{ provision_oc_vlan }}"
 
 external_interface: "{{ vxlan_interfaces[0].device }}.{{ external_vlan }}"
 
 public_interface: "{{ vxlan_interfaces[0].device }}.{{ public_vlan }}"
+
+# The storage interface is required for routing manila traffic between VMs and
+# the Storage nodes.
+storage_interface: "{{ vxlan_interfaces[0].device }}.{{ storage_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

@@ -106,11 +106,15 @@ seed_pulp_container:
     image: pulp/pulp
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
-    tag: "{{ '3.21-https' if pulp_enable_tls | bool else '3.21' }}"
+    tag: "3.24"
     network_mode: host
     # Override deploy_containers_defaults.init == true to ensure
     # s6-overlay-suexec starts as pid 1
     init: false
+    env:
+      PULP_CONTENT_WORKERS: "{{ ansible_facts.processor_vcpus * 2 + 1 }}"
+      PULP_API_WORKERS: "{{ ansible_facts.processor_vcpus * 2 + 1 }}"
+      PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
       - pulp_storage:/var/lib/pulp

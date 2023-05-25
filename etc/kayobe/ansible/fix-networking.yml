@@ -11,11 +11,10 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
   tasks:
     - name: Ensure `hosts` file contains pulp entries
-      ansible.builtin.copy:
-        content: |
-          127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-          ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+      blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} Kayobe Pulp entries"
+        block: |
           10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
           10.205.3.187 pulp-server pulp-server.internal.sms-cloud
-        dest: /etc/hosts
       become: true

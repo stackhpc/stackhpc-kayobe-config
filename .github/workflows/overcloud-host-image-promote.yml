@@ -1,0 +1,157 @@
+---
+name: Promote overcloud host image
+on:
+  workflow_dispatch:
+    inputs:
+      os_image:
+        description: Image to promote
+        type: choice
+        required: true
+        default: 'CentOS Stream 8'
+        options:
+          - 'CentOS Stream 8'
+          - 'Rocky Linux 8'
+          - 'Rocky Linux 9'
+          - 'Ubuntu Focal 20.04'
+          - 'Ubuntu Jammy 22.04'
+      image_tag:
+        description: Tag to promote
+        type: string
+        required: true
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  overcloud-host-image-promote:
+    name: Promote overcloud host image
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: src/kayobe-config
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v3
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          path: src/kayobe
+
+      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
+      - name: Install dependencies
+        run: |
+          sudo dnf -y install python3-virtualenv
+
+      - name: Setup networking
+        run: |
+          if ! ip l show breth1 >/dev/null 2>&1; then
+              sudo ip l add breth1 type bridge
+          fi
+          sudo ip l set breth1 up
+          if ! ip a show breth1 | grep 192.168.33.3/24; then
+              sudo ip a add 192.168.33.3/24 dev breth1
+          fi
+          if ! ip l show dummy1 >/dev/null 2>&1; then
+              sudo ip l add dummy1 type dummy
+          fi
+          sudo ip l set dummy1 up
+          sudo ip l set dummy1 master breth1
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install ../src/kayobe
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Promote CentOS Stream 8 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-centos-stream-8' \
+          -e os_distribution='centos' \
+          -e os_release='8-stream'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'CentOS Stream 8'
+
+      - name: Promote Rocky Linux 8 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-rocky-linux-8' \
+          -e os_distribution='rocky' \
+          -e os_release='8'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'Rocky Linux 8'
+
+      - name: Promote Rocky Linux 9 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-rocky-linux-9' \
+          -e os_distribution='rocky' \
+          -e os_release='9'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'Rocky Linux 9'
+
+      - name: Promote Ubuntu Focal 20.04 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-ubuntu-focal' \
+          -e os_distribution='ubuntu' \
+          -e os_release='focal'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'Ubuntu Focal 20.04'
+
+      - name: Promote Ubuntu Jammy 22.04 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-ubuntu-jammy' \
+          -e os_distribution='jammy' \
+          -e os_release='focal'
+        env:
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: os_image == 'Ubuntu Jammy 22.04'

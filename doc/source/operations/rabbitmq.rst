@@ -128,6 +128,8 @@ Check to see if all OpenStack queues and exchanges have been removed from the Ra
   kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl list_queues name'
   kayobe overcloud host command run --limit controllers --show-output --command 'docker exec rabbitmq rabbitmqctl list_exchanges name'
 
+There should be no queues listed, and the only exchanges listed should start with `amq.`.
+
 Start the OpenStack services which use RabbitMQ. Note that this will start all
 matching services, even if they weren't running prior to starting this
 procedure.

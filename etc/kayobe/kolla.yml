@@ -67,8 +67,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 # Kolla configuration.
 
 # Kolla base container image distribution. Options are "centos", "debian",
-# "ubuntu". Default is
-# {{ 'centos' if os_distribution == 'rocky' else os_distribution }}.
+# "rocky", "ubuntu". Default is
+# {{ 'centos' if (os_distribution == 'rocky' and os_release == '8') else os_distribution }}.
 #kolla_base_distro:
 
 # Kolla container image type: binary or source. Default is 'source'.
@@ -96,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}yoga-20230217T135826{% else %}yoga-20230220T181235{% endif %}"
+kolla_openstack_release: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -116,17 +116,9 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  cinder-base:
-    type: git
-    location: https://github.com/stackhpc/cinder.git
-    reference: stackhpc/{{ openstack_release }}
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/{{ openstack_release }}
-  glance-base:
-    type: git
-    location: https://github.com/stackhpc/glance.git
     reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
@@ -169,10 +161,6 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
-  nova-base:
-    type: git
-    location: https://github.com/stackhpc/nova.git
-    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -181,49 +169,133 @@ kolla_sources:
 stackhpc_centos_stream_repos:
   - url: "{{ stackhpc_repo_centos_stream_baseos_url }}"
     file: "CentOS-Stream-BaseOS.repo"
+    tag: "baseos"
   - url: "{{ stackhpc_repo_centos_stream_appstream_url }}"
     file: "CentOS-Stream-AppStream.repo"
+    tag: "appstream"
   - url: "{{ stackhpc_repo_centos_stream_extras_url }}"
     file: "CentOS-Stream-Extras.repo"
+    tag: "extras"
 
 # List of repositories for EPEL.
 stackhpc_epel_repos:
   - url: "{{ stackhpc_repo_epel_url }}"
     file: "epel.repo"
+    tag: "epel"
   - url: "{{ stackhpc_repo_epel_modular_url }}"
     file: "epel-modular.repo"
+    tag: "epel-modular"
 
 # List of additional CentOS Stream repositories.
 stackhpc_centos_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_advanced_virtualization_url }}"
     file: "CentOS-Advanced-Virtualization.repo"
+    tag: "centos-advanced-virtualization"
   - url: "{{ stackhpc_repo_centos_stream_nfv_extras_url }}"
     file: "CentOS-NFV-extras.repo"
+    tag: "centos-nfv-extras"
   - url: "{{ stackhpc_repo_centos_stream_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
+    tag: "centos-nfv-openvswitch"
   - url: "{{ stackhpc_repo_centos_stream_openstack_yoga_url }}"
     file: "CentOS-OpenStack-yoga.repo"
+    tag: "centos-openstack-yoga"
   - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
     file: "CentOS-OpsTools.repo"
+    tag: "centos-opstools"
   - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
     file: "CentOS-Stream-PowerTools.repo"
+    tag: "powertools"
   - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
     file: "CentOS-Ceph-Pacific.repo"
+    tag: "centos-ceph-pacific"
 
 # List of third-party repositories.
 stackhpc_third_party_repos:
   - url: "{{ stackhpc_repo_elasticsearch_logstash_kibana_7_x_url }}"
     file: "elasticsearch.repo"
+    tag: "elasticsearch-kibana-logstash-7.x"
   - url: "{{ stackhpc_repo_grafana_url }}"
     file: "grafana.repo"
+    tag: "grafana"
   - url: "{{ stackhpc_repo_mariadb_10_6_centos8_url }}"
     file: "mariadb.repo"
+    tag: "mariadb"
   - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
   - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
+    tag: "rabbitmq_rabbitmq-server"
   - url: "{{ stackhpc_repo_treasuredata_4_url }}"
     file: "td.repo"
+    tag: "treasuredata"
+
+# List of repositories for Rocky Linux 9
+stackhpc_rocky_9_repos:
+  - url: "{{ stackhpc_repo_rocky_9_baseos_url }}"
+    file: "rocky.repo"
+    tag: "baseos"
+  - url: "{{ stackhpc_repo_rocky_9_appstream_url }}"
+    file: "rocky.repo"
+    tag: "appstream"
+  - url: "{{ stackhpc_repo_rocky_9_extras_url }}"
+    file: "rocky-extras.repo"
+    tag: "extras"
+
+# List of additional repositories for Rocky Linux 9
+stackhpc_rocky_9_additional_repos:
+  - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
+    file: "CentOS-NFV-OpenvSwitch.repo"
+    tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_yoga_url }}"
+    file: "CentOS-OpenStack-yoga.repo"
+    tag: "centos-openstack-yoga"
+  - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
+    tag: "centos-opstools"
+  - url: "{{ stackhpc_repo_rocky_9_crb_url }}"
+    file: "rocky.repo"
+    tag: "crb"
+  - url: "{{ stackhpc_repo_rocky_9_highavailability_url }}"
+    file: "rocky-addons.repo"
+    tag: "highavailability"
+
+# List of third-party repositories for Rocky Linux 9
+stackhpc_rocky_9_third_party_repos:
+  - url: "{{ stackhpc_repo_grafana_url }}"
+    file: "grafana.repo"
+    tag: "grafana"
+  - url: "{{ stackhpc_repo_rhel_9_treasuredata_4_url }}"
+    file: "td.repo"
+    tag: "treasuredata"
+  - url: "{{ stackhpc_repo_rhel_9_mariadb_10_6_url }}"
+    file: "mariadb.repo"
+    tag: "mariadb"
+  - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
+    file: "influxdb.repo"
+    tag: "influxdb"
+  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_pacific_url }}"
+    file: "CentOS-Ceph-Pacific.repo"
+    tag: "centos-ceph-pacific"
+  - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
+  - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
+    file: "rabbitmq_rabbitmq-server.repo"
+    tag: "rabbitmq_rabbitmq-server"
+
+# List of EPEL 9
+stackhpc_epel_9_repos:
+  - url: "{{ stackhpc_repo_epel_9_url }}"
+    file: "epel.repo"
+    tag: "epel"
+
+base_centos_repo_overrides_post_yum_centos_list: "{{ stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos }}"
+base_centos_repo_overrides_post_yum_rocky_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
+
+base_centos_repo_overrides_post_yum_list: "{{ base_centos_repo_overrides_post_yum_centos_list if kolla_base_distro == 'centos' else base_centos_repo_overrides_post_yum_rocky_list }}"
+stackhpc_yum_repos: "{{ stackhpc_centos_stream_repos if kolla_base_distro == 'centos' else stackhpc_rocky_9_repos }}"
 
 # List of repositories for Ubuntu focal.
 stackhpc_ubuntu_focal_repos:
@@ -236,33 +308,34 @@ stackhpc_ubuntu_focal_repos:
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
-    {% if kolla_base_distro == 'centos' %}
+    {% if kolla_base_distro in ['centos', 'rocky'] %}
     RUN \
-    {% for repo in stackhpc_centos_stream_repos %}
-        sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
-               -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
-               -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
+    {% for repo in stackhpc_yum_repos %}
+        sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
+    {% if kolla_base_distro in ['centos', 'rocky'] %}
         && \
-    {% for repo in stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos %}
-        sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
-               -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
-               -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
+    {% for repo in base_centos_repo_overrides_post_yum_list %}
+        sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
-  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
-  # Ark does not work if the upstream mirror pulls packages (which it does
-  # sometimes).
-  # base_ubuntu_package_sources_list: |
-  #   RUN \
-  #       rm -f /etc/apt/sources.list && \
-  #   {% for repo in stackhpc_ubuntu_focal_repos %}
-  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
-  #   {% endif %}
-  #   {% endfor %}
+    {% endif %}
+  base_ubuntu_package_sources_list: |
+    RUN \
+        rm -f /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_focal_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
@@ -270,6 +343,14 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
+  keystone_base_footer: |
+    {% raw %}
+    {% if base_package_type == 'deb' %}
+    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
+        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
+        rm -f liblasso3_2.7.0-2build3_amd64.deb
+    {% endif %}
+    {% endraw %}
   nova_base_footer: |
     # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
     # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
@@ -355,7 +436,7 @@ kolla_build_args:
   haproxy_exporter_version: "0.13.0"
   memcached_exporter_version: "0.9.0"
   mysqld_exporter_version: "0.13.0"
-  node_exporter_version: "1.3.1"
+  node_exporter_version: "1.5.0"
   prometheus_version: "2.35.0"
   prometheus_alertmanager_version: "0.24.0"
   prometheus_cadvisor_sha256sum: "8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0"
