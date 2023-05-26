@@ -31,15 +31,12 @@ fi
 
 if [ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}"  == "baremetal" ]; then
   # Need to force baremetal specific flavors.
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok-baremetal.overrides.conf"
-else
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok.overrides.conf"
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}-baremetal.overrides.conf"
 fi
 
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
 )
-
 
 KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring"
