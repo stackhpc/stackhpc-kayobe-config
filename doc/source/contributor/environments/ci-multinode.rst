@@ -64,7 +64,7 @@ is not enabled by default. To enable it, set the following in
 .. code-block:: yaml
 
       kolla_enable_manila: true
-      kolla_enable_manila_backend_cephfs: true
+      kolla_enable_manila_backend_cephfs_native: true
 
 And re-run ``kayobe overcloud service deploy`` if you are working on an existing
 deployment.
