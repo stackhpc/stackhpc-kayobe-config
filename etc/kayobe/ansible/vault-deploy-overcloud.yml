@@ -62,7 +62,7 @@
       vars:
         vault_config_dir: "/opt/kayobe/vault"
         vault_cluster_name: "overcloud"
-        vault_ca_cert: "/etc/pki/tls/certs/ca-bundle.crt"
+        vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-INT.crt' }}"
         vault_tls_cert: "overcloud.crt"
         vault_tls_key: "overcloud.key"
         copy_self_signed_ca: true
@@ -93,7 +93,7 @@
       vars:
         vault_token: "{{ vault_keys.root_token }}"
         vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
-        vault_ca_cert: "/etc/pki/tls/certs/ca-bundle.crt"
+        vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-INT.crt' }}"
         vault_pki_root_create: false
         vault_pki_intermediate_import: true
         vault_pki_intermediate_ca_name: "OS-TLS-INT"
