@@ -8,6 +8,10 @@
     repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
     base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
   tasks:
+    - name: Print image tag
+      debug:
+        msg: "Image tag: {{ host_image_tag }}"
+
     - name: Get filename
       find:
         paths: "{{ image_path }}"
@@ -81,8 +85,8 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ repository_name }}_{{ ansible_facts.date_time.iso8601_basic_short }}"
-        base_path: "{{ base_path }}/{{ ansible_facts.date_time.iso8601_basic_short }}"
+        name: "{{ repository_name }}_{{ host_image_tag }}"
+        base_path: "{{ base_path }}/{{ host_image_tag }}"
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
@@ -92,9 +96,8 @@
       lineinfile:
         path: /tmp/updated_images.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
-        {{ ansible_facts.date_time.iso8601_basic_short }}/{{ found_files.files[0].path | basename }}"
+        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
-      when: latest_distribution_details.changed
 
     - name: Update new images file with latest path
       lineinfile:
@@ -103,7 +106,19 @@
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 
+    - name: Print versioned path
+      debug:
+        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+      when: latest_distribution_details.changed
+
+    - name: Print latest path
+      debug:
+        msg: "New latest path: {{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        latest/{{ found_files.files[0].path | basename }}"
+      when: latest_distribution_details.changed
+
     - name: Print version tag
       debug:
-        msg: "New tag: {{ ansible_facts.date_time.iso8601_basic_short }}"
+        msg: "New tag: {{ host_image_tag }}"
       when: latest_distribution_details.changed
