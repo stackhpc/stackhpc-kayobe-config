@@ -31,6 +31,7 @@ provision_oc_net_name: internal_net
 # Deprecated name: external_net_name
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
+# This is wrong and should be the trunk network.
 external_net_names:
   - internal_net
 
@@ -38,7 +39,8 @@ external_net_names:
 #public_net_name:
 
 # Name of the network used by Neutron to carry tenant overlay network traffic.
-#tunnel_net_name:
+# Currently not the using the tunnel subnet for VXLAN traffic.
+tunnel_net_name: internal_net
 
 # Name of the network used to carry storage data traffic.
 storage_net_name: storage_net
@@ -161,6 +163,7 @@ storage_net_allocation_pool_end: 172.23.59.1
 storage_net_vlan: 985
 storage_net_mtu: 9000
 # storage_net_routes:
+storage_net_zone: storage
 
 # Tunnel network IP information.
 tunnel_net_cidr: 172.23.43.0/24
@@ -168,6 +171,7 @@ tunnel_net_allocation_pool_start: 172.23.43.1
 tunnel_net_allocation_pool_end: 172.23.43.1
 tunnel_net_vlan: 1064
 tunnel_net_mtu: 9000
+tunnel_net_zone: tunnel
 
 trunk_net_no_ip: true
 trunk_net_bond_mode: 802.3ad
