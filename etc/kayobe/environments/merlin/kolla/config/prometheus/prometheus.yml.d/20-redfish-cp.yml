@@ -1,0 +1,15 @@
+# Redfish metrics for the control plane
+scrape_configs:
+  - job_name: redfish_cp
+    metrics_path: /redfish
+    static_configs:
+    - targets: [] # TODO: add redfish IPs for Merlin nodes.
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "{{ hostvars['merlin-seed'].ansible_host }}:9610"  ### the address of the redfish-exporter
+    scrape_interval: 5m
+    scrape_timeout: 60s
