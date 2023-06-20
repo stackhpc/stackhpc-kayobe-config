@@ -1,0 +1,113 @@
+---
+# NOTE: This playbook is designed for use in high-severity hotfixes ONLY.
+# If you're considering using this for regular operations, please consider
+# developing a more suitable solution instead.
+#
+# This playbook will first copy across any hotfix files, and then run the
+# hotfix command. If either of these are not specified, the corresponding step
+# will be skipped.
+#
+# It is strongly recommended that you write your container_hotfix_* variables
+# to a file, then add them as an extra var. e.g:
+# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/hotfix-containers.yml -e "@~/vars.yml"
+
+# Vars:
+# container_hotfix_command
+#   Type:    string
+#   Desc:    Command to run in a set of containers
+#   Default: ""
+#
+# container_hotfix_files
+#   Type:    list of dict containing src,dest
+#   Desc:    Files to copy into the destination containers
+#   Default: []
+#
+# container_hotfix_container_regex
+#   Type:    string
+#   Desc:    Regex to match container names against. Must match the entire name
+#            e.g. "nova" or "nova*" will result in only matching a single
+#            container called "nova". To properly match every container
+#            starting with "nova", the regex must be "nova.*"
+#   Default: ""
+#
+# container_hotfix_restart_containers
+#   Type:    bool
+#   Desc:    Whether to restart containers after applying the hotfix
+#   Default: False
+#
+# container_hotfix_become
+#   Type:    bool
+#   Desc:    Create files and exec as root in the destination container(s)
+#   Default: False
+
+# Example vars.yml:
+# ---
+# container_hotfix_command: "/tmp/quick-fix.sh"
+# container_hotfix_files:
+#   - src: "~/quick-fix.sh"
+#     dest: "/tmp/quick-fix.sh"
+#   - src: "/home/stackhpc/new_nova_conf.conf"
+#     dest: "/etc/nova/nova.conf"
+# container_hotfix_container_regex: "nova.*"
+# container_hotfix_restart_containers: True
+# container_hotfix_become: True
+
+
+- name: Hotfix containers
+  hosts: overcloud
+  tags:
+    - hotfix-containers
+  vars:
+    container_hotfix_command: ""
+    container_hotfix_files: []
+    container_hotfix_container_regex: ""
+    container_hotfix_restart_containers: False
+    container_hotfix_become: False
+  tasks:
+    - name: Ensure inputs are valid
+      fail:
+        msg: "Invalid input. Container list cannot be empty. Either container_hotfix_command or container_hotfix_files must be populated."
+      when:
+        - container_hotfix_container_regex == "" or
+          container_hotfix_command == "" and container_hotfix_files == []
+
+    - name: Get list of containers to hotfix
+      command: '{{ kolla_container_engine | default("docker")}} ps --format {% raw %}"{{.Names}}"{% endraw %}'
+      register: host_containers
+
+    - name: Fail if no containers match given regex
+      vars:
+        hotfix_containers: host_containers | split('\n') | regex_search(container_hotfix_container_regex)
+      fail:
+        msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers | split('\n') }}"
+      when: hotfix_containers == ""
+
+    - name: Ensure hotfix-files directory exists on the remote host
+      ansible.builtin.file:
+        path: /tmp/hotfix-files
+        state: directory
+
+    - name: Ensure container hotfix file(s) exist on host
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "/tmp/hotfix-files/{{ index }}"
+      loop: "{{ container_hotfix_files }}"
+      loop_control:
+        index_var: index
+      when: container_hotfix_files != []
+
+    - name: Apply hotfix
+      include_tasks: run-container-hotfix.yml
+      loop: "{{ host_containers.stdout | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      loop_control:
+        loop_var: hotfix_container
+
+    - name: Cleanup temporary files
+      ansible.builtin.file:
+        path: /tmp/hotfix-files
+        state: absent
+
+    - name: Restart containers if requested
+      command: "{{ kolla_container_engine | default('docker')}} restart {{ item }}"
+      loop: "{{ host_containers.stdout | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      when: container_hotfix_restart_containers
