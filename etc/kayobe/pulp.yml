@@ -4,7 +4,8 @@
 
 # Base URL of the local Pulp service.
 # Default uses the seed node's IP on the admin network.
-pulp_url: "{{ 'https' if pulp_enable_tls | bool else 'http' }}://{{ hostvars[groups['seed'][0]].admin_oc_net_name }}:{{ pulp_port }}"
+seed_ip: "{{ provision_oc_net_name | net_ip }}"
+pulp_url: "{{ 'https' if pulp_enable_tls | bool else 'http' }}://{{ seed_ip }}:{{ pulp_port }}"
 
 # Port on the seed node's interface on the admin network that the Pulp service
 # listens on.
