@@ -1,7 +1,7 @@
 ---
 - name: Configure VXLAN
-  hosts: storage,seed,controllers,compute
-  gather_facts: false
+  hosts: controllers,compute,seed,storage
+  gather_facts: true
   vars:
     ansible_user: "{{ bootstrap_user }}"
     # We can't assume that a virtualenv exists at this point, so use the system
@@ -11,10 +11,3 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
   roles:
     - role: stackhpc.vxlan
-      vars:
-        vxlan_phys_dev: "{{ admin_oc_net_name | net_interface }}"
-        vxlan_dstport: 4790
-        vxlan_interfaces:
-          - device: vxlan10
-            group: 224.0.0.10
-            bridge: breth1

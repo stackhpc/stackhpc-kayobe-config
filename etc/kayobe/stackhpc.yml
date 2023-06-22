@@ -5,6 +5,12 @@ stackhpc_repo_mirror_url: "{{ pulp_url }}"
 # Distribution name. Either 'development' or 'production'.
 stackhpc_repo_distribution: "development"
 
+# Whether or not to include the os minor version in the url for rocky yum repositories
+stackhpc_include_os_minor_version_in_repo_url: false
+
+stackhpc_rocky_8_url_version: "{{ '8.' + stackhpc_pulp_repo_rocky_8_minor_version | string if stackhpc_include_os_minor_version_in_repo_url | bool else '8' }}"
+stackhpc_rocky_9_url_version: "{{ '9.' + stackhpc_pulp_repo_rocky_9_minor_version | string if stackhpc_include_os_minor_version_in_repo_url | bool else '9' }}"
+
 ###############################################################################
 # Debs
 
@@ -63,9 +69,9 @@ stackhpc_repo_centos_stream_nfv_extras_version: "{{ stackhpc_repo_distribution }
 stackhpc_repo_centos_stream_nfv_openvswitch_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/8-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_repo_centos_stream_nfv_openvswitch_version }}"
 stackhpc_repo_centos_stream_nfv_openvswitch_version: "{{ stackhpc_repo_distribution }}"
 
-# CentOS Stream 8 - OpenStack Xena
-stackhpc_repo_centos_stream_openstack_xena_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/8-stream/cloud/x86_64/openstack-xena/{{ stackhpc_repo_centos_stream_openstack_xena_version }}"
-stackhpc_repo_centos_stream_openstack_xena_version: "{{ stackhpc_repo_distribution }}"
+# CentOS Stream 8 - OpenStack Yoga
+stackhpc_repo_centos_stream_openstack_yoga_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/8-stream/cloud/x86_64/openstack-yoga/{{ stackhpc_repo_centos_stream_openstack_yoga_version }}"
+stackhpc_repo_centos_stream_openstack_yoga_version: "{{ stackhpc_repo_distribution }}"
 
 # CentOS Stream 8 - OpsTools - collectd
 stackhpc_repo_centos_stream_opstools_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/8-stream/opstools/x86_64/collectd-5/{{ stackhpc_repo_centos_stream_opstools_version }}"
@@ -87,15 +93,15 @@ stackhpc_repo_elasticsearch_logstash_kibana_7_x_version: "{{ stackhpc_repo_distr
 stackhpc_repo_grafana_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/grafana/oss/rpm/{{ stackhpc_repo_grafana_version }}"
 stackhpc_repo_grafana_version: "{{ stackhpc_repo_distribution }}"
 
-# MariaDB 10.5 CentOS 8
-stackhpc_repo_mariadb_10_5_centos8_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/mariadb-10.5/yum/centos8-amd64/{{ stackhpc_repo_mariadb_10_5_centos8_version }}"
-stackhpc_repo_mariadb_10_5_centos8_version: "{{ stackhpc_repo_distribution }}"
+# MariaDB 10.6 CentOS 8
+stackhpc_repo_mariadb_10_6_centos8_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/mariadb-10.6/yum/centos8-amd64/{{ stackhpc_repo_mariadb_10_6_centos8_version }}"
+stackhpc_repo_mariadb_10_6_centos8_version: "{{ stackhpc_repo_distribution }}"
 
-# RabbitMQ - Erlang
+# RabbitMQ - Erlang for Redhat family, version 8/9 agnostic
 stackhpc_repo_rabbitmq_erlang_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_repo_rabbitmq_erlang_version }}"
 stackhpc_repo_rabbitmq_erlang_version: "{{ stackhpc_repo_distribution }}"
 
-# RabbitMQ - Server
+# RabbitMQ for Redhat family, version 8/9 agnostic
 stackhpc_repo_rabbitmq_server_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rabbitmq/rabbitmq-server/el/8/x86_64/{{ stackhpc_repo_rabbitmq_server_version }}"
 stackhpc_repo_rabbitmq_server_version: "{{ stackhpc_repo_distribution }}"
 
@@ -104,23 +110,75 @@ stackhpc_repo_treasuredata_4_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/t
 stackhpc_repo_treasuredata_4_version: "{{ stackhpc_repo_distribution }}"
 
 # Rocky 8 BaseOS
-stackhpc_repo_rocky_baseos_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8/BaseOS/x86_64/os/{{ stackhpc_repo_rocky_baseos_version }}/"
+stackhpc_repo_rocky_baseos_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_8_url_version }}/BaseOS/x86_64/os/{{ stackhpc_repo_rocky_baseos_version }}/"
 stackhpc_repo_rocky_baseos_version: "{{ stackhpc_repo_distribution }}"
 
 # Rocky 8 AppStream
-stackhpc_repo_rocky_appstream_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8/AppStream/x86_64/os/{{ stackhpc_repo_rocky_appstream_version }}/"
+stackhpc_repo_rocky_appstream_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_8_url_version }}/AppStream/x86_64/os/{{ stackhpc_repo_rocky_appstream_version }}/"
 stackhpc_repo_rocky_appstream_version: "{{ stackhpc_repo_distribution }}"
 
 # Rocky 8 extras
-stackhpc_repo_rocky_extras_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/8/extras/x86_64/os/{{ stackhpc_repo_rocky_extras_version }}/"
+stackhpc_repo_rocky_extras_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_8_url_version }}/extras/x86_64/os/{{ stackhpc_repo_rocky_extras_version }}/"
 stackhpc_repo_rocky_extras_version: "{{ stackhpc_repo_distribution }}"
+
+# CentOS Stream 9 - NFV OpenvSwitch
+stackhpc_repo_centos_stream_9_nfv_openvswitch_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_version }}"
+stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_repo_distribution }}"
+
+# CentOS Stream 9 - OpenStack Yoga
+stackhpc_repo_centos_stream_9_openstack_yoga_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/cloud/x86_64/openstack-yoga/{{ stackhpc_repo_centos_stream_9_openstack_yoga_version }}"
+stackhpc_repo_centos_stream_9_openstack_yoga_version: "{{ stackhpc_repo_distribution }}"
+
+# CentOS Stream 9 - OpsTools - collectd
+stackhpc_repo_centos_stream_9_opstools_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_repo_centos_stream_9_opstools_version }}"
+stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_repo_distribution }}"
+
+# CentOS Stream 9 - Ceph Pacific
+stackhpc_repo_centos_stream_9_storage_ceph_pacific_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/storage/x86_64/ceph-pacific/{{ stackhpc_repo_centos_stream_9_storage_ceph_pacific_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_pacific_version: "{{ stackhpc_repo_distribution }}"
+
+# CentOS Stream 9 Docker CE
+stackhpc_repo_centos_stream_9_docker_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/centos/9/x86_64/stable/{{ stackhpc_repo_centos_stream_9_docker_version }}"
+stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_repo_distribution }}"
+
+# TreasureData 4 for RHEL 9
+stackhpc_repo_rhel_9_treasuredata_4_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/treasuredata/4/redhat/9/x86_64/{{ stackhpc_repo_rhel_9_treasuredata_4_version }}"
+stackhpc_repo_rhel_9_treasuredata_4_version: "{{ stackhpc_repo_distribution }}"
+
+# MariaDB 10.6 for RHEL 9
+stackhpc_repo_rhel_9_mariadb_10_6_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/mariadb-10.6/yum/rhel/9/x86_64/{{ stackhpc_repo_rhel_9_mariadb_10_6_version }}"
+stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_repo_distribution }}"
+
+# InfluxDB for RHEL 9
+stackhpc_repo_rhel_9_influxdb_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/influxdb/rhel/9/x86_64/stable/{{ stackhpc_repo_rhel_9_influxdb_version }}"
+stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 AppStream
+stackhpc_repo_rocky_9_appstream_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/AppStream/x86_64/os/{{ stackhpc_repo_rocky_9_appstream_version }}"
+stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 BaseOS
+stackhpc_repo_rocky_9_baseos_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/BaseOS/x86_64/os/{{ stackhpc_repo_rocky_9_baseos_version }}"
+stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 CRB
+stackhpc_repo_rocky_9_crb_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/CRB/x86_64/os/{{ stackhpc_repo_rocky_9_crb_version }}"
+stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 extras
+stackhpc_repo_rocky_9_extras_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/extras/x86_64/os/{{ stackhpc_repo_rocky_9_extras_version }}"
+stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 highavailability
+stackhpc_repo_rocky_9_highavailability_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/highavailability/x86_64/os/{{ stackhpc_repo_rocky_9_highavailability_version }}"
+stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_repo_distribution }}"
+
+# EPEL 9
+stackhpc_repo_epel_9_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/epel/9/Everything/x86_64/{{ stackhpc_repo_epel_9_version }}"
+stackhpc_repo_epel_9_version: "{{ stackhpc_repo_distribution }}"
 
 ###############################################################################
 # Sources
-
-# Bifrost source repository.
-stackhpc_bifrost_source_url: "https://github.com/stackhpc/bifrost"
-stackhpc_bifrost_source_version: "stackhpc/{{ openstack_release }}"
 
 # Kolla source repository.
 stackhpc_kolla_source_url: "https://github.com/stackhpc/kolla"

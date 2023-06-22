@@ -15,6 +15,14 @@ on:
         description: Host OS distribution
         type: string
         default: centos
+      os_release:
+        description: Host OS release
+        type: string
+        default: 8-stream
+      ssh_username:
+        description: User for terraform to access the all-in-one VM
+        type: string
+        default: cloud-user
       neutron_plugin:
         description: Neutron ML2 plugin
         type: string
@@ -22,7 +30,7 @@ on:
       vm_image:
         description: Image for the all-in-one VM
         type: string
-        default: CentOS-stream8
+        default: bb8c0a34-533f-42fb-a49b-3461e677f3f6
       vm_interface:
         description: Default network interface name
         type: string
@@ -64,12 +72,12 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
            submodules: true
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
 
       - name: Initialise terraform
         run: terraform init
@@ -100,7 +108,7 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          SSH_USERNAME: "${{ inputs.os_distribution == 'ubuntu' && 'ubuntu' || 'cloud-user' }}"
+          SSH_USERNAME: "${{ inputs.ssh_username }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ inputs.vm_image }}
           VM_FLAVOR: ${{ inputs.vm_flavor }}
@@ -161,22 +169,22 @@ jobs:
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
           ---
           os_distribution: ${{ env.OS_DISTRIBUTION }}
+          os_release: "${{ env.OS_RELEASE }}"
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           EOF
         env:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
           OS_DISTRIBUTION: ${{ inputs.os_distribution }}
+          OS_RELEASE: ${{ inputs.os_release }}
 
-      # https://renehernandez.io/snippets/multiline-strings-as-a-job-output-in-github-actions/
+      # Use a heredoc to define a multiline string output
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
       - name: Set SSH key output
         id: ssh_key
         run: |
-          ssh_key="$(cat terraform/aio/id_rsa)"
-          ssh_key="${ssh_key//'%'/'%25'}"
-          ssh_key="${ssh_key//$'\n'/'%0A'}"
-          ssh_key="${ssh_key//$'\r'/'%0D'}"
-          echo "::add-mask::$ssh_key"
-          echo "::set-output name=ssh_key::$ssh_key"
+          echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
+          cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
@@ -228,7 +236,7 @@ jobs:
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.neutron_plugin }}
+          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
           path: tempest-artifacts/*
 
       - name: Fail if any Tempest tests failed

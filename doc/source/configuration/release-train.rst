@@ -78,10 +78,11 @@ Currently, Ark does not provide package repositories for Ubuntu - only
 container images. For this reason, ``stackhpc_pulp_sync_ubuntu_focal`` in
 ``etc/kayobe/pulp.yml`` is set to ``false`` by default.
 
-CentOS Stream 8 and Rocky Linux 8 package repositories are synced based on the
+CentOS Stream 8 and Rocky Linux 8/9 package repositories are synced based on the
 value of ``os_distribution``. If you need to sync multiple distributions,
-``stackhpc_pulp_sync_centos_stream8`` and ``stackhpc_pulp_sync_rocky_8`` in
-``etc/kayobe/pulp.yml`` may be set to ``true``.
+``stackhpc_pulp_sync_centos_stream8``, ``stackhpc_pulp_sync_rocky_8`` and
+``stackhpc_pulp_sync_rocky_9`` in ``etc/kayobe/pulp.yml`` may be set to
+``true``.
 
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
@@ -144,9 +145,9 @@ See the Kayobe :kayobe-doc:`custom playbook documentation
   packages have been validated in a development or staging environment.
 * ``pulp-container-sync.yml``: Pull container images from Ark to the local
   Pulp. This will create a new repository version (snapshot) for each
-  repository in the local Pulp server when new image tags are available. The
-  new image tags will not be available to cloud nodes until they have been
-  published.
+  repository in the local Pulp server when new image tags are available. If
+  these are new container image repositories, then the new image tags will not
+  be available to cloud nodes until they have been published.
 * ``pulp-container-publish.yml``: Publish synchronised container images in the
   local Pulp. This will make synchonised container images available to cloud
   nodes.
@@ -232,7 +233,7 @@ see this message when you later try to run ``pulp-container-sync.yml``:
 The issue is that pushing an image automatically creates a `container-push repository
 <https://docs.pulpproject.org/pulp_container/restapi.html#tag/Repositories:-Container-Push>`__
 which conflicts with the creation of a regular container repository of the same
-name. You can resolve this conflict by deleting the distribution associated 
+name. You can resolve this conflict by deleting the distribution associated
 with the push repository using the pulp CLI:
 
 .. code-block:: console
@@ -241,17 +242,17 @@ with the push repository using the pulp CLI:
     Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
     .Done.
 
-HTTP Error 404: Not Found 
+HTTP Error 404: Not Found
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If your login credentials are incorrect, or lack the required permissions, 
+If your login credentials are incorrect, or lack the required permissions,
 you will see a 404 error during ``pulp-repo-sync.yml``:
 
 .. code-block:: console
 
     TASK [stackhpc.pulp.pulp_repository : Sync RPM remotes into repositories] ****************************************************************************************************************************************
     An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435'))
-    failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false 
+    failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false
       ansible_loop_var: item
       item:
         name: centos-stream-8-baseos-development

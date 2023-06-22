@@ -7,7 +7,7 @@ groups:
   rules:
   - alert: BlackboxProbeFailed
     expr: probe_success == 0
-    for: 0m
+    for: 2m
     labels:
       severity: critical
     annotations:
@@ -25,12 +25,12 @@ groups:
 
   - alert: BlackboxProbeHttpFailure
     expr: probe_http_status_code <= 199 OR probe_http_status_code >= 400
-    for: 0m
+    for: 2m
     labels:
       severity: critical
     annotations:
       summary: Blackbox probe HTTP failure (instance {{ $labels.instance }})
-      description: "HTTP status code is not 200-399"
+      description: "HTTP status code is not 200-399. Blackbox exporter got status code: {{ $value }}"
 
   - alert: BlackboxSslCertificateWillExpireSoon
     expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
@@ -39,7 +39,7 @@ groups:
       severity: warning
     annotations:
       summary: Blackbox SSL certificate will expire soon (instance {{ $labels.instance }})
-      description: "SSL certificate expires in 30 days"
+      description: "SSL certificate expires in less than 30 days"
 
   - alert: BlackboxSslCertificateWillExpireSoon
     expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 3
@@ -48,7 +48,7 @@ groups:
       severity: critical
     annotations:
       summary: Blackbox SSL certificate will expire soon (instance {{ $labels.instance }})
-      description: "SSL certificate expires in 3 days"
+      description: "SSL certificate expires in less than 3 days"
 
   - alert: BlackboxSslCertificateExpired
     expr: probe_ssl_earliest_cert_expiry - time() <= 0

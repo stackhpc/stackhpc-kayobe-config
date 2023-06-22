@@ -1,0 +1,149 @@
+---
+# Wazuh deployment details and documetation:
+# https://documentation.wazuh.com/current/deployment-options/deploying-with-ansible/index.html
+#
+# Defaults that are modified by this file:
+# https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-filebeat-oss/defaults/main.yml
+# https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-wazuh-manager/defaults/main.yml
+# https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/wazuh-dashboard/defaults/main.yml
+# https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/wazuh-indexer/defaults/main.yml
+# https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-wazuh-manager/defaults/main.yml
+
+# Wazuh IP accessible from nodes running agents
+# Change network as needed
+wazuh_manager_ip: "{{ provision_oc_net_name | net_ip }}"
+
+# Single node setup
+single_node: true
+minimum_master_nodes: 1
+indexer_node_master: true
+
+# Ansible control host certificate directory
+local_certs_path: "{{ playbook_dir }}/wazuh/certificates"
+
+# Ansible control host custom certificates directory
+local_custom_certs_path: "{{ playbook_dir }}/wazuh/custom_certificates"
+
+# Indexer variables
+indexer_node_name: "{{ inventory_hostname }}"
+
+# IP to which indexer will bind on host.
+indexer_network_host: "{{ provision_oc_net_name | net_ip }}"
+
+# Even in a single node setup this must be defined. If not defaults to 127.0.0.1
+indexer_cluster_nodes: 
+  - "{{ indexer_network_host }}"
+
+instances:
+  node1:
+    name: "{{ groups['wazuh-manager'][0] }}"
+    ip: "{{ admin_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
+    role: indexer
+
+# Filebeat variables
+filebeat_node_name: "{{ indexer_node_name }}"
+
+filebeat_output_indexer_hosts:
+  - "{{ indexer_network_host }}"
+
+# Dashboard variables
+dashboard_node_name: "{{ indexer_node_name }}"
+
+dashboard_server_host: "{{ indexer_network_host }}"
+
+dashboard_server_name: "{{ indexer_node_name }}"
+
+indexer_admin_password: "{{ secrets_wazuh.opendistro_admin_password }}"
+
+dashboard_user: kibanaserver
+
+# TODO refactor creation and usage of secrets_wazuh
+dashboard_password: "{{ secrets_wazuh.opendistro_kibana_password }}"
+
+# Indexer filebeat user
+indexer_security_user: admin
+
+# Indexer filebeat password
+indexer_security_password: "{{ secrets_wazuh.opendistro_admin_password }}"
+
+# Used to override the default Wazuh api user
+wazuh_api_users: "{{ secrets_wazuh.wazuh_api_users }}"
+
+# Dashboard to Wazuh api credentials
+wazuh_api_credentials:
+  - id: "default"
+    url: "https://{{ indexer_network_host }}"
+    port: 55000
+    username: "wazuh"
+    password: "{{ secrets_wazuh.wazuh_api_users | selectattr('username', 'match', 'wazuh') | map(attribute='password') | first }}"
+
+# Perform hash_behaviour=merge at role runtime
+wazuh_manager_config_overlay: true
+
+# JSON formatted alerts to /var/ossec/logs/alerts/alerts.json
+wazuh_manager_json_output: 'yes'
+
+# Plain text alerts to /var/ossec/logs/alerts/alerts.log
+wazuh_manager_alerts_log: 'yes'
+
+# Store events that do not trip rules
+wazuh_manager_logall: 'no'
+
+# Email alert notifications
+wazuh_manager_email_notification: 'no'
+
+# Log format of /var/ossec/logs/ossec.{log|json}
+wazuh_manager_log_format: 'plain'
+
+authd_pass: "{{ secrets_wazuh.authd_pass }}"
+
+# Wazuh-Manager listener settings
+wazuh_manager_connection:
+  - type: 'secure'
+    port: '1514'
+    protocol: 'tcp'
+    queue_size: 131072
+
+# Wazuh-Manager authd settings
+# TODO, enable SSL/TLS
+wazuh_manager_authd:
+  enable: true
+  port: 1515
+  use_source_ip: 'no'
+  force:
+    enabled: 'no'
+    key_mismatch: 'no'
+    disconnected_time: '0'
+    after_registration_time: '0'
+  purge: 'no'
+  use_password: 'yes'
+  ciphers: 'HIGH:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH'
+  ssl_agent_ca: null
+  ssl_verify_host: 'no'
+  ssl_manager_cert: null
+  ssl_manager_key: null
+  ssl_auto_negotiate: 'no'
+
+# Wazuh-Manager Vulnerability Detector settings
+wazuh_manager_vulnerability_detector:
+  enabled: 'yes'
+  interval: '5m'
+  ignore_time: '6h'
+  run_on_start: 'yes'
+  providers:
+    - enabled: 'yes'
+      os:
+        - 'focal'
+        - 'jammy'
+      update_interval: '1h'
+      name: '"canonical"'
+    - enabled: 'yes'
+      os:
+        - '8'
+        - '9'
+      update_interval: '1h'
+      name: '"redhat"'
+    - enabled: 'yes'
+      update_from_year: '2018'
+      update_interval: '1h'
+      name: '"nvd"'

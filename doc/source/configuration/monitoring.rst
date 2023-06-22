@@ -7,9 +7,20 @@ Monitoring Configuration
 
 StackHPC kayobe config includes a reference monitoring and alerting stack based
 on Prometheus, Alertmanager, Grafana, Fluentd, Elasticsearch & Kibana. These
-services by default come enabled and configured. Central Elasticsearch cluster
-collects OpenStack logs, with an option to receive operating system logs too.
-In order to enable this, execute custom playbook after deployment:
+services by default come enabled and configured.
+
+Monitoring hosts, usually the controllers, should be added to the monitoring
+group. The group definition can be applied in various different places. For
+example, this configuration could be added to etc/kayobe/inventory/groups:
+
+.. code-block:: yaml
+
+    [monitoring:children]
+    controllers
+
+Central Elasticsearch cluster collects OpenStack logs, with an option to receive
+operating system logs too. In order to enable this, execute custom playbook
+after deployment:
 
 .. code-block:: console
 
@@ -37,8 +48,8 @@ environment, create the following symbolic links:
 .. code-block:: console
 
     cd $KAYOBE_CONFIG_PATH
-    ln -s kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
 
 and commit them to the config repository.
 
@@ -78,3 +89,41 @@ on the overcloud hosts:
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
+
+Alertmanager and Slack
+======================
+
+StackHPC Kayobe configuration comes bundled with an array of alerts but does not
+enable any receivers for notifications by default. Various receivers can be
+configured for Alertmanager. Slack is currently the most common.
+
+To set up a receiver, create a ``prometheus-alertmanager.yml`` file under
+``etc/kayobe/kolla/config/prometheus/``. An example config is stored in this
+directory. The example configuration uses two Slack channels. One channel
+receives all alerts while the other only receives alerts tagged as critical. It
+also adds a silence button to temporarily mute alerts. To use the example in a
+deployment, you will need to generate two webhook URLs, one for each channel.
+
+To generate a slack webhook, `create a new app
+<https://api.slack.com/apps/new>`__ in the workspace you want to add alerts to.
+From the Features page, toggle Activate incoming webhooks on. Click Add new
+webhook to workspace. Pick a channel that the app will post to, then click
+Authorise. You only need one app to generate both webhooks.
+
+Both URLs should be encrypted using ansible vault, as they give anyone access to
+your slack channels. The standard practice is to store them in
+``kayobe/secrets.yml`` as:
+
+.. code-block:: yaml
+
+    secrets_slack_notification_channel_url: <some_webhook_url>
+    secrets_slack_critical_notification_channel_url: <some_other_webhook_url>
+
+These should then be set as the ``slack_api_url`` and ``api_url`` for the
+regular and critical alerts channels respectively. Both slack channel names will
+need to be set, and the proxy URL sould be set or removed.
+
+If you want to add an alerting rule, there are many good examples of alerts are
+available `here <https://awesome-prometheus-alerts.grep.to/>`__. They simply
+need to be added to one of the ``*.rules`` files in the prometheus configuration
+directory.
