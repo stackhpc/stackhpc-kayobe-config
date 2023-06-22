@@ -6,6 +6,28 @@ This document describes how to deploy Hashicorp Vault for
 internal PKI purposes using the
 `StackHPC Hashicorp collection <https://galaxy.ansible.com/stackhpc/hashicorp>`_
 
+Background
+==========
+
+Our OpenStack environment employs two separate HashiCorp Vault instances.
+These instances manage the Public Key Infrastructure (PKI) by handling the
+creation and issuance of certificates.
+
+- The first HashiCorp Vault instance is located on the seed host.
+  It handles infrastructure-level certificates, generating the root
+  Certificate Authority (CA) and intermediate CA for the second Vault.
+  The ``vault-deploy-seed.yml`` playbook sets up this instance.
+
+- The second HashiCorp Vault instance is within the OpenStack
+  overcloud, located on the controller nodes. This instance uses the
+  intermediate CA from the root Vault to issue application-specific
+  certificates. The ``vault-deploy-overcloud.yml`` playbook is used
+  for its setup. It ensures that all controller nodes trust the
+  intermediate CA from the root Vault.
+
+The dual Vault setup provides an additional layer of security for our PKI management,
+as it lessens the risk of a complete system compromise if one Vault instance is breached.
+
 Prerequisites
 =============
 
