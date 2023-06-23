@@ -63,7 +63,7 @@ Clone the StackHPC Hashicorp Vault collection
 
    collections:
      - name: stackhpc.hashicorp
-       version: 2.2.0
+       version: 2.3.0
 
 2. Perform a control host upgrade to pull down the collection
 
