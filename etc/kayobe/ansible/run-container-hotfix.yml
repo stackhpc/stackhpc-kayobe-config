@@ -9,6 +9,13 @@
       loop: "{{ container_hotfix_files }}"
       loop_control:
         index_var: index
+
+    - name: Set mode for copied files
+      command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} chmod {{ item.mode | default('400') }} {{ item.dest }}"
+      loop: "{{ container_hotfix_files }}"
+      loop_control:
+        index_var: index
+
   when: container_hotfix_files != []
 
 - name: Run container_hotfix_command

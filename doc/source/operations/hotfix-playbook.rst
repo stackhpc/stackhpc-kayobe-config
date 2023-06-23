@@ -29,8 +29,8 @@ Playbook variables:
   containers. Default is an empty string.
 
 * ``container_hotfix_files``: A list of files to copy into each target
-  container. Consists of a list of dicts with keys ``src`` and ``dest``.
-  Default is an empty list.
+  container. Consists of a list of dicts with keys ``src`` and ``dest``
+  (required), and ``mode`` (optional - default 400). Default is an empty list.
 
 * ``container_hotfix_container_regex``: Regex to match container names against.
   Must match the entire name e.g. "nova" or "nova*" will result in only
@@ -62,6 +62,7 @@ Example Variables file
     container_hotfix_files:
       - src: "~/quick-fix.sh"
         dest: "/tmp/quick-fix.sh"
+        mode: "700"
       - src: "/home/stackhpc/new_nova_conf.conf"
         dest: "/etc/nova/nova.conf"
     container_hotfix_container_regex: "nova.*"
