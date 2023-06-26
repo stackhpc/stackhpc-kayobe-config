@@ -75,8 +75,6 @@ jobs:
       os_distribution: rocky
       os_release: "8"
       neutron_plugin: ovs
-      # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
-      # train snapshots, causing failures installing some packages.
       OS_CLOUD: sms-lab-release
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
@@ -91,14 +89,12 @@ jobs:
       os_distribution: rocky
       os_release: "8"
       neutron_plugin: ovn
-      # NOTE: The current SMS lab Rocky8 image has moved ahead of our release
-      # train snapshots, causing failures installing some packages.
       OS_CLOUD: sms-lab-release
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-ubuntu-focal-ovs:
-    name: aio (Ubuntu Focal OVS)
+  all-in-one-ubuntu-ovs:
+    name: aio (Ubuntu OVS)
     needs:
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
@@ -112,8 +108,8 @@ jobs:
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-ubuntu-focal-ovn:
-    name: aio (Ubuntu Focal OVN)
+  all-in-one-ubuntu-ovn:
+    name: aio (Ubuntu OVN)
     needs:
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml

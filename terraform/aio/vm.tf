@@ -73,6 +73,8 @@ resource "null_resource" "kayobe-aio" {
       host = openstack_compute_instance_v2.kayobe-aio.access_ip_v4
       user = var.ssh_username
       private_key = file("id_rsa")
+      # Terraform will run the start script from /tmp by default. For the
+      # current images, /tmp is noexec, so the path must be changed
       script_path = "/home/${var.ssh_username}/start.sh"
     }
 
