@@ -45,7 +45,7 @@ kayobe_image_tags:
     ubuntu: yoga-20230220T181235
   opensearch:
     centos: yoga-20230324T084510
-    rocky: yoga-20230324T090413
+    rocky: yoga-20230622T154317
     ubuntu: yoga-20230324T090345
   prometheus_node_exporter:
     centos: yoga-20230310T173747
@@ -77,6 +77,13 @@ prometheus_node_exporter_extra_volumes:
   - "textfile:/var/lib/node_exporter/textfile_collector"
 prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
 
+# Set Ceph manager exporter endpoints
+{% if groups['mgrs'] | length > 0 %}
+prometheus_ceph_mgr_exporter_endpoints:
+{% for host in groups['mgrs'] %}
+  - "{{ admin_oc_net_name | net_ip(host) }}:9283"
+{% endfor %}
+{% endif %}
 
 #############################################################################
 
