@@ -206,3 +206,69 @@ Enable the required TLS variables in kayobe and kolla
 .. code-block::
 
    kayobe overcloud service deploy
+
+Barbican integration
+====================
+
+Enable Barbican in kayobe
+-------------------------
+
+Set the following in kayobe-config/etc/kayobe/kolla.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla.yml
+
+.. code-block::
+
+   kolla_enable_barbican: yes
+
+Generate secrets_barbican_approle_secret_id
+-------------------------------------------
+
+1. Run ``uuidgen`` to generate secret id
+2. Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
+
+.. code-block::
+
+   secrets_barbican_approle_secret_id: "YOUR-SECRET-GOES-HERE"
+
+Create required configuration in Vault
+--------------------------------------
+
+Run vault-deploy-barbican.yml custom playbook
+
+.. code-block::
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-deploy-barbican.yml
+
+Add secrets_barbican_approle_id to secrets
+------------------------------------------
+
+Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
+
+.. code-block::
+
+   secrets_barbican_approle_id: "YOUR-APPROLE-ID-GOES-HERE"
+
+Configure Barbican
+------------------
+
+Put required configuration in kayobe-config/etc/kayobe/kolla/config/barbican.conf or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/barbican.conf
+
+.. code-block::
+
+   [secretstore]
+   namespace=barbican.secretstore.plugin
+   enable_multiple_secret_stores=false
+   enabled_secretstore_plugins=vault_plugin
+
+   [vault_plugin]
+   vault_url = https://{{ internal_net_vip_address }}:8200
+   use_ssl = True
+   approle_role_id = {{ secrets_barbican_approle_role_id }}
+   approle_secret_id = {{ secrets_barbican_approle_secret_id }}
+   kv_mountpoint = barbican
+
+Deploy Barbican
+---------------
+
+.. code-block::
+
+   kayobe overcloud service deploy -kt barbican
