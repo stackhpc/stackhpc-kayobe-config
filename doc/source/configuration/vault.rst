@@ -241,11 +241,11 @@ Run vault-deploy-barbican.yml custom playbook
 Add secrets_barbican_approle_id to secrets
 ------------------------------------------
 
-Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
+Note the role id from playbook output and insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
 .. code-block::
 
-   secrets_barbican_approle_id: "YOUR-APPROLE-ID-GOES-HERE"
+   secrets_barbican_approle_role_id: "YOUR-APPROLE-ID-GOES-HERE"
 
 Configure Barbican
 ------------------
