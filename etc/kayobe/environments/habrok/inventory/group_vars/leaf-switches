@@ -248,6 +248,7 @@ switch_interface_config_oss:
 switch_interface_config_robinhood:
   - no shutdown
   - mtu {{ switch_fabric_mtu }}
+  - no switchport access vlan
   - switchport mode trunk 
   - switchport trunk allowed vlan {{ switch_robinhood_trunk_vlans | unique | join(',') }}
   - spanning-tree port type edge
@@ -293,5 +294,6 @@ switch_ceph_osd_trunk_vlans:
 switch_robinhood_trunk_vlans:
   - "{{ lustre_storage_vlan }}"
   - "{{ mgmt_lustre_vlan }}"
+  - "{{ dh4_lustre_vlan }}"
 
 ###############################################################################
