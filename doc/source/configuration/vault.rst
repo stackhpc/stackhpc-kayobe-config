@@ -20,56 +20,25 @@ creation and issuance of certificates.
 
 - The second HashiCorp Vault instance is within the OpenStack
   overcloud, located on the controller nodes. This instance uses the
-  intermediate CA from the root Vault to issue application-specific
+  intermediate CA from the seed Vault to issue application-specific
   certificates. The ``vault-deploy-overcloud.yml`` playbook is used
   for its setup. It ensures that all controller nodes trust the
   intermediate CA from the root Vault.
 
-The dual Vault setup provides an additional layer of security for our PKI management,
-as it lessens the risk of a complete system compromise if one Vault instance is breached.
+The dual Vault setup enhances security by protecting the root CA's key. The more
+exposed overcloud vault only possesses the intermediate key, ensuring that
+the root key remains secure even if the overcloud Vault instance is compromised.
 
 Prerequisites
 =============
 
 Before beginning the deployment of vault for openstack internal TLS and backend TLS  you should ensure that you have the following.
 
-  * StackHPC Hashicorp collection
   * Seed Node or a host to run the vault container on
+  * Overcloud controller hosts to install second vault on
 
 Deployment
 ==========
-
-Install the Ansible hashivault modules
---------------------------------------
-
-1. Add the following to kayobe-config/requirements.txt
-
-.. code-block::
-
-   git+https://github.com/stackhpc/ansible-modules-hashivault@stackhpc
-
-2. Install the Python package (with the Kayobe virtualenv activated)
-
-.. code-block::
-
-   pip install -r requirements.txt
-
-Clone the StackHPC Hashicorp Vault collection
----------------------------------------------
-
-1. Add the following into the kayobe-config/etc/kayobe/ansible/requirements.yml
-
-.. code-block::
-
-   collections:
-     - name: stackhpc.hashicorp
-       version: 2.3.0
-
-2. Perform a control host upgrade to pull down the collection
-
-.. code-block::
-
-   kayobe control host upgrade
 
 Setup Vault on the seed node
 ----------------------------
@@ -78,15 +47,23 @@ Setup Vault on the seed node
 
 .. code-block::
 
-   kayobe playbook run ansible/vault-deploy-seed.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-deploy-seed.yml
 
 2. Encrypt generated certs/keys with ansible-vault (use proper location of vault password file)
 
 .. code-block::
 
-   ansible-vault encrypt --vault-password-file ~/vault.pass vault/OS-TLS-INT.pem
-   ansible-vault encrypt --vault-password-file ~/vault.pass vault/seed-vault-keys.json
-   ansible-vault encrypt --vault-password-file ~/vault.pass vault/overcloud.key
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/OS-TLS-INT.pem
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/seed-vault-keys.json
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/overcloud.key
+
+Or if environments are being used
+
+.. code-block::
+
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/OS-TLS-INT.pem
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/seed-vault-keys.json
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.key
 
 Setup HAProxy config for Vault
 ------------------------------
@@ -135,13 +112,22 @@ Setup Vault HA on the overcloud hosts
 
 .. code-block::
 
-   kayobe playbook run ansible/vault-deploy-overcloud.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-deploy-overcloud.yml
 
 2. Encrypt overcloud vault keys (use proper location of vault password file)
 
 .. code-block::
 
-   ansible-vault encrypt --vault-password-file ~/vault.pass vault/overcloud-vault-keys.json
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/overcloud-vault-keys.json
+
+Or if environments are being used
+
+.. code-block::
+
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud-vault-keys.json
+
+Certificates generation
+=======================
 
 Create the internal TLS certificates
 ------------------------------------
@@ -150,28 +136,43 @@ Create the internal TLS certificates
 
 .. code-block::
 
-   kayobe playbook run ansible/vault-deploy-internal-tls.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-generate-internal-tls.yml
 
-2. Use ansible-vault to encrypt the PEM bundle in kayobe-config/etc/kayobe/kolla/certificates/haproxy-internal.pem. Commit the PEM bundle and root CA to the kayobe configuration.
+2. Use ansible-vault to encrypt the PEM bundle in $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy-internal.pem. Commit the PEM bundle and root CA to the kayobe configuration.
 
 .. code-block::
 
-   ansible-vault encrypt --vault-password-file ~/vault.pass kolla/certificates/haproxy-internal.pem
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy-internal.pem
 
-Create the backend TLS certificates
------------------------------------
+Or if environments are being used
+
+.. code-block::
+
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/haproxy-internal.pem
+
+Create the backend TLS and RabbitMQ TLS certificates
+----------------------------------------------------
 
 1. Run the playbook
 
 .. code-block::
 
-   kayobe playbook run ansible/vault-deploy-backend-tls.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-generate-backend-tls.yml
 
-2. Use ansible-vault to encrypt the keys in kayobe-config/etc/kayobe/kolla/certificates/<controller>-key.pem. Commit the certificates and keys to the kayobe configuration.
+2. Use ansible-vault to encrypt the keys in $KAYOBE_CONFIG_PATH/kolla/certificates/<controller>-key.pem. Commit the certificates and keys to the kayobe configuration.
 
 .. code-block::
 
-   ansible-vault encrypt --vault-password-file ~/vault.pass kolla/certificates/<controller>-key.pem
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/kolla/certificates/<controller>-key.pem
+
+Or if environments are being used
+
+.. code-block::
+
+   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/<controller>-key.pem
+
+Certificates deployment
+=======================
 
 Enable the required TLS variables in kayobe and kolla
 -----------------------------------------------------
