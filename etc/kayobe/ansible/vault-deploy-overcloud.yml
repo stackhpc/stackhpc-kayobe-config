@@ -100,20 +100,6 @@
         vault_pki_intermediate_ca_name: "OS-TLS-INT"
         vault_pki_intermediate_ca_bundle: "{{ lookup('file', kayobe_env_config_path + '/vault/OS-TLS-INT.pem') }}"
         vault_pki_intermediate_ca_cert: "{{ lookup('file', kayobe_env_config_path + '/vault/OS-TLS-INT.crt') }}"
-        vault_pki_intermediate_roles:
-          - name: "ServerCert"
-            config:
-              max_ttl: 8760h
-              ttl: 8760h
-              allow_any_name: true
-              allow_ip_sans: true
-              require_cn: false
-              server_flag: true
-              key_type: rsa
-              key_bits: 4096
-              country: ["UK"]
-              locality: ["Bristol"]
-              organization: ["StackHPC"]
-              ou: ["OpenStack"]
+        vault_pki_intermediate_roles: "{{ overcloud_vault_pki_roles }}"
         vault_pki_write_certificate_files: true
         vault_pki_certificates_directory: "{{ kayobe_env_config_path }}/vault"
