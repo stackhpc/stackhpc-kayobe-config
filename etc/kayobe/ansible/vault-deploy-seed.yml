@@ -81,7 +81,7 @@
           - common_name: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}"
             role: "ServerCert"
             extra_params:
-              ip_sans: "{% for host in groups['controllers'] %}{{ internal_net_ips[host] }}{% if not loop.last %},{% endif %}{% endfor %},{{ kolla_internal_vip_address }}"
+              ip_sans: "{% for host in groups['controllers'] %}{{ internal_net_name | net_ip(host) }}{% if not loop.last %},{% endif %}{% endfor %},{{ kolla_internal_vip_address }}"
         vault_pki_write_certificate_files: true
         vault_pki_write_pem_bundle: false
         vault_pki_write_int_ca_to_file: true
