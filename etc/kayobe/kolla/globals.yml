@@ -12,6 +12,10 @@ octavia_tag: yoga-20230523T110936
 openvswitch_tag: yoga-20230515T150233
 ovn_tag: yoga-20230515T150233
 
+# kolla_base_distro must be set here to be resolvable on a per-host basis
+# This is necessary for os migrations where mixed clouds might be deployed
+kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
+
 kayobe_image_tags:
   openstack:
     centos: yoga-20230217T135826
