@@ -64,7 +64,8 @@ switch_config_vxlan_networks:
   - "{{ storage_mgmt_net_name if switch_layer == 'leaf' else '' }}"
   - "switch_mgmt"
   # NOTE: leaf can be removed when management switches move to hb-sw-spine01-h04.
-  - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' else '' }}"
+  # NOTE: hb-sw-leaf0x-h05 is for hb-robinhood01
+  - "{{ 'mgmt_lustre' if switch_layer == 'spine' or inventory_hostname == 'hb-sw-leaf01-h07' or inventory_hostname == 'hb-sw-leaf01-h05' or inventory_hostname == 'hb-sw-leaf02-h05' else '' }}"
   - "lustre_storage"
   - "hb_slurm_mgmt"
   - "dh4_lustre"
@@ -256,6 +257,14 @@ switch_interface_config_vlans_template: |-
     config:
       - no shutdown
       - virtual-network {{ oob_oc_net_name | net_vlan + switch_vxlan_offset }}
+  vlan {{ 'mgmt_lustre' | net_vlan }}:
+    description: lustre-iDRAC
+    config:
+      - no shutdown
+      - virtual-network {{ 'mgmt_lustre' | net_vlan + switch_vxlan_offset }}
+  {% endif %}
+  # NOTE: below if block is for hb-robinhood01
+  {% if inventory_hostname == 'hb-sw-leaf01-h05' or inventory_hostname == 'hb-sw-leaf02-h05' %}
   vlan {{ 'mgmt_lustre' | net_vlan }}:
     description: lustre-iDRAC
     config:
