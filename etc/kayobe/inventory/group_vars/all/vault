@@ -1,0 +1,60 @@
+###############################################################################
+# Hashicorp Vault deployment configuration.
+
+# Seed Consul container image tag.
+seed_consul_docker_tag: "1.16"
+
+# Seed Vault container image tag.
+seed_vault_docker_tag: "1.14"
+
+# Seed Vault PKI Role name
+seed_vault_pki_role_name: "ServerCert"
+
+# Seed Vault PKI Roles definition
+seed_vault_pki_roles:
+  - name: "{{ seed_vault_pki_role_name }}"
+    config:
+      max_ttl: 8760h
+      ttl: 8760h
+      allow_any_name: true
+      allow_ip_sans: true
+      require_cn: false
+      server_flag: true
+      key_type: rsa
+      key_bits: 4096
+      country: ["UK"]
+      locality: ["Bristol"]
+      organization: ["StackHPC"]
+      ou: ["OpenStack"]
+
+# Overcloud Consul container image tag.
+overcloud_consul_docker_tag: "1.16"
+
+# Overcloud Vault container image tag.
+overcloud_vault_docker_tag: "1.14"
+
+# Overcloud Vault PKI Default Role name
+overcloud_vault_pki_default_role_name: "ServerCert"
+
+# Overcloud Vault PKI Internal TLS Role name
+overcloud_vault_pki_internal_tls_role_name: "{{ overcloud_vault_pki_default_role_name }}"
+
+# Overcloud Vault PKI Backend TLS Role name
+overcloud_vault_pki_backend_tls_role_name: "{{ overcloud_vault_pki_default_role_name }}"
+
+# Overcloud Vault PKI Roles definition
+overcloud_vault_pki_roles:
+  - name: "{{ overcloud_vault_pki_default_role_name }}"
+    config:
+      max_ttl: 8760h
+      ttl: 8760h
+      allow_any_name: true
+      allow_ip_sans: true
+      require_cn: false
+      server_flag: true
+      key_type: rsa
+      key_bits: 4096
+      country: ["UK"]
+      locality: ["Bristol"]
+      organization: ["StackHPC"]
+      ou: ["OpenStack"]
