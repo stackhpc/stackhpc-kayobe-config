@@ -2,11 +2,14 @@
 # Kayobe Kolla configuration.
 
 # Kolla container image type: binary or source. Default is 'binary'.
-kolla_install_type: source
+kolla_install_type: binary
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
 kolla_openstack_release: wallaby
+
+# Docker namespace to use for Kolla images. Default is 'kolla'.
+kolla_docker_namespace: kolla
 
 #kolla_enable_aodh:
 #kolla_enable_barbican:
@@ -40,7 +43,7 @@ kolla_enable_cinder_backup: "no"
 #kolla_enable_glance:
 #kolla_enable_glance_horizon_policy_file:
 #kolla_enable_glance_image_cache:
-kolla_enable_gnocchi: "yes"
+kolla_enable_gnocchi: false
 #kolla_enable_gnocchi_statsd:
 #kolla_enable_grafana:
 #kolla_enable_hacluster:
@@ -167,6 +170,12 @@ kolla_enable_prometheus: "yes"
 #kolla_enable_watcher:
 #kolla_enable_zookeeper:
 #kolla_enable_zun:
+
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - "octavia_net_interface"
+
+kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+  octavia_net_interface: "octavia_network_interface"
 
 # Custom overcloud inventory containing a mapping from services to components.
 kolla_overcloud_inventory_custom_services: "{{ lookup('template', kayobe_env_config_path ~ '/kolla/inventory/overcloud-services.j2') }}"
