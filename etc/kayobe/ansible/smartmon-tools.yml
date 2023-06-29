@@ -2,12 +2,13 @@
 - hosts: overcloud
 
   tasks:
-    - name: Ensure smartmon-tools and nvme-cli is installed
+    - name: Ensure smartmon-tools, jq, nvme-cli and cron/cronie is installed
       package:
         name:
           - smartmontools
           - nvme-cli
           - jq
+          - "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'cronie' }}"
         state: present
       become: true
 
