@@ -265,7 +265,7 @@ Configure Barbican
       enabled_secretstore_plugins=vault_plugin
 
       [vault_plugin]
-      vault_url = https://{{ internal_net_vip_address }}:8200
+      vault_url = https://{{ kolla_internal_vip_address }}:8200
       use_ssl = True
       approle_role_id = {{ secrets_barbican_approle_role_id }}
       approle_secret_id = {{ secrets_barbican_approle_secret_id }}
