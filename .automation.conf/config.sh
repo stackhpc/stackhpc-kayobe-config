@@ -3,7 +3,7 @@
 
 # See: https://github.com/stackhpc/docker-rally/blob/master/bin/rally-verify-wrapper.sh for a full list of tempest parameters that can be overriden.
 # You can override tempest parameters like so:
-export TEMPEST_CONCURRENCY=8
+export TEMPEST_CONCURRENCY=2
 # Specify single test whilst experimenting
 #export TEMPEST_PATTERN="${TEMPEST_PATTERN:-tempest.api.compute.servers.test_create_server.ServersTestJSON.test_host_name_is_same_as_server_name}"
 
@@ -31,15 +31,12 @@ fi
 
 if [ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}"  == "baremetal" ]; then
   # Need to force baremetal specific flavors.
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok-baremetal.overrides.conf"
-else
-  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-habrok.overrides.conf"
+  KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}-baremetal.overrides.conf"
 fi
 
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
 )
-
 
 KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/cinder/cinder-backup/ceph.client.cinder-backup.keyring"

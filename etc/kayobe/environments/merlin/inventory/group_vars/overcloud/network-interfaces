@@ -1,12 +1,11 @@
 ---
-internal_net_interface: "api0"
-
-# TODO: take it the bridge interface
 octavia_net_interface: "{{ trunk_net_interface }}.{{ octavia_net_vlan }}"
-storage_net_interface: "{{ trunk_net_interface }}.{{ storage_net_vlan }}"
-tunnel_net_interface: "{{ trunk_net_interface }}.{{ tunnel_net_vlan }}"
+storage_net_interface: "{{ hs_net_interface }}.{{ storage_net_vlan }}"
+tunnel_net_interface: "{{ hs_net_interface }}.{{ tunnel_net_vlan }}"
 
-trunk_net_interface: "trunk0"
-trunk_net_bond_slaves:
-  - "minion0"
-  - "minion1"
+trunk_net_interface: bridge0
+trunk_net_bridge_ports:
+  - "{{ hs_net_interface }}"
+
+hs_net_bond_mode: 802.3ad
+hs_net_mtu: 9000
