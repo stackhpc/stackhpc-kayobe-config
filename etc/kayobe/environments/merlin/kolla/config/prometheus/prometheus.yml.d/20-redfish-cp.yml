@@ -1,0 +1,43 @@
+# Redfish metrics for the control plane
+scrape_configs:
+  - job_name: redfish_cp
+    metrics_path: /redfish
+    static_configs:
+    - targets:
+      - 172.23.51.1
+      - 172.23.51.2
+      - 172.23.51.3
+      - 172.23.51.4
+      - 172.23.51.5
+      - 172.23.51.6
+      - 172.23.51.7
+      - 172.23.51.8
+      - 172.23.51.9
+      - 172.23.51.10
+      - 172.23.51.11
+      - 172.23.51.12
+      - 172.23.51.13
+      - 172.23.51.14
+      - 172.23.51.15
+      - 172.23.51.16
+      - 172.23.51.17
+      - 172.23.51.18
+      - 172.23.51.19
+      - 172.23.51.20
+      - 172.23.51.21
+      - 172.23.51.22
+      - 172.23.51.23
+      - 172.23.51.24
+      - 172.23.51.25
+      - 172.23.51.26
+      - 172.23.51.27
+      - 172.23.51.28
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "{{ hostvars['merlin-seed'].ansible_host }}:9610"  ### the address of the redfish-exporter
+    scrape_interval: 5m
+    scrape_timeout: 60s
