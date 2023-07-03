@@ -38,11 +38,11 @@ seed_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
 seed_firewalld_zones:
-  - zone: trusted
+  - zone: internal
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-seed_firewalld_default_zone: trusted
+seed_firewalld_default_zone: drop
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -50,7 +50,32 @@ seed_firewalld_default_zone: trusted
 # - offline: true
 # - permanent: true
 # - state: enabled
-seed_firewalld_rules: []
+seed_firewalld_rules:
+  - service: ssh
+    zone: internal
+  - service: dhcp
+    zone: internal
+  - service: tftp
+    zone: internal
+  - service: ntp
+    zone: internal
+  # Pulp server
+  - service: http
+    zone: internal
+  - service: squid
+    zone: internal
+  # Ironic inspector API
+  - port: 5050/tcp
+    zone: internal
+  # Ironic API
+  - port: 6385/tcp
+    zone: internal
+  # nginx
+  - port: 8080/tcp
+    zone: internal
+  # Redfish exporter
+  - port: 9610/tcp
+    zone: internal
 
 seed_extra_containers:
   redfish:
