@@ -1,0 +1,48 @@
+---
+- name: Generate backend API certificates
+  hosts: controllers
+  vars:
+    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
+    vault_intermediate_ca_name: "OS-TLS-INT"
+  tasks:
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
+        name: vault_keys
+
+    - name: Issue a certificate for backend TLS
+      hashivault_pki_cert_issue:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        token: "{{ vault_keys.root_token }}"
+        mount_point: "{{ vault_intermediate_ca_name }}"
+        role: "{{ overcloud_vault_pki_backend_tls_role_name }}"
+        common_name: ""
+        extra_params:
+          ip_sans: "{{ internal_net_name | net_ip }}"
+      register: backend_cert
+
+    - name: Ensure certificates directory exists
+      file:
+        path: "{{ kayobe_env_config_path }}/kolla/certificates"
+        state: directory
+      delegate_to: localhost
+
+    - name: Copy backend cert
+      no_log: true
+      copy:
+        dest: "{{ kayobe_env_config_path }}/kolla/certificates/{{ inventory_hostname }}-cert.pem"
+        content: |
+          {{ backend_cert.data.certificate }}
+          {{ backend_cert.data.issuing_ca }}
+        mode: 0600
+      delegate_to: localhost
+
+    - name: Copy backend key
+      no_log: true
+      copy:
+        dest: "{{ kayobe_env_config_path }}/kolla/certificates/{{ inventory_hostname }}-key.pem"
+        content: |
+          {{ backend_cert.data.private_key }}
+        mode: 0600
+      delegate_to: localhost

@@ -57,14 +57,21 @@ stackhpc_overcloud_dib_env_vars:
   # FIXME: Support templating repo files.
   # DIB_YUM_MINIMAL_BOOTSTRAP_REPOS: /path/to/dir/containing/dib-mirror-*.repo
   YUM: dnf
+  # Workaround for stack user home ownership bug
+  DIB_IMAGE_CACHE: "/tmp/yum"
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
   - "logrotate"
   - "net-tools"
   - "vim"
+  - "git"
+  - "less"
   - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
+  - "{% if os_distribution == 'centos' %}openssh-clients{% endif %}"
 
 # StackHPC overcloud DIB image block device configuration.
 # This image layout conforms to the CIS partition benchmarks.
