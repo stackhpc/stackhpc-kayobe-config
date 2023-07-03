@@ -32,8 +32,14 @@ pulp_proxy_url: "{{ omit }}"
 ###############################################################################
 # StackHPC Pulp server
 
+# The scheme - http/https of the StackHPC Pulp service.
+stackhpc_release_pulp_scheme: "https://"
+
+# The domain of the StackHPC Pulp service.
+stackhpc_release_pulp_domain: "ark.stackhpc.com"
+
 # Base URL of the StackHPC Pulp service.
-stackhpc_release_pulp_url: "https://ark.stackhpc.com"
+stackhpc_release_pulp_url: "{{ stackhpc_release_pulp_scheme }}{{ stackhpc_release_pulp_domain }}"
 
 # Credentials used to access the StackHPC Pulp service.
 stackhpc_release_pulp_username:
@@ -41,6 +47,11 @@ stackhpc_release_pulp_password:
 
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
+
+# Content URL of the StackHPC Pulp service, with basic auth.
+# NOTE(Alex-Welsh): This may need reworking if it reveals the credentials
+# at runtime in the ansible output
+stackhpc_release_pulp_content_url_with_auth: "{{ stackhpc_release_pulp_scheme }}{{ stackhpc_release_pulp_username }}:{{ stackhpc_release_pulp_password }}@{{ stackhpc_release_pulp_domain }}/pulp/content"
 
 # Sync all repositories required for building Kolla images from the
 # StackHPC Ark Pulp service to local Pulp.
