@@ -5,9 +5,6 @@
 # Docker namespace to use for Kolla images. Default is 'kolla'.
 kolla_docker_namespace: stackhpc-dev
 
-# Do not enable central logging if using Rocky Linux 9. It does not have elasticsearch
-kolla_enable_central_logging: "{{ os_release != '9' }}"
-
 ###############################################################################
 # Network configuration.
 
@@ -54,8 +51,6 @@ stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stre
 stackhpc_repo_rhel_9_treasuredata_4_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_4_version }}"
 stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
 stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
-stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_1_crb_version }}"
-stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_1_highavailability_version }}"
 stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_version }}"
 ## Use derived vars from etc/kayobe/pulp.yml to switch between
 ## minor Rocky versions using stackhpc_pulp_repo_rocky_x_minor_version
@@ -65,6 +60,9 @@ stackhpc_repo_rocky_extras_version: "{{ stackhpc_pulp_repo_rocky_8_extras_versio
 stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
 stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
 stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
+stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+stackhpc_pulp_repo_rocky_9_minor_version: 1
 
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true
@@ -82,3 +80,10 @@ stackhpc_docker_registry_password: !vault |
   38333133393730633666613965653364316162353337313330346164303631313731646461363461
   3963323635373866630a633533376339363734626664333765313665623662613764363038383735
   38646138376438643533376161376634653439386230353365316239613430363338
+
+# Overcloud host image tags
+stackhpc_centos_8-stream_overcloud_host_image_version: "yoga-20230525T095243"
+stackhpc_rocky_8_overcloud_host_image_version: "yoga-20230629T135322"
+stackhpc_rocky_9_overcloud_host_image_version: "yoga-20230515T145140"
+stackhpc_ubuntu_focal_overcloud_host_image_version: "yoga-20230609T120720"
+stackhpc_ubuntu_jammy_overcloud_host_image_version: "yoga-20230609T120720"

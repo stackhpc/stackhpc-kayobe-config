@@ -43,8 +43,7 @@
         path: "{{ kayobe_env_config_path }}/kolla/config/{{ kolla_service_to_key_dir[item.name] }}"
       loop: "{{ kolla_ceph_services | selectattr('required') }}"
       loop_control:
-        label:
-          service: "{{ item.name }}"
+        label: "{{ item.name }}"
       delegate_to: localhost
 
     - name: Save Ceph keys to Kayobe configuration
@@ -59,9 +58,7 @@
         dest: "{{ kayobe_env_config_path }}/kolla/config/{{ kolla_service_to_key_dir[item.0.name] }}/ceph.{{ cephadm_user }}.keyring"
       loop: "{{ query('subelements', kolla_ceph_services | selectattr('required'), 'keys') }}"
       loop_control:
-        label:
-          service: "{{ item.0.name }}"
-          key: "{{ item.1 }}"
+        label: "{{ item.0.name }}: {{ item.1 }}"
       delegate_to: localhost
       notify: Please add and commit the Kayobe configuration
 
@@ -74,9 +71,7 @@
         dest: "{{ kayobe_env_config_path }}/kolla/config/{{ kolla_service_to_conf_dir[item.0.name] }}/ceph.conf"
       loop: "{{ query('subelements', kolla_ceph_services | selectattr('required'), 'keys') }}"
       loop_control:
-        label:
-          service: "{{ item.0.name }}"
-          key: "{{ item.1 }}"
+        label: "{{ item.0.name }}: {{ item.1 }}"
       delegate_to: localhost
       notify: Please add and commit the Kayobe configuration
 

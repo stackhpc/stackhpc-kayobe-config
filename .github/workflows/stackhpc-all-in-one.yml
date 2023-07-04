@@ -27,14 +27,14 @@ on:
         description: Neutron ML2 plugin
         type: string
         required: true
-      vm_image:
-        description: Image for the all-in-one VM
+      vm_image_override:
+        description: Full name of an image to use instead of the default
         type: string
-        default: bb8c0a34-533f-42fb-a49b-3461e677f3f6
+        default: ""
       vm_interface:
         description: Default network interface name
         type: string
-        default: eth0
+        default: ens3
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
@@ -76,6 +76,21 @@ jobs:
         with:
            submodules: true
 
+      - name: Output image tag
+        id: image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_${{ inputs.os_distribution }}_${{ inputs.os_release }}_overcloud_host_image_version etc/kayobe/environments/ci-aio/stackhpc-ci.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
+      - name: Output image name
+        id: image_name
+        run: |
+          if [ -z "${{ inputs.vm_image_override }}" ]; then
+            echo image_name=overcloud-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
+          else
+            echo image_name=${{ inputs.vm_image_override }} >> $GITHUB_OUTPUT
+          fi
+
       - name: Install terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -110,7 +125,7 @@ jobs:
         env:
           SSH_USERNAME: "${{ inputs.ssh_username }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
-          VM_IMAGE: ${{ inputs.vm_image }}
+          VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
           VM_FLAVOR: ${{ inputs.vm_flavor }}
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
@@ -190,6 +205,16 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           sudo docker image pull $KAYOBE_IMAGE
+
+      - name: Run growroot
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |

@@ -59,7 +59,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   block_device {
     uuid                  = local.image_is_uuid ? var.aio_vm_image: data.openstack_images_image_v2.image[0].id
     source_type           = "image"
-    volume_size           = 100
+    volume_size           = 35
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = true
@@ -73,8 +73,14 @@ resource "null_resource" "kayobe-aio" {
       host = openstack_compute_instance_v2.kayobe-aio.access_ip_v4
       user = var.ssh_username
       private_key = file("id_rsa")
+      # Terraform will run the start script from /tmp by default. For the
+      # current images, /tmp is noexec, so the path must be changed
+      script_path = "/home/${var.ssh_username}/start.sh"
     }
 
-    inline = ["echo 'connected!'"]
+    inline = [
+      "#!/bin/sh",
+      "echo 'connected!'"
+      ]
   }
 }

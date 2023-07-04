@@ -16,3 +16,4 @@ the various features provided.
    cephadm
    monitoring
    wazuh
+   vault

@@ -1,0 +1,54 @@
+---
+- name: Generate internal API certificate
+  hosts: controllers
+  run_once: true
+  vars:
+    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
+    vault_intermediate_ca_name: "OS-TLS-INT"
+  tasks:
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
+        name: vault_keys
+
+    - name: Issue a certificate for internal TLS
+      hashivault_pki_cert_issue:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        token: "{{ vault_keys.root_token }}"
+        mount_point: "{{ vault_intermediate_ca_name }}"
+        role: "{{ overcloud_vault_pki_internal_tls_role_name }}"
+        common_name: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% endif %}"
+        extra_params:
+          ip_sans: "{{ kolla_internal_vip_address }}"
+      register: internal_cert
+
+    - name: Ensure certificates directory exists
+      file:
+        path: "{{ kayobe_env_config_path }}/kolla/certificates"
+        state: directory
+      delegate_to: localhost
+
+    - name: Ensure CA certificates directory exists
+      file:
+        path: "{{ kayobe_env_config_path }}/kolla/certificates/ca"
+        state: directory
+      delegate_to: localhost
+
+    - name: Copy internal API PEM bundle
+      no_log: true
+      copy:
+        dest: "{{ kayobe_env_config_path }}/kolla/certificates/haproxy-internal.pem"
+        content: |
+          {{ internal_cert.data.certificate }}
+          {{ internal_cert.data.issuing_ca }}
+          {{ internal_cert.data.private_key }}
+        mode: 0600
+      delegate_to: localhost
+
+    - name: Copy root CA
+      copy:
+        src: "{{ kayobe_env_config_path }}/vault/OS-TLS-ROOT.pem"
+        dest: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+        mode: 0600
+      delegate_to: localhost

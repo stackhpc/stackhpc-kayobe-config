@@ -1,0 +1,95 @@
+---
+- name: Configure AppRole
+  any_errors_fatal: True
+  gather_facts: True
+  hosts: controllers[0]
+  vars:
+    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
+    vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+  tasks:
+    - name: Assert that secrets_barbican_approle_secret_id is defined
+      assert:
+        that:
+          - secrets_barbican_approle_secret_id is defined
+        fail_msg: "Please define secrets_barbican_approle_secret_id in your secrets.yml"
+
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
+        name: vault_keys
+
+    - name: Ensure hvac is installed
+      pip:
+        name: hvac
+        state: present
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv_path }}/kayobe"
+
+    - name: Enable AppRole auth module
+      hashivault_auth_method:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        method_type: approle
+        state: enabled
+
+    - name: Enable barbican kv store
+      hashivault_secret_engine:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        name: barbican
+        backend: kv
+        description: "Barbican kv store"
+
+    - name: Ensure barbican policy is defined
+      hashivault_policy:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        name: "barbican-policy"
+        state: present
+        rules: |
+          path "barbican/*" {
+            capabilities = ["create", "read", "update", "delete", "list"]
+          }
+
+    - name: Ensure barbican AppRole is defined
+      hashivault_approle_role:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        bind_secret_id: true
+        secret_id_bound_cidrs: "{{ internal_net_name | net_cidr }}"
+        secret_id_ttl: 0
+        token_policies: barbican-policy
+        name: barbican
+
+    - name: Get barbican Approle ID
+      hashivault_approle_role_id:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        name: barbican
+      register: barbican_role_id
+
+    - name: Print barbican Approle ID
+      debug:
+        msg: "barbican role id is {{ barbican_role_id.id }}"
+
+    - name: Check if barbican Approle Secret ID is defined
+      hashivault_approle_role_secret_list:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        name: barbican
+      register: barbican_approle_secret_list
+
+    - name: Ensure barbican AppRole Secret ID is defined
+      hashivault_approle_role_secret:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ vault_ca_cert }}"
+        token: "{{ vault_keys.root_token }}"
+        secret: "{{ secrets_barbican_approle_secret_id }}"
+        name: barbican
+      when: barbican_approle_secret_list.secrets is match(secrets_barbican_approle_secret_id)
