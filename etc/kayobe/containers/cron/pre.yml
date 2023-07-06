@@ -1,0 +1,20 @@
+---
+- name: Ensure /etc/kolla/cron/ exists
+  file:
+    path: "/etc/kolla/cron/"
+    state: directory
+  become: true
+
+- name: Copying over config.json file for cron
+  template:
+    src: "{{ kayobe_config_path }}/containers/cron/files/config.json.j2"
+    dest: /etc/kolla/cron/config.json
+    mode: "0660"
+  become: true
+
+- name: Copy logrotate configuration
+  copy:
+    src: "{{ kayobe_config_path }}/containers/cron/files/logrotate.conf"
+    dest: /etc/kolla/cron/logrotate.conf
+    mode: 0644
+  become: true

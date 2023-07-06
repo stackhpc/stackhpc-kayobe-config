@@ -137,6 +137,30 @@ seed_squid_container:
       - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
       - /var/log/squid:/var/log/squid
 
+# Seed container running a cron service.
+seed_cron_container_enabled: true
+
+seed_cron_container:
+  cron:
+    container_name: cron
+    docker_registry: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:{{ pulp_port }}"
+    image: "{{ docker_registry ~ '/' if docker_registry else '' }}stackhpc/{{ kolla_base_distro }}-source-cron"
+    registry_username: "{{ pulp_username }}"
+    registry_password: "{{ pulp_password }}"
+    pre: "{{ kayobe_config_path }}/containers/cron/pre.yml"
+    tag: "yoga-20230220T181235"
+    network_mode: host
+    env:
+      DUMMY_ENVIRONMENT: kolla_useless_env
+      KOLLA_LOGROTATE_SCHEDULE: "daily"
+      KOLLA_CONFIG_STRATEGY: "COPY_ALWAYS"
+    volumes:
+      - "/etc/kolla/cron/:/var/lib/kolla/config_files/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "/var/lib/docker/volumes/kolla_logs/_data/:/var/log/kolla/"
+    restart_policy: unless-stopped
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -148,6 +172,7 @@ seed_squid_container:
 seed_containers: >-
   {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
         | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_cron_container if seed_cron_container_enabled | bool else {})
         | combine(seed_extra_containers) }}
 
 seed_extra_containers: {}
