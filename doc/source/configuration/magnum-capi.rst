@@ -26,7 +26,7 @@ endpoint_type = publicURL
 
 Control Plane
 ==============
-Ensure that the nodes (either control plane nodes or dedicated network nodes) that you are running the magnum containers on have internet connectivity (so that the magnum containers can reach the IP listed in the kubeconfig).
+Ensure that the nodes (either controllers or dedicated network hosts) that you are running the magnum containers on have internet connectivity (so that the magnum containers can reach the IP listed in the kubeconfig).
 
 Magnum Templates
 ================
