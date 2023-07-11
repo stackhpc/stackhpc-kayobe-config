@@ -31,14 +31,16 @@ provision_oc_net_name: internal_net
 # Deprecated name: external_net_name
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
+# This is wrong and should be the trunk network.
 external_net_names:
-  - internal_net
+  - trunk_net
 
 # Name of the network used to expose the public OpenStack API endpoints.
-#public_net_name:
+public_net_name: internal_net
 
 # Name of the network used by Neutron to carry tenant overlay network traffic.
-#tunnel_net_name:
+# Currently not the using the tunnel subnet for VXLAN traffic.
+tunnel_net_name: internal_net
 
 # Name of the network used to carry storage data traffic.
 storage_net_name: storage_net
@@ -128,11 +130,11 @@ internal_net_cidr: "172.23.41.0/24"
 # internal_net_allocation_pool_end:
 internal_net_inspection_allocation_pool_start: "0.0.0.0"
 internal_net_inspection_allocation_pool_end: "0.0.0.0"
-internal_net_gateway: "172.23.41.251"
+# internal_net_gateway: "172.23.41.251"
 # internal_net_vlan:
 # internal_net_mtu:
 # internal_net_routes:
-internal_net_zone: internal
+internal_net_zone: trusted
 
 # External network IP information.
 # external_net_vip_address:
@@ -161,6 +163,12 @@ storage_net_allocation_pool_end: 172.23.59.1
 storage_net_vlan: 985
 storage_net_mtu: 9000
 # storage_net_routes:
+storage_net_zone: storage
+
+# Storage 2 network IP information.
+storage2_net_cidr: 172.23.65.0/24
+storage2_net_vlan: 986
+storage2_net_mtu: 9000
 
 # Tunnel network IP information.
 tunnel_net_cidr: 172.23.43.0/24
@@ -168,9 +176,9 @@ tunnel_net_allocation_pool_start: 172.23.43.1
 tunnel_net_allocation_pool_end: 172.23.43.1
 tunnel_net_vlan: 1064
 tunnel_net_mtu: 9000
+tunnel_net_zone: tunnel
 
 trunk_net_no_ip: true
-trunk_net_bond_mode: 802.3ad
 trunk_net_mtu: 9000
 
 # Storage management network IP information.
