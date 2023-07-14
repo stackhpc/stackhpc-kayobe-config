@@ -6,7 +6,7 @@ Monitoring Configuration
 ========================
 
 StackHPC kayobe config includes a reference monitoring and alerting stack based
-on Prometheus, Alertmanager, Grafana, Fluentd, Elasticsearch & Kibana. These
+on Prometheus, Alertmanager, Grafana, Fluentd & OpenSearch. These
 services by default come enabled and configured.
 
 Monitoring hosts, usually the controllers, should be added to the monitoring
@@ -136,3 +136,14 @@ mgrs group and list them as the endpoints for prometheus. Additionally,
 depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
+
+OpenSearch
+==========
+
+Support for automating OpenSearch API operations is available through the
+`opensearch` role in the Kayobe configuration. This role runs during
+`kayobe overcloud post configure`.
+
+Settings can be configured in `opensearch.yml`. Due to the way that Kayobe
+and Kolla-Ansible namespaces are separated, some options in this file
+will need to be set manually. Hints are provided at run time if they are not.

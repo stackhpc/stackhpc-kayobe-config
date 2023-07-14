@@ -1,0 +1,35 @@
+---
+###############################################################################
+# OpenSearch configuration.
+
+###############################################################################
+# Log retention
+
+# If no retention policy is configured, then we apply one during Kayobe
+# overcloud post configure. This ensures that we do not have unbounded log
+# storage.
+#
+# Once a retention policy has been applied, it should be administered from
+# the OpenSearch Dashboards UI. Any changes made in this file will not
+# be applied to an existing policy. This is to prevent overwriting changes
+# which have been made in the UI.
+
+# OpenSearch cluster to apply retention policy to. You must customise
+# this according to your deployment.
+# opensearch_internal_endpoint: "http://{{ kolla_internal_fqdn }}:9200"
+
+# OpenSearch index pattern to apply retention policy to. You must
+# customise this according to your deployment.
+# opensearch_log_index_pattern: "flog-*"
+
+# Duration after which an index is staged for deletion. This is implemented
+# by closing the index. Whilst in this state the index contributes negligible
+# load on the cluster and may be manually re-opened if required.
+opensearch_soft_retention_period_days: 180
+
+# Duration after which an index is permanently erased from the cluster.
+opensearch_hard_retention_period_days: 365
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

@@ -1,0 +1,58 @@
+---
+- name: Check required variables are set
+  fail:
+    msg: "Please set the variable {{ item.key }} in opensearch.yml. For example: {{ item.key }}: {{ item.value }} "
+  when: "{{ item.key }} is not defined"
+  with_dict:
+    - "opensearch_internal_endpoint" : '"http://{{ kolla_internal_fqdn }}:9200"'
+    - "opensearch_log_index_pattern" : '"flog-*"'
+
+- name: Wait for OpenSearch to become ready
+  become: true
+  uri:
+    url: "{{ opensearch_internal_endpoint }}/_cluster/stats"
+    status_code: 200
+  register: result
+  until: result.get('status') == 200
+  retries: 30
+  delay: 2
+  run_once: true
+
+- name: Check if a log retention policy exists
+  become: true
+  uri:
+    url: "{{ opensearch_internal_endpoint }}/_plugins/_ism/policies/retention"
+    method: GET
+    status_code: 200, 404
+    return_content: yes
+  register: opensearch_retention_policy_check
+  run_once: true
+
+- name: Create new log retention policy
+  become: true
+  uri:
+    url: "{{ opensearch_internal_endpoint }}/_plugins/_ism/policies/retention"
+    method: PUT
+    status_code: 201
+    return_content: yes
+    body: "{{ opensearch_retention_policy | from_yaml | to_json }}"
+    body_format: json
+  register: opensearch_retention_policy_create
+  run_once: true
+  changed_when: opensearch_retention_policy_create.status == 201
+  when: opensearch_retention_policy_check.status == 404
+
+- name: Apply retention policy to existing indicies
+  become: true
+  vars:
+    opensearch_set_policy_body: {"policy_id": "retention"}
+  uri:
+    url: "{{ opensearch_internal_endpoint }}/_plugins/_ism/add/{{ opensearch_log_index_pattern }}"
+    method: POST
+    status_code: 200
+    return_content: yes
+    body: "{{ opensearch_set_policy_body | to_json }}"
+    body_format: json
+  run_once: true
+  changed_when: opensearch_retention_policy_create.status == 201
+  when: opensearch_retention_policy_check.status == 404

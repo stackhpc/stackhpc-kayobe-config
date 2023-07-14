@@ -1,0 +1,38 @@
+---
+# Default policy to apply for log retention.
+opensearch_retention_policy: |
+  policy:
+    description: Retention policy for OpenStack logs
+    error_notification:
+    default_state: open
+    states:
+    - name: open
+      actions: []
+      transitions:
+      - state_name: close
+        conditions:
+          min_index_age: "{{ opensearch_soft_retention_period_days }}d"
+    - name: close
+      actions:
+      - retry:
+          count: 3
+          backoff: exponential
+          delay: 1m
+        close: {}
+      transitions:
+      - state_name: delete
+        conditions:
+          min_index_age: "{{ opensearch_hard_retention_period_days }}d"
+    - name: delete
+      actions:
+      - retry:
+          count: 3
+          backoff: exponential
+          delay: 1m
+        delete: {}
+      transitions: []
+    ism_template:
+    - index_patterns:
+      - "{{ opensearch_log_index_pattern }}"
+      priority: 1
+
