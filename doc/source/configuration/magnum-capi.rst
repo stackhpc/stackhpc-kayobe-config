@@ -23,7 +23,7 @@ Ensure that your kayobe-config branch is up to date on stackhpc/yoga.
 
 There is a helper script for setting up your environment, located at `tools/kayobe-dev.sh`. Again, the usage is `./tools/kayobe-dev.sh <environment>` where this is your kayobe environment located at `etc/kayobe/environments/<environment>`.
 
-Copy the kubeconfig found at `kubeconfig-capi-mgmt-<your-az-environment>.yaml` to your kayobe environment (e.g. `<your-skc-environment>/kolla/config/magnum/kubeconfig`.
+Copy the kubeconfig found at `kubeconfig-capi-mgmt-<your-az-environment>.yaml` to your kayobe environment (e.g. `<your-skc-environment>/kolla/config/magnum/kubeconfig`. It is highly likely you'll want to add this file to ansible vault. 
 
 Ensure that your magnum.conf has the following set:
 .. code-block:: yaml
