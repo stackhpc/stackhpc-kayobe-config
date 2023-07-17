@@ -154,12 +154,12 @@ groups:
 
   # alert on nic packet errors and drops rates > 1 packet/s
   - alert: network packets dropped
-    expr: irate(node_network_receive_drop_total{device=~"eno.*|ens.*|eth.*|enp.*"}[5m]) + irate(node_network_transmit_drop_total{device=~"eno.*|ens.*|eth.*|enp.*"}[5m]) > 1
+    expr: irate(node_network_receive_drop_total{device=~"eno.*|ens.*|eth.*|enp.*"}[5m]) + irate(node_network_transmit_drop_total{device=~"eno.*|ens.*|eth.*|enp.*"}[5m]) > 10
     labels:
       severity: warning
     annotations:
       description: >
-        Node {{ $labels.instance }} experiences packet drop > 1
+        Node {{ $labels.instance }} experiences packet drop > 10
         packet/s on interface {{ $labels.device }}.
 
   - alert: network packet errors
