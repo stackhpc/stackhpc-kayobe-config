@@ -26,10 +26,11 @@ There is a helper script for setting up your environment, located at `tools/kayo
 Copy the kubeconfig found at `kubeconfig-capi-mgmt-<your-az-environment>.yaml` to your kayobe environment (e.g. `<your-skc-environment>/kolla/config/magnum/kubeconfig`.
 
 Ensure that your magnum.conf has the following set:
-```
-[nova_client]
-endpoint_type = publicURL
-```
+.. code-block:: yaml
+
+    [nova_client]
+    endpoint_type = publicURL
+
 
 This is used to generate the application credential config injected into the tenant Kubernetes clusters, such that it is usable from within an OpenStack project, so you can't use the "internal API" end point here.
 
