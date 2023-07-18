@@ -14,13 +14,13 @@ groups:
       description: "{{ $labels.device }} is {{ $value }}% full."
 
   - alert: LowMemory
-    expr: ( ( node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes - (node_memory_Hugepagesize_bytes * node_memory_HugePages_Total)) / (node_memory_MemTotal_bytes - (node_memory_Hugepagesize_bytes * node_memory_HugePages_Total))) * 100 >= 80
+    expr: (node_memory_MemAvailable_bytes / 1024^3) < {{ alertmanager_low_memory_threshold_gib }}
     for: 1m
     labels:
       severity: alert
     annotations:
       summary: "Prometheus exporter at {{ $labels.instance }} reports low memory"
-      description: "Memory is {{ $value }}% full."
+      description: "Available memory is {{ $value }} GiB."
 
   - alert: HostOomKillDetected
     expr: increase(node_vmstat_oom_kill[5m]) > 0
