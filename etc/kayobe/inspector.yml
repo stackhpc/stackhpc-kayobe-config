@@ -130,6 +130,7 @@ inspector_rules:
   - "{{ inspector_rule_redfish_credentials }}"
   - "{{ inspector_rule_redfish_address }}"
   - "{{ inspector_rule_lldp_switch_port_desc_to_name_eth0 }}"
+  - "{{ inspector_rule_lldp_switch_port_desc_to_name_eno8303 }}"
   - "{{ inspector_rule_uefi }}"
   - "{{ inspector_rule_resource_class_baremetal }}"
   - "{{ inspector_rule_resource_class_baremetal_gpu }}"
@@ -209,6 +210,51 @@ inspector_rule_lldp_switch_port_desc_to_name_eth0:
     - action: "set-attribute"
       path: "name"
       value: "{data[all_interfaces][eth0][lldp_processed][switch_port_description]}"
+
+# Ironic inspector rule to set the node's name from an interface's LLDP switch
+# port description. [eno8303]
+inspector_rule_lldp_switch_port_desc_to_name_eno8303:
+  description: "Set node name from eno8303 LLDP switch port description"
+  conditions:
+    # Check for the existence of the switch_port_description field.
+    - field: "data://all_interfaces.eno8303"
+      op: "is-empty"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed"
+      op: "is-empty"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "is-empty"
+      invert: True
+    # Filter out switch port descriptions using the switch's interface names.
+    # On some switches (including Dell Network OS 9.10(0.1) and some Ruckus
+    # switches), the port description TLV is sent but contains the interface
+    # name rather than the interface's description. Dell switches use a space
+    # character between port type and port number, while Ruckus switches don't.
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "matches"
+      value: "^GigabitEthernet ?([0-9/]*)$"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "matches"
+      value: "^TenGigabitEthernet ?([0-9/]*)$"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "matches"
+      value: "^twentyFiveGigE ?([0-9/]*)$"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "matches"
+      value: "^fortyGigE ?([0-9/]*)$"
+      invert: True
+    - field: "data://all_interfaces.eno8303.lldp_processed.switch_port_description"
+      op: "matches"
+      value: "^Port-channel ?([0-9/]*)$"
+      invert: True
+  actions:
+    - action: "set-attribute"
+      path: "name"
+      value: "{data[all_interfaces][eno8303][lldp_processed][switch_port_description]}"
 
 inspector_rule_uefi:
   - description: "Set UEFI boot mode"
