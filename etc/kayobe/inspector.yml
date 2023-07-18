@@ -137,6 +137,7 @@ inspector_rules:
   - "{{ inspector_rule_resource_class_baremetal_memory }}"
   - "{{ inspector_rule_resource_class_hypervisor }}"
   - "{{ inspector_rule_traits_hyperthreading }}"
+  - "{{ inspector_rule_bios_interface_redfish }}"
 
 # Ironic inspector rule to set Redfish credentials.
 inspector_rule_redfish_credentials:
@@ -324,6 +325,14 @@ inspector_rule_traits_hyperthreading:
         name: "CUSTOM_HYPERTHREADING_ENABLED"
       - action: "add-trait"
         name: "CUSTOM_HYPERTHREADING_DISABLED"
+
+inspector_rule_bios_interface_redfish:
+  - description: "Set BIOS interface to redfish"
+    conditions: []
+    actions:
+      - action: "set-attribute"
+        path: "bios_interface"
+        value: "redfish"
 
 ###############################################################################
 # Dell switch LLDP workaround configuration.
