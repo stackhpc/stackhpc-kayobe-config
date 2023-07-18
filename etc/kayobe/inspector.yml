@@ -133,6 +133,7 @@ inspector_rules:
   - "{{ inspector_rule_lldp_switch_port_desc_to_name_eno8303 }}"
   - "{{ inspector_rule_uefi }}"
   - "{{ inspector_rule_resource_class_baremetal }}"
+  - "{{ inspector_rule_resource_class_baremetal_v2 }}"
   - "{{ inspector_rule_resource_class_baremetal_gpu }}"
   - "{{ inspector_rule_resource_class_baremetal_memory }}"
   - "{{ inspector_rule_resource_class_hypervisor }}"
@@ -273,6 +274,19 @@ inspector_rule_resource_class_baremetal:
       - field: "node://extra[system_vendor][product_name]"
         op: "matches"
         value: "^PowerEdge R6525 \\(SKU=NotProvided;ModelName=PowerEdge R6525\\)$"
+    actions:
+      - action: "set-attribute"
+        path: "resource_class"
+        value: "baremetal"
+
+inspector_rule_resource_class_baremetal_v2:
+  - description: "Set resource class for generic nodes v2"
+    conditions:
+      - field: "node://resource_class"
+        op: "is-empty"
+      - field: "node://extra[system_vendor][product_name]"
+        op: "matches"
+        value: "^PowerEdge R6525 \\(SKU=08FE;ModelName=PowerEdge R6525\\)$"
     actions:
       - action: "set-attribute"
         path: "resource_class"
