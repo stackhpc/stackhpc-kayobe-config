@@ -11,8 +11,6 @@ Management Cluster
 The CAPI driver relies on a management Kubernetes cluster, installed inside the cloud, to manage tenant Kubernetes clusters.
 The easiest way to get one is by deploying `this <https://github.com/stackhpc/azimuth-config/tree/feature/capi-mgmt-config>`__ branch of azimuth-config, and look at the `capi-mgmt-example` environment. Refer to the `azimuth-config wiki <https://stackhpc.github.io/azimuth-config/>`__ for detailed steps on how to deploy.
 
-There is a helper script for setting up your environment to run manual commands at `tools/azimuth-config-dev.sh`. The usage is: `./tools/azimuth-config-dev.sh <environment>`. It assumes you follow the naming convention of `<environment>-azimuth-config` for your fork, as well as `environments/<environment>` for your mix-in environment.
-
 Ensure that you have set `capi_cluster_apiserver_floating_ip: true`, as the management cluster will need an externally accessible IP. The external network this corresponds to is whatever you have set `azimuth_capi_operator_external_network_id` to. This network needs to be reachable from wherever the magnum container is running.
 
 It's preferable that most Day 2 ops be done via a `CD Pipeline <https://stackhpc.github.io/azimuth-config/deployment/automation/>`__.
@@ -20,8 +18,6 @@ It's preferable that most Day 2 ops be done via a `CD Pipeline <https://stackhpc
 Kayobe Config
 ==============
 Ensure that your kayobe-config branch is up to date on stackhpc/yoga.
-
-There is a helper script for setting up your environment, located at `tools/kayobe-dev.sh`. Again, the usage is `./tools/kayobe-dev.sh <environment>` where this is your kayobe environment located at `etc/kayobe/environments/<environment>`.
 
 Copy the kubeconfig found at `kubeconfig-capi-mgmt-<your-az-environment>.yaml` to your kayobe environment (e.g. `<your-skc-environment>/kolla/config/magnum/kubeconfig`. It is highly likely you'll want to add this file to ansible vault.
 
