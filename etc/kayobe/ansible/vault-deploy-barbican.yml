@@ -77,6 +77,13 @@
       debug:
         msg: "barbican role id is {{ barbican_role_id.id }}"
 
+    - name: Write barbican Approle ID to file if requested
+      delegate_to: localhost
+      copy:
+        content: "{{ barbican_role_id.id }}"
+        dest: "{{ stackhpc_barbican_role_id_file_path | default('~/barbican-role-id') }}"
+      when: stackhpc_write_barbican_role_id_to_file | bool | default(false)
+
     - name: Check if barbican Approle Secret ID is defined
       hashivault_approle_role_secret_list:
         url: "{{ vault_api_addr }}"

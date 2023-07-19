@@ -36,6 +36,8 @@ Before beginning the deployment of vault for openstack internal TLS and backend 
 
   * Seed Node or a host to run the vault container on
   * Overcloud controller hosts to install second vault on
+  * Ansible Galaxy dependencies installed: ``kayobe control host bootstrap``
+  * Python dependencies installed: ``pip install -r kayobe-config/requirements.txt``
 
 Deployment
 ==========
@@ -197,7 +199,7 @@ Enable the required TLS variables in kayobe and kolla
       # Copy the self-signed CA into the kolla containers
       kolla_copy_ca_into_containers: "yes"
       # Use the following trust store within the container
-      openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ["centos", "rocky"] else '/etc/ssl/certs/ca-certificates.crt' }}"
+      openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
 
       # Backend TLS config
       # Enable backend TLS
