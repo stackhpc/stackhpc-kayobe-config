@@ -17,7 +17,7 @@ It's preferable that most Day 2 ops be done via a `CD Pipeline <https://stackhpc
 
 Kayobe Config
 ==============
-Ensure that your kayobe-config branch is up to date on stackhpc/yoga.
+Ensure that your kayobe-config branch is up to date on |current_release_git_branch_name|.
 
 Copy the kubeconfig found at `kubeconfig-capi-mgmt-<your-az-environment>.yaml` to your kayobe environment (e.g. `<your-skc-environment>/kolla/config/magnum/kubeconfig`. It is highly likely you'll want to add this file to ansible vault.
 
