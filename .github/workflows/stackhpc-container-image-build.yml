@@ -18,18 +18,13 @@ on:
         type: boolean
         required: false
         default: false
-      centos-stream-8:
-        description: Build CentOS Stream 8 images?
-        type: boolean
-        required: false
-        default: true
       rocky-linux-9:
         description: Build Rocky Linux 9 images?
         type: boolean
         required: false
         default: true
-      ubuntu-focal:
-        description: Build Ubuntu Focal 20.04 images?
+      ubuntu-jammy:
+        description: Build Ubuntu Jammy 22.04 images?
         type: boolean
         required: false
         default: true
@@ -76,15 +71,11 @@ jobs:
         run: |
           comma=""
           echo -n "matrix={\"distro\": [" >> $GITHUB_OUTPUT
-          if [[ ${{ inputs.centos-stream-8 }} == 'true' ]]; then
-            echo -n "$comma\"centos\"" >> $GITHUB_OUTPUT
-            comma=", "
-          fi
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
             echo -n "$comma\"rocky\"" >> $GITHUB_OUTPUT
             comma=", "
           fi
-          if [[ ${{ inputs.ubuntu-focal }} == 'true' ]]; then
+          if [[ ${{ inputs.ubuntu-jammy }} == 'true' ]]; then
             echo -n "$comma\"ubuntu\"" >> $GITHUB_OUTPUT
             comma=", "
           fi
