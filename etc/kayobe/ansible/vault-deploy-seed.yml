@@ -1,0 +1,73 @@
+---
+- name: Deploy Hashicorp Vault on the seed
+  any_errors_fatal: True
+  gather_facts: True
+  hosts: seed
+  vars:
+    consul_bind_interface: "lo"
+    vault_bind_address: "{{ ansible_facts[consul_bind_interface].ipv4.address }}"
+    vault_api_addr: "http://{{ vault_bind_address }}:8200"
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      pip:
+        name: hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Ensure vault directory exists in Kayobe configuration
+      file:
+        path: "{{ kayobe_env_config_path }}/vault/"
+        state: directory
+      delegate_to: localhost
+      run_once: true
+
+    - import_role:
+        name: stackhpc.hashicorp.vault
+      vars:
+        consul_docker_tag: "{{ seed_consul_docker_tag }}"
+        vault_config_dir: "/opt/kayobe/vault"
+        vault_cluster_name: "seed"
+        vault_docker_tag: "{{ seed_vault_docker_tag }}"
+        vault_write_keys_file: true
+        vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"
+
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"
+        name: vault_keys
+
+    - import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      vars:
+        vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
+
+    - import_role:
+        name: stackhpc.hashicorp.vault_pki
+      vars:
+        vault_token: "{{ vault_keys.root_token }}"
+        vault_pki_root_ca_name: "OS-TLS-ROOT"
+        vault_pki_write_root_ca_to_file: true
+        vault_pki_intermediate_ca_name: "OS-TLS-INT"
+        vault_pki_intermediate_export: true
+        vault_pki_intermediate_roles: "{{ seed_vault_pki_roles }}"
+        vault_pki_certificates_directory: "{{ kayobe_env_config_path }}/vault"
+        vault_pki_generate_certificates: true
+        vault_pki_write_certificates: true
+        vault_pki_certificate_subject:
+          - common_name: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}"
+            role: "{{ seed_vault_pki_role_name }}"
+            extra_params:
+              ip_sans: "{% for host in groups['controllers'] %}{{ internal_net_name | net_ip(host) }}{% if not loop.last %},{% endif %}{% endfor %},{{ kolla_internal_vip_address }}"
+        vault_pki_write_certificate_files: true
+        vault_pki_write_pem_bundle: false
+        vault_pki_write_int_ca_to_file: true
