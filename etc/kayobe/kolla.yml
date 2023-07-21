@@ -4,9 +4,6 @@
 ###############################################################################
 # Kolla installation.
 
-# Type of Kolla control installation. One of 'binary' or 'source'.
-#kolla_ctl_install_type:
-
 # Path to directory for kolla source code checkout.
 #kolla_source_path:
 
@@ -62,8 +59,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 ###############################################################################
 # Kolla configuration.
 
-# Kolla base container image distribution. Options are "centos", "debian",
-# "rocky", "ubuntu". Default is {{ os_distribution }}.
+# Kolla base container image distribution. Options are "rocky", "ubuntu".
+# Default is {{ os_distribution }}.
 #kolla_base_distro:
 
 # Kolla base container image distribution version default map.
@@ -146,72 +143,6 @@ kolla_sources:
 ###############################################################################
 # Kolla image build configuration.
 
-# List of repositories for CentOS Stream.
-stackhpc_centos_stream_repos:
-  - url: "{{ stackhpc_repo_centos_stream_baseos_url }}"
-    file: "CentOS-Stream-BaseOS.repo"
-    tag: "baseos"
-  - url: "{{ stackhpc_repo_centos_stream_appstream_url }}"
-    file: "CentOS-Stream-AppStream.repo"
-    tag: "appstream"
-  - url: "{{ stackhpc_repo_centos_stream_extras_url }}"
-    file: "CentOS-Stream-Extras.repo"
-    tag: "extras"
-
-# List of repositories for EPEL.
-stackhpc_epel_repos:
-  - url: "{{ stackhpc_repo_epel_url }}"
-    file: "epel.repo"
-    tag: "epel"
-  - url: "{{ stackhpc_repo_epel_modular_url }}"
-    file: "epel-modular.repo"
-    tag: "epel-modular"
-
-# List of additional CentOS Stream repositories.
-stackhpc_centos_additional_repos:
-  - url: "{{ stackhpc_repo_centos_stream_advanced_virtualization_url }}"
-    file: "CentOS-Advanced-Virtualization.repo"
-    tag: "centos-advanced-virtualization"
-  - url: "{{ stackhpc_repo_centos_stream_nfv_extras_url }}"
-    file: "CentOS-NFV-extras.repo"
-    tag: "centos-nfv-extras"
-  - url: "{{ stackhpc_repo_centos_stream_nfv_openvswitch_url }}"
-    file: "CentOS-NFV-OpenvSwitch.repo"
-    tag: "centos-nfv-openvswitch"
-  - url: "{{ stackhpc_repo_centos_stream_openstack_yoga_url }}"
-    file: "CentOS-OpenStack-yoga.repo"
-    tag: "centos-openstack-yoga"
-  - url: "{{ stackhpc_repo_centos_stream_opstools_url }}"
-    file: "CentOS-OpsTools.repo"
-    tag: "centos-opstools"
-  - url: "{{ stackhpc_repo_centos_stream_powertools_url }}"
-    file: "CentOS-Stream-PowerTools.repo"
-    tag: "powertools"
-  - url: "{{ stackhpc_repo_centos_stream_storage_ceph_pacific_url }}"
-    file: "CentOS-Ceph-Pacific.repo"
-    tag: "centos-ceph-pacific"
-
-# List of third-party repositories.
-stackhpc_third_party_repos:
-  - url: "{{ stackhpc_repo_elasticsearch_logstash_kibana_7_x_url }}"
-    file: "elasticsearch.repo"
-    tag: "elasticsearch-kibana-logstash-7.x"
-  - url: "{{ stackhpc_repo_grafana_url }}"
-    file: "grafana.repo"
-    tag: "grafana"
-  - url: "{{ stackhpc_repo_mariadb_10_6_centos8_url }}"
-    file: "mariadb.repo"
-    tag: "mariadb"
-  - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
-    file: "rabbitmq_rabbitmq-erlang.repo"
-    tag: "rabbitmq_rabbitmq-erlang"
-  - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
-    file: "rabbitmq_rabbitmq-server.repo"
-    tag: "rabbitmq_rabbitmq-server"
-  - url: "{{ stackhpc_repo_treasuredata_4_url }}"
-    file: "td.repo"
-    tag: "treasuredata"
-
 # List of repositories for Rocky Linux 9
 stackhpc_rocky_9_repos:
   - url: "{{ stackhpc_repo_rocky_9_baseos_url }}"
@@ -229,9 +160,9 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
-  - url: "{{ stackhpc_repo_centos_stream_9_openstack_yoga_url }}"
-    file: "CentOS-OpenStack-yoga.repo"
-    tag: "centos-openstack-yoga"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_zed_url }}"
+    file: "CentOS-OpenStack-Zed.repo"
+    tag: "centos-openstack-zed"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -265,6 +196,12 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
+  - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch"
+  - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
+    file: "opensearch_dashboards.repo"
+    tag: "opensearch_dashboards"
 
 # List of EPEL 9
 stackhpc_epel_9_repos:
@@ -272,24 +209,21 @@ stackhpc_epel_9_repos:
     file: "epel.repo"
     tag: "epel"
 
-base_centos_repo_overrides_post_yum_centos_list: "{{ stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos }}"
-base_centos_repo_overrides_post_yum_rocky_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
+base_centos_repo_overrides_post_yum_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
+stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
 
-base_centos_repo_overrides_post_yum_list: "{{ base_centos_repo_overrides_post_yum_centos_list if kolla_base_distro == 'centos' else base_centos_repo_overrides_post_yum_rocky_list }}"
-stackhpc_yum_repos: "{{ stackhpc_centos_stream_repos if kolla_base_distro == 'centos' else stackhpc_rocky_9_repos }}"
-
-# List of repositories for Ubuntu focal.
-stackhpc_ubuntu_focal_repos:
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
-  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/{{ openstack_release }} main"
+# List of repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_repos:
+  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
+  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
+  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
+  - "deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
+  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release }} main"
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
-    {% if kolla_base_distro in ['centos', 'rocky'] %}
+    {% if kolla_base_distro == rocky %}
     RUN \
     {% for repo in stackhpc_yum_repos %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
@@ -301,7 +235,7 @@ kolla_build_blocks:
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
-    {% if kolla_base_distro in ['centos', 'rocky'] %}
+    {% if kolla_base_distro == rocky %}
         && \
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
@@ -313,7 +247,7 @@ kolla_build_blocks:
   base_ubuntu_package_sources_list: |
     RUN \
         rm -f /etc/apt/sources.list && \
-    {% for repo in stackhpc_ubuntu_focal_repos %}
+    {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
@@ -332,16 +266,6 @@ kolla_build_blocks:
         rm -f liblasso3_2.7.0-2build3_amd64.deb
     {% endif %}
     {% endraw %}
-  nova_base_footer: |
-    {% if kolla_base_distro == 'centos' %}
-    # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
-    # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
-    {% raw %}
-    {% if base_package_type == 'rpm' %}
-    RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
-    {% endif %}
-    {% endraw %}
-    {% endif %}
   magnum_base_footer: |
     RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
 # Dict mapping image customization variable names to their values.
@@ -356,7 +280,7 @@ kolla_build_customizations_common:
   ironic_inspector_pip_packages_append:
     - /additions/*
 
-kolla_build_customizations_centos:
+kolla_build_customizations_rocky: # TODO: Check whether this is actually correct. It seems that it was previously being skipped for rocky
   base_yum_repo_files_remove:
     - proxysql.repo
   neutron_base_packages_remove:
@@ -406,7 +330,7 @@ kolla_build_customizations_ubuntu: {}
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_rocky if kolla_base_distro == 'rocky' else kolla_build_customizations_ubuntu) }}"
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args:
@@ -690,7 +614,6 @@ kolla_enable_prometheus: true
 #kolla_enable_prometheus_blackbox_exporter:
 #kolla_enable_prometheus_cadvisor:
 #kolla_enable_prometheus_ceph_mgr_exporter:
-#kolla_enable_prometheus_elasticsearch_exporter:
 #kolla_enable_prometheus_etcd_integration:
 #kolla_enable_prometheus_fluentd_integration:
 #kolla_enable_prometheus_haproxy_exporter:
