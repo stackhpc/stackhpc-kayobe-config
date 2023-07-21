@@ -37,7 +37,7 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-* Pulp repository definitions for CentOS Stream 8 and Rocky Linux 8
+* Pulp repository definitions for Rocky Linux 9 and Ubuntu Jammy 22.04
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -74,16 +74,6 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Currently, Ark does not provide package repositories for Ubuntu - only
-container images. For this reason, ``stackhpc_pulp_sync_ubuntu_focal`` in
-``etc/kayobe/pulp.yml`` is set to ``false`` by default.
-
-CentOS Stream 8 and Rocky Linux 8/9 package repositories are synced based on the
-value of ``os_distribution``. If you need to sync multiple distributions,
-``stackhpc_pulp_sync_centos_stream8``, ``stackhpc_pulp_sync_rocky_8`` and
-``stackhpc_pulp_sync_rocky_9`` in ``etc/kayobe/pulp.yml`` may be set to
-``true``.
-
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
 in ``etc/kayobe/pulp-repo-versions.yml``. This file is managed by the StackHPC
@@ -93,10 +83,7 @@ repository.
 Package managers
 ----------------
 
-No configuration is provided for APT, since Ark does not currently provide
-package repositories for Ubuntu - only container images.
-
-For CentOS and Rocky Linux based systems, package manager configuration is
+For Rocky Linux based systems, package manager configuration is
 provided by ``stackhpc_dnf_repos`` in ``etc/kayobe/dnf.yml``, which points to
 package repositories on the local Pulp server. To use this configuration, the
 ``dnf_custom_repos`` variable must be set, and this is done for hosts in the
@@ -219,10 +206,10 @@ see this message when you later try to run ``pulp-container-sync.yml``:
 .. code-block:: console
 
     TASK [stackhpc.pulp.pulp_repository : Setup container repositories] *****************************
-    failed: [localhost] (item=stackhpc/centos-source-prometheus-jiralert) => changed=false
+    failed: [localhost] (item=stackhpc/rocky-source-prometheus-jiralert) => changed=false
     ansible_loop_var: item
     item:
-      name: stackhpc/centos-source-prometheus-jiralert
+      name: stackhpc/rocky-source-prometheus-jiralert
       policy: on_demand
       remote_password: password
       remote_username: username
@@ -238,7 +225,7 @@ with the push repository using the pulp CLI:
 
 .. code-block:: console
 
-    (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/centos-source-prometheus-jiralert
+    (venv-pulp) [stack@seed ~]$ pulp --base-url http://<pulp server>:8080--username admin --password <password> container distribution destroy --name stackhpc/rocky-source-prometheus-jiralert
     Started background task /pulp/api/v3/tasks/1f0a474a-b7c0-44b4-9ef4-ed633077f4d8/
     .Done.
 
@@ -251,11 +238,11 @@ you will see a 404 error during ``pulp-repo-sync.yml``:
 .. code-block:: console
 
     TASK [stackhpc.pulp.pulp_repository : Sync RPM remotes into repositories] ****************************************************************************************************************************************
-    An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435'))
-    failed: [localhost] (item=centos-stream-8-baseos-development) => changed=false
+    An exception occurred during task execution. To see the full traceback, use -vvv. The error was: Exception: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/rocky/9/BaseOS/x86_64/os/20211122T102435'))
+    failed: [localhost] (item=rocky-9-baseos-development) => changed=false
       ansible_loop_var: item
       item:
-        name: centos-stream-8-baseos-development
+        name: rocky-9-baseos-development
         policy: on_demand
         proxy_url: __omit_place_holder__d35452c39719f081229941a64fd2cdce1188a287
         remote_password: <password>
@@ -263,8 +250,8 @@ you will see a 404 error during ``pulp-repo-sync.yml``:
         required: true
         state: present
         sync_policy: mirror_complete
-        url: https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435
-      msg: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/centos/8-stream/BaseOS/x86_64/os/20211122T102435')) '''
+        url: https://ark.stackhpc.com/pulp/content/rocky/9/BaseOS/x86_64/os/20211122T102435
+      msg: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/rocky/9/BaseOS/x86_64/os/20211122T102435')) '''
 
 The issue can be rectified by updating the ``stackhpc_release_pulp_username``
 and ``stackhpc_release_pulp_password`` variables

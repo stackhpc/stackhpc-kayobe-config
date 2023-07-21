@@ -29,7 +29,7 @@
 # -- StackHPC Kayobe configuration --------------------------------------
 # Variables to override
 
-current_series = "yoga"
+current_series = "zed"
 branch = f"stackhpc/{current_series}"
 
 # Substitutions loader

@@ -9,7 +9,7 @@ service, and pushed there once built.
 Prerequisites
 =============
 
-* a CentOS Stream 8 or Ubuntu Focal 20.04 host
+* a Rocky Linux 9 or Ubuntu Jammy 22.04 host
 * access to the Test Pulp server on SMS lab
 
 Setup

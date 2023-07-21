@@ -13,7 +13,7 @@ make changes to the setup process.
 Prerequisites
 =============
 
-* a CentOS Stream 8 or Ubuntu Focal 20.04 host
+* a Rocky Linux 9 or Ubuntu Jammy 22.04 host
 * access to the Test Pulp server on SMS lab
 
 Automated Setup
@@ -25,7 +25,7 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/yoga/etc/kayobe/environments/ci-aio/automated-setup.sh
+   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/zed/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
@@ -56,7 +56,7 @@ Access the host via SSH.
 
 Install package dependencies.
 
-On CentOS:
+On Rocky:
 
 .. parsed-literal::
 
