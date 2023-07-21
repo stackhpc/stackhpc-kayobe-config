@@ -17,3 +17,4 @@ the various features provided.
    monitoring
    wazuh
    vault
+   magnum-capi
