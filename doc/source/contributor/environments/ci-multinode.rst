@@ -2,6 +2,10 @@
 Multinode Test Environment
 ==========================
 
+.. warning:: 
+
+      The initial setup guide here is designed for the Yoga release of OpenStack. Proceed with caution.
+
 Set up hosts
 ============
 1. Create four baremetal instances with a centos 8 stream LVM image, and a

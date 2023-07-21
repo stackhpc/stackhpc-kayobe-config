@@ -199,7 +199,7 @@ Enable the required TLS variables in kayobe and kolla
       # Copy the self-signed CA into the kolla containers
       kolla_copy_ca_into_containers: "yes"
       # Use the following trust store within the container
-      openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
+      openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution == 'rocky' else '/etc/ssl/certs/ca-certificates.crt' }}"
 
       # Backend TLS config
       # Enable backend TLS

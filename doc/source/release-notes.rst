@@ -1,6 +1,6 @@
 =========================
-Yoga Series Release Notes
+Zed Series Release Notes
 =========================
 
 .. release-notes::
-   :branch: stackhpc/yoga
+   :branch: stackhpc/zed
