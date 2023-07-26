@@ -73,7 +73,7 @@ Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm
           size: "100%VG"
           filesystem: "ext4"
           mount: true
-          mntp: “/var/lib/elasticsearch”
+          mntp: “/var/lib/opensearch”
           create: true
 
 

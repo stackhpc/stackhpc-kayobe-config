@@ -428,18 +428,6 @@ stackhpc_pulp_repository_rpm_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
 
-  - name: ELK repository for 7.x packages
-    url: "{{ stackhpc_release_pulp_content_url }}/elasticsearch/oss-7.x/{{ stackhpc_pulp_repo_elasticsearch_logstash_kibana_7_x_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    sync_policy: mirror_complete
-    state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
-
   - name: Grafana
     url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
@@ -725,11 +713,6 @@ stackhpc_pulp_distribution_rpm_development:
     repository: CentOS Stream 8 - Ceph Pacific
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
-  - name: "elasticsearch-logstash-kibana-7.x-development"
-    base_path: "elasticsearch/oss-7.x/development"
-    repository: ELK repository for 7.x packages
-    state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
   - name: "grafana-development"
     base_path: "grafana/oss/rpm/development"
     repository: Grafana
@@ -924,11 +907,6 @@ stackhpc_pulp_distribution_rpm_production:
     repository: CentOS Stream 8 - Ceph Pacific
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
-  - name: "elasticsearch-logstash-kibana-7.x-production"
-    base_path: "elasticsearch/oss-7.x/production"
-    repository: ELK repository for 7.x packages
-    state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
   - name: "grafana-production"
     base_path: "grafana/oss/rpm/production"
     repository: Grafana
@@ -1055,8 +1033,6 @@ stackhpc_pulp_images_kolla:
   - designate-sink
   - designate-worker
   - dnsmasq
-  - elasticsearch
-  - elasticsearch-curator
   - etcd
   - fluentd
   - glance-api
@@ -1121,7 +1097,6 @@ stackhpc_pulp_images_kolla:
   - prometheus-alertmanager
   - prometheus-blackbox-exporter
   - prometheus-cadvisor
-  - prometheus-elasticsearch-exporter
   - prometheus-haproxy-exporter
   - prometheus-jiralert
   - prometheus-libvirt-exporter
@@ -1141,12 +1116,8 @@ stackhpc_pulp_images_kolla:
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
   ubuntu: []
-  centos: []
   rocky:
-    - elasticsearch
-    - elasticsearch-curator
     - iscsid
-    - kibana
 
 # Whitespace-separated list of regular expressions matching Kolla image names.
 # Usage is similar to kolla-build CLI arguments.
