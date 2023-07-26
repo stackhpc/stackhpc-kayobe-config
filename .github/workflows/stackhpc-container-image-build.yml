@@ -198,6 +198,9 @@ jobs:
           path: ${{ matrix.distro }}-container-images
           retention-days: 7
 
+      # NOTE(Alex-Welsh) This may not work after the zed release, since the
+      # kolla_version tag is changing to be a sha-1 hash if images are built
+      # with kolla from a git repository
       - name: Prune local Kolla container images over 1 week old
         run: |
           sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
