@@ -6,8 +6,8 @@ Monitoring Configuration
 ========================
 
 StackHPC kayobe config includes a reference monitoring and alerting stack based
-on Prometheus, Alertmanager, Grafana, Fluentd, Elasticsearch & Kibana. These
-services by default come enabled and configured.
+on Prometheus, Alertmanager, Grafana, Fluentd, OpenSearch & OpenSearch
+Dashboards. These services by default come enabled and configured.
 
 Monitoring hosts, usually the controllers, should be added to the monitoring
 group. The group definition can be applied in various different places. For
@@ -18,7 +18,7 @@ example, this configuration could be added to etc/kayobe/inventory/groups:
     [monitoring:children]
     controllers
 
-Central Elasticsearch cluster collects OpenStack logs, with an option to receive
+Central OpenSearch cluster collects OpenStack logs, with an option to receive
 operating system logs too. In order to enable this, execute custom playbook
 after deployment:
 
