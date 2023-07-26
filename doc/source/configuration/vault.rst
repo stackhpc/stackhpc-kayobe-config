@@ -210,6 +210,16 @@ Enable the required TLS variables in kayobe and kolla
 
 3. Deploy backend and internal TLS
 
+   .. warning::
+
+      It is important that you are only using admin endpoints for keystone. If
+      any admin endpoints exist for other services, they must be deleted e.g.
+
+      .. code-block::
+
+         openstack endpoint list --interface admin -f value | \
+         awk '!/keystone/ {print $1}' | xargs openstack endpoint delete
+
    .. code-block::
 
       kayobe overcloud service deploy
