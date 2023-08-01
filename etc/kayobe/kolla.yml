@@ -309,6 +309,19 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
+  base_debian_after_sources_list: |
+    RUN echo "\
+    deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main"\
+    > /etc/apt/sources.list.d/uca-yoga.list
+    RUN echo "\
+    Package: *\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: -1\n\
+    \n\
+    Package: openvswitch* python3-openvswitch\n\
+    Pin: release focal-updates/yoga\n\
+    Pin-Priority: 500"\
+    > /etc/apt/preferences.d/uca-yoga
   base_ubuntu_package_sources_list: |
     RUN \
         rm -f /etc/apt/sources.list && \
