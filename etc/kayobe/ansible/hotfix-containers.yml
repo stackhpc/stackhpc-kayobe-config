@@ -28,9 +28,13 @@
       command: '{{ kolla_container_engine | default("docker")}} ps --format {% raw %}"{{.Names}}"{% endraw %}'
       register: host_containers
 
+    - name: Set fact for containers list
+      set_fact:
+        containers_list: host_containers.stdout
+
     - name: Fail if no containers match given regex
       vars:
-        hotfix_containers: host_containers | split('\n') | regex_search(container_hotfix_container_regex)
+        hotfix_containers: "{{ containers_list | split('\n') | regex_search(container_hotfix_container_regex) }}"
       fail:
         msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers | split('\n') }}"
       when: hotfix_containers == ""
@@ -51,7 +55,7 @@
 
     - name: Apply hotfix
       include_tasks: run-container-hotfix.yml
-      loop: "{{ host_containers.stdout | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
       loop_control:
         loop_var: hotfix_container
 
@@ -62,5 +66,5 @@
 
     - name: Restart containers if requested
       command: "{{ kolla_container_engine | default('docker')}} restart {{ item }}"
-      loop: "{{ host_containers.stdout | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
       when: container_hotfix_restart_containers
