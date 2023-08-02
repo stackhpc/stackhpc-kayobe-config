@@ -9,3 +9,4 @@ This guide is for operators of the StackHPC Kayobe configuration project.
 
    rabbitmq
    octavia
+   hotfix-playbook
