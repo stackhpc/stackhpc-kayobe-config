@@ -199,7 +199,7 @@ stackhpc_pulp_distribution_deb_production:
 stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
 # Whether to sync Rocky Linux 8 packages.
-stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' }}"
+stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' and os_release == '8' }}"
 # Rocky 8 minor version number. Supported values: 6, 7
 stackhpc_pulp_repo_rocky_8_minor_version: 7
 # Rocky 8 Snapshot versions. The defaults use the appropriate version from
@@ -210,8 +210,23 @@ stackhpc_pulp_repo_rocky_8_extras_version: "{{ lookup('vars', 'stackhpc_pulp_rep
 stackhpc_pulp_repo_rocky_8_nfv_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_nfv_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
 stackhpc_pulp_repo_rocky_8_powertools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_powertools_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
 
-# Whether to sync packages common to all RHEL derivatives.
+# Whether to sync packages common to all RHEL 8 derivatives.
 stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_centos_stream8 }}"
+
+# Whether to sync Rocky Linux 9 packages.
+stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' and os_release == '9' }}"
+# Rocky 9 minor version number. Supported values: 1
+stackhpc_pulp_repo_rocky_9_minor_version: 1
+# Rocky 9 Snapshot versions. The defaults use the appropriate version from
+# pulp-repo-versions.yml for the selected minor release.
+stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+stackhpc_pulp_repo_rocky_9_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_baseos_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_extras_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+stackhpc_pulp_repo_rocky_9_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_crb_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_highavailability_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+
+# Whether to sync packages common to all RHEL 9 derivatives.
+stackhpc_pulp_sync_el_9: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
 stackhpc_pulp_repository_rpm_repos:
   # Base CentOS 8 Stream repositories
@@ -301,7 +316,7 @@ stackhpc_pulp_repository_rpm_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
 
-  # EPEL repositories
+  # EPEL 8 repositories
   - name: Extra Packages for Enterprise Linux 8 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/8/Everything/x86_64/{{ stackhpc_pulp_repo_epel_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
@@ -425,7 +440,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
 
   - name: RabbitMQ - Erlang
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
@@ -436,7 +451,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
 
   - name: RabbitMQ - Server
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
@@ -447,7 +462,7 @@ stackhpc_pulp_repository_rpm_repos:
     policy: on_demand
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
 
   - name: TreasureData 4
     url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/8/x86_64/{{ stackhpc_pulp_repo_treasuredata_4_version }}"
@@ -459,6 +474,140 @@ stackhpc_pulp_repository_rpm_repos:
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  # Base Rocky 9 repositories
+  - name: Rocky Linux 9 - AppStream
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: Rocky Linux 9 - BaseOS
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: Rocky Linux 9 - Extras
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: Rocky Linux 9 - CRB
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: Rocky Linux 9 - HighAvailability
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
+  # Additional CentOS Stream 9 repositories
+  - name: CentOS Stream 9 - NFV OpenvSwitch
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: CentOS Stream 9 - OpenStack Yoga
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-yoga/{{ stackhpc_pulp_repo_centos_stream_9_openstack_yoga_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: CentOS 9 - OpsTools - collectd
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: CentOS Stream 9 - Ceph Pacific
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-pacific/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_pacific_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: Extra Packages for Enterprise Linux 9 - x86_64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/9/Everything/x86_64/{{ stackhpc_pulp_repo_epel_9_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_content_only
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+  - name: Docker CE for CentOS 9
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/9/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 }}"
+
+  # Additional RHEL 9 repositories
+  - name: TreasureData 4 for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_4_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: MariaDB 10.6 for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.6/yum/rhel/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: InfluxDB for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_development }}"
@@ -512,7 +661,7 @@ stackhpc_pulp_distribution_rpm_development:
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
 
-  # EPEL repositories
+  # EPEL 8 repositories
   - name: "extra-packages-for-enterprise-linux-8-x86_64-development"
     repository: Extra Packages for Enterprise Linux 8 - x86_64
     base_path: "epel/8/Everything/x86_64/development"
@@ -576,17 +725,94 @@ stackhpc_pulp_distribution_rpm_development:
     base_path: "rabbitmq/erlang/el/8/x86_64/development"
     repository: RabbitMQ - Erlang
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
   - name: "rabbitmq-server-development"
     base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/development"
     repository: RabbitMQ - Server
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
   - name: "treasuredata-4-development"
     base_path: "treasuredata/4/redhat/8/x86_64/development"
     repository: TreasureData 4
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  # Base Rocky Linux 9 repositories
+  - name: "rocky-9-appstream-development"
+    repository: Rocky Linux 9 - AppStream
+    base_path: "rocky/9/AppStream/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-baseos-development"
+    repository: Rocky Linux 9 - BaseOS
+    base_path: "rocky/9/BaseOS/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-extras-development"
+    repository: Rocky Linux 9 - Extras
+    base_path: "rocky/9/extras/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-crb-development"
+    repository: Rocky Linux 9 - CRB
+    base_path: "rocky/9/crb/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-highavailability-development"
+    repository: Rocky Linux 9 - HighAvailability
+    base_path: "rocky/9/highavailability/x86_64/os/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
+  # Additional CentOS Stream 9 repositories
+  - name: "centos-stream-9-nfv-openvswitch-development"
+    base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/development"
+    repository: CentOS Stream 9 - NFV OpenvSwitch
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-stream-9-openstack-yoga-development"
+    base_path: "centos/9-stream/cloud/x86_64/openstack-yoga/development"
+    repository: CentOS Stream 9 - OpenStack Yoga
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-9-opstools-collectd-development"
+    base_path: "centos/9-stream/opstools/x86_64/collectd-5/development"
+    repository: CentOS 9 - OpsTools - collectd
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-stream-9-ceph-pacific-development"
+    base_path: "centos/9-stream/storage/x86_64/ceph-pacific/development"
+    repository: CentOS Stream 9 - Ceph Pacific
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "extra-packages-for-enterprise-linux-9-x86_64-development"
+    repository: Extra Packages for Enterprise Linux 9 - x86_64
+    base_path: "epel/9/Everything/x86_64/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "docker-ce-for-centos-9-development"
+    repository: Docker CE for CentOS 9
+    base_path: "docker-ce/centos/9/x86_64/stable/development"
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+
+  # Additional RHEL 9 repositories
+  - name: "rhel-9-treasuredata-4-development"
+    base_path: "treasuredata/4/redhat/9/x86_64/development"
+    repository: TreasureData 4 for RHEl 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "rhel-9-mariadb-10-6-development"
+    base_path: "mariadb-10.6/yum/rhel/9/x86_64/development"
+    repository: MariaDB 10.6 for RHEL 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "rhel-9-influxdb-development"
+    base_path: "influxdb/rhel/9/x86_64/stable/development"
+    repository: InfluxDB for RHEL 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_rpm_production:
@@ -698,17 +924,93 @@ stackhpc_pulp_distribution_rpm_production:
     base_path: "rabbitmq/erlang/el/8/x86_64/production"
     repository: RabbitMQ - Erlang
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
   - name: "rabbitmq-server-production"
     base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/production"
     repository: RabbitMQ - Server
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
   - name: "treasuredata-4-production"
     base_path: "treasuredata/4/redhat/8/x86_64/production"
     repository: TreasureData 4
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+
+  # Base Rocky Linux 9 repositories
+  - name: "rocky-9-appstream-production"
+    repository: Rocky Linux 9 - AppStream
+    base_path: "rocky/9/AppStream/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-baseos-production"
+    repository: Rocky Linux 9 - BaseOS
+    base_path: "rocky/9/BaseOS/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-extras-production"
+    repository: Rocky Linux 9 - Extras
+    base_path: "rocky/9/extras/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-crb-production"
+    repository: Rocky Linux 9 - CRB
+    base_path: "rocky/9/crb/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+  - name: "rocky-9-highavailability-production"
+    repository: Rocky Linux 9 - HighAvailability
+    base_path: "rocky/9/highavailability/x86_64/os/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
+  # Additional CentOS Stream 9 repositories
+  - name: "centos-stream-9-nfv-openvswitch-production"
+    base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/production"
+    repository: CentOS Stream 9 - NFV OpenvSwitch
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-stream-9-openstack-yoga-production"
+    base_path: "centos/9-stream/cloud/x86_64/openstack-yoga/production"
+    repository: CentOS Stream 9 - OpenStack Yoga
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-9-opstools-collectd-production"
+    base_path: "centos/9-stream/opstools/x86_64/collectd-5/production"
+    repository: CentOS 9 - OpsTools - collectd
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "centos-stream-9-ceph-pacific-production"
+    base_path: "centos/9-stream/storage/x86_64/ceph-pacific/production"
+    repository: CentOS Stream 9 - Ceph Pacific
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "extra-packages-for-enterprise-linux-9-x86_64-production"
+    repository: Extra Packages for Enterprise Linux 9 - x86_64
+    base_path: "epel/9/Everything/x86_64/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "docker-ce-for-centos-9-production"
+    repository: Docker CE for CentOS 9
+    base_path: "docker-ce/centos/9/x86_64/stable/production"
+    state: present
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+
+  # Additional RHEL 9 repositories
+  - name: "rhel-9-treasuredata-4-production"
+    base_path: "treasuredata/4/redhat/9/x86_64/production"
+    repository: TreasureData 4 for RHEl 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "rhel-9-mariadb-10-6-production"
+    base_path: "mariadb-10.6/yum/rhel/9/x86_64/production"
+    repository: MariaDB 10.6 for RHEL 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  - name: "rhel-9-influxdb-production"
+    base_path: "influxdb/rhel/9/x86_64/stable/production"
+    repository: InfluxDB for RHEL 9
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
 ###############################################################################
 # Containers
@@ -820,6 +1122,16 @@ stackhpc_pulp_images_kolla:
   - skydive-agent
   - skydive-analyzer
 
+# List of images for each base distribution which should not/cannot be built.
+stackhpc_kolla_unbuildable_images:
+  ubuntu: []
+  centos: []
+  rocky:
+    - elasticsearch
+    - elasticsearch-curator
+    - iscsid
+    - kibana
+
 # Whitespace-separated list of regular expressions matching Kolla image names.
 # Usage is similar to kolla-build CLI arguments.
 # Example:
@@ -843,9 +1155,11 @@ stackhpc_pulp_repository_container_repos_kolla_common:
 stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
   {%- for image in stackhpc_pulp_images_kolla_filtered -%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro]-%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set repo = {"name": image_repo} -%}
   {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
+  {%- endif -%}
   {%- endfor -%}
   {{ repos }}
 
@@ -858,9 +1172,11 @@ stackhpc_pulp_distribution_container_kolla_common:
 stackhpc_pulp_distribution_container_kolla: >-
   {%- set distributions = [] -%}
   {%- for image in stackhpc_pulp_images_kolla_filtered -%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro]-%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ kolla_base_distro ~ "-" ~ kolla_install_type ~ "-" ~ image -%}
   {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
   {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
+  {%- endif -%}
   {%- endfor -%}
   {{ distributions }}
 

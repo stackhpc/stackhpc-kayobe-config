@@ -15,6 +15,14 @@ on:
         description: Host OS distribution
         type: string
         default: centos
+      os_release:
+        description: Host OS release
+        type: string
+        default: 8-stream
+      ssh_username:
+        description: User for terraform to access the all-in-one VM
+        type: string
+        default: cloud-user
       neutron_plugin:
         description: Neutron ML2 plugin
         type: string
@@ -100,7 +108,7 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          SSH_USERNAME: "${{ inputs.os_distribution == 'ubuntu' && 'ubuntu' || 'cloud-user' }}"
+          SSH_USERNAME: "${{ inputs.ssh_username }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ inputs.vm_image }}
           VM_FLAVOR: ${{ inputs.vm_flavor }}
@@ -161,11 +169,13 @@ jobs:
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
           ---
           os_distribution: ${{ env.OS_DISTRIBUTION }}
+          os_release: "${{ env.OS_RELEASE }}"
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           EOF
         env:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
           OS_DISTRIBUTION: ${{ inputs.os_distribution }}
+          OS_RELEASE: ${{ inputs.os_release }}
 
       # Use a heredoc to define a multiline string output
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -226,7 +236,7 @@ jobs:
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.neutron_plugin }}
+          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
           path: tempest-artifacts/*
 
       - name: Fail if any Tempest tests failed
