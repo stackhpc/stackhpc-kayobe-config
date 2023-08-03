@@ -1,10 +1,42 @@
 ---
+# Required for uri module to work with self-signed certificates and for systems to trust
+# the self-signed CA
+- name: Install CA on controllers
+  hosts: controllers
+  tasks:
+    - name: Copy the intermediate CA
+      copy:
+        src: "{{ kayobe_env_config_path }}/vault/OS-TLS-ROOT.pem"
+        dest: "{{ '/etc/pki/ca-trust/source/anchors/OS-TLS-ROOT.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        mode: 0644
+      become: true
+
+    - name: update system CA
+      become: true
+      shell: "{{ 'update-ca-trust' if ansible_facts.os_family == 'RedHat' else 'update-ca-certificates' }}"
+
 - name: Generate backend API certificates
   hosts: controllers
   vars:
     vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
     vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      pip:
+        name: hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
     - name: Include Vault keys
       include_vars:
         file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
