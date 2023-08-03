@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: true
+      scan-upload:
+        description: Upload scanned images that have vulnerabilities?
+        type: boolean
+        required: false
+        default: true
       distro:
         description: Container image OS distribution
         type: choice
@@ -60,7 +65,12 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.38.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.44.0
+ 
+      - name: Install jq
+        run: |
+          curl --output /usr/local/bin/jq -sfL https://github.com/jqlang/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x /usr/local/bin/jq
 
       - name: Setup networking
         run: |
@@ -112,7 +122,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build ${{ github.event.inputs.regexes }} --push -e kolla_base_distro=${{ inputs.distro }}
+          kayobe overcloud container image build ${{ github.event.inputs.regexes }} -e kolla_base_distro=${{ inputs.distro }}
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
@@ -127,11 +137,6 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > overcloud-container-images
         if: github.event.inputs.overcloud == 'true'
 
-      - name: Generate the images to scan
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" >> images-to-scan.txt
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
-
       - name: Upload overcloud-container-images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -144,7 +149,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed container image build --push -e kolla_base_distro=${{ inputs.distro }}
+          kayobe seed container image build -e kolla_base_distro=${{ inputs.distro }}
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.seed == 'true'
@@ -159,11 +164,6 @@ jobs:
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" > seed-container-images
         if: github.event.inputs.seed == 'true'
 
-      - name: Generate the images to scan
-        run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$(cat ~/kolla_tag)" --format "{{.Repository}}:{{.Tag}}" >> images-to-scan.txt
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
-
       - name: Upload seed-container-images artifact
         uses: actions/upload-artifact@v3
         with:
@@ -172,25 +172,87 @@ jobs:
           retention-days: 7
         if: github.event.inputs.seed == 'true'
 
-      - name: Scan built overcloud container images
+      - name: Generate list of images to scan/push
         run: |
-          if [[ ${{ github.event.inputs.scan }} == true ]]; then
-              mkdir upload
-              cat images-to-scan.txt | while read i; do
-                filename=$(echo $i | sed 's/.*stackhpc-dev\///;s/:.*//')
-                sudo trivy image --severity HIGH,CRITICAL $i > upload/${filename}.txt
-              done
-          fi
-        shell: bash
-        if: ${{ (github.event.inputs.overcloud == 'true') && (github.event.inputs.scan == 'true') }}
+          # Make a file of imagename:tag
+          grep --invert-match --no-filename ^REPOSITORY overcloud-container-images seed-container-images |\
+          sed 's/ \+/:/g' |\
+          cut -f 1,2 -d: > docker-images.txt
+        
+      - name: Scan built container images
+        run: |
+          set -euo pipefail
+          mkdir -p image-scan-output
 
-      - name: Upload scan output artefact
+          rm -f images-to-push.txt
+
+          # If Trivy detects no vulnerabilities, add the image name to images-to-push.txt.
+          # If there are vulnerabilities detected, generate a CSV summary and do not add to
+          # images-to-push.txt.
+          while read -r image; do
+            filename=$(basename $image | sed 's/:/\./g')
+            if $(trivy image \
+                    --exit-code 1 \
+                    --scanners vuln \
+                    --format json \
+                    --severity HIGH,CRITICAL \
+                    --output image-scan-output/${filename}.json \
+                    --ignore-unfixed \
+                    $image); then
+              echo "${image}" >> images-to-push.txt
+              rm image-scan-output/${filename}.json
+            else
+              if [${{github.event.input.scan-upload}} == 'true' ]; then
+                echo "${image}" >> images-to-push.txt
+              fi
+              
+              echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}.csv
+              jq -r '.Results[].Vulnerabilities
+                     # Ignore packages with "kernel" in the PkgName
+                     | map(select(.PkgName | test("kernel") | not ))
+                     | group_by(.VulnerabilityID)
+                     | map(
+                            [
+                              (map(.PkgName) | unique | join(";")),
+                              (map(.PkgPath | select( . != null )) | join(";")),
+                              .[0].PkgID,
+                              .[0].VulnerabilityID,
+                              .[0].FixedVersion,
+                              .[0].PrimaryURL,
+                              .[0].Severity
+                              ]
+                          ) 
+                     | .[] 
+                     | @csv' image-scan-output/${filename}.json >> image-scan-output/${filename}.summary.csv
+            fi
+          done < docker-images.txt
+          mv images-to-push.txt docker-images.txt
+        shell: bash
+        if: github.event.inputs.scan == 'true'
+     
+      - name: Upload Trivy scan artefacts
         uses: actions/upload-artifact@v3
         with:
-          name: "Trivy Scan txt"
-          path: 'upload/'
+          name: "trivy-scan-output"
+          path: |
+            'image-scan-output/*.json'
+            'image-scan-output/*.summary.csv'
           retention-days: 7
-        if: ${{ (github.event.inputs.overcloud == 'true') &&  (github.event.inputs.scan == 'true') }}
+        if: github.event.inputs.scan == 'true'
+
+      - name: Push images
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml
+
+          while read -r image; do
+            # Retries!
+            for i in {1..10}; do 
+              docker push ${image} && break || sleep 5
+            done
+          done < docker-images.txt
+        shell: bash
 
       - name: Prune local Kolla container images over 1 week old
         run: |
