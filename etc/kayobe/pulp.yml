@@ -4,7 +4,7 @@
 
 # Base URL of the local Pulp service.
 # Default uses the seed node's IP on the admin network.
-pulp_url: "{{ 'https' if pulp_enable_tls | bool else 'http' }}://{{ admin_oc_net_name | net_ip(groups['seed'][0]) }}:{{ pulp_port }}"
+pulp_url: "{{ 'https' if pulp_enable_tls | bool else 'http' }}://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:{{ pulp_port }}"
 
 # Port on the seed node's interface on the admin network that the Pulp service
 # listens on.
@@ -51,10 +51,7 @@ stackhpc_pulp_sync_for_local_container_build: false
 # Debs
 
 # Whether to sync Ubuntu packages.
-# NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
-# Ark does not work if the upstream mirror pulls packages (which it does
-# sometimes).
-stackhpc_pulp_sync_ubuntu_focal: false
+stackhpc_pulp_sync_ubuntu_focal: "{{ os_release == 'focal' }}"
 
 stackhpc_pulp_repository_deb_repos:
   # Base Ubuntu Focal repositories
@@ -215,8 +212,8 @@ stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_ce
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' and os_release == '9' }}"
-# Rocky 9 minor version number. Supported values: 1
-stackhpc_pulp_repo_rocky_9_minor_version: 1
+# Rocky 9 minor version number. Supported values: 1, 2. Default is 2
+stackhpc_pulp_repo_rocky_9_minor_version: 2
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
@@ -272,6 +269,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
@@ -282,6 +280,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
@@ -292,6 +291,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
@@ -302,6 +302,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
@@ -312,6 +313,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_8 | bool }}"
@@ -361,6 +363,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -372,6 +375,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -383,6 +387,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -394,6 +399,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -405,6 +411,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -416,6 +423,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -427,6 +435,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -438,6 +447,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
@@ -449,6 +459,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
@@ -460,6 +471,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
@@ -471,6 +483,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
@@ -539,6 +552,7 @@ stackhpc_pulp_repository_rpm_repos:
     client_cert: ""
     client_key: ""
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
@@ -755,7 +769,7 @@ stackhpc_pulp_distribution_rpm_development:
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
   - name: "rocky-9-crb-development"
     repository: Rocky Linux 9 - CRB
-    base_path: "rocky/9/crb/x86_64/os/development"
+    base_path: "rocky/9/CRB/x86_64/os/development"
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
   - name: "rocky-9-highavailability-development"
@@ -799,7 +813,7 @@ stackhpc_pulp_distribution_rpm_development:
   # Additional RHEL 9 repositories
   - name: "rhel-9-treasuredata-4-development"
     base_path: "treasuredata/4/redhat/9/x86_64/development"
-    repository: TreasureData 4 for RHEl 9
+    repository: TreasureData 4 for RHEL 9
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rhel-9-mariadb-10-6-development"
@@ -954,7 +968,7 @@ stackhpc_pulp_distribution_rpm_production:
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
   - name: "rocky-9-crb-production"
     repository: Rocky Linux 9 - CRB
-    base_path: "rocky/9/crb/x86_64/os/production"
+    base_path: "rocky/9/CRB/x86_64/os/production"
     state: present
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
   - name: "rocky-9-highavailability-production"
@@ -998,7 +1012,7 @@ stackhpc_pulp_distribution_rpm_production:
   # Additional RHEL 9 repositories
   - name: "rhel-9-treasuredata-4-production"
     base_path: "treasuredata/4/redhat/9/x86_64/production"
-    repository: TreasureData 4 for RHEl 9
+    repository: TreasureData 4 for RHEL 9
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rhel-9-mariadb-10-6-production"
@@ -1094,6 +1108,8 @@ stackhpc_pulp_images_kolla:
   - octavia-health-manager
   - octavia-housekeeping
   - octavia-worker
+  - opensearch
+  - opensearch-dashboards
   - openvswitch-db-server
   - openvswitch-netcontrold
   - openvswitch-vswitchd
@@ -1188,6 +1204,7 @@ stackhpc_pulp_repository_container_repos_ceph:
   - name: "ceph/ceph"
     url: "https://quay.io"
     policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
     state: present
     include_tags: "{{ cephadm_image_tag }}"
     required: "{{ stackhpc_sync_ceph_images | bool }}"

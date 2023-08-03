@@ -15,3 +15,6 @@ the various features provided.
    swap
    cephadm
    monitoring
+   wazuh
+   vault
+   magnum-capi

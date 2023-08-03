@@ -15,7 +15,22 @@ nova_backend_ceph: "yes"
 neutron_bridge_name: "{{ vxlan_interfaces[0].device }}-ovs"
 neutron_external_interface: "{{ vxlan_interfaces[0].device }}"
 
+# Elasticsearch memory tuning
+es_heap_size: 1g
+
 # Octavia load balancer configuration
 octavia_auto_configure: "no"
 octavia_provider_drivers: "ovn:OVN provider"
 octavia_provider_agents: "ovn"
+
+# Manila CephFS configuration
+manila_cephfs_filesystem_name: manila-cephfs
+
+# Designate configuration
+designate_ns_record:
+  - "ns1.mos.{{ root_domain | default('example.com') }}"
+  - "ns2.mos.{{ root_domain | default('example.com') }}"
+  - "ns3.mos.{{ root_domain | default('example.com') }}"
+designate_backend: "bind9"
+designate_recursion: "yes"
+designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"

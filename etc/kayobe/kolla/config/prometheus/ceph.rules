@@ -102,22 +102,6 @@ groups:
         marked down and back up at {{ $value | humanize }} times once a
         minute for 5 minutes.
 
-  # alert on high deviation from average PG count
-  - alert: HighPgCountDeviation
-    expr: |
-      abs(
-      (
-        (ceph_osd_numpg > 0) - on (job) group_left avg(ceph_osd_numpg > 0) by (job)
-      ) / on (job) group_left avg(ceph_osd_numpg > 0) by (job)
-      ) * on(ceph_daemon) group_left(hostname) ceph_osd_metadata > 0.35
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      description: >
-        OSD {{ $labels.ceph_daemon }} on {{ $labels.hostname }} deviates
-        by more than 30% from average PG count.
-
 - name: pgs
   rules:
   - alert: PgsInactive

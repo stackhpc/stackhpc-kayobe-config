@@ -96,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}yoga-20230217T135826{% elif kolla_base_distro == 'rocky' %}yoga-20230310T170929{% else %}yoga-20230220T181235{% endif %}"
+kolla_openstack_release: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -116,17 +116,9 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  cinder-base:
-    type: git
-    location: https://github.com/stackhpc/cinder.git
-    reference: stackhpc/{{ openstack_release }}
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/{{ openstack_release }}
-  glance-base:
-    type: git
-    location: https://github.com/stackhpc/glance.git
     reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
@@ -148,10 +140,6 @@ kolla_sources:
   neutron-base-plugin-networking-generic-switch:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/{{ openstack_release }}
-  nova-base:
-    type: git
-    location: https://github.com/stackhpc/nova.git
     reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
@@ -321,16 +309,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
-  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
-  # Ark does not work if the upstream mirror pulls packages (which it does
-  # sometimes).
-  # base_ubuntu_package_sources_list: |
-  #   RUN \
-  #       rm -f /etc/apt/sources.list && \
-  #   {% for repo in stackhpc_ubuntu_focal_repos %}
-  #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
-  #   {% endif %}
-  #   {% endfor %}
+  base_ubuntu_package_sources_list: |
+    RUN \
+        rm -f /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_focal_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
@@ -347,6 +332,7 @@ kolla_build_blocks:
     {% endif %}
     {% endraw %}
   nova_base_footer: |
+    {% if kolla_base_distro == 'centos' %}
     # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
     # https://bugzilla.redhat.com/show_bug.cgi?id=2090752 on c8s
     {% raw %}
@@ -354,7 +340,9 @@ kolla_build_blocks:
     RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
     {% endif %}
     {% endraw %}
-
+    {% endif %}
+  magnum_base_footer: |
+    RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
 # <image name>_<customization>_<operation>
