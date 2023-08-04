@@ -104,6 +104,18 @@ Add initial network configuration:
    sudo ip l set dummy1 up
    sudo ip l set dummy1 master breth1
 
+Configuration
+=============
+
+If using Ironic:
+
+.. parsed-literal::
+
+   cd src/kayobe-config
+   cat << EOF > etc/kayobe/aio.yml
+   kolla_enable_ironic: true
+   EOF
+
 Installation
 ------------
 
@@ -140,6 +152,13 @@ Finally, deploy the overcloud services.
 
 The control plane should now be running.
 
+If using Ironic, run overcloud post configuration:
+
+.. parsed-literal::
+
+   source ~/src/kayobe-config/etc/kolla/public-openrc.sh
+   kayobe overcloud post configure
+
 Testing
 -------
 
@@ -147,5 +166,58 @@ Run a smoke test:
 
 .. parsed-literal::
 
-   cd ~/kayobe
+   cd ~/src/kayobe
    ./dev/overcloud-test-vm.sh
+
+Ironic
+------
+
+For a control plane with Ironic enabled, a "bare metal" instance can be
+deployed. We can use the Tenks project to create fake bare metal nodes.
+
+Clone the tenks repository:
+
+.. parsed-literal::
+
+   cd ~/src/kayobe
+   git clone https://opendev.org/openstack/tenks.git
+
+Optionally, edit the Tenks configuration file,
+``~/src/kayobe/dev/tenks-deploy-config-compute.yml``.
+
+Run the ``dev/tenks-deploy-compute.sh`` script to deploy Tenks:
+
+.. parsed-literal::
+
+   cd ~/src/kayobe
+   export KAYOBE_CONFIG_SOURCE_PATH=~/src/kayobe-config
+   export KAYOBE_VENV_PATH=~/venvs/kayobe
+   ./dev/tenks-deploy-compute.sh ./tenks/
+
+Check that Tenks has created VMs called tk0 and tk1:
+
+.. parsed-literal::
+
+   sudo virsh list --all
+
+Verify that VirtualBMC is running:
+
+.. parsed-literal::
+
+   ~/tenks-venv/bin/vbmc list
+
+We are now ready to run the ``dev/overcloud-test-baremetal.sh`` script. This
+will run the ``init-runonce`` setup script provided by Kolla Ansible that
+registers images, networks, flavors etc. It will then deploy a bare metal
+server instance, and delete it once it becomes active:
+
+.. parsed-literal::
+
+   ./dev/overcloud-test-baremetal.sh
+
+The machines and networking created by Tenks can be cleaned up via
+``dev/tenks-teardown-compute.sh``:
+
+.. parsed-literal::
+
+   ./dev/tenks-teardown-compute.sh ./tenks
