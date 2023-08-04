@@ -797,12 +797,47 @@ stackhpc_pulp_distribution_container_ceph:
     state: present
     required: "{{ stackhpc_sync_ceph_images | bool }}"
 
+# Whether to sync HashiCorp container images.
+stackhpc_sync_hashicorp_images: false
+
+# List of HashiCorp container image repositories.
+stackhpc_pulp_repository_container_repos_hashicorp:
+  - name: "hashicorp/consul"
+    url: "https://registry-1.docker.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ overcloud_consul_docker_tag }}"
+    required: "{{ stackhpc_sync_hashicorp_images | bool }}"
+  - name: "hashicorp/vault"
+    url: "https://registry-1.docker.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ overcloud_vault_docker_tag }}"
+    required: "{{ stackhpc_sync_hashicorp_images | bool }}"
+
+# List of HashiCorp container image distributions.
+stackhpc_pulp_distribution_container_hashicorp:
+  - name: consul
+    repository: hashicorp/consul
+    base_path: hashicorp/consul
+    state: present
+    required: "{{ stackhpc_sync_hashicorp_images | bool }}"
+  - name: vault
+    repository: hashicorp/vault
+    base_path: hashicorp/vault
+    state: present
+    required: "{{ stackhpc_sync_hashicorp_images | bool }}"
+
 # List of container image repositories.
 stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
-      stackhpc_pulp_repository_container_repos_ceph) | selectattr('required') }}
+      stackhpc_pulp_repository_container_repos_ceph +
+      stackhpc_pulp_repository_container_repos_hashicorp) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
-      stackhpc_pulp_distribution_container_ceph) | selectattr('required') }}
+      stackhpc_pulp_distribution_container_ceph +
+      stackhpc_pulp_distribution_container_hashicorp) | selectattr('required') }}
