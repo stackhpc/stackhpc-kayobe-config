@@ -43,8 +43,8 @@ on:
         type: boolean
         required: false
         default: true
-      scan-upload:
-        description: Upload scanned images that have vulnerabilities?
+      scan-push:
+        description: Push scanned images that have vulnerabilities?
         type: boolean
         required: false
         default: true
@@ -135,11 +135,6 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.44.0
  
-      - name: Install jq
-        run: |
-          curl --output /usr/local/bin/jq -sfL https://github.com/jqlang/jq/releases/download/jq-1.6/jq-linux64
-          chmod +x /usr/local/bin/jq
-
       - name: Setup networking
         run: |
           if ! ip l show breth1 >/dev/null 2>&1; then
@@ -186,7 +181,7 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Build and push kolla overcloud images
+      - name: Build kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
@@ -198,7 +193,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.overcloud == 'true'
 
-      - name: Build and push kolla seed images
+      - name: Build kolla seed images
         run: |
           args="kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
@@ -222,17 +217,24 @@ jobs:
 
       - name: Generate list of images to scan/push
         run: |
+          # Clean up any stale data
+          rm -rf ${{ matrix.distro }}-docker-images.txt
+
           # Make a file of imagename:tag
           grep --invert-match --no-filename ^REPOSITORY ${{ matrix.distro }}-container-images |\
           sed 's/ \+/:/g' |\
-          cut -f 1,2 -d: > docker-images.txt
+          cut -f 1,2 -d: > ${{ matrix.distro }}-docker-images.txt
         
       - name: Scan built container images
         run: |
           set -euo pipefail
-          mkdir -p image-scan-output
 
+          # Clean any stale data
+          rm -rf ${{ matrix.distro }}-image-scan-output
           rm -f images-to-push.txt
+
+          # Make a fresh output directory
+          mkdir -p ${{ matrix.distro }}-image-scan-output
 
           # If Trivy detects no vulnerabilities, add the image name to images-to-push.txt.
           # If there are vulnerabilities detected, generate a CSV summary and do not add to
@@ -240,22 +242,32 @@ jobs:
           while read -r image; do
             filename=$(basename $image | sed 's/:/\./g')
             if $(trivy image \
+                    --quiet \
                     --exit-code 1 \
                     --scanners vuln \
                     --format json \
                     --severity HIGH,CRITICAL \
-                    --output image-scan-output/${filename}.json \
+                    --output ${{ matrix.distro }}-image-scan-output/${filename}.json \
                     --ignore-unfixed \
                     $image); then
-              echo "${image}" >> images-to-push.txt
-              rm image-scan-output/${filename}.json
+              # Clean up the output file for any images with no vulnerabilities
+              rm -f ${{ matrix.distro }}-image-scan-output/${filename}.json
+
+              # Add the image to the list to push
+              echo "${image}" >> ${{ matrix.distro }}-images-to-push.txt
             else
-              if [${{github.event.input.scan-upload}} == 'true' ]; then
-                echo "${image}" >> images-to-push.txt
+              # Still add the image to the list to push if we're ignoring fails
+              if [ "${{github.event.inputs.scan-push}}" == "true" ]; then
+                echo "${image}" >> ${{ matrix.distro }}-images-to-push.txt
               fi
               
-              echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}.csv
-              jq -r '.Results[].Vulnerabilities
+              # Write a header for the summary CSV
+              echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > ${{ matrix.distro }}-image-scan-output/${filename}.summary.csv
+
+              # Write the summary CSV data
+              jq -r '.Results[] 
+                     | select(.Vulnerabilities) 
+                     | .Vulnerabilities
                      # Ignore packages with "kernel" in the PkgName
                      | map(select(.PkgName | test("kernel") | not ))
                      | group_by(.VulnerabilityID)
@@ -271,37 +283,40 @@ jobs:
                               ]
                           ) 
                      | .[] 
-                     | @csv' image-scan-output/${filename}.json >> image-scan-output/${filename}.summary.csv
+                     | @csv' ${{ matrix.distro }}-image-scan-output/${filename}.json >> ${{ matrix.distro }}-image-scan-output/${filename}.summary.csv
             fi
-          done < docker-images.txt
-          mv images-to-push.txt docker-images.txt
+          done < ${{ matrix.distro }}-docker-images.txt
+
+          # Rename the file of vulnerability scanned images so that it can
+          # be consumed by the docker push step
+          mv ${{ matrix.distro }}-images-to-push.txt ${{ matrix.distro }}-docker-images.txt
         shell: bash
         if: github.event.inputs.scan == 'true'
      
       - name: Upload Trivy scan artefacts
         uses: actions/upload-artifact@v3
         with:
-          name: "trivy-scan-output"
-          path: |
-            'image-scan-output/*.json'
-            'image-scan-output/*.summary.csv'
+          name: ${{ matrix.distro }}-image-scan-output
+          path: ${{ matrix.distro }}-image-scan-output
           retention-days: 7
-        if: github.event.inputs.scan == 'true'
+        if: always()
 
       - name: Push images
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml
+          kayobe playbook run --become ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml
 
           while read -r image; do
             # Retries!
             for i in {1..10}; do 
-              docker push ${image} && break || sleep 5
+              sudo docker push ${image} && break || sleep 2
             done
-          done < docker-images.txt
+          done < ${{ matrix.distro }}-docker-images.txt
         shell: bash
-        if: ${{ inputs.push }}
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: github.event.inputs.push == 'true'
 
       - name: Prune local Kolla container images over 1 week old
         run: |
