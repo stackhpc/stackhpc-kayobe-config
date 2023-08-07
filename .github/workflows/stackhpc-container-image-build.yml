@@ -88,7 +88,7 @@ jobs:
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder-rl9]
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -107,11 +107,6 @@ jobs:
           ref: refs/heads/stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
           path: src/kayobe
 
-      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
-      - name: Install dependencies
-        run: |
-          sudo dnf -y install python3-virtualenv
-
       - name: Setup networking
         run: |
           if ! ip l show breth1 >/dev/null 2>&1; then
@@ -126,14 +121,6 @@ jobs:
           fi
           sudo ip l set dummy1 up
           sudo ip l set dummy1 master breth1
-
-      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
-      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
-      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
-      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
-      - name: Kill dhclient (workaround)
-        run: |
-          (sudo killall dhclient || true) && sudo systemctl restart network
 
       - name: Install Kayobe
         run: |
