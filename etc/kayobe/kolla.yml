@@ -108,6 +108,12 @@ kolla_openstack_release: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
+# NOTE (Alex-Welsh): The reference for many of these entries could be
+# 'stackhpc/{{ openstack_release }}' which would keep the branch up to date
+# for the current release. This is nice in theory but in practice, the stackhpc
+# forks change with every release and the elements in this list change with
+# them. Explicitly using /zed makes it more intuitive to find and edit these
+# entries.
 kolla_sources:
   bifrost-base-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
@@ -117,11 +123,11 @@ kolla_sources:
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/{{ openstack_release }}
+    reference: stackhpc/zed
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/{{ openstack_release }}
+    reference: stackhpc/zed
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -130,15 +136,11 @@ kolla_sources:
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/{{ openstack_release }}
-  neutron-base:
-    type: git
-    location: https://github.com/stackhpc/neutron.git
-    reference: stackhpc/{{ openstack_release }}
+    reference: stackhpc/zed
   neutron-base-plugin-networking-generic-switch:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/{{ openstack_release }}
+    reference: stackhpc/zed
 
 ###############################################################################
 # Kolla image build configuration.
@@ -161,7 +163,7 @@ stackhpc_rocky_9_additional_repos:
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
   - url: "{{ stackhpc_repo_centos_stream_9_openstack_zed_url }}"
-    file: "CentOS-OpenStack-Zed.repo"
+    file: "CentOS-OpenStack-zed.repo"
     tag: "centos-openstack-zed"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
@@ -187,9 +189,9 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
     file: "influxdb.repo"
     tag: "influxdb"
-  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_pacific_url }}"
-    file: "CentOS-Ceph-Pacific.repo"
-    tag: "centos-ceph-pacific"
+  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_quincy_url }}"
+    file: "CentOS-Ceph-Quincy.repo"
+    tag: "centos-ceph-quincy"
   - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
     tag: "rabbitmq_rabbitmq-erlang"
@@ -198,10 +200,10 @@ stackhpc_rocky_9_third_party_repos:
     tag: "rabbitmq_rabbitmq-server"
   - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
     file: "opensearch.repo"
-    tag: "opensearch"
+    tag: "opensearch-2.x"
   - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
-    file: "opensearch_dashboards.repo"
-    tag: "opensearch_dashboards"
+    file: "opensearch.repo"
+    tag: "opensearch-dashboards-2.x"
 
 # List of EPEL 9
 stackhpc_epel_9_repos:
