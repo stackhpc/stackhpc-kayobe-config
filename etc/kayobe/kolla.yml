@@ -223,7 +223,7 @@ stackhpc_ubuntu_jammy_repos:
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
-    {% if kolla_base_distro == rocky %}
+    {% if kolla_base_distro == 'rocky' %}
     RUN \
     {% for repo in stackhpc_yum_repos %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
@@ -235,7 +235,7 @@ kolla_build_blocks:
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
-    {% if kolla_base_distro == rocky %}
+    {% if kolla_base_distro == 'rocky' %}
         && \
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
