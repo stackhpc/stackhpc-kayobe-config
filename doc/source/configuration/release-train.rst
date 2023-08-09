@@ -102,6 +102,13 @@ Ceph container images
 By default, Ceph images are not synced from quay.io to the local Pulp. To sync
 these images, set ``stackhpc_sync_ceph_images`` to ``true``.
 
+HashiCorp container images
+--------------------------
+
+By default, HashiCorp images (Consul and Vault) are not synced from Docker Hub
+to the local Pulp. To sync these images, set ``stackhpc_sync_hashicorp_images``
+to ``true``.
+
 Usage
 =====
 
