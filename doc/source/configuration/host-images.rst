@@ -26,7 +26,8 @@ Currently, images exist for the following operating systems:
 * Ubuntu Jammy 22.04
 
 The image to download is selected automatically using the ``os_distribution``
-and ``os_release`` variables.
+and ``os_release`` variables. These images are versioned and a variable for
+each OS is stored in ``pulp-host-image-versions.yml``.
 
 This content requires the same set of credentials as is used for other
 release train content.
