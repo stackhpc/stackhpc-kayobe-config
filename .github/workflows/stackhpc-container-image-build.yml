@@ -43,7 +43,7 @@ jobs:
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
     permissions: {}
     outputs:
-      kolla_tag: ${{ steps.kolla_tag.outputs.kolla_tag }}
+      datetime_tag: ${{ steps.datetime_tag.outputs.datetime_tag }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
     steps:
@@ -58,10 +58,10 @@ jobs:
 
       # Generate a tag to apply to all built container images.
       # Without this, each kayobe * container image build command would use a different tag.
-      - name: Generate container image tag
-        id: kolla_tag
+      - name: Generate container datetime tag
+        id: datetime_tag
         run: |
-          echo "kolla_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
       # Dynamically define job matrix.
       # We need a separate matrix entry for each distribution, when the relevant input is true.
@@ -81,9 +81,9 @@ jobs:
           fi
           echo "]}" >> $GITHUB_OUTPUT
 
-      - name: Display container image tag
+      - name: Display container datetime tag
         run: |
-          echo "${{ steps.kolla_tag.outputs.kolla_tag }}"
+          echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
 
   container-image-build:
     name: Build Kolla container images
@@ -145,11 +145,25 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: DEBUG
+        run: |
+          args="${{ github.event.inputs.regexes }}"
+          args="$args -e kolla_base_distro=${{ matrix.distro }}"
+          args="$args -e kolla_tag=$KOLLA_TAG"
+          if ${{ inputs.push }} == 'true'; then
+            args="$args --push"
+          fi
+          echo $KOLLA_TAG &&
+          echo "$args"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KOLLA_TAG: "${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"
+
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e kolla_tag=$KOLLA_TAG"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -158,12 +172,13 @@ jobs:
           kayobe overcloud container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KOLLA_TAG: "${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"
         if: github.event.inputs.overcloud == 'true'
 
       - name: Build and push kolla seed images
         run: |
           args="kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e kolla_tag=$KOLLA_TAG"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -172,11 +187,12 @@ jobs:
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KOLLA_TAG: "${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"
         if: github.event.inputs.seed == 'true'
 
       - name: Get built container images
         run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
+          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:*${{ matrix.distro }}*${{ needs.generate-tag.outputs.datetime_tag }}" > ${{ matrix.distro }}-container-images
 
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
