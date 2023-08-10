@@ -60,10 +60,15 @@
     - import_role:
         name: stackhpc.hashicorp.vault
       vars:
+        hashicorp_registry_url: "{{ overcloud_hashicorp_registry_url }}"
+        hashicorp_registry_username: "{{ overcloud_hashicorp_registry_username }}"
+        hashicorp_registry_password: "{{ overcloud_hashicorp_registry_password }}"
+        consul_docker_image: "{{ overcloud_consul_docker_image }}"
         consul_docker_tag: "{{ overcloud_consul_docker_tag }}"
         vault_config_dir: "/opt/kayobe/vault"
         vault_cluster_name: "overcloud"
         vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        vault_docker_image: "{{ overcloud_vault_docker_image }}"
         vault_docker_tag: "{{ overcloud_vault_docker_tag }}"
         vault_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
         vault_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
