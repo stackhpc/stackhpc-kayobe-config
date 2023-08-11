@@ -42,6 +42,11 @@ Run the setup script:
 
    ./automated-setup.sh
 
+Adding the ``--lvm`` flag will also automatically set the LVM configuration,
+which can be modified in
+``etc/kayobe/environments/ci-aio/inventory/group_vars/controllers/lvm.yml``. A
+minimum 30GB root disk is recommended.
+
 The script will pull the current version of Kayobe and this repository, and
 then run the manual setup steps below. The script can be easily edited to use
 a different branch of Kayobe or this repository.
