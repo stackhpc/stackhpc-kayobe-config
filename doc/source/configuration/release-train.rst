@@ -38,7 +38,7 @@ This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
 * Pulp repository definitions for CentOS Stream 8, Rocky Linux 8/9 and Ubuntu
-  Focal
+  Focal/Jammy
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -80,14 +80,12 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Currently, Ark does not provide package repositories for Ubuntu Jammy 22.04 -
-only container images.
-
-CentOS Stream 8, Rocky Linux 8/9, and Ubuntu Focal package repositories are
+CentOS Stream 8, Rocky Linux 8/9 and Ubuntu Focal/Jammy package repositories are
 synced based on the value of ``os_distribution`` and ``os_release`` . If you
-need to sync multiple RHEL-like distributions,
-``stackhpc_pulp_sync_centos_stream8``, ``stackhpc_pulp_sync_rocky_8`` and
-``stackhpc_pulp_sync_rocky_9`` in ``etc/kayobe/pulp.yml`` may be set to
+need to sync multiple RHEL-like distributions or Ubuntu releases,
+``stackhpc_pulp_sync_centos_stream8``, ``stackhpc_pulp_sync_rocky_8``
+``stackhpc_pulp_sync_rocky_9``, ``stackhpc_pulp_sync_ubuntu_jammy`` and
+``stackhpc_pulp_sync_ubuntu_focal`` in ``etc/kayobe/pulp.yml`` may be set to
 ``true``.
 
 On Ark, each package repository provides versioned snapshots using a datetime
@@ -99,10 +97,10 @@ repository.
 Package managers
 ----------------
 
-For Ubuntu Focal systems, the package manager configuration is provided by
+For Ubuntu Focal and Jammy systems, the package manager configuration is provided by
 ``stackhpc_apt_repositories`` in ``etc/kayobe/apt.yml``.
 
-The configuration is applied by default to all Ubuntu Focal hosts. The
+The configuration is applied by default to all Ubuntu Focal and Jammy hosts. The
 configuration can be overridden by changing the repository definitions in
 ``apt_repositories`` or toggling ``apt_disable_sources_list`` to use the default
 apt repositories. This can be done on a host-by host basis by defining the
