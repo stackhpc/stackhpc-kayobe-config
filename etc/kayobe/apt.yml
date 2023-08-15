@@ -48,11 +48,11 @@ apt_keys:
 #   (optional, default is unset)
 # Default is an empty list.
 stackhpc_apt_repositories:
-  - url: "{{ stackhpc_repo_ubuntu_focal_url }}"
+  - url: "{{ stackhpc_repo_ubuntu_focal_url if ansible_facts.distribution_release == 'focal' else stackhpc_repo_ubuntu_jammy_url }}"
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
     architecture: amd64
-  - url: "{{ stackhpc_repo_ubuntu_focal_security_url }}"
+  - url: "{{ stackhpc_repo_ubuntu_focal_security_url if ansible_facts.distribution_release == 'focal' else stackhpc_repo_ubuntu_jammy_security_url }}"
     suites: "{{ ansible_facts.distribution_release }}-security"
     components: main restricted universe multiverse
     architecture: amd64
@@ -62,13 +62,12 @@ stackhpc_apt_repositories:
     signed_by: docker.asc
     architecture: amd64
 
-# Disable pulp apt repos on Ubuntu Jammy until they are published.
-apt_repositories: "{{ [] if ansible_facts['distribution_release'] == 'jammy' else stackhpc_apt_repositories }}"
+apt_repositories: "{{ stackhpc_apt_repositories }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
 # Default is false.
-apt_disable_sources_list: "{{ ansible_facts['distribution_release'] != 'jammy' }}"
+apt_disable_sources_list: true
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
