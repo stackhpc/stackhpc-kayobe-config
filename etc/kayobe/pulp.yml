@@ -105,6 +105,23 @@ stackhpc_pulp_deb_repos:
     distributions: "jammy-updates/{{ openstack_release }}"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  # Base Ubuntu Jammy repositories
+  - name: "Ubuntu jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy/{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
+    distribution_name: "ubuntu-jammy-"
+    base_path: "ubuntu/jammy/"
+    components: "main restricted universe multiverse"
+    distributions: "jammy jammy-updates jammy-backports"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
+  - name: "Ubuntu jammy security"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy-security/{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
+    distribution_name: "ubuntu-jammy-security-"
+    base_path: "ubuntu/jammy-security/"
+    components: "main restricted universe multiverse"
+    distributions: "jammy-security"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
   # Third-party repositories
   - name: "Docker CE for Ubuntu"
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
