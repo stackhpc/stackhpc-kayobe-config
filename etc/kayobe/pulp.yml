@@ -113,22 +113,6 @@ stackhpc_pulp_repository_deb_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
-  # Third-party repositories for Focal
-  - name: Docker CE for Ubuntu
-    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
-    distributions: focal
-    components: stable
-    mirror: true
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
   # Base Ubuntu Jammy repositories
   - name: Ubuntu jammy
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy/{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
@@ -160,23 +144,23 @@ stackhpc_pulp_repository_deb_repos:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Ubuntu Cloud Archive (UCA) Jammy repositories
-  - name: Ubuntu Cloud Archive
-    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
-    components: main
-    distributions: "jammy-updates/{{ openstack_release }}"
-    mirror: true
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+  # # Ubuntu Cloud Archive (UCA) Jammy repositories
+  # - name: Ubuntu Cloud Archive
+  #   url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
+  #   remote_username: "{{ stackhpc_release_pulp_username }}"
+  #   remote_password: "{{ stackhpc_release_pulp_password }}"
+  #   client_cert: ""
+  #   client_key: ""
+  #   policy: on_demand
+  #   proxy_url: "{{ pulp_proxy_url }}"
+  #   architectures: amd64
+  #   components: main
+  #   distributions: "jammy-updates/{{ openstack_release }}"
+  #   mirror: true
+  #   state: present
+  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Third-party repositories for Jammy
+  # Third-party repositories
   - name: Docker CE for Ubuntu
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
@@ -186,11 +170,11 @@ stackhpc_pulp_repository_deb_repos:
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     architectures: amd64
-    distributions: jammy
+    distributions: focal jammy
     components: stable
     mirror: true
     state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -222,14 +206,6 @@ stackhpc_pulp_distribution_deb_development:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
-  # Third-party repositories for Focal
-  - name: "docker-ce-for-ubuntu-development"
-    repository: Docker CE for Ubuntu
-    base_path: "docker-ce/ubuntu/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
   # Base Ubuntu Jammy repositories
   - name: "ubuntu-jammy-development"
     repository: Ubuntu jammy
@@ -244,21 +220,21 @@ stackhpc_pulp_distribution_deb_development:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Ubuntu Cloud Archive (UCA) Jammy repositories
-  - name: "ubuntu-cloud-archive-development"
-    repository: Ubuntu Cloud Archive
-    base_path: "ubuntu-cloud-archive/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+  # # Ubuntu Cloud Archive (UCA) Jammy repositories
+  # - name: "ubuntu-cloud-archive-development"
+  #   repository: Ubuntu Cloud Archive
+  #   base_path: "ubuntu-cloud-archive/development"
+  #   mode: verbatim
+  #   state: present
+  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Third-party repositories for Jammy
+  # Third-party repositories
   - name: "docker-ce-for-ubuntu-development"
     repository: Docker CE for Ubuntu
     base_path: "docker-ce/ubuntu/development"
     mode: verbatim
     state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_deb_production:
@@ -284,14 +260,6 @@ stackhpc_pulp_distribution_deb_production:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
-  # Third-party repositories for Focal
-  - name: "docker-ce-for-ubuntu-production"
-    repository: Docker CE for Ubuntu
-    base_path: "docker-ce/ubuntu/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
   # Base Ubuntu Jammy repositories
   - name: "ubuntu-jammy-production"
     repository: Ubuntu jammy
@@ -306,21 +274,21 @@ stackhpc_pulp_distribution_deb_production:
     state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Ubuntu Cloud Archive (UCA) Jammy repositories
-  - name: "ubuntu-cloud-archive-production"
-    repository: Ubuntu Cloud Archive
-    base_path: "ubuntu-cloud-archive/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+  # # Ubuntu Cloud Archive (UCA) Jammy repositories
+  # - name: "ubuntu-cloud-archive-production"
+  #   repository: Ubuntu Cloud Archive
+  #   base_path: "ubuntu-cloud-archive/production"
+  #   mode: verbatim
+  #   state: present
+  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
-  # Third-party repositories for Jammy
+  # Third-party repositories
   - name: "docker-ce-for-ubuntu-production"
     repository: Docker CE for Ubuntu
     base_path: "docker-ce/ubuntu/production"
     mode: verbatim
     state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 ###############################################################################
 # RPMs
