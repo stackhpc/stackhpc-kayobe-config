@@ -65,115 +65,71 @@ stackhpc_pulp_sync_for_local_container_build: false
 stackhpc_pulp_sync_ubuntu_focal: "{{ os_release == 'focal' }}"
 stackhpc_pulp_sync_ubuntu_jammy: "{{ os_release == 'jammy' }}"
 
-stackhpc_pulp_repository_deb_repos:
+# Default configuration, which each element of stackhpc_pulp_deb_repos
+# is combined with
+stackhpc_pulp_deb_repos_default_config:
+  remote_username: "{{ stackhpc_release_pulp_username }}"
+  remote_password: "{{ stackhpc_release_pulp_password }}"
+  client_cert: ""
+  client_key: ""
+  policy: on_demand
+  proxy_url: "{{ pulp_proxy_url }}"
+  architectures: amd64
+  mirror: true
+  state: present
+
+# Deb repositories
+stackhpc_pulp_deb_repos:
   # Base Ubuntu Focal repositories
   - name: Ubuntu focal
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/focal/{{ stackhpc_pulp_repo_ubuntu_focal_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "ubuntu-focal-"
+    base_path: "ubuntu/focal/"
     components: main restricted universe multiverse
     distributions: focal focal-updates focal-backports
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   - name: Ubuntu focal security
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/focal-security/{{ stackhpc_pulp_repo_ubuntu_focal_security_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "ubuntu-focal-security"
+    base_path: "ubuntu/focal-security/"
     components: main restricted universe multiverse
     distributions: focal-security
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
-  # Ubuntu Cloud Archive (UCA) Focal repositories
+  # Ubuntu Cloud Archive (UCA) repositories
   - name: Ubuntu Cloud Archive
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "ubuntu-cloud-archive-"
+    base_path: "ubuntu-cloud-archive/"
     components: main
     distributions: "focal-updates/{{ openstack_release }}"
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
 
   # Base Ubuntu Jammy repositories
   - name: Ubuntu jammy
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy/{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "ubuntu-jammy-"
+    base_path: "ubuntu/jammy/"
     components: main restricted universe multiverse
     distributions: jammy jammy-updates jammy-backports
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
   - name: Ubuntu jammy security
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy-security/{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "ubuntu-jammy-security-"
+    base_path: "ubuntu/jammy-security/"
     components: main restricted universe multiverse
     distributions: jammy-security
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  # # Ubuntu Cloud Archive (UCA) Jammy repositories
-  # - name: Ubuntu Cloud Archive
-  #   url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-  #   remote_username: "{{ stackhpc_release_pulp_username }}"
-  #   remote_password: "{{ stackhpc_release_pulp_password }}"
-  #   client_cert: ""
-  #   client_key: ""
-  #   policy: on_demand
-  #   proxy_url: "{{ pulp_proxy_url }}"
-  #   architectures: amd64
-  #   components: main
-  #   distributions: "jammy-updates/{{ openstack_release }}"
-  #   mirror: true
-  #   state: present
-  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
   # Third-party repositories
   - name: Docker CE for Ubuntu
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-    remote_username: "{{ stackhpc_release_pulp_username }}"
-    remote_password: "{{ stackhpc_release_pulp_password }}"
-    client_cert: ""
-    client_key: ""
-    policy: on_demand
-    proxy_url: "{{ pulp_proxy_url }}"
-    architectures: amd64
+    distribution_name: "docker-ce-for-ubuntu-"
+    base_path: "docker-ce/ubuntu/"
     distributions: focal jammy
     components: stable
-    mirror: true
-    state: present
     required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Publication format is a subset of distribution.
@@ -182,113 +138,74 @@ stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_de
 # Content is made available at well-known distribution names for development,
 # production.
 
+stackhpc_pulp_repository_deb_repos: >-
+  {%- set deb_repos = [] -%}
+  {%- for repo in stackhpc_pulp_deb_repos -%}
+  {%- set deb_repo = {"name": repo.name} -%}
+  {%- set deb_repo = deb_repo | combine({"url": repo.url}) -%}
+  {%- set deb_repo = deb_repo | combine({"required": repo.required}) -%}
+  {%- if "policy" in repo -%}
+  {%- set deb_repo = deb_repo | combine({"policy": repo.policy}) -%}
+  {%- endif -%}
+  {%- if "mirror" in repo -%}
+  {%- set deb_repo = deb_repo | combine({"mirror": repo.mirror}) -%}
+  {%- endif -%}
+  {%- if "distributions" in repo -%}
+  {%- set deb_repo = deb_repo | combine({"distributions": repo.distributions}) -%}
+  {%- endif -%}
+  {%- if "components" in repo -%}
+  {%- set deb_repo = deb_repo | combine({"components": repo.components}) -%}
+  {%- endif -%}
+  {%- if "architectures" in repo -%}
+  {%- set deb_repo = deb_repo | combine({"architectures": repo.architectures}) -%}
+  {%- endif -%}
+  {%- set _ = deb_repos.append(stackhpc_pulp_deb_repos_default_config | combine(deb_repo)) -%}
+  {%- endfor -%}
+  {{ deb_repos }}
+
+stackhpc_pulp_deb_dists_default_config:
+  state: present
+  mode: verbatim
+
 # Development tracks the release repositories.
-stackhpc_pulp_distribution_deb_development:
-  # Base Ubuntu Focal repositories
-  - name: "ubuntu-focal-development"
-    repository: Ubuntu focal
-    base_path: "ubuntu/focal/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-  - name: "ubuntu-focal-security-development"
-    repository: Ubuntu focal security
-    base_path: "ubuntu/focal-security/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
-  # Ubuntu Cloud Archive (UCA) Focal repositories
-  - name: "ubuntu-cloud-archive-development"
-    repository: Ubuntu Cloud Archive
-    base_path: "ubuntu-cloud-archive/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
-  # Base Ubuntu Jammy repositories
-  - name: "ubuntu-jammy-development"
-    repository: Ubuntu jammy
-    base_path: "ubuntu/jammy/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-  - name: "ubuntu-jammy-security-development"
-    repository: Ubuntu jammy security
-    base_path: "ubuntu/jammy-security/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  # # Ubuntu Cloud Archive (UCA) Jammy repositories
-  # - name: "ubuntu-cloud-archive-development"
-  #   repository: Ubuntu Cloud Archive
-  #   base_path: "ubuntu-cloud-archive/development"
-  #   mode: verbatim
-  #   state: present
-  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  # Third-party repositories
-  - name: "docker-ce-for-ubuntu-development"
-    repository: Docker CE for Ubuntu
-    base_path: "docker-ce/ubuntu/development"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+stackhpc_pulp_distribution_deb_development: >-
+  {%- set dev_dists = [] -%}
+  {%- for repo in stackhpc_pulp_deb_repos -%}
+  {%- set name = repo.distribution_name ~ 'development' -%}
+  {%- set base_path = repo.base_path ~ 'development' -%}
+  {%- set dev_dist = {
+                      "name": name,
+                      "repository": repo.name,
+                      "base_path": base_path,
+                      "required": repo.required
+                      }
+                    -%}
+  {%- if "mode" in repo -%}
+  {%- set dev_dist = dev_dist | combine({"mode": repo.mode}) -%}
+  {%- endif -%}
+  {%- set _ = dev_dists.append(stackhpc_pulp_deb_dists_default_config | combine(dev_dist)) -%}
+  {%- endfor -%}
+  {{ dev_dists }}
 
 # Development gets promoted to production.
-stackhpc_pulp_distribution_deb_production:
-  # Base Ubuntu Focal repositories
-  - name: "ubuntu-focal-production"
-    repository: Ubuntu focal
-    base_path: "ubuntu/focal/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-  - name: "ubuntu-focal-security-production"
-    repository: Ubuntu focal security
-    base_path: "ubuntu/focal-security/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
-  # Ubuntu Cloud Archive (UCA) Focal repositories
-  - name: "ubuntu-cloud-archive-production"
-    repository: Ubuntu Cloud Archive
-    base_path: "ubuntu-cloud-archive/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
-
-  # Base Ubuntu Jammy repositories
-  - name: "ubuntu-jammy-production"
-    repository: Ubuntu jammy
-    base_path: "ubuntu/jammy/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-  - name: "ubuntu-jammy-security-production"
-    repository: Ubuntu jammy security
-    base_path: "ubuntu/jammy-security/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  # # Ubuntu Cloud Archive (UCA) Jammy repositories
-  # - name: "ubuntu-cloud-archive-production"
-  #   repository: Ubuntu Cloud Archive
-  #   base_path: "ubuntu-cloud-archive/production"
-  #   mode: verbatim
-  #   state: present
-  #   required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  # Third-party repositories
-  - name: "docker-ce-for-ubuntu-production"
-    repository: Docker CE for Ubuntu
-    base_path: "docker-ce/ubuntu/production"
-    mode: verbatim
-    state: present
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+stackhpc_pulp_distribution_deb_production: >-
+  {%- set prod_dists = [] -%}
+  {%- for repo in stackhpc_pulp_deb_repos -%}
+  {%- set name = repo.distribution_name ~ 'production' -%}
+  {%- set base_path = repo.base_path ~ 'production' -%}
+  {%- set prod_dist = {
+                      "name": name,
+                      "distribution": repo.distribution_name ~ 'development',
+                      "base_path": base_path,
+                      "required": repo.required
+                      }
+                    -%}
+  {%- if "mode" in repo -%}
+  {%- set prod_dist = prod_dist | combine({"mode": repo.mode}) -%}
+  {%- endif -%}
+  {%- set _ = prod_dists.append(stackhpc_pulp_deb_dists_default_config | combine(prod_dist)) -%}
+  {%- endfor -%}
+  {{ prod_dists }}
 
 ###############################################################################
 # RPMs
