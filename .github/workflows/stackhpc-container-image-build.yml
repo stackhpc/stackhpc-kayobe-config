@@ -145,20 +145,6 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: DEBUG
-        run: |
-          args="${{ github.event.inputs.regexes }}"
-          args="$args -e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=$KOLLA_TAG"
-          if ${{ inputs.push }} == 'true'; then
-            args="$args --push"
-          fi
-          echo $KOLLA_TAG &&
-          echo "$args"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-          KOLLA_TAG: "${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"
-
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
