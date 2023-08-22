@@ -595,12 +595,36 @@ stackhpc_pulp_repository_container_repos_ceph:
     state: present
     include_tags: "{{ cephadm_image_tag }}"
     required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: "ceph/haproxy"
+    url: "https://quay.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ cephadm_haproxy_image_tag }}"
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: "ceph/keepalived"
+    url: "https://quay.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ cephadm_keepalived_image_tag }}"
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
 
 # List of Ceph container image distributions.
 stackhpc_pulp_distribution_container_ceph:
   - name: ceph
     repository: ceph/ceph
     base_path: ceph/ceph
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: ceph/haproxy
+    repository: ceph/haproxy
+    base_path: ceph/haproxy
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: ceph/keepalived
+    repository: ceph/keepalived
+    base_path: ceph/keepalived
     state: present
     required: "{{ stackhpc_sync_ceph_images | bool }}"
 
