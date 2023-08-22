@@ -2,7 +2,7 @@
 Multinode Test Environment
 ==========================
 
-.. warning:: 
+.. warning::
 
       The initial setup guide here is designed for the Yoga release of OpenStack. Proceed with caution.
 

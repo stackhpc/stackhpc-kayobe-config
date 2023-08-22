@@ -150,6 +150,7 @@ Upgrading OpenStack to the next release in a multinode environment
 ------------------------------------------------------------------
 .. NOTE(Alex-Welsh): These instructions are a fair bit out of date now. While
 .. the structure is probably fine, it should reference the most recent release
+
 As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 
 .. code-block:: console
