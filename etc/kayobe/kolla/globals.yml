@@ -6,63 +6,14 @@
 # non-overcloud hosts
 enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}{% endraw %}"
 
-magnum_tag: yoga-20230705T121023
-neutron_tag: yoga-20230515T150233
-nova_tag: yoga-20230718T112646
-octavia_tag: yoga-20230523T110936
-openvswitch_tag: yoga-20230515T150233
-ovn_tag: yoga-20230515T150233
-
 # kolla_base_distro must be set here to be resolvable on a per-host basis
 # This is necessary for os migrations where mixed clouds might be deployed
-kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
+kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}"
 
 kayobe_image_tags:
   openstack:
-    centos: yoga-20230217T135826
-    rocky: yoga-20230310T170929
-    ubuntu: yoga-20230220T181235
-  bifrost:
-    centos: yoga-20230217T160618
-    rocky: yoga-20230310T194732
-    ubuntu: yoga-20230220T184947
-  blazar:
-    centos: yoga-20230315T125157
-    rocky: yoga-20230315T130918
-    ubuntu: yoga-20230315T125441
-  caso:
-    centos: yoga-20230315T125157
-    rocky: yoga-20230315T130918
-    ubuntu: yoga-20230315T125441
-  grafana:
-    centos: yoga-20230419T085955
-    rocky: yoga-20230419T111514
-    ubuntu: yoga-20230426T084340
-  ironic:
-    centos: yoga-20230316T154655
-    rocky: yoga-20230316T170311
-    ubuntu: yoga-20230316T154704
-  ironic_dnsmasq:
-    centos: yoga-20230217T135826
-    rocky: yoga-20230310T170929
-    ubuntu: yoga-20230220T181235
-  opensearch:
-    centos: yoga-20230324T084510
-    rocky: yoga-20230622T154317
-    ubuntu: yoga-20230324T090345
-  prometheus_node_exporter:
-    centos: yoga-20230310T173747
-    rocky: yoga-20230315T170614
-    ubuntu: yoga-20230315T170541
-
-bifrost_tag: "{% raw %}{{ kayobe_image_tags['bifrost'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-blazar_tag: "{% raw %}{{ kayobe_image_tags['blazar'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-caso_tag: "{% raw %}{{ kayobe_image_tags['caso'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-grafana_tag: "{% raw %}{{ kayobe_image_tags['grafana'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-ironic_tag: "{% raw %}{{ kayobe_image_tags['ironic'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-ironic_dnsmasq_tag: "{% raw %}{{ kayobe_image_tags['ironic_dnsmasq'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-opensearch_tag: "{% raw %}{{ kayobe_image_tags['opensearch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+    rocky: zed-rocky-9-20230821T155947
+    ubuntu: zed-ubuntu-jammy-20230821T155947
 
 om_enable_rabbitmq_high_availability: true
 
