@@ -21,6 +21,10 @@ on:
       no_proxy:
         type: string
         required: false
+      base_image:
+        type: string
+        required: false
+        default: "rockylinux:9"
       if:
         description: Whether to run the workflow (workaround for required status checks issue)
         type: boolean
@@ -49,7 +53,7 @@ jobs:
       - name: Checkout kayobe config
         uses: actions/checkout@v4
         with:
-           submodules: true
+          submodules: true
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -88,6 +92,7 @@ jobs:
           build-args: |
              http_proxy=${{ inputs.http_proxy }}
              https_proxy=${{ inputs.https_proxy }}
+             BASE_IMAGE=${{ inputs.base_image }}
              KAYOBE_USER_UID=1001
              KAYOBE_USER_GID=1001
           push: true
