@@ -7,17 +7,17 @@ This section describes the Release Train process of creating new package reposit
 Preparations
 ============
 
-1. Before building images, you should check for any outstanding PRs into the earliest supported release. Below are the links for the Wallaby branches.
+1. Before building images, you should check for any outstanding PRs into the earliest supported release. Below are the links for the Zed branches.
 
- kayobe-config: https://github.com/stackhpc/stackhpc-kayobe-config/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fwallaby
+ kayobe-config: https://github.com/stackhpc/stackhpc-kayobe-config/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fzed+
 
- kolla: https://github.com/stackhpc/kolla/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fwallaby
+ kolla: https://github.com/stackhpc/kolla/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fzed+
 
- kolla-ansible: https://github.com/stackhpc/kolla-ansible/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fwallaby
+ kolla-ansible: https://github.com/stackhpc/kolla-ansible/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2Fzed
 
  You should also check any referenced source trees in etc/kayobe/kolla.yml.
 
- e.g: https://github.com/stackhpc/stackhpc-kayobe-config/blob/320ba8b28da879917beec0ce7c4c90c478aaeaf7/etc/kayobe/kolla.yml#L112-L158
+ e.g: https://github.com/stackhpc/stackhpc-kayobe-config/blob/68026c4b2e605fcb0e60786ad438b32a74a50a13/etc/kayobe/kolla.yml#L113-L143
 
 2. Follow the workflows documented `here <https://stackhpc.github.io/stackhpc-release-train/usage/content-howto/#update-package-repositories>`_. Sync the package repositories. Then, for each release:
 
@@ -98,7 +98,7 @@ Checkout the new kayobe-config branch (from the draft PR):
    git fetch
    git checkout <branch-name>
 
-Bump the snapshot versions in /etc/yum/repos.d with:
+For Rocky Linux 9, bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
@@ -119,7 +119,7 @@ Perform a rolling reboot of hosts:
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[0]
 
    # Test live migration
-   openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname wallaby-pkg-refresh-ovs-compute-02.novalocal --os-compute-api-version 2.74 server1
+   openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname zed-pkg-refresh-ovs-compute-02.novalocal --os-compute-api-version 2.74 server1
    openstack server migrate --live-migration server1
    watch openstack server show server1
 
@@ -148,6 +148,8 @@ Deploy the services, once the new tags are set in the kayobe_config:
 
 Upgrading OpenStack to the next release in a multinode environment
 ------------------------------------------------------------------
+.. NOTE(Alex-Welsh): These instructions are a fair bit out of date now. While
+.. the structure is probably fine, it should reference the most recent release
 
 As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 

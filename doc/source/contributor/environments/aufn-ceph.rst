@@ -24,7 +24,7 @@ Setup
 
 To begin the manual setup, access the baremetal node via SSH and install some basic dependencies.
 
-CentOS or Rocky:
+Rocky:
 
 .. parsed-literal::
 
