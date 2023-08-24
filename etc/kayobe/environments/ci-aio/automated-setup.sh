@@ -6,9 +6,9 @@ cat << EOF | sudo tee -a /etc/hosts
 10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 EOF
 
-if [ "${1-0}" = "--lvm" ]; then
-   sudo lvextend -L 2G /dev/rootvg/lv_home -r || true
-   sudo lvextend -L 2.5G /dev/rootvg/lv_tmp -r || true
+if [ "${1-0}" != "--non-lvm" ]; then
+   sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
+   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
 fi
 
 BASE_PATH=~
