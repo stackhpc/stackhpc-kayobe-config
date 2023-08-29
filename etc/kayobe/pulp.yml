@@ -208,7 +208,18 @@ stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhp
 stackhpc_pulp_sync_el_9: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
 stackhpc_pulp_repository_rpm_repos:
-  # RabbitMQ repositories - version 8/9 agnositic
+  # Grafana and RabbitMQ repositories - version 8/9 agnositic
+  - name: Grafana
+    url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
+    remote_username: "{{ stackhpc_release_pulp_username }}"
+    remote_password: "{{ stackhpc_release_pulp_password }}"
+    client_cert: ""
+    client_key: ""
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    sync_policy: mirror_complete
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: RabbitMQ - Erlang
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
@@ -220,7 +231,6 @@ stackhpc_pulp_repository_rpm_repos:
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
   - name: RabbitMQ - Server
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
@@ -336,7 +346,7 @@ stackhpc_pulp_repository_rpm_repos:
     proxy_url: "{{ pulp_proxy_url }}"
     sync_policy: mirror_complete
     state: present
-    required: "{{ stackhpc_pulp_sync_el_9 }}"
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
 
   # Additional RHEL 9 repositories
   - name: TreasureData 4 for RHEL 9
@@ -366,8 +376,8 @@ stackhpc_pulp_repository_rpm_repos:
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-  - name: OpenSearch for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/pulp/content/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+  - name: OpenSearch 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
     remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
@@ -375,8 +385,8 @@ stackhpc_pulp_repository_rpm_repos:
     sync_policy: mirror_complete
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-  - name: OpenSearch Dashboards for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/pulp/content/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+  - name: OpenSearch Dashboards 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
     remote_username: "{{ stackhpc_release_pulp_username }}"
     remote_password: "{{ stackhpc_release_pulp_password }}"
     policy: on_demand
@@ -394,17 +404,22 @@ stackhpc_pulp_publication_rpm_development: "{{ stackhpc_pulp_distribution_rpm_de
 
 # Development tracks the release repositories.
 stackhpc_pulp_distribution_rpm_development:
-  # RabbitMQ repositories - version 8/9 agnositic
+  # Grafana and RabbitMQ repositories - version 8/9 agnositic
+  - name: "grafana-development"
+    base_path: "grafana/oss/rpm/development"
+    repository: Grafana
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rabbitmq-erlang-development"
     base_path: "rabbitmq/erlang/el/8/x86_64/development"
     repository: RabbitMQ - Erlang
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool  }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rabbitmq-server-development"
     base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/development"
     repository: RabbitMQ - Server
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool  }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # Base Rocky Linux 9 repositories
   - name: "rocky-9-appstream-development"
@@ -483,29 +498,34 @@ stackhpc_pulp_distribution_rpm_development:
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "opensearch-2-x-development"
     base_path: "opensearch/2.x/yum/development"
-    repository: OpenSearch for RHEL 9
+    repository: OpenSearch 2.x
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "opensearch-dashboards-2-x-development"
     base_path: "opensearch-dashboards/2.x/yum/development"
-    repository: OpenSearch for RHEL 9
+    repository: OpenSearch Dashboards 2.x
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
 
 # Development gets promoted to production.
 stackhpc_pulp_distribution_rpm_production:
-  # RabbitMQ repositories - version 8/9 agnositic
+  # Grafana and RabbitMQ repositories - version 8/9 agnositic
+  - name: "grafana-production"
+    base_path: "grafana/oss/rpm/production"
+    repository: Grafana
+    state: present
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rabbitmq-erlang-production"
     base_path: "rabbitmq/erlang/el/8/x86_64/production"
     repository: RabbitMQ - Erlang
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool ) }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "rabbitmq-server-production"
     base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/production"
     repository: RabbitMQ - Server
     state: present
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool ) }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # Base Rocky Linux 9 repositories
   - name: "rocky-9-appstream-production"
@@ -584,12 +604,12 @@ stackhpc_pulp_distribution_rpm_production:
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "opensearch-2-x-production"
     base_path: "opensearch/2.x/yum/production"
-    repository: OpenSearch for RHEL 9
+    repository: OpenSearch 2.x
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
   - name: "opensearch-dashboards-2-x-production"
     base_path: "opensearch-dashboards/2.x/yum/production"
-    repository: OpenSearch for RHEL 9
+    repository: OpenSearch Dashboards 2.x
     state: present
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
