@@ -16,6 +16,10 @@ on:
       no_proxy:
         type: string
         required: false
+      base_image:
+        type: string
+        required: false
+        default: "rockylinux:9"
     outputs:
       kayobe_image:
         description: Reference of Kayobe image that was built
@@ -39,7 +43,7 @@ jobs:
       - name: Checkout kayobe config
         uses: actions/checkout@v3
         with:
-           submodules: true
+          submodules: true
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
@@ -76,6 +80,7 @@ jobs:
           build-args: |
              http_proxy=${{ inputs.http_proxy }}
              https_proxy=${{ inputs.https_proxy }}
+             BASE_IMAGE=${{ inputs.base_image }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

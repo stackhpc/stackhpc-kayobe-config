@@ -96,7 +96,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
+# kolla_openstack_release:
 
 # Docker tag applied to built container images. Default is {{
 # kolla_openstack_release }}-{{ kolla_base_distro }}-{{
@@ -263,14 +263,6 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
-  keystone_base_footer: |
-    {% raw %}
-    {% if base_package_type == 'deb' %}
-    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
-        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
-        rm -f liblasso3_2.7.0-2build3_amd64.deb
-    {% endif %}
-    {% endraw %}
   magnum_base_footer: |
     RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
 # Dict mapping image customization variable names to their values.
@@ -344,10 +336,9 @@ kolla_build_args:
   memcached_exporter_version: "0.9.0"
   mysqld_exporter_version: "0.13.0"
   node_exporter_version: "1.5.0"
+  node_exporter_sha256sum: "af999fd31ab54ed3a34b9f0b10c28e9acee9ef5ac5a5d5edfdde85437db7acbb"
   prometheus_version: "2.35.0"
   prometheus_alertmanager_version: "0.24.0"
-  prometheus_cadvisor_sha256sum: "8e3df91eee70c72ac3f3184b9fab1229b037c2e850ff1593103b2bd9028c57c0"
-  prometheus_cadvisor_version: "0.40.0"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
