@@ -321,7 +321,7 @@ RGWs are defined with the following:
    spec:
      rgw_frontend_port: 80
 
-Ceph RGWs require additional configuration for the following features:
+Ceph RGWs require additional configuration to:
 
   * Support both S3 and Swift APIs.
 
