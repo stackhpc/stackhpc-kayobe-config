@@ -67,7 +67,9 @@ source kayobe-env --environment ci-aio
 
 kayobe control host bootstrap
 
-kayobe playbook run etc/kayobe/ansible/growroot.yml
+if [ sudo vgdisplay | grep -q lvm2 ]; then
+    kayobe playbook run etc/kayobe/ansible/growroot.yml
+fi
 
 kayobe overcloud host configure
 
