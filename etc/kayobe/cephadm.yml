@@ -87,7 +87,8 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 # post-deployment configuration, post commands run after the rest of the
 # post-deployment configuration.
 #cephadm_commands_pre:
-#cephadm_commands_post:
+cephadm_commands_post:
+  - "{% if cephadm_ceph_release == 'quincy' %}config set osd osd_mclock_cost_per_byte_usec_hdd 0.1{% endif %}"
 
 ###############################################################################
 # Kolla Ceph auto-configuration.
