@@ -6,6 +6,11 @@ The ``ci-builder`` Kayobe environment is used to build Kolla container images.
 Images are built using package repositories in the StackHPC development Pulp
 service, and pushed there once built.
 
+.. warning::
+
+    This guide was written for the Yoga release and has not been validated for
+    Zed. Proceed with caution.
+
 Prerequisites
 =============
 
@@ -18,12 +23,6 @@ Setup
 Access the host via SSH.
 
 Install package dependencies.
-
-On CentOS:
-
-.. parsed-literal::
-
-   sudo dnf install -y python3-virtualenv
 
 On Ubuntu:
 

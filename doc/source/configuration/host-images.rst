@@ -19,10 +19,7 @@ in ``etc/kayobe/stackhpc-overcloud-host-images.yml``.
 
 Currently, images exist for the following operating systems:
 
-* CentOS 8 Stream
-* Rocky Linux 8
 * Rocky Linux 9
-* Ubuntu Focal 20.04
 * Ubuntu Jammy 22.04
 
 The image to download is selected automatically using the ``os_distribution``

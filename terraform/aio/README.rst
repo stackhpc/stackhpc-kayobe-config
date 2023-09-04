@@ -84,7 +84,7 @@ Generate Terraform variables:
    cat << EOF > terraform.tfvars
    ssh_public_key = "id_rsa.pub"
    aio_vm_name = "kayobe-aio"
-   aio_vm_image = "CentOS-stream8"
+   aio_vm_image = "Rocky9"
    aio_vm_flavor = "general.v1.medium"
    aio_vm_network = "stackhpc-ipv4-geneve"
    aio_vm_subnet = "stackhpc-ipv4-geneve-subnet"

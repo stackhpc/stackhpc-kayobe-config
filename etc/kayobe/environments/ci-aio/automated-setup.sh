@@ -12,8 +12,8 @@ if [ sudo vgdisplay | grep -q lvm2 ]; then
 fi
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/yoga
-KAYOBE_CONFIG_BRANCH=stackhpc/yoga
+KAYOBE_BRANCH=stackhpc/zed
+KAYOBE_CONFIG_BRANCH=stackhpc/zed
 
 if [[ ! -f $BASE_PATH/vault-pw ]]; then
     echo "Vault password file not found at $BASE_PATH/vault-pw"

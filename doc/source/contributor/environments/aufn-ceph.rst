@@ -6,10 +6,15 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 
 .. _Universe-from-nothing: https://github.com/stackhpc/a-universe-from-nothing
 
+.. warning::
+
+    This guide was written for the Yoga release and has not been validated for
+    Zed. Proceed with caution.
+
 Prerequisites
 =============
 
-* a baremetal node with at least 64GB of RAM running CentOS Stream 8 (or Ubuntu)
+* a baremetal node with at least 64GB of RAM running Rocky Linux 9 (or Ubuntu Jammy 22.04)
 
 * access to the test pulp server on SMS lab
 

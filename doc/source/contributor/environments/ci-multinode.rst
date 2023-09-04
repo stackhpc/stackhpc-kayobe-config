@@ -4,13 +4,14 @@ Multinode Test Environment
 
 .. warning::
 
-      The initial setup guide here is designed for the Yoga release of OpenStack. Proceed with caution.
+    This guide was written for the Yoga release and has not been validated for
+    Zed. Proceed with caution.
 
 Set up hosts
 ============
-1. Create four baremetal instances with a centos 8 stream LVM image, and a
-   Centos 8 stream vm
-2. SSH into each baremetal and run ``sudo chown -R centos:.`` in the home
+1. Create four baremetal instances with a Rocky Linux 9 LVM image, and a
+   Rocky Linux 9 vm.
+2. SSH into each baremetal and run ``sudo chown -R cloud-user:.`` in the home
    directory, then add the lines::
 
       10.0.0.34 pelican pelican.service.compute.sms-lab.cloud

@@ -37,12 +37,7 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-<<<<<<< HEAD
 * Pulp repository definitions for Rocky Linux 9 and Ubuntu Jammy 22.04
-=======
-* Pulp repository definitions for CentOS Stream 8, Rocky Linux 8/9 and Ubuntu
-  Focal/Jammy
->>>>>>> Add Ubuntu Jammy repository config in Yoga. (#578)
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
