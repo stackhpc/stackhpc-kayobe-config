@@ -93,10 +93,18 @@ dnf_custom_repos_centos:
     # Exclude buggy iptables: https://bugzilla.redhat.com/show_bug.cgi?id=2236501
     exclude: "iptables-1.8.5* iptables-libs-1.8.5* iptables-ebtables-1.8.5* iptables-services-1.8.5* iptables-arptables-1.8.5* iptables-devel-1.8.5*"
   extras:
+    # This repo is no longer updated: https://www.spinics.net/lists/centos-devel/msg21454.html
     baseurl: "{{ stackhpc_repo_centos_stream_extras_url }}"
     description: "CentOS Stream $releasever - Extras"
     file: CentOS-Stream-Extras
+    enabled: false
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    gpgcheck: yes
+  extras_common:
+    baseurl: "{{ stackhpc_repo_centos_stream_extras_common_url }}"
+    description: "CentOS Stream $releasever - Extras Common Packages"
+    file: CentOS-Stream-Extras-common
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Extras
     gpgcheck: yes
 
 # Rocky 8 specific repositories
