@@ -80,7 +80,7 @@
             pv: "{{ pvs.stdout | from_json }}"
             disk: "{{ pv.report[0].pv[0].pv_name }}"
           become: true
-      when: lvm_check.rc != 1 or growroot_skip_lvm_check
+      when: lvm_check.rc == 0 or not growroot_skip_lvm_check | bool
 #      when: "'NOCHANGE' not in growpart.stdout"
 # Commenting out the conditional because growpart is already triggered by cloud-init - hence it emits NOCHANGE
 # Cloud-Inits growpart implementation has a bug https://bugzilla.redhat.com/show_bug.cgi?id=2122575
