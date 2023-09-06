@@ -16,9 +16,11 @@
         - not ansible_python_interpreter.startswith('/bin/')
         - not ansible_python_interpreter.startswith('/usr/bin/')
 
-    - name: Ensure Python hvac module is installed
+    - name: Ensure Python PyYAML and hvac modules are installed
       pip:
-        name: hvac
+        name:
+          - PyYAML
+          - hvac
         state: latest
         extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
         virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
@@ -34,9 +36,14 @@
     - import_role:
         name: stackhpc.hashicorp.vault
       vars:
+        hashicorp_registry_url: "{{ seed_hashicorp_registry_url }}"
+        hashicorp_registry_username: "{{ seed_hashicorp_registry_username }}"
+        hashicorp_registry_password: "{{ seed_hashicorp_registry_password }}"
+        consul_docker_image: "{{ seed_consul_docker_image }}"
         consul_docker_tag: "{{ seed_consul_docker_tag }}"
         vault_config_dir: "/opt/kayobe/vault"
         vault_cluster_name: "seed"
+        vault_docker_image: "{{ seed_vault_docker_image }}"
         vault_docker_tag: "{{ seed_vault_docker_tag }}"
         vault_write_keys_file: true
         vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"

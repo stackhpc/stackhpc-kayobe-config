@@ -23,13 +23,13 @@ stackhpc_overcloud_dib_name: "deployment_image"
 stackhpc_overcloud_dib_elements:
   - "{{ os_distribution }}-{% if os_distribution == 'rocky' %}container{% else %}minimal{% endif %}"
   - "cloud-init-datasources"
-  - "{% if os_distribution in ['centos', 'rocky'] %}disable-selinux{% endif %}"
+  - "{% if os_distribution == 'rocky' %}disable-selinux{% endif %}"
   - "enable-serial-console"
   - "{% if kayobe_environment == 'ci-builder' %}etc-hosts{% endif %}"
   - "vm"
   - "block-device-efi"
   - "cloud-init"
-  - "{% if os_distribution in ['centos', 'rocky'] %}dracut-regenerate{% endif %}"
+  - "{% if os_distribution == 'rocky' %}dracut-regenerate{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}lvm{% endif %}"
   - "openssh-server"
   - "{% if os_distribution == 'ubuntu' %}sudoers{% endif %}"
@@ -71,7 +71,7 @@ stackhpc_overcloud_dib_packages:
   - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
-  - "{% if os_distribution == 'centos' %}openssh-clients{% endif %}"
+  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
 
 # StackHPC overcloud DIB image block device configuration.
 # This image layout conforms to the CIS partition benchmarks.

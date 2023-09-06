@@ -1,11 +1,22 @@
 ###############################################################################
 # Hashicorp Vault deployment configuration.
 
+# Registry information for seed.
+seed_hashicorp_registry_url: "{{ stackhpc_docker_registry if stackhpc_sync_hashicorp_images | bool else '' }}"
+seed_hashicorp_registry_username: "{{ stackhpc_docker_registry_username if stackhpc_sync_hashicorp_images | bool else '' }}"
+seed_hashicorp_registry_password: "{{ stackhpc_docker_registry_password if stackhpc_sync_hashicorp_images | bool else '' }}"
+
+# Seed Consul container image.
+seed_consul_docker_image: "{{ stackhpc_docker_registry ~ '/' if stackhpc_sync_hashicorp_images | bool else '' }}hashicorp/consul"
+
 # Seed Consul container image tag.
-seed_consul_docker_tag: "1.16"
+seed_consul_docker_tag: "1.16.1"
+
+# Seed Vault container image.
+seed_vault_docker_image: "{{ stackhpc_docker_registry ~ '/' if stackhpc_sync_hashicorp_images | bool else '' }}hashicorp/vault"
 
 # Seed Vault container image tag.
-seed_vault_docker_tag: "1.14"
+seed_vault_docker_tag: "1.14.1"
 
 # Seed Vault PKI Role name
 seed_vault_pki_role_name: "ServerCert"
@@ -27,11 +38,22 @@ seed_vault_pki_roles:
       organization: ["StackHPC"]
       ou: ["OpenStack"]
 
+# Registry information for overcloud.
+overcloud_hashicorp_registry_url: "{{ stackhpc_docker_registry if stackhpc_sync_hashicorp_images | bool else '' }}"
+overcloud_hashicorp_registry_username: "{{ stackhpc_docker_registry_username if stackhpc_sync_hashicorp_images | bool else '' }}"
+overcloud_hashicorp_registry_password: "{{ stackhpc_docker_registry_password if stackhpc_sync_hashicorp_images | bool else '' }}"
+
+# Overcloud Consul container image.
+overcloud_consul_docker_image: "{{ stackhpc_docker_registry ~ '/' if stackhpc_sync_hashicorp_images | bool else '' }}hashicorp/consul"
+
 # Overcloud Consul container image tag.
-overcloud_consul_docker_tag: "1.16"
+overcloud_consul_docker_tag: "1.16.1"
+
+# Overcloud Vault container image.
+overcloud_vault_docker_image: "{{ stackhpc_docker_registry ~ '/' if stackhpc_sync_hashicorp_images | bool else '' }}hashicorp/vault"
 
 # Overcloud Vault container image tag.
-overcloud_vault_docker_tag: "1.14"
+overcloud_vault_docker_tag: "1.14.1"
 
 # Overcloud Vault PKI Default Role name
 overcloud_vault_pki_default_role_name: "ServerCert"

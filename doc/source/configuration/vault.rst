@@ -39,6 +39,11 @@ Before beginning the deployment of vault for openstack internal TLS and backend 
   * Ansible Galaxy dependencies installed: ``kayobe control host bootstrap``
   * Python dependencies installed: ``pip install -r kayobe-config/requirements.txt``
 
+By default, Consul and Vault images are not synced from Docker Hub to the local
+Pulp. To sync these images, set ``stackhpc_sync_hashicorp_images`` to ``true``.
+The Vault deployment configuration will be automatically updated to pull images
+from Pulp.
+
 Deployment
 ==========
 
@@ -209,6 +214,16 @@ Enable the required TLS variables in kayobe and kolla
       rabbitmq_enable_tls: "yes"
 
 3. Deploy backend and internal TLS
+
+   .. warning::
+
+      It is important that you are only using admin endpoints for keystone. If
+      any admin endpoints exist for other services, they must be deleted e.g.
+
+      .. code-block::
+
+         openstack endpoint list --interface admin -f value | \
+         awk '!/keystone/ {print $1}' | xargs openstack endpoint delete
 
    .. code-block::
 
