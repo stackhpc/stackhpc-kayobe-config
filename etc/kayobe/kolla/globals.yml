@@ -10,6 +10,8 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
 
+opensearch_tag: yoga-20230904T121340
+
 kayobe_image_tags:
   openstack:
     centos: yoga-20230905T130221
@@ -49,9 +51,6 @@ kayobe_image_tags:
   octavia:
     rocky: yoga-20230523T110936
     ubuntu: yoga-20230523T110936
-  opensearch:
-    rocky: yoga-20230622T154317
-    ubuntu: yoga-20230324T090345
   openvswitch:
     rocky: yoga-20230515T150233
     ubuntu: yoga-20230515T150233
@@ -73,7 +72,6 @@ neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] | defa
 nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 octavia_tag: "{% raw %}{{ kayobe_image_tags['octavia'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-opensearch_tag: "{% raw %}{{ kayobe_image_tags['opensearch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 openvswitch_tag: "{% raw %}{{ kayobe_image_tags['openvswitch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ovn_tag: "{% raw %}{{ kayobe_image_tags['ovn'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
