@@ -31,7 +31,7 @@ jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder-rl9]
     permissions: {}
     steps:
       - uses: actions/checkout@v3
@@ -65,10 +65,9 @@ jobs:
           ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
           path: src/kayobe
 
-      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
       - name: Install dependencies
         run: |
-          sudo dnf -y install python3-virtualenv zstd
+          sudo dnf -y install zstd
 
       - name: Setup networking
         run: |

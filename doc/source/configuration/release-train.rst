@@ -2,9 +2,9 @@
 StackHPC Release Train
 ======================
 
-StackHPC provides packages and container images for OpenStack via `Ark
-<https://ark.stackhpc.com>`__. These artifacts are built and released using a
-process known as the `Release Train
+StackHPC provides packages, container images, and host images for OpenStack via
+`Ark <https://ark.stackhpc.com>`__. These artifacts are built and released using
+a process known as the `Release Train
 <https://stackhpc.github.io/stackhpc-release-train/>`__.
 
 Deployments should use a local `Pulp <https://pulpproject.org/>`__ repository
@@ -41,6 +41,7 @@ This configuration provides the following:
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
+* Configuration to deploy pre-built OS images to overcloud hosts using Bifrost
 
 Local Pulp server
 -----------------
@@ -60,6 +61,10 @@ Pulp startup.
 If a proxy is required to access the Internet from the seed, ``pulp_proxy_url``
 may be used.
 
+Host images are not synchronised to the local Pulp server, since they should
+only be pulled to the seed node once. More information on host images can be
+found :ref:`here <host-images>`.
+
 StackHPC Ark
 ------------
 
@@ -74,6 +79,9 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
+Rocky Linux 9 and Ubuntu Jammy package repositories are synced based on the
+value of ``os_distribution`` and ``os_release``.
+
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
 in ``etc/kayobe/pulp-repo-versions.yml``. This file is managed by the StackHPC
@@ -83,14 +91,27 @@ repository.
 Package managers
 ----------------
 
-For Rocky Linux based systems, package manager configuration is
-provided by ``stackhpc_dnf_repos`` in ``etc/kayobe/dnf.yml``, which points to
-package repositories on the local Pulp server. To use this configuration, the
+For Ubuntu Jammy systems, the package manager configuration is provided by
+``stackhpc_apt_repositories`` in ``etc/kayobe/apt.yml``.
+
+The configuration is applied by default to all Ubuntu hosts. The configuration
+can be overridden by changing the repository definitions in
+``apt_repositories`` or toggling ``apt_disable_sources_list`` to use the
+default apt repositories. This can be done on a host-by host basis by defining
+the variables as host or group vars under ``etc/kayobe/inventory/host_vars`` or
+``etc/kayobe/inventory/group_vars``.
+
+For Rocky Linux based systems, package manager configuration is provided by
+``stackhpc_dnf_repos`` in ``etc/kayobe/dnf.yml``, which points to package
+repositories on the local Pulp server. To use this configuration, the
 ``dnf_custom_repos`` variable must be set, and this is done for hosts in the
 ``overcloud`` group via the group_vars file
 ``etc/kayobe/inventory/group_vars/overcloud/stackhpc-dnf-repos``. Similar
 configuration may be added for other groups, however there may be ordering
 issues during initial deployment when Pulp has not yet been deployed.
+
+In both instances, the configuration points to package repositories on the
+local Pulp server.
 
 The distribution name for the environment should be configured as either
 ``development`` or ``production`` via ``stackhpc_repo_distribution`` in
@@ -101,6 +122,13 @@ Ceph container images
 
 By default, Ceph images are not synced from quay.io to the local Pulp. To sync
 these images, set ``stackhpc_sync_ceph_images`` to ``true``.
+
+HashiCorp container images
+--------------------------
+
+By default, HashiCorp images (Consul and Vault) are not synced from Docker Hub
+to the local Pulp. To sync these images, set ``stackhpc_sync_hashicorp_images``
+to ``true``.
 
 Usage
 =====
@@ -136,7 +164,7 @@ See the Kayobe :kayobe-doc:`custom playbook documentation
   these are new container image repositories, then the new image tags will not
   be available to cloud nodes until they have been published.
 * ``pulp-container-publish.yml``: Publish synchronised container images in the
-  local Pulp. This will make synchonised container images available to cloud
+  local Pulp. This will make synchronised container images available to cloud
   nodes.
 
 Syncing content
@@ -254,4 +282,4 @@ you will see a 404 error during ``pulp-repo-sync.yml``:
       msg: Task failed to complete. (failed; 404, message='Not Found', url=URL('https://ark.stackhpc.com/pulp/content/rocky/9/BaseOS/x86_64/os/20211122T102435')) '''
 
 The issue can be rectified by updating the ``stackhpc_release_pulp_username``
-and ``stackhpc_release_pulp_password`` variables
+and ``stackhpc_release_pulp_password`` variables.

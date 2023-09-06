@@ -4,7 +4,10 @@ Multinode Test Environment
 
 .. warning::
 
-      The initial setup guide here is designed for the Yoga release of OpenStack. Proceed with caution.
+    This guide was written for the Yoga release and has not been validated for
+    Zed. Proceed with caution.
+
+
 
 Set up hosts
 ============
@@ -68,7 +71,7 @@ is not enabled by default. To enable it, set the following in
 .. code-block:: yaml
 
       kolla_enable_manila: true
-      kolla_enable_manila_backend_cephfs: true
+      kolla_enable_manila_backend_cephfs_native: true
 
 And re-run ``kayobe overcloud service deploy`` if you are working on an existing
 deployment.

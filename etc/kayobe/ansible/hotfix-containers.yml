@@ -1,0 +1,70 @@
+---
+# NOTE: This playbook is designed for use in high-severity hotfixes ONLY.
+# If you're considering using this for regular operations, please consider
+# developing a more suitable solution instead.
+#
+# See https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/operations/hotfix-containers.html
+# for more information.
+
+- name: Hotfix containers
+  hosts: overcloud
+  tags:
+    - hotfix-containers
+  vars:
+    container_hotfix_command: ""
+    container_hotfix_files: []
+    container_hotfix_container_regex: ""
+    container_hotfix_restart_containers: False
+    container_hotfix_become: False
+  tasks:
+    - name: Ensure inputs are valid
+      fail:
+        msg: "Invalid input. Container list cannot be empty. Either container_hotfix_command or container_hotfix_files must be populated."
+      when:
+        - container_hotfix_container_regex == "" or
+          container_hotfix_command == "" and container_hotfix_files == []
+
+    - name: Get list of containers to hotfix
+      command: '{{ kolla_container_engine | default("docker")}} ps --format {% raw %}"{{.Names}}"{% endraw %}'
+      register: host_containers
+
+    - name: Set fact for containers list
+      set_fact:
+        containers_list: host_containers.stdout
+
+    - name: Fail if no containers match given regex
+      vars:
+        hotfix_containers: "{{ containers_list | split('\n') | regex_search(container_hotfix_container_regex) }}"
+      fail:
+        msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers | split('\n') }}"
+      when: hotfix_containers == ""
+
+    - name: Ensure hotfix-files directory exists on the remote host
+      ansible.builtin.file:
+        path: /tmp/hotfix-files
+        state: directory
+
+    - name: Ensure container hotfix file(s) exist on host
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "/tmp/hotfix-files/{{ index }}"
+      loop: "{{ container_hotfix_files }}"
+      loop_control:
+        index_var: index
+      when: container_hotfix_files != []
+
+    - name: Apply hotfix
+      include_tasks: run-container-hotfix.yml
+      loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      loop_control:
+        loop_var: hotfix_container
+
+    - name: Cleanup temporary files
+      ansible.builtin.file:
+        path: /tmp/hotfix-files
+        state: absent
+
+    - name: Restart containers if requested
+      command: "{{ kolla_container_engine | default('docker')}} restart {{ item }}"
+      loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
+      when: container_hotfix_restart_containers
