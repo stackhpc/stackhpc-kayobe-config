@@ -42,6 +42,10 @@ kayobe_image_tags:
   nova:
     rocky: yoga-20230718T112646
     ubuntu: yoga-20230718T112646
+  nova_libvirt:
+    # Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
+    # with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test carefully before bumping.
+    centos: yoga-20230718T112646    
   octavia:
     rocky: yoga-20230523T110936
     ubuntu: yoga-20230523T110936
@@ -67,6 +71,7 @@ ironic_dnsmasq_tag: "{% raw %}{{ kayobe_image_tags['ironic_dnsmasq'][kolla_base_
 magnum_tag: "{% raw %}{{ kayobe_image_tags['magnum'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 octavia_tag: "{% raw %}{{ kayobe_image_tags['octavia'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 opensearch_tag: "{% raw %}{{ kayobe_image_tags['opensearch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 openvswitch_tag: "{% raw %}{{ kayobe_image_tags['openvswitch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
