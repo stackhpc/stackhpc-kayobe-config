@@ -41,6 +41,15 @@
       become: true
 
     - block:
+        - name: Check if growpart is installed
+          shell:
+            cmd: type growpart
+          changed_when: false
+          failed_when: false
+          check_mode: false
+          register: growpart_check
+          become: true
+
         - name: Ensure growpart is installed
           package:
             name: "{% if os_family == 'RedHat' %}cloud-utils-growpart{% else %}cloud-guest-utils{% endif %}"
@@ -48,6 +57,7 @@
             cache_valid_time: "{{ apt_cache_valid_time if os_family == 'Debian' else omit }}"
             update_cache: "{{ true if os_family == 'Debian' else omit }}"
           become: true
+          when: growpart_check.rc !=0
 
         - name: Get root PV device
           command: "pvs --select vg_name={{ growroot_vg }} --reportformat json"
