@@ -27,8 +27,8 @@
     growroot_vg: "rootvg"
     # Don't assume facts are present.
     os_family: "{{ ansible_facts.os_family | default('Debian' if os_distribution == 'ubuntu' else 'RedHat') }}"
-    # LVM override
-    growroot_skip_lvm_check: false
+    # Ignore LVM check
+    growroot_ignore_lvm_check: false
 
   tasks:
     - name: Check LVM status
@@ -80,7 +80,7 @@
             pv: "{{ pvs.stdout | from_json }}"
             disk: "{{ pv.report[0].pv[0].pv_name }}"
           become: true
-      when: lvm_check.rc == 0 or not growroot_skip_lvm_check | bool
+      when: lvm_check.rc == 0 or growroot_ignore_lvm_check
 #      when: "'NOCHANGE' not in growpart.stdout"
 # Commenting out the conditional because growpart is already triggered by cloud-init - hence it emits NOCHANGE
 # Cloud-Inits growpart implementation has a bug https://bugzilla.redhat.com/show_bug.cgi?id=2122575
