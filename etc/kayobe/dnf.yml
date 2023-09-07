@@ -48,7 +48,7 @@
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
 stackhpc_dnf_repos_8: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
-stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) }}"
+stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
 
 stackhpc_dnf_repos: "{{ stackhpc_dnf_repos_9 if os_release == '9' else stackhpc_dnf_repos_8 }}"
 
@@ -135,6 +135,16 @@ dnf_custom_repos_el9:
     gpgkey: "{{ dnf_docker_gpg_key_url }}"
     gpgcheck: yes
 
+# ELRepo 9
+dnf_custom_repos_elrepo_9:
+  elrepo:
+    baseurl: "{{ stackhpc_repo_elrepo_9_url }}"
+    description: "ELRepo.org Community Enterprise Linux Repository - el9"
+    enabled: "{{ dnf_enable_elrepo_9 | bool }}"
+    file: elrepo
+    gpgkey: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    gpgcheck: yes
+
 # Rocky 9 specific repositories
 dnf_custom_repos_rocky_9:
   appstream:
@@ -165,6 +175,9 @@ dnf_custom_repos_rocky_9:
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
 
+# Whether to enable the ELRepo repository. This affects RedHat-based, 9.x release systems only.
+dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
+
 # URL of EPEL GPG keys.
 dnf_epel_8_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
 dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
@@ -174,6 +187,10 @@ rocky_9_gpg_key: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'false'.
 #dnf_install_epel:
+
+# Whether to create a repo file for ELRepo. This affects RedHat-based
+# systems only.
+dnf_install_elrepo_9: false
 
 # Whether to enable docker dnf repo in stackhpc_dnf_repos
 dnf_enable_docker: true
