@@ -24,6 +24,7 @@ $PULP_HOST
 EOF
 
 # Install git and tmux.
+# FIXME: Drop virtualenv?
 if $(which dnf 2>/dev/null >/dev/null); then
     sudo dnf -y install git tmux python3-virtualenv
 else

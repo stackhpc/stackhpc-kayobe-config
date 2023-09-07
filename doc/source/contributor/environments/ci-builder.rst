@@ -25,6 +25,8 @@ Access the host via SSH.
 
 Install package dependencies.
 
+FIXME: Stop using virtualenv?
+
 On CentOS:
 
 .. parsed-literal::

@@ -14,6 +14,8 @@ When configured, an image will be downloaded to the seed during the
 ``kayobe seed service deploy`` step, and subsequently deployed using bifrost
 with ``kayobe overcloud provision``.
 
+FIXME: Should we do this by default in Zed+?
+
 To use these images, set ``stackhpc_download_overcloud_host_images`` to true
 in ``etc/kayobe/stackhpc-overcloud-host-images.yml``.
 
@@ -44,17 +46,16 @@ StackHPC Kayobe configuration provides configuration for some standard
 overcloud host images, built using the :kayobe-doc:`overcloud DIB
 <configuration/reference/overcloud-dib.html>` functionality of Kayobe.
 
+FIXME:
+
 The overcloud DIB configuration is provided in
-``etc/kayobe/stackhpc-overcloud-dib.yml``. It is not used by default, and must
-be actively opted into. This can be done as follows:
+``etc/kayobe/stackhpc-overcloud-dib.yml``. It is used by default, but may be
+opted out of as follows:
 
 .. code-block:: yaml
    :caption: ``etc/kayobe/overcloud-dib.yml``
 
-   overcloud_dib_build_host_images: true
-
-   overcloud_dib_host_images:
-     - "{{ stackhpc_overcloud_dib_host_image }}"
+   overcloud_dib_build_host_images: false
 
 The image name is configured via ``stackhpc_overcloud_dib_name``, and is
 ``deployment_image`` by default.

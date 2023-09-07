@@ -62,6 +62,7 @@ proxy:
    ---
    # HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
+   # FIXME: Need to apply the fix from 0e66f0b3dd08b470acb593977dce7dcb611cf5e3
    http_proxy: "http://{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}:3128"
 
    # HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port). By
@@ -73,6 +74,7 @@ proxy:
    # docker_registry) | urlsplit('hostname') }}"] if docker_registry is set, or
    # ["127.0.0.1", "localhost"] otherwise. This is configured only if either
    # http_proxy or https_proxy is set.
+   # FIXME: Need to apply the fix from 0e66f0b3dd08b470acb593977dce7dcb611cf5e3
    no_proxy:
      - "127.0.0.1"
      - "localhost"

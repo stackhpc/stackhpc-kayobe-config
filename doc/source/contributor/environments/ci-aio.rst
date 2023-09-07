@@ -61,6 +61,7 @@ Install package dependencies when on Ubuntu:
 .. parsed-literal::
 
    sudo apt update
+   # FIXME: Stop using virtualenv?
    sudo apt install -y python3-virtualenv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
