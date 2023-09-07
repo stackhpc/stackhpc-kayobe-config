@@ -2,6 +2,11 @@
 Swap
 ====
 
+Support for :kayobe-doc:`managing swap files and devices
+<configuration/reference/hosts.html#swap>` was added to Kayobe in the Zed
+release. The custom playbook described below is retained for backwards
+compatibility but may be removed in a future release.
+
 StackHPC Kayobe configuration provides a ``swap.yml`` custom playbook that may
 be used to configure a swap device.
 
