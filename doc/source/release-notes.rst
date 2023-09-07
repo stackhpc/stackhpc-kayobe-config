@@ -1,6 +1,6 @@
-=========================
-Zed Series Release Notes
-=========================
+====================================
+2023.1 Antelope Series Release Notes
+====================================
 
 .. release-notes::
-   :branch: stackhpc/zed
+   :branch: stackhpc/2023.1
