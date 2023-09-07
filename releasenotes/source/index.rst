@@ -7,6 +7,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   2023.1
    zed
    yoga
    xena

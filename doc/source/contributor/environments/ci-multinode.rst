@@ -5,8 +5,7 @@ Multinode Test Environment
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Zed. Proceed with caution.
-
+    Antelope. Proceed with caution.
 
 
 Set up hosts
