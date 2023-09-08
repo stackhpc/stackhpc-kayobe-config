@@ -39,6 +39,11 @@ Before beginning the deployment of vault for openstack internal TLS and backend 
   * Ansible Galaxy dependencies installed: ``kayobe control host bootstrap``
   * Python dependencies installed: ``pip install -r kayobe-config/requirements.txt``
 
+By default, Consul and Vault images are not synced from Docker Hub to the local
+Pulp. To sync these images, set ``stackhpc_sync_hashicorp_images`` to ``true``.
+The Vault deployment configuration will be automatically updated to pull images
+from Pulp.
+
 Deployment
 ==========
 

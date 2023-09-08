@@ -112,8 +112,8 @@ seed_pulp_container:
     # s6-overlay-suexec starts as pid 1
     init: false
     env:
-      PULP_CONTENT_WORKERS: "{{ ansible_facts.processor_vcpus * 2 + 1 }}"
-      PULP_API_WORKERS: "{{ ansible_facts.processor_vcpus * 2 + 1 }}"
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
       PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp

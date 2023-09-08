@@ -6,6 +6,11 @@ cat << EOF | sudo tee -a /etc/hosts
 10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 EOF
 
+if [ sudo vgdisplay | grep -q lvm2 ]; then
+   sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
+   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
+fi
+
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/yoga
 KAYOBE_CONFIG_BRANCH=stackhpc/yoga
@@ -16,10 +21,10 @@ if [[ ! -f $BASE_PATH/vault-pw ]]; then
 fi
 
 if type dnf; then
-    sudo dnf -y install git python3-virtualenv
+    sudo dnf -y install git
 else
     sudo apt update
-    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-virtualenv
+    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3
 fi
 
 cd $BASE_PATH
@@ -32,7 +37,7 @@ popd
 mkdir -p venvs
 pushd venvs
 if [[ ! -d kayobe ]]; then
-    virtualenv kayobe
+    python3 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable.
@@ -61,6 +66,8 @@ pushd $BASE_PATH/src/kayobe-config
 source kayobe-env --environment ci-aio
 
 kayobe control host bootstrap
+
+kayobe playbook run etc/kayobe/ansible/growroot.yml
 
 kayobe overcloud host configure
 

@@ -6,10 +6,11 @@
 # non-overcloud hosts
 enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}{% endraw %}"
 
-magnum_tag: yoga-20230705T121023
+magnum_tag: yoga-20230825T142202
 neutron_tag: yoga-20230728T081242
 nova_tag: yoga-20230718T112646
 octavia_tag: yoga-20230523T110936
+opensearch_tag: yoga-20230904T121340
 openvswitch_tag: yoga-20230515T150233
 ovn_tag: yoga-20230515T150233
 
@@ -46,10 +47,6 @@ kayobe_image_tags:
     centos: yoga-20230217T135826
     rocky: yoga-20230310T170929
     ubuntu: yoga-20230220T181235
-  opensearch:
-    centos: yoga-20230324T084510
-    rocky: yoga-20230622T154317
-    ubuntu: yoga-20230324T090345
   prometheus_node_exporter:
     centos: yoga-20230310T173747
     rocky: yoga-20230315T170614
@@ -61,7 +58,6 @@ caso_tag: "{% raw %}{{ kayobe_image_tags['caso'][kolla_base_distro] | default(op
 grafana_tag: "{% raw %}{{ kayobe_image_tags['grafana'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ironic_tag: "{% raw %}{{ kayobe_image_tags['ironic'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ironic_dnsmasq_tag: "{% raw %}{{ kayobe_image_tags['ironic_dnsmasq'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
-opensearch_tag: "{% raw %}{{ kayobe_image_tags['opensearch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"

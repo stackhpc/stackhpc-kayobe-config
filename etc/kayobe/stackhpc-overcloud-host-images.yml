@@ -1,0 +1,28 @@
+---
+##############################
+# Release train overcloud host image sources
+
+# Whether or not to download overcloud host images from Ark
+stackhpc_download_overcloud_host_images: false
+
+# Whether or not to use images with MLNX_OFED installed (for deployment using
+# mellanox/Nvidia NICs). Only available for Ubuntu Jammy and Rocky Linux 9
+# OFED images are currently WIP and this variable is a placeholder
+stackhpc_overcloud_host_image_is_ofed: false
+
+# The overcloud host image source, defined by os_distribution, os_release,
+# stackhpc_overcloud_host_image_is_ofed, and the current stable version.
+stackhpc_overcloud_host_image_url: "{{ stackhpc_release_pulp_content_url_with_auth }}/kayobe-images/\
+                                    {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}/\
+                                    {{ 'ofed/' if stackhpc_overcloud_host_image_is_ofed else '' }}\
+                                    {{ stackhpc_overcloud_host_image_version }}/\
+                                    overcloud-{{ os_distribution }}-{{ os_release }}\
+                                    {{ '-ofed' if stackhpc_overcloud_host_image_is_ofed else '' }}.qcow2"
+
+# Overcloud host image version tag selection
+stackhpc_overcloud_host_image_version: >-
+  {{ stackhpc_centos_8_stream_overcloud_host_image_version if os_distribution == 'centos' and os_release == '8-stream' else
+  stackhpc_rocky_8_overcloud_host_image_version if os_distribution == 'rocky' and os_release == '8' else
+  stackhpc_rocky_9_overcloud_host_image_version if os_distribution == 'rocky' and os_release == '9' else
+  stackhpc_ubuntu_focal_overcloud_host_image_version if os_distribution == 'ubuntu' and os_release == 'focal' else
+  stackhpc_ubuntu_jammy_overcloud_host_image_version if os_distribution == 'ubuntu' and os_release == 'jammy' }}
