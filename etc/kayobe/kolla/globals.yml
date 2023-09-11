@@ -6,49 +6,60 @@
 # non-overcloud hosts
 enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}{% endraw %}"
 
-magnum_tag: yoga-20230825T142202
-neutron_tag: yoga-20230728T081242
-nova_tag: yoga-20230718T112646
-octavia_tag: yoga-20230523T110936
-opensearch_tag: yoga-20230904T121340
-openvswitch_tag: yoga-20230515T150233
-ovn_tag: yoga-20230515T150233
-
 # kolla_base_distro must be set here to be resolvable on a per-host basis
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
 
+opensearch_tag: yoga-20230904T121340
+
 kayobe_image_tags:
   openstack:
-    centos: yoga-20230217T135826
+    centos: yoga-20230905T130221
     rocky: yoga-20230310T170929
     ubuntu: yoga-20230220T181235
   bifrost:
-    centos: yoga-20230217T160618
     rocky: yoga-20230310T194732
     ubuntu: yoga-20230220T184947
   blazar:
-    centos: yoga-20230315T125157
     rocky: yoga-20230315T130918
     ubuntu: yoga-20230315T125441
   caso:
-    centos: yoga-20230315T125157
     rocky: yoga-20230315T130918
     ubuntu: yoga-20230315T125441
   grafana:
-    centos: yoga-20230419T085955
     rocky: yoga-20230419T111514
     ubuntu: yoga-20230426T084340
   ironic:
-    centos: yoga-20230316T154655
     rocky: yoga-20230316T170311
     ubuntu: yoga-20230316T154704
   ironic_dnsmasq:
-    centos: yoga-20230217T135826
     rocky: yoga-20230310T170929
     ubuntu: yoga-20230220T181235
+  kibana:
+    centos: yoga-20230907T152300
+  magnum:
+    rocky: yoga-20230825T142202
+    ubuntu: yoga-20230825T142202
+  neutron:
+    rocky: yoga-20230728T081242
+    ubuntu: yoga-20230728T081242
+  nova:
+    rocky: yoga-20230718T112646
+    ubuntu: yoga-20230718T112646
+  nova_libvirt:
+    # Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
+    # with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test carefully before bumping.
+    centos: yoga-20230718T112646    
+  octavia:
+    rocky: yoga-20230523T110936
+    ubuntu: yoga-20230523T110936
+  openvswitch:
+    rocky: yoga-20230515T150233
+    ubuntu: yoga-20230515T150233
+  ovn:
+    rocky: yoga-20230515T150233
+    ubuntu: yoga-20230515T150233
   prometheus_node_exporter:
-    centos: yoga-20230310T173747
     rocky: yoga-20230315T170614
     ubuntu: yoga-20230315T170541
 
@@ -58,6 +69,14 @@ caso_tag: "{% raw %}{{ kayobe_image_tags['caso'][kolla_base_distro] | default(op
 grafana_tag: "{% raw %}{{ kayobe_image_tags['grafana'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ironic_tag: "{% raw %}{{ kayobe_image_tags['ironic'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ironic_dnsmasq_tag: "{% raw %}{{ kayobe_image_tags['ironic_dnsmasq'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+kibana_tag: "{% raw %}{{ kayobe_image_tags['kibana'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+magnum_tag: "{% raw %}{{ kayobe_image_tags['magnum'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova_libvirt'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+octavia_tag: "{% raw %}{{ kayobe_image_tags['octavia'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+openvswitch_tag: "{% raw %}{{ kayobe_image_tags['openvswitch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
+ovn_tag: "{% raw %}{{ kayobe_image_tags['ovn'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
