@@ -48,8 +48,8 @@ environment, create the following symbolic links:
 .. code-block:: console
 
     cd $KAYOBE_CONFIG_PATH
-    ln -s kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
+    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
 
 and commit them to the config repository.
 
@@ -127,3 +127,12 @@ If you want to add an alerting rule, there are many good examples of alerts are
 available `here <https://awesome-prometheus-alerts.grep.to/>`__. They simply
 need to be added to one of the ``*.rules`` files in the prometheus configuration
 directory.
+
+Ceph Monitoring
+===============
+
+There is code in the globals.yml file to extract the ceph mgr nodes from the
+mgrs group and list them as the endpoints for prometheus. Additionally,
+depending on your configuration, you may need set the
+``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
+enable the ceph mgr exporter.

@@ -37,7 +37,7 @@ indexer_cluster_nodes:
 instances:
   node1:
     name: "{{ groups['wazuh-manager'][0] }}"
-    ip: "{{ admin_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
+    ip: "{{ wazuh_manager_ip }}"
     role: indexer
 
 # Filebeat variables
@@ -133,17 +133,17 @@ wazuh_manager_vulnerability_detector:
   providers:
     - enabled: 'yes'
       os:
-        - 'bionic'
         - 'focal'
+        - 'jammy'
       update_interval: '1h'
       name: '"canonical"'
     - enabled: 'yes'
       os:
-        - '7'
         - '8'
+        - '9'
       update_interval: '1h'
       name: '"redhat"'
     - enabled: 'yes'
-      update_from_year: '2010'
+      update_from_year: '2018'
       update_interval: '1h'
       name: '"nvd"'

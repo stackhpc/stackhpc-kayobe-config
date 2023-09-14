@@ -2,6 +2,21 @@
 Wazuh
 =====
 
+The short version
+=================
+
+#. Create an infrastructure VM for the Wazuh manager, and add it to the wazuh-manager group
+#. Configure the infrastructure VM with kayobe: ``kayobe infra vm host configure``
+#. Edit your config under
+   ``etc/kayobe/inventory/group_vars/wazuh-manager/wazuh-manager``, in
+   particular the defaults assume that the ``provision_oc_net`` network will be
+   used.
+#. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
+#. Encrypt the secrets: ``ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml``
+#. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
+#. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
+
+
 Wazuh Manager
 =============
 
@@ -74,8 +89,8 @@ Define network interfaces ``etc/kayobe/inventory/group_vars/wazuh-manager/networ
 
 
 The Wazuh manager may need to be exposed externally, in which case it may require another interface.
-This can be done as follows in ``etc/kayobe/inventory/group_vars/wazuh-manager/network-interfaces`` ,
-with the network defined in network.yml as usual.
+This can be done as follows in ``etc/kayobe/inventory/group_vars/wazuh-manager/network-interfaces``,
+with the network defined in ``networks.yml`` as usual.
 
 .. code-block:: console
 
@@ -128,18 +143,18 @@ Several services are used for the communication of Wazuh components. Below is th
 Manually provisioned VM
 -----------------------
 
-In case where you can’t use infra-vms to deploy your wazuh-manager VM but you want to configure
-host using kayobe, there are some tips (note that depending on your setup this don’t have to always apply):
+In cases where you can’t use infra-vms to deploy your wazuh-manager VM but you want to configure
+the host using kayobe, here are some tips (note that depending on your setup this doesn't have to always apply):
 
-* Depending on preferences host have to be part of some group in inventory. ``infra-vms`` group still seems as best choice
+* Depending on preferences, hosts have to be part of some group in inventory. ``infra-vms`` group still seems like the best choice.
   You can use ``kayobe infra vm host configure`` to configure host in this case.
-  Bellow tips are based on assumption that infra-vm will be used.
-* user ``stack`` with password less sudo and accessible with ssh keys needs to be present on host.
+  The tips below are based on the assumption that infra-vm will be used.
+* user ``stack`` with passwordless sudo and access with ssh keys needs to be present on the host.
   It can be achieved in many different ways, depending on your setup.
 * lvm configuration should be placed in ``host_vars/<host_name>``
-* wazuh-manager host have to be part of ``infra-vms`` group (directly or as child)
-* network used on host needs to be defined in ``networks.yml`` and
-  if you have pre-alocated IP, it should be added to ``network-allocation.yml``.
+* wazuh-manager hosts have to be part of ``infra-vms`` group (directly or as child)
+* The network used on the host needs to be defined in ``networks.yml`` and
+  if you have pre-alocated an IP, it should be added to ``network-allocation.yml``.
   For example, if using host with IP 10.10.224.5 in network 10.10.224.0/24 one have to add:
 
 
@@ -169,18 +184,18 @@ Deploying Wazuh Manager services
 Setup
 -----
 
-To install specific version modify wazuh-ansible entry in ``etc/kayobe/ansible/requirements.yml``:
+To install a specific version modify the wazuh-ansible entry in ``etc/kayobe/ansible/requirements.yml``:
 
 .. code-block:: console
 
   roles:
     - name: wazuh-ansible
       src: https://github.com/stackhpc/wazuh-ansible
-      version: stackhpc
+      version: custom-branch
 
-Version above was tested and verified, but there is no reason to use not different one.
+The default version has been tested and verified, but there is no reason not to use a different one.
 
-Install the role:
+Reinstall the role if required:
 
 ``kayobe control host bootstrap``
 
@@ -210,9 +225,10 @@ You may need to modify some of the variables, including:
 .. note::
 
     NOTE:
-    If you are using multiple environments, and you need to customise Wazuh in each environement, create override files in an appropriate directory,
+    If you are using multiple environments, and you need to customise Wazuh in
+    each environment, create override files in an appropriate directory,
     for example `etc/kayobe/environments/production/inventory/group_vars/`
-    Files which values can be overridden (in context of Wazuh):
+    Files which values can be overridden (in the context of Wazuh):
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
     - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
@@ -257,7 +273,6 @@ does not exist, it will generate the following certificates in ``etc/kayobe/ansi
    * os-wazuh_http.key, os-wazuh_http.pem
 * Root CA certificate
    * root-ca.key  root-ca.pem
-
 
 
 It is also possible to use externally generated certificates for wazuh-dashboard. root-ca.pem should contain the CA chain.

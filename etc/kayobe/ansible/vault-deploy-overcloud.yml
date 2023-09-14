@@ -4,10 +4,10 @@
 - name: Install CA on controllers
   hosts: controllers
   tasks:
-    - name: Copy the rootCA
+    - name: Copy the intermediate CA
       copy:
-        src: "{{ kayobe_env_config_path }}/vault/rootCA.crt"
-        dest: "{{ '/etc/pki/ca-trust/source/anchors/rootCA.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/rootCA.crt' }}"
+        src: "{{ kayobe_env_config_path }}/vault/OS-TLS-ROOT.pem"
+        dest: "{{ '/etc/pki/ca-trust/source/anchors/OS-TLS-ROOT.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
         mode: 0644
       become: true
 
@@ -22,7 +22,6 @@
   vars:
     consul_bind_interface: "{{ internal_net_name | net_interface }}"
     vault_bind_address: "{{ internal_net_name | net_ip }}"
-    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
   tasks:
     - name: Set a fact about the virtualenv on the remote system
       set_fact:
@@ -54,19 +53,27 @@
         group: 1000
         mode: 0600
       loop:
-        - overcloud.crt
-        - overcloud.key
-      no_log: true
-      become: true
+        - "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
+        - "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
+      become: True
 
     - import_role:
         name: stackhpc.hashicorp.vault
       vars:
+        hashicorp_registry_url: "{{ overcloud_hashicorp_registry_url }}"
+        hashicorp_registry_username: "{{ overcloud_hashicorp_registry_username }}"
+        hashicorp_registry_password: "{{ overcloud_hashicorp_registry_password }}"
+        consul_docker_image: "{{ overcloud_consul_docker_image }}"
+        consul_docker_tag: "{{ overcloud_consul_docker_tag }}"
         vault_config_dir: "/opt/kayobe/vault"
         vault_cluster_name: "overcloud"
-        vault_tls_cert: "overcloud.crt"
-        vault_tls_key: "overcloud.key"
+        vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        vault_docker_image: "{{ overcloud_vault_docker_image }}"
+        vault_docker_tag: "{{ overcloud_vault_docker_tag }}"
+        vault_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
+        vault_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
         copy_self_signed_ca: true
+        vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
         vault_write_keys_file: true
         vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
 
@@ -75,17 +82,29 @@
         file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
         name: vault_keys
 
-    - include_role:
+    - import_role:
         name: stackhpc.hashicorp.vault_unseal
       vars:
         # NOTE: Need to unseal each backend, so don't use the VIP
-        # Use include_role to avoid this leaking to subsequent tasks.
         vault_api_addr: "http://localhost:8200"
         vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
 
+- name: Configure PKI
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: controllers[0]
+  tasks:
     - import_role:
-        name: stackhpc.hashicorp.vault_backend_ha
+        name: stackhpc.hashicorp.vault_pki
       vars:
         vault_token: "{{ vault_keys.root_token }}"
-        vault_root_ca_name: "OS-TLS-ROOT"
-        vault_intermediate_ca_name: "OS-TLS-INT"
+        vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
+        vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        vault_pki_root_create: false
+        vault_pki_intermediate_import: true
+        vault_pki_intermediate_ca_name: "OS-TLS-INT"
+        vault_pki_intermediate_ca_bundle: "{{ lookup('file', kayobe_env_config_path + '/vault/OS-TLS-INT.pem') }}"
+        vault_pki_intermediate_ca_cert: "{{ lookup('file', kayobe_env_config_path + '/vault/OS-TLS-INT.crt') }}"
+        vault_pki_intermediate_roles: "{{ overcloud_vault_pki_roles }}"
+        vault_pki_write_certificate_files: true
+        vault_pki_certificates_directory: "{{ kayobe_env_config_path }}/vault"

@@ -16,3 +16,5 @@ the various features provided.
    cephadm
    monitoring
    wazuh
+   vault
+   magnum-capi
