@@ -201,11 +201,18 @@ stackhpc_ubuntu_focal_repos:
   - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
   - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/{{ openstack_release }} main"
 
+# Whether to revert to the upstream mirrors in built Kolla container images.
+stackhpc_kolla_clean_up_repo_mirrors: true
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
     {% if kolla_base_distro == 'centos' %}
     RUN \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        mkdir -p /etc/yum.repos.d.backup && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_centos_stream_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -216,11 +223,34 @@ kolla_build_blocks:
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  footer: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro == 'centos' %}
+    RUN \
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+           echo "Found repository mirror in Yum repositories"; \
+           exit 1; \
+        fi && \
+        rm -rf /etc/yum.repos.d.backup/
+    {% else %}
+    # RUN \
+    #     mv /etc/apt/sources.list.backup /etc/apt/sources.list && \
+    #     if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
+    #        echo "Found repository mirror in APT repositories"; \
+    #        exit 1; \
+    #     fi
+    {% endif %}
+    {% endif %}
   # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
   # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
   # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
@@ -247,7 +277,7 @@ kolla_build_blocks:
   # sometimes).
   # base_ubuntu_package_sources_list: |
   #   RUN \
-  #       rm -f /etc/apt/sources.list && \
+  #       mv /etc/apt/sources.list{,.backup} && \
   #   {% for repo in stackhpc_ubuntu_focal_repos %}
   #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
   #   {% endif %}
