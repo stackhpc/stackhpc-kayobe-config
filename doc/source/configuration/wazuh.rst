@@ -302,6 +302,8 @@ Encrypt the keys (and remember to commit to git):
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
 
+.. _wazuh-verification:
+
 Verification
 ==============
 

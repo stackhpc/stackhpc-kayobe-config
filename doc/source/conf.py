@@ -29,16 +29,19 @@
 # -- StackHPC Kayobe configuration --------------------------------------
 # Variables to override
 
+previous_series = "yoga"
 current_series = "zed"
 branch = f"stackhpc/{current_series}"
 
 # Substitutions loader
-rst_epilog = """
+rst_prolog = """
 .. |current_release| replace:: {current_release}
 .. |current_release_git_branch_name| replace:: {current_release_git_branch_name}
+.. |previous_release| replace:: {previous_release}
 """.format(  # noqa: E501
     current_release_git_branch_name=branch,
     current_release=current_series,
+    previous_release=previous_series,
 )
 
 # -- General configuration ----------------------------------------------------
@@ -51,6 +54,7 @@ extensions = [
     'sphinx.ext.extlinks',
     #'sphinx.ext.intersphinx',
     'sphinxcontrib.rsvgconverter',
+    'sphinx_substitution_extensions',
 ]
 
 # autodoc generation is a bit aggressive and a nuisance when doing heavy
@@ -118,3 +122,6 @@ extlinks = {
     f"{project}-doc": (f"https://docs.openstack.org/{project}/{current_series}/", "%s documentation")
     for project in extlinks_projects
 }
+extlinks["skc-doc"] = (f"https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-{current_series}/", "%s documentation")
+extlinks["kayobe-renos"] = (f"https://docs.openstack.org/releasenotes/kayobe/{current_series}.html", "%s release notes")
+extlinks["kolla-ansible-renos"] = (f"https://docs.openstack.org/releasenotes/kolla-ansible/{current_series}.html", "%s release notes")
