@@ -1,0 +1,27 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Set the version of Python and other tools you might need
+build:
+  apt_packages:
+    - tox
+  os: ubuntu-22.04
+  tools:
+    python: "3.7"
+  jobs:
+    post_checkout:
+      - git remote set-branches origin master stackhpc/yoga stackhpc/xena stackhpc/wallaby
+      - git fetch --unshallow
+
+# Build documentation in the doc/source/ directory with Sphinx
+sphinx:
+  configuration: doc/source/conf.py
+
+# We recommend specifying your dependencies to enable reproducible builds:
+# https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+  install:
+    - requirements: doc/requirements.txt

@@ -9,7 +9,7 @@ cephadm_ceph_release: "pacific"
 #cephadm_fsid:
 
 # Ceph container image.
-cephadm_image: "{{ stackhpc_docker_registry }}/ceph/ceph:{{ cephadm_image_tag }}"
+cephadm_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/ceph:{{ cephadm_image_tag }}"
 
 # Ceph container image tag.
 cephadm_image_tag: "v16.2.5"
@@ -60,6 +60,13 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 # List of Cephx keys. See stackhpc.cephadm.keys role for format.
 #cephadm_keys:
 
+# A list of commands to pass to cephadm shell -- ceph. See
+# stackhpc.cephadm.commands for format. Pre commands run before the rest of the
+# post-deployment configuration, post commands run after the rest of the
+# post-deployment configuration.
+#cephadm_commands_pre:
+#cephadm_commands_post:
+
 ###############################################################################
 # Kolla Ceph auto-configuration.
 
@@ -91,7 +98,7 @@ kolla_ceph_services:
 kolla_ceph_cinder_volume_required: "{{ kolla_enable_cinder | bool }}"
 
 # Whether to generate Ceph configuration for Cinder backup.
-kolla_ceph_cinder_backup_required: "{{ kolla_enable_cinder_backup | default(false) | bool }}"
+kolla_ceph_cinder_backup_required: "{{ kolla_enable_cinder_backup | default(true) | bool }}"
 
 # Whether to generate Ceph configuration for Glance.
 kolla_ceph_glance_required: "{{ kolla_enable_glance | bool }}"
