@@ -95,7 +95,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20220919T081704{% else %}wallaby-20220819T112725{% endif %}"
+kolla_openstack_release: "{% if kolla_base_distro == 'centos' %}wallaby-20230207T161158{% else %}wallaby-20230215T134157{% endif %}"
 
 # Docker tag applied to built container images. Default is
 # {{ kolla_openstack_release }}.
@@ -123,18 +123,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  cinder-base:
-    type: git
-    location: https://github.com/stackhpc/cinder.git
-    reference: stackhpc/{{ openstack_release }}
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
     reference: stackhpc/wallaby
-  glance-base:
-    type: git
-    location: https://github.com/stackhpc/glance.git
-    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -213,11 +205,18 @@ stackhpc_ubuntu_focal_repos:
   - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
   - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/wallaby main"
 
+# Whether to revert to the upstream mirrors in built Kolla container images.
+stackhpc_kolla_clean_up_repo_mirrors: true
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
     {% if kolla_base_distro == 'centos' %}
     RUN \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        mkdir -p /etc/yum.repos.d.backup && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_centos_stream_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -228,11 +227,34 @@ kolla_build_blocks:
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
         && \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_centos_stream_repos + stackhpc_epel_repos + stackhpc_centos_additional_repos + stackhpc_third_party_repos %}
         sed -i -e 's/^\(mirrorlist *=.*\)/#\1/g' \
                -e 's/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/#baseurl.*/a baseurl={{ repo.url }}' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+  footer: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro == 'centos' %}
+    RUN \
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+           echo "Found repository mirror in Yum repositories"; \
+           exit 1; \
+        fi && \
+        rm -rf /etc/yum.repos.d.backup/
+    {% else %}
+    # RUN \
+    #     mv /etc/apt/sources.list.backup /etc/apt/sources.list && \
+    #     if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
+    #        echo "Found repository mirror in APT repositories"; \
+    #        exit 1; \
+    #     fi
+    {% endif %}
+    {% endif %}
   # NOTE: The Open vSwitch and OVN packages in Ubuntu Wallaby UCA repository
   # are quite old - 2.15 and 20.12 respectively. Pull in these packages from
   # the Yoga UCA, which are 2.17 and 22.03, to more closely match the CentOS
@@ -259,7 +281,7 @@ kolla_build_blocks:
   # sometimes).
   # base_ubuntu_package_sources_list: |
   #   RUN \
-  #       rm -f /etc/apt/sources.list && \
+  #       mv /etc/apt/sources.list{,.backup} && \
   #   {% for repo in stackhpc_ubuntu_focal_repos %}
   #       echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
   #   {% endif %}
@@ -271,6 +293,14 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
+  keystone_base_footer: |
+    {% raw %}
+    {% if base_package_type == 'deb' %}
+    RUN curl -sLO https://github.com/stackhpc/lasso/releases/download/applied%2F2.7.0-2build3/liblasso3_2.7.0-2build3_amd64.deb && \
+        sudo dpkg -i liblasso3_2.7.0-2build3_amd64.deb && \
+        rm -f liblasso3_2.7.0-2build3_amd64.deb
+    {% endif %}
+    {% endraw %}
   prometheus_v2_server_repository_version: |
     ARG prometheus_version='2.35.0'
   prometheus_alertmanager_repository_version: |
@@ -299,7 +329,13 @@ kolla_build_blocks:
   neutron_server_footer: |
     # This is a workaround for a bug in etcd3gw that was fixed in 1.0.1, but not in v0.2.3.
     # https://opendev.org/openstack/etcd3gw/commit/ed899b34e464862525f76fff2377a2cceeb65af7
+    {% raw %}
+    {% if base_distro == 'centos' %}
+    RUN sed -i 's/decode_unicode=True/decode_unicode=False/' /var/lib/kolla/venv/lib/python3.6/site-packages/etcd3gw/watch.py
+    {% elif base_distro == 'ubuntu' %}
     RUN sed -i 's/decode_unicode=True/decode_unicode=False/' /var/lib/kolla/venv/lib/python3.8/site-packages/etcd3gw/watch.py
+    {% endif %}
+    {% endraw %}
 
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
