@@ -4,21 +4,15 @@ scrape_configs:
     metrics_path: /redfish
     static_configs:
     - targets:
-      - 172.23.11.101
-      - 172.23.11.102
-      - 172.23.11.103
-      - 172.23.11.111
-      - 172.23.11.112
-      - 172.23.11.113
-      - 172.23.11.121
-      - 172.23.11.122
-      - 172.23.11.123
+{% for host in groups['redfish_exporter_cp_hosts'] %}
+      - {{ hostvars[host].ipmi_address }}
+{% endfor %}
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: "{{ hostvars['hb-seed01'].ansible_host }}:9610"  ### the address of the redfish-exporter
+        replacement: "{{ hostvars[groups['seed'][0]].ansible_host }}:9610"  ### the address of the redfish-exporter
     scrape_interval: 5m
-    scrape_timeout: 60s
+    scrape_timeout: {{ 8 * groups['redfish_exporter_cp_hosts'] | length }}s

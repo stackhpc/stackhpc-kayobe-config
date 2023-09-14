@@ -11,15 +11,13 @@ route:
   group_interval: 5m
   repeat_interval: 4h
 
- {{ '{% raw %}' }}{% raw %}
 receivers:
   - name: slack-notifications
     slack_configs:
-    - channel: '#merlin-prometheus'
+    - channel: '#{{ kayobe_environment }}-prometheus'
       send_resolved: true
       http_config:
-        proxy_url: http://172.23.41.237:3128
-{% endraw %}{{ '{% endraw %}' }}
+        proxy_url: http://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:3128
 
 templates:
   - '/etc/prometheus/*.tmpl'
