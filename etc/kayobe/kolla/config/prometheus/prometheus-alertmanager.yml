@@ -1,0 +1,23 @@
+---
+global:
+  resolve_timeout: 5m
+  smtp_require_tls: true
+  slack_api_url: '{{ secrets_slack_notification_channel_url }}'
+
+route:
+  receiver: slack-notifications
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: slack-notifications
+    slack_configs:
+    - channel: '#{{ kayobe_environment }}-prometheus'
+      send_resolved: true
+      http_config:
+        proxy_url: http://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:3128
+
+templates:
+  - '/etc/prometheus/*.tmpl'
