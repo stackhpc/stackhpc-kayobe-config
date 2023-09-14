@@ -8,3 +8,5 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    :maxdepth: 1
 
    rabbitmq
+   octavia
+   hotfix-playbook

@@ -1,0 +1,40 @@
+---
+# Tag is the version of the image to promote, stored in an env variable named OVERCLOUD_HOST_IMAGE_TAG
+- name: Promote an image to production
+  hosts: localhost
+  vars:
+    remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
+    remote_pulp_username: "{{ stackhpc_image_repository_username }}"
+    remote_pulp_password: "{{ stackhpc_image_repository_password }}"
+    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    promotion_tag: "{{ lookup('env', 'OVERCLOUD_HOST_IMAGE_TAG') }}"
+  tasks:
+
+    - name: Check whether the image exists
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ promotion_tag }}"
+        base_path: "{{ base_path }}/{{ promotion_tag }}"
+      register: distribution_details
+
+    - name: Fail if the image does not exist
+      fail:
+        msg: "Image {{ promotion_tag }} does not exist"
+      when: distribution_details.distribution is none
+
+    - name: Ensure production content guard is set
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ promotion_tag }}"
+        base_path: "{{ base_path }}/{{ promotion_tag }}"
+        content_guard: release
+        state: present
+
+    - name: Print version tag and os
+      debug:
+        msg: "Promoted tag: {{ promotion_tag }}"

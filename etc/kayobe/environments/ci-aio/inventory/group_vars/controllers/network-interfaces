@@ -5,7 +5,7 @@
 # Controller interface on all-in-one network.
 aio_interface: breth1
 # Use dummy1 if it exists, otherwise the bridge will have no ports.
-aio_bridge_ports: "{{ ['dummy1'] if 'dummy1' in hostvars[inventory_hostname].ansible_facts else [] }}"
+aio_bridge_ports: "{{ ['dummy1'] if ('dummy1' in hostvars[inventory_hostname].ansible_facts) or (os_distribution == 'rocky' and os_release == '9') else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

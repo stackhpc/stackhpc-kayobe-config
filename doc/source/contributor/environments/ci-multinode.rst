@@ -324,3 +324,77 @@ with:
 
 There are various other options for sonobuoy, see the `documentation
 <https://sonobuoy.io/docs/>`_ for more details.
+
+Wazuh
+======
+
+Adding Wazuh to a new deployment
+--------------------------------
+
+Wazuh is supported but not deployed by default. If you are using the standard
+[StackHPC multinode
+terraform](https://github.com/stackhpc/terraform-kayobe-multinode), there is a
+``deploy_wazuh`` terraform variable that will add it to the automated setup.
+
+Adding Wazuh to an existing deployment
+--------------------------------------
+
+Create an additional VM with the same basic configuration (key, image, flavour
+etc.) as the existing deployment.
+
+Add the IP and hostname to ``/etc/hosts`` on the ansible control host.
+
+Add the hostname to the ``[wazuh-manager]`` group in
+``$KAYOBE_CONFIG_PATH/environments/ci-multinode/inventory/hosts``.
+
+Add the host to the ``[infra-vms]`` group, either directly or by making the
+``wazuh-manager`` group a child group of ``infra-vms``.
+
+Create the following directory structure:
+``$KAYOBE_CONFIG_PATH/hooks/infra-vm-host-configure/pre.d/``
+
+Either copy or symlink in the growroot, networking, and vxlan playbooks as
+shown in ``$KAYOBE_CONFIG_PATH/hooks/seed-host-configure/pre.d/``.
+
+Configure the Wazuh manager VM:
+
+.. code-block:: bash
+
+      kayobe infra vm host configure
+
+Create and encrypt the Wazuh secrets
+
+.. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
+      ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml
+
+Run the Wazuh manager and agent deployment playbooks:
+
+.. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml
+
+Wazuh should now be fully deployed. To test the service, you can use sshuttle
+or some other forwarding protocol to access the Wazuh dashboard.
+
+.. code-block:: bash
+
+      sshuttle -r <wazuh-manager-hostname> <wazuh-manager-ip>
+
+The above example assumes an SSH configuration that allows access with
+``ssh <wazuh-manager-hostname>``.
+
+Open ``https://<wazuh-manager-ip>/`` in a web browser, and you should see a
+login screen.
+
+The default username is ``admin`` and the password is the
+``opendistro_admin_password`` which can be found in ``wazuh-secrets.yml`` e.g.
+
+.. code-block:: bash
+
+      ansible-vault view $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml --vault-password-file ~/vault.password | grep opendistro_admin_password
+
+If the deployment has been successful, you should be able to see a Wazuh agent
+for each host in your deployment (aside from the Wazuh manager itself).

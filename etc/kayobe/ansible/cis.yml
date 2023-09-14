@@ -1,0 +1,15 @@
+---
+
+- name: Security hardening
+  hosts: overcloud
+  become: true
+  tasks:
+    - name: Remove /etc/motd
+      # See remediation in:
+      # https://github.com/wazuh/wazuh/blob/bfa4efcf11e288c0a8809dc0b45fdce42fab8e0d/ruleset/sca/centos/8/cis_centos8_linux.yml#L777
+      file:
+        path: /etc/motd
+        state: absent
+
+    - include_role:
+        name: ansible-lockdown.rhel8_cis
