@@ -1,4 +1,33 @@
 ---
+- name: Pre-checks
+  gather_facts: false
+  hosts: localhost
+  tags:
+    - prechecks
+  tasks:
+    - name: Fail if using old path for Wazuh certificates
+      fail:
+        msg: >-
+          The path used for Wazuh SSL certificates was changed in a previous release. The certificates
+          were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/certificates
+          to {{ kayobe_env_config_path }}/wazuh/certificates, e.g git mv {{ playbook_dir }}/wazuh/certificates
+          {{ kayobe_env_config_path }}/wazuh/certificates
+      when: (playbook_dir ~ '/wazuh/certificates') is exists
+
+    - name: Fail if using old path for custom certificates
+      fail:
+        msg: >-
+          Wazuh custom SSL certificates have been merged with regular certificates. The certificates
+          were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom-certificates
+          to {{ kayobe_env_config_path }}/wazuh/certificates/certs ,e.g git mv {{ playbook_dir }}/wazuh/custom-certificates/*
+          {{ kayobe_env_config_path }}/wazuh/certificates/certs.
+      when: (playbook_dir ~ '/wazuh/custom-certificates)' is exists
+
+    - name:
+      assert:
+        that: local_custom_certs_path is not defined
+        fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
+
 # Certificates generation
 - hosts: localhost
   roles:
@@ -30,27 +59,6 @@
       when: http_proxy_url is defined
       notify:
         - Restart wazuh
-
-    - name: Check if custom certificates exists
-      stat:
-        path: "{{ local_custom_certs_path }}"
-      register: custom_certificates_folder
-      delegate_to: localhost
-      become: no
-
-    - name: Copy the node & admin certificates to Wazuh dashboard
-      copy:
-        src: "{{ local_custom_certs_path }}/{{ item }}"
-        dest: /etc/wazuh-dashboard/certs/
-        owner: wazuh-dashboard
-        group: wazuh-dashboard
-        mode: 0400
-      with_items:
-        - "{{ indexer_node_name }}-key.pem"
-        - "{{ indexer_node_name }}.pem"
-      when: custom_certificates_folder.stat.exists
-      notify:
-        - Restart wazuh-dashboard
 
     - name: Perform health check against filebeat
       command: filebeat test output
