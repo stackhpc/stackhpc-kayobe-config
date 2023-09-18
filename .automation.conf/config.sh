@@ -21,7 +21,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   fi
 
   if [[ "$KAYOBE_ENVIRONMENT" =~ "habrok" ]]; then
-    export TEMPEST_CONCURRENCY=16
+    export TEMPEST_CONCURRENCY=32
   fi
 fi
 
