@@ -28,6 +28,9 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
   fi
 
+  if [[ "$KAYOBE_ENVIRONMENT" =~ "habrok" ]]; then
+    export TEMPEST_CONCURRENCY=32
+  fi
 fi
 
 if [[ -z "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES:+x}" ]] || [[ ! -e "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" ]]; then
