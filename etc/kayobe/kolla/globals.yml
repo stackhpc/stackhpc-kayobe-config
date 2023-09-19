@@ -11,6 +11,7 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts
 kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
 
 opensearch_tag: yoga-20230904T121340
+octavia_tag: yoga-20230921T074238
 
 kayobe_image_tags:
   openstack:
@@ -49,10 +50,7 @@ kayobe_image_tags:
   nova_libvirt:
     # Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
     # with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test carefully before bumping.
-    centos: yoga-20230718T112646    
-  octavia:
-    rocky: yoga-20230523T110936
-    ubuntu: yoga-20230523T110936
+    centos: yoga-20230718T112646
   openvswitch:
     rocky: yoga-20230515T150233
     ubuntu: yoga-20230515T150233
@@ -74,7 +72,6 @@ magnum_tag: "{% raw %}{{ kayobe_image_tags['magnum'][kolla_base_distro] | defaul
 neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova_libvirt'][kolla_base_distro] | default(nova_tag) }}{% endraw %}"
-octavia_tag: "{% raw %}{{ kayobe_image_tags['octavia'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 openvswitch_tag: "{% raw %}{{ kayobe_image_tags['openvswitch'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 ovn_tag: "{% raw %}{{ kayobe_image_tags['ovn'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
 prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_exporter'][kolla_base_distro] | default(openstack_tag) }}{% endraw %}"
