@@ -316,10 +316,10 @@ RGWs are defined with the following:
 .. code:: yaml
 
   cephadm_radosgw_services:
- - id: myrgw
-   count_per_host: 1
-   spec:
-     rgw_frontend_port: 80
+    - id: myrgw
+      count_per_host: 1
+      spec:
+        rgw_frontend_port: 80
 
 Ceph RGWs require additional configuration to:
 
@@ -345,7 +345,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
   - "config set client.rgw rgw_keystone_api_version '3'"
   - "config set client.rgw rgw_keystone_token_cache_size '10000'"
-  - "config set client.rgw rgw_keystone_url https://{{ internal_net_vip_address }}:5000"
+  - "config set client.rgw rgw_keystone_url https://{{ kolla_internal_fqdn }}:5000"
   - "config set client.rgw rgw_keystone_verify_ssl false"
   - "config set client.rgw rgw_max_attr_name_len '1000'"
   - "config set client.rgw rgw_max_attr_size '1000'"
@@ -394,15 +394,15 @@ add definitions of your Ceph hosts to Kolla ``globals.yml``:
 .. code:: yaml
 
   ceph_rgw_hosts:
-  - host: controller1
-    ip: <host IP on storage net>
-    port: 8100
-  - host: controller2
-    ip: <host IP on storage net>
-    port: 8100
-  - host: controller3
-    ip: <host IP on storage net>
-    port: 8100
+    - host: controller1
+      ip: <host IP on storage net>
+      port: 8100
+    - host: controller2
+      ip: <host IP on storage net>
+      port: 8100
+    - host: controller3
+      ip: <host IP on storage net>
+      port: 8100
 
 HA with Ingress services
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -415,12 +415,12 @@ pair).
 .. code:: yaml
 
   cephadm_ingress_services:
-      - id: rgw.myrgw
-        spec:
-          frontend_port: 443
-          monitor_port: 1967
-          virtual_ip: 10.66.0.1/24
-          ssl_cert: {example_certificate_chain}
+    - id: rgw.myrgw
+      spec:
+        frontend_port: 443
+        monitor_port: 1967
+        virtual_ip: 10.66.0.1/24
+        ssl_cert: {example_certificate_chain}
 
 When using ingress services, you will need to stop Kolla from configuring your
 RGWs to use the Kolla-deployed haproxy. Set the following in Kolla
