@@ -322,14 +322,14 @@ kolla_build_blocks:
     {% endif %}
   base_ubuntu_package_sources_list: |
     RUN \
-        mv /etc/apt/sources.list{,.backup} && \
+        mv /etc/apt/sources.list /etc/apt/sources.list.backup && \
     {% for repo in stackhpc_ubuntu_focal_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
   footer: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
-    {% if kolla_base_distro == 'centos' %}
+    {% if kolla_base_distro in ['centos', 'rocky'] %}
     RUN \
         tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
