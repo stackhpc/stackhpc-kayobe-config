@@ -6,30 +6,30 @@
     - prechecks
   tasks:
     - block:
-      - name: Fail if using old path for Wazuh certificates
-        fail:
-          msg: >-
-            The path used for Wazuh SSL certificates was changed in a previous release. The certificates
-            were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/certificates
-            to {{ kayobe_env_config_path }}/wazuh/certificates, e.g git mv {{ playbook_dir }}/wazuh/certificates
-            {{ kayobe_env_config_path }}/wazuh/certificates.
-        when:
-          - (playbook_dir ~ '/wazuh/certificates') is exists
+        - name: Fail if using old path for Wazuh certificates
+          fail:
+            msg: >-
+              The path used for Wazuh SSL certificates was changed in a previous release. The certificates
+              were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/certificates
+              to {{ kayobe_env_config_path }}/wazuh/certificates, e.g git mv {{ playbook_dir }}/wazuh/certificates
+              {{ kayobe_env_config_path }}/wazuh/certificates.
+          when:
+            - (playbook_dir ~ '/wazuh/certificates') is exists
 
-      - name: Fail if using old path for custom certificates
-        fail:
-          msg: >-
-            Wazuh custom SSL certificates have been merged with regular certificates. The certificates
-            were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
-            to {{ kayobe_env_config_path }}/wazuh/certificates/certs ,e.g git mv {{ playbook_dir }}/wazuh/custom_certificates/*
-            {{ kayobe_env_config_path }}/wazuh/certificates/certs.
-        when:
-          - (playbook_dir ~ '/wazuh/custom_certificates') is exists
+        - name: Fail if using old path for custom certificates
+          fail:
+            msg: >-
+              Wazuh custom SSL certificates have been merged with regular certificates. The certificates
+              were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
+              to {{ kayobe_env_config_path }}/wazuh/certificates/certs ,e.g git mv {{ playbook_dir }}/wazuh/custom_certificates/*
+              {{ kayobe_env_config_path }}/wazuh/certificates/certs.
+          when:
+            - (playbook_dir ~ '/wazuh/custom_certificates') is exists
 
-      - name: Check that removed variable, local_custom_certs_path, is not set
-        assert:
-          that: local_custom_certs_path is not defined
-          fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
+        - name: Check that removed variable, local_custom_certs_path, is not set
+          assert:
+            that: local_custom_certs_path is not defined
+            fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
       when:
         - groups["wazuh-manager"] | length > 0 or True
 
