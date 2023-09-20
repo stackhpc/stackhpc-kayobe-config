@@ -10,6 +10,10 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
 
+# Use the new Keystone image which includes the liblasso fix for Keystone SAML
+# federation.
+keystone_tag: yoga-20230913T160015
+
 opensearch_tag: yoga-20230904T121340
 
 kayobe_image_tags:
