@@ -82,6 +82,17 @@ prometheus_node_exporter_tag: "{% raw %}{{ kayobe_image_tags['prometheus_node_ex
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 
+{% raw %}
+# Using OVN images from the Zed release to bring in OVN 22.09 which
+# properly supports native OVN DHCP for external (bare metal, SR-IOV) ports.
+# Note that they have a different naming scheme than the Yoga images.
+ovn_tag: "zed-ubuntu-jammy-20230821T155947"
+ovn_northd_image: "{{ docker_registry }}/{{ docker_namespace }}/ovn-northd"
+ovn_nb_db_image: "{{ docker_registry }}/{{ docker_namespace }}/ovn-nb-db-server"
+ovn_sb_db_image: "{{ docker_registry }}/{{ docker_namespace }}/ovn-sb-db-server"
+ovn_controller_image: "{{ docker_registry }}/{{ docker_namespace }}/ovn-controller"
+{% endraw %}
+
 om_enable_rabbitmq_high_availability: true
 
 #############################################################################
