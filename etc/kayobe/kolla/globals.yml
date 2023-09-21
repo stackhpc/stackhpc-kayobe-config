@@ -1,20 +1,47 @@
 # yamllint disable-file
 ---
-docker_yum_baseurl: "{{ stackhpc_repo_docker_url }}"
-docker_yum_gpgkey: "https://download.docker.com/linux/centos/gpg"
+
+# To work around issue of trying to install docker from
+# empty pulp server, use upstream docker dnf repo on
+# non-overcloud hosts
+enable_docker_repo: {% raw %}"{{ 'overcloud' not in group_names or ansible_facts.os_family == 'Debian' }}"{% endraw %}
+
 
 {% if kolla_base_distro == 'centos' %}
-bifrost_tag: wallaby-20230207T194135
-blazar_tag: wallaby-20230303T172322
-caso_tag: wallaby-20230303T172322
-neutron_tag: wallaby-20230317T170927
+bifrost_tag: xena-20230214T165534
+blazar_tag: xena-20230315T122920
+caso_tag: xena-20230315T122920
+ironic_tag: xena-20230316T162305
+ironic_dnsmasq_tag: xena-20230214T150257
+neutron_tag: xena-20230320T143013
+prometheus_node_exporter_tag: xena-20230310T170439
 {% else %}
-bifrost_tag: wallaby-20230215T160405
-blazar_tag: wallaby-20230303T172458
-caso_tag: wallaby-20230303T172458
-keystone_tag: wallaby-20230308T104024
-neutron_tag: wallaby-20230317T170930
+bifrost_tag: xena-20230215T195824
+blazar_tag: xena-20230315T122918
+caso_tag: xena-20230315T122918
+ironic_tag: xena-20230317T090705
+ironic_dnsmasq_tag: xena-20230215T164524
+keystone_tag: xena-20230308T120251
+neutron_tag: xena-20230320T143007
+prometheus_node_exporter_tag: xena-20230315T164024
 {% endif %}
 
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
+
+om_enable_rabbitmq_high_availability: true
+
+#############################################################################
+# Monitoring and alerting related settings
+
+es_heap_size: 8g
+prometheus_cmdline_extras: "--storage.tsdb.retention.time=30d"
+
+# Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
+prometheus_node_exporter_extra_volumes:
+  - "textfile:/var/lib/node_exporter/textfile_collector"
+prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
+
+
+#############################################################################
+

@@ -18,6 +18,9 @@
 # List of extra networks to which seed nodes are attached.
 #seed_extra_network_interfaces:
 
+# Whether to enable SNAT on seed nodes. Default is false.
+#seed_enable_snat:
+
 ###############################################################################
 # Seed node software RAID configuration.
 
@@ -77,6 +80,13 @@
 #seed_sysctl_parameters:
 
 ###############################################################################
+# Seed node tuned configuration.
+
+# Builtin tuned profile to use. Format is same as that used by giovtorres.tuned
+# role. Default is virtual-guest.
+#seed_tuned_active_builtin_profile:
+
+###############################################################################
 # Seed node user configuration.
 
 # List of users to create. This should be in a format accepted by the
@@ -96,8 +106,15 @@ seed_pulp_container:
     image: pulp/pulp
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
-    tag: "3.16"
+    tag: "3.24.0"
     network_mode: host
+    # Override deploy_containers_defaults.init == true to ensure
+    # s6-overlay-suexec starts as pid 1
+    init: false
+    env:
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
       - pulp_storage:/var/lib/pulp
@@ -124,7 +141,6 @@ seed_squid_container:
 # Example:
 # seed_containers:
 #   squid:
-#     name: "squid"
 #     image: "stackhpc/squid:3.5.20-1"
 #     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
