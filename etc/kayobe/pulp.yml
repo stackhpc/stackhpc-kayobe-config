@@ -800,14 +800,54 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+# RUG: Using OVN images from the Zed release to bring in OVN 22.09 which
+# properly supports native OVN DHCP for external (bare metal, SR-IOV) ports.
+# Note that they have a different naming scheme than the Yoga images.
+
+# List of Kolla Zed container image names.
+stackhpc_pulp_images_kolla_zed:
+  - ovn-controller
+  - ovn-nb-db-server
+  - ovn-northd
+  - ovn-sb-db-server
+
+# Filtered list of Kolla Zed container image names.
+stackhpc_pulp_images_kolla_zed_filtered: "{{ stackhpc_pulp_images_kolla_zed | select('search', '(' ~ stackhpc_pulp_images_kolla_filter.split() | join('|') ~ ')') | list }}"
+
+# List of Kolla Zed container image repositories.
+stackhpc_pulp_repository_container_repos_kolla_zed: >-
+  {%- set repos = [] -%}
+  {%- for image in stackhpc_pulp_images_kolla_zed_filtered -%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro]-%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ image -%}
+  {%- set repo = {"name": image_repo} -%}
+  {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
+  {%- endif -%}
+  {%- endfor -%}
+  {{ repos }}
+
+# List of Kolla Zed container image distributions.
+stackhpc_pulp_distribution_container_kolla_zed: >-
+  {%- set distributions = [] -%}
+  {%- for image in stackhpc_pulp_images_kolla_zed_filtered -%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro]-%}
+  {%- set image_repo = kolla_docker_namespace ~ "/" ~ image -%}
+  {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
+  {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
+  {%- endif -%}
+  {%- endfor -%}
+  {{ distributions }}
+
 # List of container image repositories.
 stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
+      stackhpc_pulp_repository_container_repos_kolla_zed +
       stackhpc_pulp_repository_container_repos_hashicorp) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
+      stackhpc_pulp_distribution_container_kolla_zed +
       stackhpc_pulp_distribution_container_hashicorp) | selectattr('required') }}
