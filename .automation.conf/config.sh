@@ -48,6 +48,7 @@ if [ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}"  == "baremetal" ]; then
 fi
 
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/wazuh-secrets.yml"
 )
 
