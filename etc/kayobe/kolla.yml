@@ -101,7 +101,7 @@ kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 # Docker tag applied to built container images. Default is {{
 # kolla_openstack_release }}-{{ kolla_base_distro }}-{{
 # kolla_base_distro_version }}.
-#kolla_tag:
+kolla_tag: "{{ openstack_release }}-{{ kolla_base_distro }}-{{ kolla_base_distro_version }}-{{ ansible_facts.date_time.iso8601_basic_short }}"
 
 # Dict mapping names of sources to their definitions.
 # See kolla.common.config for details.
@@ -225,11 +225,18 @@ stackhpc_ubuntu_jammy_repos:
   - "deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
   - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release }} main"
 
+# Whether to revert to the upstream mirrors in built Kolla container images.
+stackhpc_kolla_clean_up_repo_mirrors: true
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
     {% if kolla_base_distro == 'rocky' %}
     RUN \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        mkdir -p /etc/yum.repos.d.backup && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_yum_repos %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -242,6 +249,10 @@ kolla_build_blocks:
     {# fixme #}
     {% if kolla_base_distro == 'rocky' %}
         && \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -251,11 +262,30 @@ kolla_build_blocks:
     {% endif %}
   base_ubuntu_package_sources_list: |
     RUN \
-        rm -f /etc/apt/sources.list && \
+        mv /etc/apt/sources.list /etc/apt/sources.list.backup && \
     {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+  footer: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro == 'rocky' %}
+    RUN \
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+           echo "Found repository mirror in Yum repositories"; \
+           exit 1; \
+        fi && \
+        rm -rf /etc/yum.repos.d.backup/
+    {% else %}
+    RUN \
+        mv /etc/apt/sources.list.backup /etc/apt/sources.list && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
+           echo "Found repository mirror in APT repositories"; \
+           exit 1; \
+        fi
+    {% endif %}
+    {% endif %}
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
@@ -277,47 +307,17 @@ kolla_build_customizations_common:
   ironic_inspector_pip_packages_append:
     - /additions/*
 
-kolla_build_customizations_rocky: # TODO: Check whether this is actually correct. It seems that it was previously being skipped for rocky
-  base_yum_repo_files_remove:
-    - proxysql.repo
-  neutron_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  neutron_base_packages_append:
-    - openvswitch2.17
-    - python3-openvswitch2.17
-  nova_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  nova_base_packages_append:
-    - openvswitch2.17
-    - python3-openvswitch2.17
-  nova_compute_packages_remove:
-    - openvswitch
-  nova_compute_packages_append:
-    - openvswitch2.17
-  octavia_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  octavia_base_packages_append:
-    - openvswitch2.17
-    - python3-openvswitch2.17
+kolla_build_customizations_rocky:
   ovn_base_packages_override:
-    - ovn22.09
+    - ovn23.03
   ovn_controller_packages_override:
-    - ovn22.09-host
+    - ovn23.03-host
   ovn_nb_db_server_packages_override:
-    - ovn22.09-central
+    - ovn23.03-central
   ovn_northd_packages_override:
-    - ovn22.09-central
+    - ovn23.03-central
   ovn_sb_db_server_packages_override:
-    - ovn22.09-central
-  openvswitch_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  openvswitch_base_packages_append:
-    - openvswitch2.17
-    - python3-openvswitch2.17
+    - ovn23.03-central
 
 kolla_build_customizations_ubuntu: {}
 
@@ -331,14 +331,8 @@ kolla_build_customizations: "{{ kolla_build_customizations_common | combine(koll
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args:
-  blackbox_exporter_version: "0.19.0"
-  haproxy_exporter_version: "0.13.0"
-  memcached_exporter_version: "0.9.0"
-  mysqld_exporter_version: "0.13.0"
-  node_exporter_version: "1.5.0"
+  node_exporter_version: "1.5.0" # kolla has 1.4.0
   node_exporter_sha256sum: "af999fd31ab54ed3a34b9f0b10c28e9acee9ef5ac5a5d5edfdde85437db7acbb"
-  prometheus_version: "2.35.0"
-  prometheus_alertmanager_version: "0.24.0"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
