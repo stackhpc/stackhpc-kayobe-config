@@ -9,20 +9,10 @@
 # https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/wazuh-indexer/defaults/main.yml
 # https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-wazuh-manager/defaults/main.yml
 
-# Domain name used to generate Search Guard CE certificates
-domain_name: "hb-wazuh.hpc.rug.nl"
-
 # Ansible control host certificate directory
-local_certs_path: "{{ kayobe_config_path }}/environments/{{ kayobe_environment }}/inventory/group_vars/wazuh-manager"
+local_certs_path: "{{ kayobe_env_config_path }}/wazuh/"
 
-# Ansible control host custom certificates directory
-local_custom_certs_path: "{{ local_certs_path }}/wazuh-certificates/dashboard"
-
-instances:
-  node1:
-    name: "{{ groups['wazuh-manager'][0] }}"
-    ip: "{{ admin_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
-    role: indexer
+local_custom_certs_path: "{{ local_certs_path }}/dashboard"
 
 # Dashboard variables
-dashboard_server_host: "{{ domain_name }}"
+dashboard_server_host: "{{ public_net_name | net_ip }}"
