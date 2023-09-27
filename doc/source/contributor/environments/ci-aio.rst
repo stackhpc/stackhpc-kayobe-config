@@ -10,6 +10,11 @@ automates the manual setup steps below, and is recommended for most users.
 The manual setup steps are provided for reference, and for users who wish to
 make changes to the setup process.
 
+.. warning::
+
+    This guide was written for the Yoga release and has not been validated for
+    Antelope. Proceed with caution.
+
 Prerequisites
 =============
 

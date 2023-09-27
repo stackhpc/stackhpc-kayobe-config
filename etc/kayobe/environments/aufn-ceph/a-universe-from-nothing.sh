@@ -10,8 +10,8 @@
 set -eu
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/yoga
-KAYOBE_CONFIG_BRANCH=stackhpc/yoga
+KAYOBE_BRANCH=stackhpc/2023.1
+KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
@@ -25,10 +25,10 @@ EOF
 
 # Install git and tmux.
 if $(which dnf 2>/dev/null >/dev/null); then
-    sudo dnf -y install git tmux python3-virtualenv
+    sudo dnf -y install git tmux
 else
     sudo apt update
-    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3 python3-virtualenv
+    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3
 fi
 
 # Disable the firewall.
@@ -56,7 +56,7 @@ popd
 mkdir -p venvs
 pushd venvs
 if [[ ! -d kayobe ]]; then
-    virtualenv kayobe
+    python3 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable. 
