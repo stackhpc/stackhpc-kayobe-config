@@ -163,7 +163,8 @@ jobs:
 
       - name: Build and push kolla seed images
         run: |
-          args="kolla_base_distro=${{ matrix.distro }}"
+          args="${{ github.event.inputs.regexes }}"
+          args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=$KOLLA_TAG"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
