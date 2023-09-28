@@ -14,7 +14,7 @@
               {{ playbook_dir }}/wazuh/certificates to {{ kayobe_env_config_path }}/wazuh/ and remove the
               empty directory.
           when:
-            - playbook_dir ~ '/wazuh/certificates' is exists
+            - (playbook_dir ~ '/wazuh/certificates') is exists
 
         - name: Fail if using old path for custom certificates
           fail:
@@ -23,7 +23,7 @@
               were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
               to {{ kayobe_env_config_path }}/wazuh/wazuh-certificates and remove the empty directory.
           when:
-            - playbook_dir ~ '/wazuh/custom_certificates' is exists
+            - (playbook_dir ~ '/wazuh/custom_certificates') is exists
 
         - name: Check that removed variable, local_custom_certs_path, is not set
           assert:
