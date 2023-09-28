@@ -260,7 +260,7 @@ By default, Wazuh Ansible uses `wazuh-cert-tool.sh <https://documentation.wazuh.
 to automatically
 generate certificates for wazuh-indexer (previously Elasticsearch and opendistro)
 and wazuh-dashbooard (previously Kibana) using a local CA.
-If the certificates directory ``{{ kayobe_env_config_path }}/wazuh/wazuh-certificates``
+If the certificates directory ``{{ kayobe_env_config_path }}/wazuh``
 does not exist, it will generate the following certificates in ``{{ kayobe_env_config_path }}/wazuh/wazuh-certificates/``
 (here os-wazuh is set as ``elasticsearch_node_name`` and ``kibana_node_name``:
 
