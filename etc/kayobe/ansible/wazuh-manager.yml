@@ -10,8 +10,9 @@
           fail:
             msg: >-
               The path used for Wazuh SSL certificates was changed in a previous release. The certificates
-              were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/certificates
-              to {{ kayobe_env_config_path }}/wazuh/certificates.
+              were found in the wrong location. Please move all files and directories in
+              {{ playbook_dir }}/wazuh/certificates to {{ kayobe_env_config_path }}/wazuh/ and remove the
+              empty directory.
           when:
             - playbook_dir ~ '/wazuh/certificates' is exists
 
@@ -20,7 +21,7 @@
             msg: >-
               Wazuh custom SSL certificates have been merged with regular certificates. The certificates
               were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
-              to {{ kayobe_env_config_path }}/wazuh/certificates/certs.
+              to {{ kayobe_env_config_path }}/wazuh/wazuh-certificates and remove the empty directory.
           when:
             - playbook_dir ~ '/wazuh/custom_certificates' is exists
 
@@ -29,7 +30,7 @@
             that: local_custom_certs_path is not defined
             fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
       when:
-        - groups["wazuh-manager"] | length > 0 or True
+        - groups["wazuh-manager"] | length > 0
 
 # Certificates generation
 - hosts: localhost
