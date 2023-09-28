@@ -24,6 +24,17 @@ common
 [kolla-toolbox:children]
 common
 
+[opensearch:children]
+control
+
+# TODO: This is used for cleanup and can be removed in the Antelope cycle.
+[elasticsearch-curator:children]
+opensearch
+
+# Opensearch dashboards
+[opensearch-dashboards:children]
+opensearch
+
 # Glance
 [glance-api:children]
 glance
@@ -467,9 +478,8 @@ monitoring
 [prometheus-openstack-exporter:children]
 monitoring
 
-# NOTE(Alex-Welsh): This might need removing, since we have moved to opensearch
 [prometheus-elasticsearch-exporter:children]
-elasticsearch
+opensearch
 
 [prometheus-blackbox-exporter:children]
 monitoring

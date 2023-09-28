@@ -9,8 +9,16 @@ kayobe_image_tags:
   openstack:
     rocky: zed-rocky-9-20230821T155947
     ubuntu: zed-ubuntu-jammy-20230821T155947
+  bifrost:
+    rocky: zed-rocky-9-20230927T142529
+    ubuntu: zed-ubuntu-jammy-20230927T154443
+  ovn:
+    rocky: zed-rocky-9-20230925T132313
+    ubuntu: zed-ubuntu-jammy-20230821T155947
 
 openstack_tag: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
+bifrost_tag: "{% raw %}{{ kayobe_image_tags['bifrost'][kolla_base_distro] }}{% endraw %}"
+ovn_tag: "{% raw %}{{ kayobe_image_tags['ovn'][kolla_base_distro] }}{% endraw %}"
 
 om_enable_rabbitmq_high_availability: true
 
@@ -32,6 +40,9 @@ prometheus_ceph_mgr_exporter_endpoints:
   - "{{ admin_oc_net_name | net_ip(host) }}:9283"
 {% endfor %}
 {% endif %}
+
+# Use inventory hostnames as labels
+prometheus_instance_label: "{% raw %}{{ ansible_facts.hostname }}{% endraw %}"
 
 #############################################################################
 
