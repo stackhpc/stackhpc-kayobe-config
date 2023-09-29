@@ -48,9 +48,8 @@
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
 stackhpc_dnf_repos_8: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
-stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
 
-stackhpc_dnf_repos: "{{ stackhpc_dnf_repos_9 if os_release == '9' else stackhpc_dnf_repos_8 }}"
+stackhpc_dnf_repos: "{{ stackhpc_dnf_repos_8 }}"
 
 # Custom repositories shared between all RHEL 8 derivatives.
 dnf_custom_repos_el8:
@@ -92,20 +91,6 @@ dnf_custom_repos_centos:
     gpgcheck: yes
     # Exclude buggy iptables: https://bugzilla.redhat.com/show_bug.cgi?id=2236501
     exclude: "iptables-1.8.5* iptables-libs-1.8.5* iptables-ebtables-1.8.5* iptables-services-1.8.5* iptables-arptables-1.8.5* iptables-devel-1.8.5*"
-  extras:
-    # This repo is no longer updated: https://www.spinics.net/lists/centos-devel/msg21454.html
-    baseurl: "{{ stackhpc_repo_centos_stream_extras_url }}"
-    description: "CentOS Stream $releasever - Extras"
-    file: CentOS-Stream-Extras
-    enabled: false
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-    gpgcheck: yes
-  extras-common:
-    baseurl: "{{ stackhpc_repo_centos_stream_extras_common_url }}"
-    description: "CentOS Stream $releasever - Extras common Packages"
-    file: CentOS-Stream-Extras-common
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Extras
-    gpgcheck: yes
 
 # Rocky 8 specific repositories
 dnf_custom_repos_rocky:
@@ -128,86 +113,17 @@ dnf_custom_repos_rocky:
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
 
-# Custom repositories shared between all RHEL 9 derivatives.
-dnf_custom_repos_el9:
-  epel:
-    baseurl: "{{ stackhpc_repo_epel_9_url }}"
-    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
-    enabled: "{{ dnf_enable_epel | bool }}"
-    file: epel
-    gpgkey: "{{ dnf_epel_9_gpg_key_url }}"
-    gpgcheck: yes
-  docker:
-    baseurl: "{{ stackhpc_repo_centos_stream_9_docker_url }}"
-    description: "Package repository for installing docker"
-    enabled: "{{ dnf_enable_docker | bool }}"
-    file: docker
-    gpgkey: "{{ dnf_docker_gpg_key_url }}"
-    gpgcheck: yes
-
-# ELRepo 9
-dnf_custom_repos_elrepo_9:
-  elrepo:
-    baseurl: "{{ stackhpc_repo_elrepo_9_url }}"
-    description: "ELRepo.org Community Enterprise Linux Repository - el9"
-    enabled: "{{ dnf_enable_elrepo_9 | bool }}"
-    file: elrepo
-    gpgkey: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
-    gpgcheck: yes
-
-# Rocky 9 specific repositories
-dnf_custom_repos_rocky_9:
-  appstream:
-    baseurl: "{{ stackhpc_repo_rocky_9_appstream_url }}"
-    description: "Rocky Linux $releasever - AppStream"
-    file: rocky
-    gpgkey: "{{ rocky_9_gpg_key }}"
-    gpgcheck: yes
-  baseos:
-    baseurl: "{{ stackhpc_repo_rocky_9_baseos_url }}"
-    description: "Rocky Linux $releasever - BaseOS"
-    file: rocky
-    gpgkey: "{{ rocky_9_gpg_key }}"
-    gpgcheck: yes
-  crb:
-    baseurl: "{{ stackhpc_repo_rocky_9_crb_url }}"
-    description: "Rocky Linux $releasever - CRB"
-    file: rocky
-    gpgkey: "{{ rocky_9_gpg_key }}"
-    gpgcheck: yes
-  extras:
-    baseurl: "{{ stackhpc_repo_rocky_9_extras_url }}"
-    description: "Rocky Linux $releasever - Extras"
-    file: rocky-extras
-    gpgkey: "{{ rocky_9_gpg_key }}"
-    gpgcheck: yes
-
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
 
-# Whether to enable the ELRepo repository. This affects RedHat-based, 9.x release systems only.
-dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
-
 # URL of EPEL GPG keys.
 dnf_epel_8_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
-dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
-
-rocky_9_gpg_key: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
-
-# Whether to install the epel-release package. This affects RedHat-based
-# systems only. Default value is 'false'.
-#dnf_install_epel:
-
-# Whether to create a repo file for ELRepo. This affects RedHat-based
-# systems only.
-dnf_install_elrepo_9: false
 
 # Whether to enable docker dnf repo in stackhpc_dnf_repos
 dnf_enable_docker: true
 
 #URL of docker repo GPG key
 dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
-
 
 ###############################################################################
 # DNF Automatic configuration.
