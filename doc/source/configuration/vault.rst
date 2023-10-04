@@ -229,6 +229,18 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud service deploy
 
+   If VM provisioning fails with an error with this format:
+
+   .. code-block::
+
+      Unable to establish connection to http://<kolla internal vip/fqdn>:9696/v2.0/ports/some-sort-of-uuid: Connection aborted
+
+   Restart the nova-compute container on all hypervisors:
+
+   .. code-block::
+
+      kayobe overcloud host command run --command "docker restart nova_compute" --become --show-output -l compute
+
 Barbican integration
 ====================
 
