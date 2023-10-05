@@ -77,7 +77,8 @@ proxy:
      - "127.0.0.1"
      - "localhost"
      - "{{ ('http://' ~ docker_registry) | urlsplit('hostname') if docker_registry else '' }}"
-     - "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+     - "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
+     - "{{ lookup('vars', admin_oc_net_name ~ '_ips')[inventory_hostname] }}"
      - "{{ kolla_external_fqdn }}"
      - "{{ kolla_internal_fqdn }}"
 
