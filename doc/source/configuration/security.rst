@@ -27,7 +27,6 @@ about what each variable does. The documentation can be found here:
 - `Rocky 8, RHEL 8, CentOS Stream 8 <https://github.com/ansible-lockdown/RHEL8-CIS/tree/1.3.0>`__
 - `Ubuntu 22.04 <https://github.com/ansible-lockdown/UBUNTU22-CIS>`__
 
-
 Running the playbooks
 ---------------------
 
