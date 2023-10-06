@@ -14,7 +14,6 @@ supported:
 - Rocky 8, RHEL 8, CentOS Stream 8
 - Ubuntu 22.04
 
-
 Configuration
 --------------
 
