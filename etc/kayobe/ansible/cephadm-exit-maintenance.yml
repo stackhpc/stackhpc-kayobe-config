@@ -1,0 +1,11 @@
+---
+- name: Ensure a Ceph host has exited host maintenance
+  gather_facts: true
+  hosts: ceph
+  become: true
+  tasks:
+    - import_role:
+        name: stackhpc.cephadm.commands
+      vars:
+        cephadm_commands:
+          - "orch host maintenance exit {{ ansible_facts.nodename }}"

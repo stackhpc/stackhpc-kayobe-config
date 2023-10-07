@@ -1,0 +1,32 @@
+---
+- name: Ensure a Ceph host has entered host maintenance
+  gather_facts: true
+  hosts: ceph
+  become: true
+  tasks:
+    - name: Check if host can enter maintenance mode
+      import_role:
+        name: stackhpc.cephadm.commands
+      vars:
+        cephadm_commands:
+          - "orch host ok-to-stop {{ ansible_facts.nodename }}"
+
+    - block:
+      - name: Extract full name of active Ceph manager
+        ansible.builtin.set_fact:
+          active_ceph_mgr: "{{ cephadm_commands_result.results[0].stderr | split | last | replace(\"'\",'') }}"
+
+      - name: Ensure active manager has been switched to another node
+        import_role:
+          name: stackhpc.cephadm.commands
+        vars:
+          cephadm_commands:
+            - "mgr fail {{ active_ceph_mgr }}"
+      when: '"Cannot stop active Mgr daemon" in cephadm_commands_result.results[0].stderr'
+
+    - name: Ensure host is in maintenance mode
+      import_role:
+        name: stackhpc.cephadm.commands
+      vars:
+        cephadm_commands:
+          - "orch host maintenance enter {{ ansible_facts.nodename }}"
