@@ -3,6 +3,13 @@
   gather_facts: false
 
   tasks:
+    - name: Ensure legacy os_exporter.cfg config file is deleted
+      ansible.builtin.file:
+        path: /etc/kolla/haproxy/services.d/os_exporter.cfg
+        state: absent
+      delegate_to: network
+      become: true
+
     - name: Create os-capacity directory
       ansible.builtin.file:
         path: /opt/kayobe/os-capacity/
