@@ -12,16 +12,16 @@
           - "orch host ok-to-stop {{ ansible_facts.nodename }}"
 
     - block:
-      - name: Extract full name of active Ceph manager
-        ansible.builtin.set_fact:
+        - name: Extract full name of active Ceph manager
+          ansible.builtin.set_fact:
           active_ceph_mgr: "{{ cephadm_commands_result.results[0].stderr | split | last | replace(\"'\",'') }}"
 
-      - name: Ensure active manager has been switched to another node
-        import_role:
-          name: stackhpc.cephadm.commands
-        vars:
-          cephadm_commands:
-            - "mgr fail {{ active_ceph_mgr }}"
+        - name: Ensure active manager has been switched to another node
+          import_role:
+            name: stackhpc.cephadm.commands
+          vars:
+            cephadm_commands:
+              - "mgr fail {{ active_ceph_mgr }}"
       when: '"Cannot stop active Mgr daemon" in cephadm_commands_result.results[0].stderr'
 
     - name: Ensure host is in maintenance mode
