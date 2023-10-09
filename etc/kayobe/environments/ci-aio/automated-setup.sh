@@ -6,7 +6,7 @@ cat << EOF | sudo tee -a /etc/hosts
 10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 EOF
 
-if [ sudo vgdisplay | grep -q lvm2 ]; then
+if [ "sudo vgdisplay | grep -q lvm2" ]; then
    sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
    sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
 fi
