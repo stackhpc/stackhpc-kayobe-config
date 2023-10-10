@@ -49,6 +49,7 @@ fi
 
 KAYOBE_CONFIG_SECRET_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh/wazuh-secrets.yml"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/wazuh-secrets.yml"
 )
 
 KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
@@ -70,5 +71,13 @@ KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA=(
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/issuing.csr"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/issuing-bundle.pem"
     "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.key"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/dashboard/hb-wazuh01-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/dashboard/hb-wazuh01.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/admin-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/admin.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/hb-wazuh01-key.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/hb-wazuh01.pem"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/root-ca.key"
+    "etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/wazuh-manager/wazuh-certificates/root-ca.pem"
 )
 
