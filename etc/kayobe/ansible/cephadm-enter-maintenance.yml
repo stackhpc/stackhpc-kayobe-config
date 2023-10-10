@@ -5,7 +5,7 @@
   become: true
   tasks:
     - name: Check if host can enter maintenance mode
-      import_role:
+      ansible.builtin.import_role:
         name: stackhpc.cephadm.commands
       vars:
         cephadm_commands:
@@ -17,7 +17,7 @@
           active_ceph_mgr: "{{ cephadm_commands_result.results[0].stderr | split | last | replace(\"'\",'') }}"
 
         - name: Ensure active manager has been switched to another node
-          import_role:
+          ansible.builtin.import_role:
             name: stackhpc.cephadm.commands
           vars:
             cephadm_commands:
@@ -25,7 +25,7 @@
       when: '"Cannot stop active Mgr daemon" in cephadm_commands_result.results[0].stderr'
 
     - name: Ensure host is in maintenance mode
-      import_role:
+      ansible.builtin.import_role:
         name: stackhpc.cephadm.commands
       vars:
         cephadm_commands:
