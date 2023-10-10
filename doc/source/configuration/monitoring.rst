@@ -136,3 +136,39 @@ mgrs group and list them as the endpoints for prometheus. Additionally,
 depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
+
+OpenStack Capacity
+==================
+
+OpenStack Capacity allows you to see how much space you have avaliable
+in your cloud. StackHPC Kayobe Config includes this exporter by default
+and it's necessary that some variables are set to allow deployment.
+
+To successfully deploy OpenStack Capacity, you are required to specify
+the OpenStack application credentials in ``kayobe/secrets.yml`` as:
+
+.. code-block:: yaml
+
+    secrets_os_exporter_auth_url: <some_auth_url>
+    secrets_os_exporter_credential_id: <some_credential_id>
+    secrets_os_exporter_credential_secret: <some_credential_secret>
+
+After defining your credentials, You may deploy OpenStack Capacity
+using the ``ansible/deploy-os-capacity-exporter.yml`` Ansible playbook
+via Kayobe.
+
+.. code-block:: console
+
+    kayobe playbook run ansible/deploy-os-capacity-exporter.yml
+
+It is required that you re-configure the Prometheus, Grafana and HAProxy
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus,haproxy
+
+If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
+alerts after deployment it's likely the os_exporter secrets have not been
+set correctly, double check you have entered the correct authentication
+information appropiate to your cloud and re-deploy.
