@@ -249,7 +249,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-manager/wazuh-secrets
+  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
 
 TLS (optional)
