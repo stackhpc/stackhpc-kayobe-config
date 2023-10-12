@@ -356,6 +356,13 @@ Pulling container images from the local Pulp server to the control plane hosts
 can take a considerable time, because images are only synced from Ark to the
 local Pulp on demand, and there is potentially a large fan-out. Pulling images
 in advance of the upgrade moves this step out of the maintenance/change window.
+Consider checking available disk space before pulling:
+
+.. code-block:: console
+
+   kayobe overcloud host command run --command "df -h" --show-output --limit controllers[0],compute[0],storage[0]
+
+Then pull the images:
 
 .. code-block:: console
 
