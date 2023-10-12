@@ -348,6 +348,11 @@ kolla_build_blocks:
     {% endif %}
   bifrost_base_header: |
     ADD additions-archive /
+  grafana_default_volumes:
+  - "{{ node_config_directory }}/grafana/:{{ container_config_directory }}/:ro"
+  - "/etc/localtime:/etc/localtime:ro"
+  - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+  - "kolla_logs:/var/log/kolla/"
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel \
         && grafana-cli plugins install grafana-piechart-panel \
