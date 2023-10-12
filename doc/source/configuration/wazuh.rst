@@ -17,8 +17,8 @@ The short version
 #. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
 
-Wazuh Manager
-=============
+Wazuh Manager Host
+==================
 
 Provision using infra-vms
 -------------------------
@@ -303,7 +303,7 @@ Encrypt the keys (and remember to commit to git):
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
 
 Verification
-==============
+------------
 
 The Wazuh portal should be accessible on port 443 of the Wazuh
 manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/wazuh/certificates/wazuh-certificates/root-ca.pem``).
@@ -315,10 +315,8 @@ Troubleshooting
 
 Logs are in ``/var/log/wazuh-indexer/wazuh.log``. There are also logs in the journal.
 
-============
 Wazuh agents
 ============
-
 
 Wazuh agent playbook is located in ``etc/kayobe/ansible/wazuh-agent.yml``.
 
@@ -333,13 +331,13 @@ Deploy the Wazuh agents:
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
 Verification
-=============
+------------
 
 The Wazuh agents should register with the Wazuh manager. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
 
-Additional resources:
-=====================
+Additional resources
+--------------------
 
 For times when you need to upgrade wazuh with elasticsearch to version with opensearch or you just need to deinstall all wazuh components:
 Wazuh purge script: https://github.com/stackhpc/wazuh-server-purge
