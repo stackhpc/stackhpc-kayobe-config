@@ -57,7 +57,7 @@ Define VM sizing in ``etc/kayobe/inventory/group_vars/wazuh-manager/infra-vms``:
   infra_vm_data_capacity: "200G"
 
 
-Optional: define LVM volumes in ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``. 
+Optional: define LVM volumes in ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``.
 ``/var/ossec`` often requires greater storage space, and ``/var/lib/wazuh-indexer``
 may be beneficial too.
 
