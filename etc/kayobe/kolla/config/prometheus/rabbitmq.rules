@@ -41,6 +41,13 @@ groups:
       severity: warning
     annotations:
       description: RabbitMQ file descriptors usage on {{ $labels.instance }}
+  - alert: RabbitMQTooMuchReady
+    expr: rabbitmq_queue_messages_ready > 100
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ too much ready on {{ $labels.instance }}
   - alert: RabbitMQTooMuchUnack
     expr: rabbitmq_queue_messages_unacked > 100
     for: 1m
