@@ -56,7 +56,7 @@ groups:
     annotations:
       description: RabbitMQ too much unack on {{ $labels.instance }}
   - alert: RabbitMQTooMuchConnections
-    expr: rabbitmq_connections > 1000
+    expr: rabbitmq_connections > {% endraw %}{{ (1500 * groups['controllers'] | length + 50 * groups['compute'] | length) }}{% raw %}
     for: 2m
     labels:
       severity: warning
