@@ -8,6 +8,25 @@ name: Pull request
 'on':
   pull_request:
 jobs:
+  # Detect which files have changed and use this to run jobs conditionally.
+  # Note that we can't use the workflow-level paths attribute since this
+  # would skip the workflow entirely, and would prevent us from making the
+  # aio jobs required to pass (a skip counts as a pass).
+  check-changes:
+    runs-on: ubuntu-20.04
+    permissions:
+      pull-requests: read
+    name: Check changed files
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    outputs:
+      aio: ${{ steps.changes.outputs.aio }}
+    steps:
+      - name: Check changed files
+        uses: dorny/path-filter@v2
+        id: changes
+        with:
+          # Filters are defined in this file.
+          filters: .github/path-filters.yml
   tox:
     runs-on: ubuntu-20.04
     permissions: {}
@@ -36,8 +55,12 @@ jobs:
 
   build-kayobe-image:
     name: Build Kayobe Image
+    needs:
+      - check-changes
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if:
+      - github.repository == 'stackhpc/stackhpc-kayobe-config'
+      - needs.check-changes.outputs.aio == 'true'
 
   all-in-one-centos-ovs:
     name: aio (CentOS OVS)
