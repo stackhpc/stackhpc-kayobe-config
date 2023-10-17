@@ -25,10 +25,10 @@ EOF
 
 # Install git and tmux.
 if $(which dnf 2>/dev/null >/dev/null); then
-    sudo dnf -y install git tmux python3-virtualenv
+    sudo dnf -y install git tmux
 else
     sudo apt update
-    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3 python3-virtualenv
+    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3 python3-venv
 fi
 
 # Disable the firewall.
@@ -56,7 +56,7 @@ popd
 mkdir -p venvs
 pushd venvs
 if [[ ! -d kayobe ]]; then
-    virtualenv kayobe
+    python3 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable. 
