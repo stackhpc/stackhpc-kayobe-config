@@ -319,7 +319,10 @@ RGWs are defined with the following:
     - id: myrgw
       count_per_host: 1
       spec:
-        rgw_frontend_port: 80
+        rgw_frontend_port: 8100
+
+The port chosen must not conflict with any other processes running on the Ceph
+hosts. Port 8100 does not conflict with our default suite of services.
 
 Ceph RGWs require additional configuration to:
 
@@ -382,10 +385,11 @@ RGWs with hyper-converged Ceph
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are using a hyper-converged Ceph setup (i.e. your OpenStack controllers
-and Ceph storage nodes share the same hosts), you will need to change the
-``rgw_frontend_port``. This is because port 80 (and 443) will be bound to the
-Kolla-deployed haproxy. You should choose a custom port that does not conflict
-with any OpenStack endpoints (``openstack endpoint list``), such as port 8100.
+and Ceph storage nodes share the same hosts), you should double-check that
+``rgw_frontend_port`` does not conflict with any processes on the controllers.
+For example, port 80 (and 443) will be bound to the Kolla-deployed haproxy. You
+should choose a custom port that does not conflict with any OpenStack endpoints
+too (``openstack endpoint list``).
 
 You may also want to use the Kolla-deployed haproxy to load balance your RGWs.
 This means you will not need to define any Ceph ingress services. Instead, you
