@@ -311,7 +311,7 @@ should be used in the Kolla Manila configuration e.g.:
 RADOS Gateways
 --------------
 
-RGWs are defined with the following:
+RADOS Gateways (RGWs) are defined with the following:
 
 .. code:: yaml
 
