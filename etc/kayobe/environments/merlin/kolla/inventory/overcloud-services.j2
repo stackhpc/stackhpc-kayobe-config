@@ -116,13 +116,15 @@ neutron
 cinder
 
 [cinder-backup:children]
-control
+# MODIFIED: was storage
+cinder
 
 [cinder-scheduler:children]
 cinder
 
 [cinder-volume:children]
-control
+# MODIFIED: was storage
+cinder
 
 # Cloudkitty
 [cloudkitty-api:children]
@@ -214,9 +216,6 @@ monasca-agent
 monasca
 
 [monasca-grafana:children]
-monasca
-
-[monasca-log-transformer:children]
 monasca
 
 [monasca-log-persister:children]
@@ -346,10 +345,6 @@ compute
 
 [cyborg-conductor:children]
 cyborg
-
-# Panko
-[panko-api:children]
-panko
 
 # Gnocchi
 [gnocchi-api:children]
@@ -504,7 +499,7 @@ storage
 mariadb
 
 [prometheus-haproxy-exporter:children]
-haproxy
+loadbalancer
 
 [prometheus-memcached-exporter:children]
 memcached
@@ -526,9 +521,6 @@ monitoring
 elasticsearch
 
 [prometheus-blackbox-exporter:children]
-monitoring
-
-[prometheus-msteams:children]
 monitoring
 
 [prometheus-libvirt-exporter:children]
