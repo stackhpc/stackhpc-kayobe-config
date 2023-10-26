@@ -389,7 +389,7 @@ kolla_build_customizations_common:
   ironic_inspector_pip_packages_append:
     - /additions/*
 
-kolla_build_customizations_centos:
+kolla_build_customizations_el:
   base_yum_repo_files_remove:
     - proxysql.repo
   neutron_base_packages_remove:
@@ -415,15 +415,15 @@ kolla_build_customizations_centos:
     - openvswitch2.17
     - python3-openvswitch2.17
   ovn_base_packages_override:
-    - ovn22.09
+    - ovn22.12
   ovn_controller_packages_override:
-    - ovn22.09-host
+    - ovn22.12-host
   ovn_nb_db_server_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   ovn_northd_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   ovn_sb_db_server_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   openvswitch_base_packages_remove:
     - openvswitch
     - python3-openvswitch
@@ -439,7 +439,7 @@ kolla_build_customizations_ubuntu: {}
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_el if kolla_base_distro in ['centos', 'rocky'] else kolla_build_customizations_ubuntu) }}"
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args:

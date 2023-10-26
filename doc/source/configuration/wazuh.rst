@@ -290,6 +290,21 @@ Example OpenSSL rune to convert to PKCS#8:
 
 TODO: document how to use a local certificate. Do we need to override all certificates?
 
+Custom SCA Policies (optional)
+------------------------------
+
+Wazuh ships with a large selection of Security Configuration Assessment
+rulesets. However, you may find you want to add more. This can be achieved via
+`custom policies <https://documentation.wazuh.com/current/user-manual/capabilities/sec-config-assessment/how-to-configure.html>`_.
+
+SKC supports this automatically, just add the policy file from this PR to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies``.
+
+Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
+the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
+include this in your deployment, simply copy it to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
+
 Deploy
 ------
 
