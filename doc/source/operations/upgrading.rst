@@ -35,41 +35,39 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-Rocky Linux 9
--------------
+Systemd container management
+----------------------------
 
-The Zed release first introduced support for Rocky Linux 9 as a host operating
-system, and Rocky Linux 9 support was subsequently added to Yoga.  CentOS
-Stream 8 users upgrading from Yoga should first migrate to Rocky Linux 9 before
-upgrading to Zed.
+Containers deployed by Kolla Ansible are now managed by Systemd. Containers log
+to journald and have a unit file in ``/etc/systemd/system`` named
+``kolla-<container name>-container.service``. Manual control of containers
+should be performed using ``systemd start|stop|restart`` etc. rather than using
+the Docker CLI.
 
-Ubuntu Jammy 22.04
-------------------
+Secure RBAC
+-----------
 
-The Zed release first introduced support for Ubuntu Jammy 22.04 as a host
-operating system, and Jammy support was subsequently added to Yoga.  Ubuntu
-Focal 20.04 users upgrading from Yoga should first migrate to Jammy before
-upgrading to Zed.
+Secure Role Based Access Control (RBAC) is an ongoing effort in OpenStack, and
+new policies have been evolving alongside the deprecated legacy policies.
+Several projects have changed the default value of the ``[oslo_policy]
+enforce_new_defaults`` configuration option to ``True``, meaning that the
+deprecated legacy policies are no longer applied. This results in more strict
+policies that may affect existing API users. The following projects have made
+this change:
 
-OpenSearch
-----------
+* Glance
+* Nova
 
-The Zed release no longer supports Elasticsearch or Kibana, with these having
-been replaced by OpenSearch and OpenSearch Dashboard. The Yoga release provides
-the opportunity to migrate to OpenSearch.
+Some things to watch out for:
 
-Kolla images
-------------
-
-Kolla no longer supports "binary" (RPM/Deb) type images, only "source". As
-such, there is no longer a ``kolla_install_type`` option, and the naming scheme
-for images has changed from::
-
-    ark.stackhpc.com/stackhpc/centos-source-etcd:yoga-20230515T145140
-
-to::
-
-    ark.stackhpc.com/stackhpc/etcd:zed-rocky-9-20230821T155947
+* Policies may require the ``member`` role rather than the deprecated
+  ``_member_`` and ``Member`` roles.
+* Application credentials may need to be regenerated to grant any roles
+  required by the secure RBAC policies.
+* Application credentials generated before the existence of any implicit roles
+  will not be granted those roles. This may include the ``reader`` role, which
+  is referenced in some of the new secure RBAC policies.  See `Keystone bug
+  2030061 <https://bugs.launchpad.net/keystone/+bug/2030061>`_.
 
 OVN enabled by default
 ----------------------
