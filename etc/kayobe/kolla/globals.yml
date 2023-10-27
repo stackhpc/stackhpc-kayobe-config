@@ -9,15 +9,22 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names or ansible_facts
 # kolla_base_distro must be set here to be resolvable on a per-host basis
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky' and ansible_facts.distribution_major_version == '8' else ansible_facts.distribution | lower }}{% endraw %}"
-opensearch_tag: yoga-20230904T121340
 
-# Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
-# with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test nova carefully before bumping.
 kayobe_image_tags:
   openstack:
     centos: yoga-20231024T093507
     rocky: yoga-20231024T093507
     ubuntu: yoga-20231024T093507
+  nova_libvirt:
+    # Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
+    # with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test carefully before bumping.
+    centos: yoga-20230718T112646
+
+nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova_libvirt'][kolla_base_distro] | default(nova_tag) }}{% endraw %}"
+
+# These overrides are currently redundant, but are kept because it's not obvious that you need them if setting haproxy_tag
+glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
+neutron_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
 
 om_enable_rabbitmq_high_availability: true
 
