@@ -30,6 +30,7 @@ jobs:
         with:
           # Filters are defined in this file.
           filters: .github/path-filters.yml
+
   tox:
     runs-on: ubuntu-20.04
     permissions: {}
@@ -120,7 +121,7 @@ jobs:
       OS_CLOUD: sms-lab-release
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: always() && needs.build-kayobe-image.result != 'failure'
+    if: ${{ ! failure() }}
 
   all-in-one-rocky-ovn:
     name: aio (Rocky OVN)
@@ -139,7 +140,7 @@ jobs:
       OS_CLOUD: sms-lab-release
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: always() && needs.build-kayobe-image.result != 'failure'
+    if: ${{ ! failure() }}
 
   all-in-one-ubuntu-ovs:
     name: aio (Ubuntu OVS)
@@ -170,3 +171,4 @@ jobs:
       OS_CLOUD: sms-lab-release
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
+    if: ${{ ! failure() }}
