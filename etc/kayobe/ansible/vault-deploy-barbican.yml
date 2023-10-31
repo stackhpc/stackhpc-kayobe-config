@@ -82,15 +82,16 @@
       copy:
         content: "{{ barbican_role_id.id }}"
         dest: "{{ stackhpc_barbican_role_id_file_path | default('~/barbican-role-id') }}"
-      when: stackhpc_write_barbican_role_id_to_file | bool | default(false)
+      when: stackhpc_write_barbican_role_id_to_file | default(false) | bool
 
     - name: Check if barbican Approle Secret ID is defined
-      hashivault_approle_role_secret_list:
+      hashivault_approle_role_secret_get:
         url: "{{ vault_api_addr }}"
         ca_cert: "{{ vault_ca_cert }}"
         token: "{{ vault_keys.root_token }}"
+        secret: "{{ secrets_barbican_approle_secret_id }}"
         name: barbican
-      register: barbican_approle_secret_list
+      register: barbican_approle_secret_get
 
     - name: Ensure barbican AppRole Secret ID is defined
       hashivault_approle_role_secret:
@@ -99,4 +100,4 @@
         token: "{{ vault_keys.root_token }}"
         secret: "{{ secrets_barbican_approle_secret_id }}"
         name: barbican
-      when: barbican_approle_secret_list.secrets is match(secrets_barbican_approle_secret_id)
+      when: barbican_approle_secret_get.status == "absent"
