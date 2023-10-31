@@ -28,7 +28,9 @@ if $(which dnf 2>/dev/null >/dev/null); then
     sudo dnf -y install git tmux
 else
     sudo apt update
-    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3
+    sudo apt -y install git tmux gcc libffi-dev python3-dev python-is-python3 python3-venv python3-packaging
+    # FIXME: Images on SMS appear to have issues with their python installations. This does not work without being run as root.
+    sudo pip install pulp_glue
 fi
 
 # Disable the firewall.
