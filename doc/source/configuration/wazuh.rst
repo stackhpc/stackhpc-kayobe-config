@@ -57,7 +57,9 @@ Define VM sizing in ``etc/kayobe/inventory/group_vars/wazuh-manager/infra-vms``:
   infra_vm_data_capacity: "200G"
 
 
-Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``:
+Optional: define LVM volumes in ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``.
+``/var/ossec`` often requires greater storage space, and ``/var/lib/wazuh-indexer``
+may be beneficial too.
 
 .. code-block:: console
 
@@ -73,7 +75,7 @@ Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm
           size: "100%VG"
           filesystem: "ext4"
           mount: true
-          mntp: “/var/lib/elasticsearch”
+          mntp: "/var/ossec"
           create: true
 
 
@@ -249,7 +251,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-manager/wazuh-secrets
+  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
 
 TLS (optional)
@@ -287,6 +289,21 @@ Example OpenSSL rune to convert to PKCS#8:
 ``openssl pkcs8 -topk8 -nocrypt -in wazuh.key -out wazuh.key.pkcs8``
 
 TODO: document how to use a local certificate. Do we need to override all certificates?
+
+Custom SCA Policies (optional)
+------------------------------
+
+Wazuh ships with a large selection of Security Configuration Assessment
+rulesets. However, you may find you want to add more. This can be achieved via
+`custom policies <https://documentation.wazuh.com/current/user-manual/capabilities/sec-config-assessment/how-to-configure.html>`_.
+
+SKC supports this automatically, just add the policy file from this PR to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies``.
+
+Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
+the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
+include this in your deployment, simply copy it to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
 
 Deploy
 ------
