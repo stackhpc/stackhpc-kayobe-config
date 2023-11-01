@@ -34,14 +34,14 @@ jobs:
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder-rl9]
     permissions: {}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: src/kayobe-config
 
       - name: Determine OpenStack release
         id: openstack_release
         run: |
-          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
           echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
 
       # Generate a tag to apply to all built overcloud host images.
@@ -67,7 +67,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo dnf -y install zstd
+          sudo dnf -y install zstd debootstrap
 
       - name: Setup networking
         run: |
@@ -83,14 +83,6 @@ jobs:
           fi
           sudo ip l set dummy1 up
           sudo ip l set dummy1 master breth1
-
-      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
-      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
-      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
-      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
-      - name: Kill dhclient (workaround)
-        run: |
-          (sudo killall dhclient || true) && sudo systemctl restart network
 
       - name: Install Kayobe
         run: |
