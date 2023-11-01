@@ -277,13 +277,19 @@ base_centos_repo_overrides_post_yum_rocky_list: "{{ stackhpc_rocky_9_repos + sta
 base_centos_repo_overrides_post_yum_list: "{{ base_centos_repo_overrides_post_yum_centos_list if kolla_base_distro == 'centos' else base_centos_repo_overrides_post_yum_rocky_list }}"
 stackhpc_yum_repos: "{{ stackhpc_centos_stream_repos if kolla_base_distro == 'centos' else stackhpc_rocky_9_repos }}"
 
-# List of repositories for Ubuntu focal.
-stackhpc_ubuntu_focal_repos:
+# List of base repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_base_repos:
   - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
   - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
   - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
   - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
+
+# List of UCA repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_uca_repos:
   - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/{{ openstack_release }} main"
+
+# List of repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_repos: "{{ stackhpc_ubuntu_focal_base_repos + stackhpc_ubuntu_focal_uca_repos }}"
 
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
@@ -304,6 +310,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    RUN \
+        rm /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_focal_base_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
@@ -320,9 +333,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
+  # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    COPY sources.list.ubuntu /etc/apt/sources.list.backup
+    {% endif %}
     RUN \
-        mv /etc/apt/sources.list /etc/apt/sources.list.backup && \
+        rm /etc/apt/sources.list && \
     {% for repo in stackhpc_ubuntu_focal_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
