@@ -16,6 +16,10 @@ on:
       no_proxy:
         type: string
         required: false
+      if:
+        description: Whether to run the workflow (workaround for required status checks issue)
+        type: boolean
+        default: true
     outputs:
       kayobe_image:
         description: Reference of Kayobe image that was built
@@ -28,6 +32,7 @@ env:
 jobs:
   build-kayobe-image:
     name: Build kayobe image
+    if: inputs.if
     runs-on: ubuntu-20.04
     permissions:
       contents: read
