@@ -166,8 +166,9 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)
@@ -181,6 +182,7 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovs
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
     if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
@@ -196,6 +198,7 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
     if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
@@ -211,6 +214,7 @@ jobs:
       ssh_username: cloud-user
       neutron_plugin: ovs
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
     if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
