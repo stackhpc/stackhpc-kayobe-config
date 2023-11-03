@@ -62,12 +62,18 @@ stackhpc_apt_repositories:
     signed_by: docker.asc
     architecture: amd64
 
-apt_repositories: "{{ stackhpc_apt_repositories }}"
+# Do not replace apt configuration for non-overcloud hosts. This can result in
+# errors if apt reconfiguration is performed before local repository mirrors
+# are deployed.
+apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names else [] }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
 # Default is false.
-apt_disable_sources_list: true
+# Do not disable the default apt configuration for non-overcloud hosts. This
+# can result in errors if apt reconfiguration is performed before local
+# repository mirrors are deployed.
+apt_disable_sources_list: "{{ 'overcloud' in group_names }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

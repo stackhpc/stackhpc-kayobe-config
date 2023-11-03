@@ -8,6 +8,29 @@ name: Pull request
 'on':
   pull_request:
 jobs:
+  # Detect which files have changed and use this to run jobs conditionally.
+  # Note that we can't use the workflow-level paths attribute since this
+  # would skip the workflow entirely, and would prevent us from making the
+  # aio jobs required to pass (a skip counts as a pass).
+  check-changes:
+    runs-on: ubuntu-20.04
+    permissions:
+      pull-requests: read
+    name: Check changed files
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    outputs:
+      aio: ${{ steps.changes.outputs.aio }}
+    steps:
+      - name: GitHub Checkout
+        uses: actions/checkout@v3
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          # Filters are defined in this file.
+          filters: .github/path-filters.yml
+
   tox:
     runs-on: ubuntu-22.04
     permissions: {}
@@ -36,14 +59,27 @@ jobs:
       - name: Run Tox ${{ matrix.environment }} 🧪
         run: tox -e ${{ matrix.environment }}
 
+  # A skipped job is treated as success when used as a required status check.
+  # The registered required status checks refer to the name of the job in the
+  # called reusable workflow rather than the jobs in this file.  The following
+  # jobs need to run unconditionally to allow GitHub required status checks to
+  # pass even when there are changed files. The `! failure()` condition runs
+  # when the parent jobs completed successfully or were skipped. We pass an
+  # 'if' argument to the called workflow to allow running it conditionally.
+
   build-kayobe-image:
     name: Build Kayobe Image
+    needs:
+      - check-changes
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
+    with:
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)
     needs:
+      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
@@ -53,12 +89,14 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovs
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovn:
     name: aio (Ubuntu Jammy OVN)
     needs:
+      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
@@ -68,12 +106,14 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovs:
     name: aio (Rocky 9 OVS)
     needs:
+      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
@@ -83,12 +123,14 @@ jobs:
       ssh_username: cloud-user
       neutron_plugin: ovs
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovn:
     name: aio (Rocky 9 OVN)
     needs:
+      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
@@ -98,5 +140,6 @@ jobs:
       ssh_username: cloud-user
       neutron_plugin: ovn
       OS_CLOUD: sms-lab-release
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
