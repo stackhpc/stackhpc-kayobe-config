@@ -112,19 +112,19 @@ dnf_custom_repos_rocky:
   appstream:
     baseurl: "{{ stackhpc_repo_rocky_appstream_url }}"
     description: "Rocky Linux $releasever - AppStream"
-    file: Rocky-AppStream
+    file: "{{ 'Rocky-AppStream' if os_release == '8' else 'rocky' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
   baseos:
     baseurl: "{{ stackhpc_repo_rocky_baseos_url }}"
     description: "Rocky Linux $releasever - BaseOS"
-    file: Rocky-BaseOS
+    file: "{{ 'Rocky-BaseOS' if os_release == '8' else 'rocky' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
   extras:
     baseurl: "{{ stackhpc_repo_rocky_extras_url }}"
     description: "Rocky Linux $releasever - Extras"
-    file: Rocky-Extras
+    file: "{{ 'Rocky-Extras' if os_release == '8' else 'rocky-extras' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
 
