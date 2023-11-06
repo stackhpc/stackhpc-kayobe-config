@@ -411,10 +411,14 @@ add definitions of your Ceph hosts to Kolla ``globals.yml``:
 HA with Ingress services
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Ingress services are defined with the following. ``id`` should match name (not
-id) of the RGW service to which ingress will point to. ``spec`` is a service
-specification required by Cephadm to deploy the ingress (haproxy + keepalived
-pair).
+Ingress services are defined with the following. ``id`` should match the name
+(not id) of the RGW service to which ingress will point to. ``spec`` is a
+service specification required by Cephadm to deploy the ingress (haproxy +
+keepalived pair).
+
+Not that the ``virtual_ip`` here should be different than the Kolla VIP. The
+choice of subnet will be dependent on your deployment, but should be outside
+of any other Ceph networks.
 
 .. code:: yaml
 
