@@ -22,19 +22,19 @@
   hosts: "{{ ovn_nb_db_group | default('controllers') }}"
   tasks:
     - name: Find the OVN NB DB leader
-      command: docker exec -it ovn_nb_db ovn-nbctl get-connection
+      ansible.builtin.command: docker exec ovn_nb_db ovn-nbctl get-connection
       changed_when: false
       failed_when: false
       register: ovn_check_result
-      check_mode: no
+      check_mode: false
 
     - name: Group hosts by leader/follower role
-      group_by:
+      ansible.builtin.group_by:
         key: "ovn_nb_{{ 'leader' if ovn_check_result.rc == 0 else 'follower' }}"
       changed_when: false
 
     - name: Assert one leader exists
-      assert:
+      ansible.builtin.assert:
         that:
           - groups['ovn_nb_leader'] | default([]) | length == 1
 
@@ -47,8 +47,8 @@
     gateway_chassis_max_priority: "{{ ovn_nb_db_hosts_sorted | length }}"
   tasks:
     - name: Fix ha_chassis priorities
-      command: >-
-        docker exec -it ovn_nb_db
+      ansible.builtin.command: >-
+        docker exec ovn_nb_db
         bash -c '
         ovn-nbctl find ha_chassis chassis_name={{ item }} |
         awk '\''$1 == "_uuid" { print $3 }'\'' |
@@ -56,10 +56,12 @@
       loop: "{{ ovn_nb_db_hosts_sorted }}"
       vars:
         priority: "{{ ha_chassis_max_priority | int - ovn_nb_db_hosts_sorted.index(item) }}"
+      register: ha_chassis_command
+      changed_when: ha_chassis_command.rc == 0
 
     - name: Fix gateway_chassis priorities
-      command: >-
-        docker exec -it ovn_nb_db
+      ansible.builtin.command: >-
+        docker exec ovn_nb_db
         bash -c '
         ovn-nbctl find gateway_chassis chassis_name={{ item }} |
         awk '\''$1 == "_uuid" { print $3 }'\'' |
@@ -67,3 +69,5 @@
       loop: "{{ ovn_nb_db_hosts_sorted }}"
       vars:
         priority: "{{ gateway_chassis_max_priority | int - ovn_nb_db_hosts_sorted.index(item) }}"
+      register: gateway_chassis_command
+      changed_when: gateway_chassis_command.rc == 0
