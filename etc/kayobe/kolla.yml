@@ -217,13 +217,19 @@ stackhpc_epel_9_repos:
 base_centos_repo_overrides_post_yum_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
 stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
 
-# List of repositories for Ubuntu Jammy.
-stackhpc_ubuntu_jammy_repos:
+# List of base repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_base_repos:
   - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
   - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
   - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
   - "deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
+
+# List of UCA repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_uca_repos:
   - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release }} main"
+
+# List of repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
 
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
@@ -244,6 +250,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    RUN \
+        rm /etc/apt/sources.list && \
+    {% for repo in stackhpc_ubuntu_jammy_base_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
@@ -260,9 +273,13 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
+  # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    COPY sources.list.ubuntu /etc/apt/sources.list.backup
+    {% endif %}
     RUN \
-        mv /etc/apt/sources.list /etc/apt/sources.list.backup && \
+        rm /etc/apt/sources.list && \
     {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
