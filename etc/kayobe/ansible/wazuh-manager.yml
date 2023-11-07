@@ -9,6 +9,7 @@
     - generate-certs
 # Single node
 - hosts: wazuh-manager
+  become: yes
   become_user: root
   roles:
     - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
@@ -22,6 +23,7 @@
             path: "{{ local_custom_sca_policies_path }}"
           register: custom_sca_policies_folder
           delegate_to: localhost
+          become: no
 
         - name: Gather list of custom SCA policies
           find:
@@ -30,9 +32,9 @@
           delegate_to: localhost
           register: custom_sca_policies
           when: custom_sca_policies_folder.stat.exists
+          become: no
 
         - name: Copy custom SCA policy files to Wazuh manager
-          become: yes
           copy:
             # Note the trailing slash to copy directory contents
             src: "{{ local_custom_sca_policies_path }}/"
@@ -42,7 +44,6 @@
           when: custom_sca_policies.files | length > 0
 
         - name: Add custom policy definition(s) to the shared Agent config
-          becomd: yes
           blockinfile:
             path: "/var/ossec/etc/shared/default/agent.conf"
             state: present
@@ -65,7 +66,6 @@
         - Restart wazuh
 
     - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
-      become: yes
       blockinfile:
         path: "/var/ossec/etc/ossec.conf"
         state: present
@@ -84,9 +84,9 @@
         path: "{{ local_custom_certs_path }}"
       register: custom_certificates_folder
       delegate_to: localhost
+      become: no
 
     - name: Copy the node & admin certificates to Wazuh dashboard
-      become: yes
       copy:
         src: "{{ local_custom_certs_path }}/{{ item }}"
         dest: /etc/wazuh-dashboard/certs/
@@ -101,7 +101,6 @@
         - Restart wazuh-dashboard
 
     - name: Perform health check against filebeat
-      become: yes
       command: filebeat test output
       changed_when: false
       retries: 2
