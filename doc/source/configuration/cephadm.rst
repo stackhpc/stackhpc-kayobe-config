@@ -416,9 +416,9 @@ Ingress services are defined with the following. ``id`` should match the name
 service specification required by Cephadm to deploy the ingress (haproxy +
 keepalived pair).
 
-Not that the ``virtual_ip`` here should be different than the Kolla VIP. The
-choice of subnet will be dependent on your deployment, but should be outside
-of any other Ceph networks.
+Note that the ``virtual_ip`` here must be different than the Kolla VIP. The
+choice of subnet will be dependent on your deployment, and can be outside
+of any Ceph networks.
 
 .. code:: yaml
 
