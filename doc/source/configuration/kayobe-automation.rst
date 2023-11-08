@@ -88,7 +88,7 @@ Also feel free to change the number of runners and their names.
 
 8. Check runners have registered properly by visiting the repositories :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
 
-9. Repeat the above steps for each environment you intend to deploy runners within. 
+9. Repeat the above steps for each environment you intend to deploy runners within.
     You can share the fine-grain access token between environments.
 
 Workflow Deployment
