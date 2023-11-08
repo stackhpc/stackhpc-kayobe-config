@@ -24,6 +24,9 @@ This guide covers the following types of hosts:
 - Compute hosts
 - Storage hosts
 - Seed
+
+The following types of hosts will be covered in future:
+
 - Seed hypervisor
 - Ansible control host
 - Wazuh manager
@@ -61,8 +64,9 @@ Configuration
 
 Make the following changes to your Kayobe configuration:
 
-- Set ``os_distribution`` to ``rocky`` in ``etc/kayobe/globals.yml``
-- Set ``os_release`` to ``"9"`` in ``etc/kayobe/globals.yml``
+- Merge in the latest ``stackhpc-kayobe-config`` ``stackhpc/yoga`` branch.
+- Set ``os_distribution`` to ``rocky`` in ``etc/kayobe/globals.yml``.
+- Set ``os_release`` to ``"9"`` in ``etc/kayobe/globals.yml``.
 - If you are using Kayobe multiple environments, add the following into
   ``kayobe-config/etc/kayobe/environments/<env>/kolla/config/nova.conf``
   (as Kolla custom service config environment merging is not supported in
@@ -166,16 +170,11 @@ Deploy latest CentOS Stream 8 images
 ------------------------------------
 
 Make sure you deploy the latest CentOS Stream 8 containers prior to
-this migration.
+this migration:
 
-The usual steps apply:
+.. code-block:: console
 
-- Merge in the latest changes from the ``stackhpc-kayobe-config`` ``stackhpc/yoga`` branch
-- Upgrade services
-
-  .. code-block:: console
-
-     kayobe overcloud service deploy
+   kayobe overcloud service deploy
 
 Controllers
 ===========
@@ -220,43 +219,82 @@ Full procedure for one host
 
       kayobe overcloud host command run --command 'docker exec -it ovn_sb_db ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound' --show-output -l controllers
 
-4. Deprovision the controller:
+4. If the controller is running Ceph services:
+
+   1. Set host in maintenance mode:
+
+      .. code-block:: console
+
+         ceph orch host maintenance enter <hostname>
+
+   2. Check there's nothing remaining on the host:
+
+      .. code-block:: console
+
+         ceph orch ps <hostname>
+
+5. Deprovision the controller:
 
    .. code:: console
 
       kayobe overcloud deprovision -l <hostname>
 
-5. Reprovision the controller:
+6. Reprovision the controller:
 
    .. code:: console
 
       kayobe overcloud provision -l <hostname>
 
-6. Host configure:
+7. Host configure:
 
    .. code:: console
 
       kayobe overcloud host configure -l <hostname> -kl <hostname>
 
-7. Service deploy on all controllers:
+8. If the controller is running Ceph OSD services:
+
+   1. Make sure the cephadm public key is in ``authorized_keys`` for stack or
+      root user - depends on your setup. For example, your SSH key may
+      already be defined in ``users.yml`` . If in doubt, run the cephadm
+      deploy playbook to copy the SSH key and install the cephadm binary.
+
+      .. code-block:: console
+
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
+
+   2. Take the host out of maintenance mode:
+
+      .. code-block:: console
+
+         ceph orch host maintenance exit <hostname>
+
+   3. Make sure that everything is back in working condition before moving
+      on to the next host:
+
+      .. code-block:: console
+
+         ceph -s
+         ceph -w
+
+9. Service deploy on all controllers:
 
    .. code:: console
 
       kayobe overcloud service deploy -kl controllers
 
-8. If using OVN, check OVN northbound DB cluster state on all controllers to see if the new host has joined:
+10. If using OVN, check OVN northbound DB cluster state on all controllers to see if the new host has joined:
 
-   .. code:: console
+    .. code:: console
 
-      kayobe overcloud host command run --command 'docker exec -it ovn_nb_db ovs-appctl -t /run/ovn/ovnnb_db.ctl cluster/status OVN_Northbound' --show-output -l controllers
+       kayobe overcloud host command run --command 'docker exec -it ovn_nb_db ovs-appctl -t /run/ovn/ovnnb_db.ctl cluster/status OVN_Northbound' --show-output -l controllers
 
-9. If using OVN, check OVN southbound DB cluster state on all controllers to see if the new host has joined:
+11. If using OVN, check OVN southbound DB cluster state on all controllers to see if the new host has joined:
 
-   .. code:: console
+    .. code:: console
 
-      kayobe overcloud host command run --command 'docker exec -it ovn_sb_db ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound' --show-output -l controllers
+       kayobe overcloud host command run --command 'docker exec -it ovn_sb_db ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound' --show-output -l controllers
 
-10. Some MariaDB instability has been observed. The exact cause is unknown but
+12. Some MariaDB instability has been observed. The exact cause is unknown but
     the simplest fix seems to be to run the Kayobe database recovery tool
     between migrations.
 
@@ -291,25 +329,64 @@ Full procedure for one batch of hosts
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-{disable,drain}.yml --limit <host>
 
-2. Deprovision the compute node:
+2. If the compute node is running Ceph OSD services:
+
+   1. Set host in maintenance mode:
+
+      .. code-block:: console
+
+         ceph orch host maintenance enter <hostname>
+
+   2. Check there's nothing remaining on the host:
+
+      .. code-block:: console
+
+         ceph orch ps <hostname>
+
+3. Deprovision the compute node:
 
    .. code:: console
 
       kayobe overcloud deprovision -l <hostname>
 
-3. Reprovision the compute node:
+4. Reprovision the compute node:
 
    .. code:: console
 
       kayobe overcloud provision -l <hostname>
 
-4. Host configure:
+5. Host configure:
 
    .. code:: console
 
       kayobe overcloud host configure -l <hostname> -kl <hostname>
 
-5. Service deploy:
+6. If the compute node is running Ceph OSD services:
+
+   1. Make sure the cephadm public key is in ``authorized_keys`` for stack or
+      root user - depends on your setup. For example, your SSH key may
+      already be defined in ``users.yml`` . If in doubt, run the cephadm
+      deploy playbook to copy the SSH key and install the cephadm binary.
+
+      .. code-block:: console
+
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
+
+   2. Take the host out of maintenance mode:
+
+      .. code-block:: console
+
+         ceph orch host maintenance exit <hostname>
+
+   3. Make sure that everything is back in working condition before moving
+      on to the next host:
+
+      .. code-block:: console
+
+         ceph -s
+         ceph -w
+
+7. Service deploy:
 
    .. code:: console
 
@@ -319,8 +396,6 @@ If any VMs were powered off, they may now be powered back on.
 
 Wait for Prometheus alerts and errors in OpenSearch Dashboard to resolve, or
 address them.
-
-After updating controllers or network hosts, run any appropriate smoke tests.
 
 Once happy that the system has been restored to full health, move onto the next
 host or batch or hosts.
@@ -380,13 +455,13 @@ Full procedure for any storage host
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
 
-6. Take the host out of maintenance mode:
+7. Take the host out of maintenance mode:
 
    .. code-block:: console
 
       ceph orch host maintenance exit <hostname>
 
-7. Make sure that everything is back in working condition before moving
+8. Make sure that everything is back in working condition before moving
    on to the next host:
 
    .. code-block:: console
@@ -426,75 +501,81 @@ Full procedure
 
        lsblk
 
-2.  If the data volume is not mounted at either ``/var/lib/docker`` or
+2.  Use `mysqldump
+    <https://docs.openstack.org/kayobe/yoga/administration/seed.html#database-backup-restore>`_
+    to take a backup of the MariaDB database. Copy the backup file to one of
+    the Bifrost container's persistent volumes, such as ``/var/lib/ironic/`` in
+    the ``bifrost_deploy`` container.
+
+3.  If the data volume is not mounted at either ``/var/lib/docker`` or
     ``/var/lib/docker/volumes``, make an external copy of the data
     somewhere on the seed hypervisor.
 
-3.  On the seed, stop the MariaDB process within the bifrost_deploy
+4.  On the seed, stop the MariaDB process within the bifrost_deploy
     container:
 
     .. code:: console
 
        sudo docker exec bifrost_deploy systemctl stop mariadb
 
-4.  On the seed, stop docker:
+5.  On the seed, stop docker:
 
     .. code:: console
 
        sudo systemctl stop docker
 
-5.  On the seed, shut down the host:
+6.  On the seed, shut down the host:
 
     .. code:: console
 
        sudo systemctl poweroff
 
-6.  Wait for the VM to shut down:
+7.  Wait for the VM to shut down:
 
     .. code:: console
 
        watch sudo virsh list --all
 
-7.  Back up the VM volumes on the seed hypervisor
+8.  Back up the VM volumes on the seed hypervisor
 
     .. code:: console
 
        sudo mkdir /var/lib/libvirt/images/backup
        sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images/backup
 
-8.  Delete the seed root volume (check the structure & naming
+9.  Delete the seed root volume (check the structure & naming
     conventions first)
 
     .. code:: console
 
        sudo virsh vol-delete seed-root --pool default
 
-9.  Reprovision the seed
+10.  Reprovision the seed
 
-    .. code:: console
+     .. code:: console
 
-       kayobe seed vm provision
+        kayobe seed vm provision
 
-10. Seed host configure
+11. Seed host configure
 
     .. code:: console
 
        kayobe seed host configure
 
-11. Rebuild seed container images (if using locally-built rather than
+12. Rebuild seed container images (if using locally-built rather than
     release train images)
 
     .. code:: console
 
        kayobe seed container image build --push
 
-12. Service deploy
+13. Service deploy
 
     .. code:: console
 
        kayobe seed service deploy
 
-13. Verify that Bifrost/Ironic is healthy.
+14. Verify that Bifrost/Ironic is healthy.
 
 Seed hypervisor
 ===============
