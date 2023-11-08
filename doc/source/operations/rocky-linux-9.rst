@@ -200,6 +200,12 @@ Potential issues
    .. code-block:: yaml
 
       mariabackup_image_full: "{{ docker_registry }}/stackhpc/rocky-source-mariadb-server:yoga-20230310T170929"
+- When using Octavia load balancers with the OVN provider and OVN DVR FIP is
+  enabled, restarting Neutron causes load balancers with floating IPs to stop
+  processing traffic. See `LP#2042938
+  <https://bugs.launchpad.net/neutron/+bug/2042938>`__ for details. The issue
+  may be worked around after Neutron has been restarted by detaching then
+  reattaching the floating IP to the load balancer's virtual IP.
 
 Full procedure for one host
 ---------------------------
