@@ -599,7 +599,84 @@ Wazuh manager
 
 TODO
 
-In-place migrations
-===================
+In-place upgrades
+=================
 
-TODO
+Sometimes it is necessary to upgrade a system in-place.
+This may be the case for the seed hypervisor or Ansible control host which are often installed manually onto bare metal.
+This procedure is not officially recommended, and can be risky, so be sure to back up all critical data and ensure serial console access is available (including password login) in case of getting locked out.
+
+The procedure is performed in two stages:
+
+1. Migrate from CentOS Stream 8 to Rocky Linux 8
+2. Upgrade from Rocky Linux 8 to Rocky Linux 9
+
+Potential issues
+----------------
+
+Full procedure
+--------------
+
+- It's good to inspect existing DNF packages and determine whether they are
+  really required.
+
+- Use the `migrate2rocky.sh
+  <https://raw.githubusercontent.com/rocky-linux/rocky-tools/main/migrate2rocky/migrate2rocky.sh>`__
+  script to migrate to Rocky Linux 8.
+
+- Disable all DNF modules - they're no longer used.
+
+  .. code-block:: console
+
+     sudo dnf module disable "*"
+
+- Migrate to NetworkManager:
+
+  - Ensure that all network interfaces are managed by Network Manager:
+
+    .. code:: console
+
+       sudo sed -i -e 's/NM_CONTROLLED=no/NM_CONTROLLED=yes/g' /etc/sysconfig/network-scripts/*
+
+  - Enable and start NetworkManager:
+
+    .. code:: console
+
+       sudo systemctl enable NetworkManager
+       sudo systemctl start NetworkManager
+
+  - Migrate Ethernet connections to native NetworkManager configuration:
+
+    .. code:: console
+
+       sudo nmcli connection migrate
+
+  - Manually migrate non-Ethernet (bonds, bridges & VLAN subinterfaces) network interfaces to native NetworkManager.
+
+  - Look out for lost DNS configuration after migration to NetworkManager. This may be manually restored using something like this:
+
+    .. code:: console
+
+       nmcli con mod System\ brextmgmt.3003 ipv4.dns "10.41.4.4 10.41.4.5 10.41.4.6"
+
+ - Make sure there are no funky udev rules left in
+   ``/etc/udev/rules.d/70-persistent-net.rules`` (e.g. from cloud-init run on
+   Rocky 9.1).
+
+  - Inspect networking configuration at this point, ideally reboot to validate correctness.
+
+- Upgrade to Rocky Linux 9
+
+  .. https://forums.rockylinux.org/t/dnf-warning-message-after-upgrade-from-rocky-8-to-rocky-9/8319/2
+
+  .. code:: console
+
+     sudo dnf install -y https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.2-1.6.el9.noarch.rpm \
+                         https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.2-1.6.el9.noarch.rpm \
+                         https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.2-1.6.el9.noarch.rpm
+     sudo rm -rf /usr/share/redhat-logos
+     sudo dnf --releasever=9 --allowerasing --setopt=deltarpm=false distro-sync -y
+     sudo rpm --rebuilddb
+     sudo rpm -qa | grep el8 | xargs dnf remove
+
+- You will need to re-create *all* virtualenvs afterwards due to system Python version upgrade.
