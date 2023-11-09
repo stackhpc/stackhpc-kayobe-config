@@ -617,8 +617,7 @@ Potential issues
 Full procedure
 --------------
 
-- It's good to inspect existing DNF packages and determine whether they are
-  really required.
+- Inspect existing DNF packages and determine whether they are really required.
 
 - Use the `migrate2rocky.sh
   <https://raw.githubusercontent.com/rocky-linux/rocky-tools/main/migrate2rocky/migrate2rocky.sh>`__
@@ -630,7 +629,9 @@ Full procedure
 
      sudo dnf module disable "*"
 
-- Migrate to NetworkManager:
+- Migrate to NetworkManager. This can be done using a manual process or with Kayobe.
+
+  The manual process is as follows:
 
   - Ensure that all network interfaces are managed by Network Manager:
 
@@ -659,6 +660,16 @@ Full procedure
 
        nmcli con mod System\ brextmgmt.3003 ipv4.dns "10.41.4.4 10.41.4.5 10.41.4.6"
 
+  The following Kayobe process for migrating to NetworkManager has not yet been tested.
+
+  - Set ``interfaces_use_nmconnection: true`` as a host/group variable for the relevant hosts
+
+  - Run the appropriate host configure command. For example, for the seed hypervisor:
+
+    .. code:: console
+
+       kayobe seed hypervisor host configure -t network -kt none
+
  - Make sure there are no funky udev rules left in
    ``/etc/udev/rules.d/70-persistent-net.rules`` (e.g. from cloud-init run on
    Rocky 9.1).
@@ -669,14 +680,36 @@ Full procedure
 
   .. https://forums.rockylinux.org/t/dnf-warning-message-after-upgrade-from-rocky-8-to-rocky-9/8319/2
 
-  .. code:: console
+  - Install Rocky Linux 9 repositories and GPG keys:
 
-     sudo dnf install -y https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.2-1.6.el9.noarch.rpm \
-                         https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.2-1.6.el9.noarch.rpm \
-                         https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.2-1.6.el9.noarch.rpm
-     sudo rm -rf /usr/share/redhat-logos
-     sudo dnf --releasever=9 --allowerasing --setopt=deltarpm=false distro-sync -y
-     sudo rpm --rebuilddb
-     sudo rpm -qa | grep el8 | xargs dnf remove
+    .. code:: console
+
+       sudo dnf install -y https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.2-1.6.el9.noarch.rpm \
+                           https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.2-1.6.el9.noarch.rpm \
+                           https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.2-1.6.el9.noarch.rpm
+
+  - Remove the RedHat logos package:
+
+    .. code:: console
+
+       sudo rm -rf /usr/share/redhat-logos
+
+  - Synchronise all packages with current versions
+
+    .. code:: console
+
+       sudo dnf --releasever=9 --allowerasing --setopt=deltarpm=false distro-sync -y
+
+  - Rebuild RPB database:
+
+    .. code:: console
+
+       sudo rpm --rebuilddb
+
+  - Remove all EL8 packages:
+
+    .. code:: console
+
+       sudo rpm -qa | grep el8 | xargs dnf remove
 
 - You will need to re-create *all* virtualenvs afterwards due to system Python version upgrade.
