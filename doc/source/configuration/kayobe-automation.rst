@@ -7,7 +7,7 @@ What is Kayobe Automation
 
 `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ is a collection of scripts and tools that automate kayobe operations.
 It is deployed and controlled by CI/CD platforms such as GitHub actions and GitLab pipelines.
-Kayobe automation provides users with an easy process to perform tasks such as; overcloud service deploy, config-diff, tempest testing and many more.
+Kayobe automation provides users with an easy process to perform tasks such as: overcloud service deploy, config-diff, tempest testing, and many more.
 With it being integrated into platforms such as GitHub or GitLab it builds a close relationship between the contents of the deployments kayobe configuration and what is currently deployed.
 This is because operations such as opening a pull request will trigger a config diff to be generated providing insight on what impact it might have on services or a tempest test that could be scheduled to run daily providing knowledge of faults earlier than before.
 
