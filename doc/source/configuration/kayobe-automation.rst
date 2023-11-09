@@ -100,10 +100,10 @@ Workflow Deployment
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-workflows.yml`
 
 3. Add all required secrets to repository either via the GitHub UI or GitHub CLI (may require repository owner)
-    * KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
-    * KAYOBE_VAULT_PASSWORD
-    * REGISTRY_PASSWORD
-    * TEMPEST_OPENRC
+    * KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: private key used by Ansible to authenticate with machines.
+    * KAYOBE_VAULT_PASSWORD: password used by the config to encrypt Ansible Vault secrets.
+    * REGISTRY_PASSWORD: password used to login to the docker registry such as Pulp.
+    * TEMPEST_OPENRC: contents of :code:`kolla/public-openrc.sh`
 
 Note if you are using multiple environments and not sharing secrets between environments then each of must have the environment name prefix for each enviromment for example
     * PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
