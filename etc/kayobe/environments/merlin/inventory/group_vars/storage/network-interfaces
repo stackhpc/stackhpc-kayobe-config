@@ -1,0 +1,20 @@
+---
+internal_net_interface: eno1
+internal_net_gateway: 172.23.41.250
+
+hs_net_interface: bond0
+hs_net_bond_mode: 802.3ad
+hs_bond_xmit_hash_policy: "layer3+4"
+hs_mtu: 9000
+
+hs2_net_interface: bond1
+hs2_net_bond_mode: 802.3ad
+hs2_net_xmit_hash_policy: "layer3+4"
+hs2_net_mtu: 9000
+
+storage_mgmt_net_interface: "{{ hs2_net_interface }}.{{ storage_mgmt_net_vlan }}"
+
+storage_default_network_interfaces:
+  - hs_net
+  - internal_net
+  - storage_net
