@@ -21,7 +21,7 @@ stackhpc_overcloud_dib_name: "deployment_image"
 
 # StackHPC overcloud DIB image elements.
 stackhpc_overcloud_dib_elements:
-  - "{{ os_distribution }}-{% if os_distribution == 'rocky' %}container{% else %}minimal{% endif %}"
+  - "{{ os_distribution }}-{% if os_distribution == 'rocky' %}container-stackhpc{% else %}minimal{% endif %}"
   - "cloud-init-datasources"
   - "{% if os_distribution == 'rocky' %}disable-selinux{% endif %}"
   - "enable-serial-console"
@@ -41,6 +41,7 @@ stackhpc_overcloud_dib_env_vars:
   DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
   DIB_CONTAINERFILE_RUNTIME: "docker"
   DIB_CONTAINERFILE_NETWORK_DRIVER: "host"
+  DIB_CONTAINERFILE_DOCKERFILE: "/opt/kayobe/src/stackhpc-image-elements/elements/rocky-container-stackhpc/containerfiles/9-stackhpc"
   # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
   # Ark does not work if the upstream mirror pulls packages (which it does
   # sometimes).
