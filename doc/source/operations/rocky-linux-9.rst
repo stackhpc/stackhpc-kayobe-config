@@ -98,6 +98,8 @@ suggestions:
 * Check for unexpected ``ERROR`` or ``CRITICAL`` messages in Kibana/OpenSearch
   Dashboard.
 * Check Grafana dashboards.
+* Disable Ansible fact caching for the duration of the migration, or remember
+  to clear hosts from the fact cache after they have been reprovisioned.
 
 Migrate to OpenSearch
 ---------------------
@@ -108,6 +110,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
   docs <https://docs.openstack.org/kolla-ansible/yoga/reference/logging-and-monitoring/central-logging-guide-opensearch.html#migration>`__
 - If necessary, take a backup of the Elasticsearch data.
 - Ensure ``kolla_enable_elasticsearch`` is unset in ``etc/kayobe/kolla.yml``
+- If you have a custom Kolla Ansible inventory, ensure that it contains the ``opensearch`` and ``opensearch-dashboards`` groups. Otherwise, sync with the inventory in Kayobe.
 - Set ``kolla_enable_opensearch: true`` in ``etc/kayobe/kolla.yml``
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
 - ``kayobe overcloud container image pull -kt opensearch``
