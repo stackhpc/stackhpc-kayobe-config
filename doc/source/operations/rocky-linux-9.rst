@@ -706,10 +706,18 @@ Full procedure
 
        sudo rpm --rebuilddb
 
-  - Remove all EL8 packages:
+  - Make a list of EL8 packages to remove:
 
     .. code:: console
 
-       sudo rpm -qa | grep el8 | xargs dnf remove
+       sudo rpm -qa | grep el8 > el8-packages
+
+  - Inspect the ``el8-packages`` list and ensure only expected packages are included.
+
+  - Remove the EL8 packages:
+
+    .. code:: console
+
+       cat el8-packages | xargs sudo dnf remove -y
 
 - You will need to re-create *all* virtualenvs afterwards due to system Python version upgrade.
