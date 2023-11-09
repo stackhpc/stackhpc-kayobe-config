@@ -5,15 +5,16 @@ Kayobe Automation
 What is Kayobe Automation
 =========================
 
-`Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ is a collection of scripts and tools that enable the automation of kayobe related operations through the use of CI/CD platforms such as those provided by GitHub and GitLab.
-Kayobe automation provides users an easy process of performing tasks such as; overcloud service deploy, config-diff, tempest testing and many more.
+`Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ is a collection of scripts and tools that automate kayobe operations.
+It is deployed and controlled by CI/CD platforms such as GitHub actions and GitLab pipelines.
+Kayobe automation provides users with an easy process to perform tasks such as; overcloud service deploy, config-diff, tempest testing and many more.
 With it being integrated into platforms such as GitHub or GitLab it builds a close relationship between the contents of the deployments kayobe configuration and what is currently deployed.
 This is because operations such as opening a pull request will trigger a config diff to be generated providing insight on what impact it might have on services or a tempest test that could be scheduled to run daily providing knowledge of faults earlier than before.
 
-Kayobe automation has been designed to be independent of any CI/CD platform with all tasks running inside of a purpose build Kayobe container.
+Kayobe automation has been designed to be independent of any CI/CD platform with all tasks running inside of a purpose built Kayobe container.
 However, platform specific workflows need to be deployed to bridge the gap between the contents of Kayobe Automation and these CI/CD platforms.
 To achieve this work has been carried to template workflows as deployment specific choices have to be made when writing workflows, such as; multiple environment support, container registry location and secret sharing.
-The templating of workflows is offered through the `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ collection which currently supports GitHub workflows and should enable the easy and error free deployment of workflows.
+The templating of workflows is offered through the `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ collection which currently supports GitHub workflows.
 
 GitHub Deployment
 =================
@@ -30,14 +31,14 @@ Runner Deployment
     Ideally an Infra VM could be used here or failing that the control host.
     Wherever it is deployed the host will need access to the :code:`admin_network`, :code:`public_network` and the :code:`pulp registry` on the seed.
 
-2. Edit the environments :code:`inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
+2. Edit the environment's :code:`inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
 
 .. code-block:: ini
 
     [infra-vms:children]
     github-runners
 
-3. Edit the environments :code:`inventory/hosts` to define the host(s) that will host the runners.
+3. Edit the environment's :code:`inventory/hosts` to define the host(s) that will host the runners.
 
 .. code-block:: ini
 
@@ -82,11 +83,11 @@ Also feel free to change the number of runners and their names.
 6. Obtain a personal access token that would enable the registration of GitHub runners against the `github_account` and `github_repo` defined above.
     This token ideally should be `fine-grain personal access token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>`__ which may require the organisation to enable such tokens beforehand steps can be found `here <https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization>`__
     The repository permissions for a fine-grain personal access token should be; :code:`Actions: R/W, Administration: R/W, Metadata: R`
-    Once obtained the key add to :code:`secrets.yml` under :code:`secrets_github_access_token`
+    Once the key has been obtained, add it to :code:`secrets.yml` under :code:`secrets_github_access_token`
 
 7. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-github-runner.yml`
 
-8. Check runners have registered properly by visiting the repositories :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
+8. Check runners have registered properly by visiting the repository's :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
 
 9. Repeat the above steps for each environment you intend to deploy runners within.
     You can share the fine-grain access token between environments.
@@ -104,7 +105,7 @@ Workflow Deployment
     * REGISTRY_PASSWORD
     * TEMPEST_OPENRC
 
-Note if using multiple environments and are not sharing secrets between environments then each of must have the environment name prefix for each enviromment for example
+Note if you are using multiple environments and not sharing secrets between environments then each of must have the environment name prefix for each enviromment for example
     * PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
     * PRODUCTION_KAYOBE_VAULT_PASSWORD
     * PRODUCTION_REGISTRY_PASSWORD
@@ -119,7 +120,7 @@ Note if using multiple environments and are not sharing secrets between environm
 Final Steps
 -----------
 
-Some final steps include the following; running config-diff will require that :code:`.automation.conf/config.sh` contains a list :code:`KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA` of all vaulted files contained within the config.
+Some final steps include the following: running config-diff will require that :code:`.automation.conf/config.sh` contains a list :code:`KAYOBE_CONFIG_VAULTED_FILES_PATHS_EXTRA` of all vaulted files contained within the config.
 All such files can be found with :code:`grep -r "$ANSIBLE_VAULT;1.1;AES256" .` though make sure NOT to include `kolla/passwords.yml` and `secrets.yml`
 Also make sure tempest has been configured appropriately in :code:`.automation.conf/config.sh` to meet the limitations of a given deployment such as not using a too high of :code:`TEMPEST_CONCURRENCY` value and that overrides and load/skips lists are correct.
-Finally, once all the workflows and configuration has been pushed and reviewed you can build a kayobe image using `Build Kayobe Docker Image` once succesfully built and pushed to a container registry other workflows can be used.
+Finally, once all the workflows and configuration has been pushed and reviewed you can build a kayobe image using the `Build Kayobe Docker Image` workflow. Once it is successfully built and pushed to a container registry, other workflows can be used.
