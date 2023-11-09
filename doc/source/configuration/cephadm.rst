@@ -308,6 +308,136 @@ should be used in the Kolla Manila configuration e.g.:
 
   manila_cephfs_filesystem_name: manila-cephfs
 
+RADOS Gateways
+--------------
+
+RADOS Gateways (RGWs) are defined with the following:
+
+.. code:: yaml
+
+  cephadm_radosgw_services:
+    - id: myrgw
+      count_per_host: 1
+      spec:
+        rgw_frontend_port: 8100
+
+The port chosen must not conflict with any other processes running on the Ceph
+hosts. Port 8100 does not conflict with our default suite of services.
+
+Ceph RGWs require additional configuration to:
+
+  * Support both S3 and Swift APIs.
+
+  * Authenticate user access via Keystone.
+
+  * Allow cross-project and public object access.
+
+The set of commands below configure all of these.
+
+.. code:: yaml
+
+  # Append the following to cephadm_commands_post:
+  - "config set client.rgw rgw_content_length_compat true"
+  - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
+  - "config set client.rgw rgw_enforce_swift_acls true"
+  - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, Member, _member_, admin'"
+  - "config set client.rgw rgw_keystone_admin_domain Default"
+  - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_project service"
+  - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
+  - "config set client.rgw rgw_keystone_api_version '3'"
+  - "config set client.rgw rgw_keystone_token_cache_size '10000'"
+  - "config set client.rgw rgw_keystone_url https://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_verify_ssl false"
+  - "config set client.rgw rgw_max_attr_name_len '1000'"
+  - "config set client.rgw rgw_max_attr_size '1000'"
+  - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
+  - "config set client.rgw rgw_s3_auth_use_keystone true"
+  - "config set client.rgw rgw_swift_account_in_url true"
+  - "config set client.rgw rgw_swift_versioning_enabled true"
+
+As we have configured Ceph to respond to Swift APIs, you will need to tell
+Kolla to account for this when registering Swift endpoints with Keystone. Also,
+when ``rgw_swift_account_in_url`` is set, the equivalent Kolla variable should
+be set in Kolla ``globals.yml`` too:
+
+.. code:: yaml
+
+  ceph_rgw_swift_compatibility: false
+  ceph_rgw_swift_account_in_url: true
+
+``secrets_ceph_rgw_keystone_password`` should be stored in the Kayobe
+``secrets.yml``, and set to the same value as ``ceph_rgw_keystone_password`` in
+the Kolla ``passwords.yml``. As such, you will need to configure Keystone
+before deploying the RADOS gateways. If you are using the Kolla load balancer
+(see :ref:`RGWs-with-hyper-converged-Ceph` for more info), you can specify the
+``haproxy`` and ``loadbalancer`` tags here too.
+
+.. code:: yaml
+
+  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
+
+
+.. _RGWs-with-hyper-converged-Ceph:
+
+RGWs with hyper-converged Ceph
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are using a hyper-converged Ceph setup (i.e. your OpenStack controllers
+and Ceph storage nodes share the same hosts), you should double-check that
+``rgw_frontend_port`` does not conflict with any processes on the controllers.
+For example, port 80 (and 443) will be bound to the Kolla-deployed haproxy. You
+should choose a custom port that does not conflict with any OpenStack endpoints
+too (``openstack endpoint list``).
+
+You may also want to use the Kolla-deployed haproxy to load balance your RGWs.
+This means you will not need to define any Ceph ingress services. Instead, you
+add definitions of your Ceph hosts to Kolla ``globals.yml``:
+
+.. code:: yaml
+
+  ceph_rgw_hosts:
+    - host: controller1
+      ip: <host IP on storage net>
+      port: 8100
+    - host: controller2
+      ip: <host IP on storage net>
+      port: 8100
+    - host: controller3
+      ip: <host IP on storage net>
+      port: 8100
+
+HA with Ingress services
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ingress services are defined with the following. ``id`` should match the name
+(not id) of the RGW service to which ingress will point to. ``spec`` is a
+service specification required by Cephadm to deploy the ingress (haproxy +
+keepalived pair).
+
+Note that the ``virtual_ip`` here must be different than the Kolla VIP. The
+choice of subnet will be dependent on your deployment, and can be outside
+of any Ceph networks.
+
+.. code:: yaml
+
+  cephadm_ingress_services:
+    - id: rgw.myrgw
+      spec:
+        frontend_port: 443
+        monitor_port: 1967
+        virtual_ip: 10.66.0.1/24
+        ssl_cert: {example_certificate_chain}
+
+When using ingress services, you will need to stop Kolla from configuring your
+RGWs to use the Kolla-deployed haproxy. Set the following in Kolla
+``globals.yml``:
+
+.. code:: yaml
+
+  enable_ceph_rgw_loadbalancer: false
+
 Deployment
 ==========
 
@@ -345,8 +475,14 @@ cephadm.yml playbook to perform post-deployment configuration:
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
 
-The ``cephadm.yml`` playbook imports various other playbooks, which may
-also be run individually to perform specific tasks.
+The ``cephadm.yml`` playbook imports various other playbooks, which may also be
+run individually to perform specific tasks. Note that if you want to deploy
+additional services (such as RGWs or ingress) after an initial deployment, you
+will need to set ``cephadm_bootstrap`` to true. For example:
+
+.. code:: bash
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml -e cephadm_bootstrap=true
 
 Configuration generation
 ------------------------

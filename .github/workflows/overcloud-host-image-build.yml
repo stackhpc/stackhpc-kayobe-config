@@ -11,10 +11,6 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
-      SMS:
-        description: Push images to SMS
-        type: boolean
-        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -166,7 +162,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success' && inputs.sms
+        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
         id: build_ubuntu_jammy
@@ -210,7 +206,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success' && inputs.sms
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Upload updated images artifact
         uses: actions/upload-artifact@v3
