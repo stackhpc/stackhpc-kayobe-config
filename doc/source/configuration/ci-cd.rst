@@ -31,6 +31,13 @@ However, platform specific workflows need to be deployed to bridge the gap betwe
 Workflows are templated for each Kayobe configuration repository, ensuring appropriate workflow input parameters are defined, and any necessary customisations can be applied.
 The templating of workflows is offered through the `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ collection which currently supports GitHub workflows.
 
+Runners
+-------
+
+Runners are purpose built services tied to a particular service vendor such as GitHub Actions or GitLab CI.
+These services will listen for jobs which have been tagged appropriately and dispatched to these specific runners.
+The runners will need to be deployed using existing roles and playbooks whereby the binary/package is downloaded and registered using a special token.
+
 GitHub Actions
 =================
 
@@ -81,6 +88,21 @@ Runner Deployment
       - kayobe
       - openstack
 
+    # Dictionary of runners to be deployed using the role.
+    # Each dict item can be provided with optional attributes
+    # * labels - provide a list of labels for a specific runner
+    #   overriding the contents of `default_runner_labels`
+    # * state - either `started`` or `absent`. By default it will
+    #   be started if however the runner needs to be removed
+    #   then setting it to `absent` will unregister the runner with
+    #   GitHub and remove it from the system.
+    # Example
+    # github_runners:
+    #  runner_01: {}
+    #  runner_02:
+    #    labels: ['foo', 'bar', 'baz']
+    #  runner_03:
+    #    state: absent
     github_runners:
       runner_01: {}
       runner_02: {}
