@@ -19,6 +19,8 @@
       loop_control:
         loop_var: runner
 
+    # FIXME: Sometimes the runner service is not running at the end of the role.
+    # Start the service manually.
     - name: Ensure runner service is running
       ansible.builtin.service:
         name: actions.runner.{{ github_account }}-{{ github_repo }}.{{ ansible_facts.nodename }}-{{ runner.key }}.service
