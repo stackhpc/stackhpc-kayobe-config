@@ -65,16 +65,7 @@
           delegate_to: localhost
           register: custom_sca_policies
           when: custom_sca_policies_folder.stat.exists
-
-        - name: Allow Wazuh agents to execute commands in SCA policies sent from the Wazuh manager
-          blockinfile:
-            path: "/var/ossec/etc/local_internal_options.conf"
-            state: present
-            owner: wazuh
-            group: wazuh
-            block: |
-              sca.remote_commands=1
-          when: custom_sca_policies.files | length > 0
+          become: no
 
         - name: Copy custom SCA policy files to Wazuh manager
           copy:
@@ -124,7 +115,6 @@
     - name: Perform health check against filebeat
       command: filebeat test output
       changed_when: false
-      become: true
       retries: 2
 
   handlers:
