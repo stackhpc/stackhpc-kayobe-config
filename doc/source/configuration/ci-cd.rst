@@ -87,6 +87,7 @@ Runner Deployment
     default_runner_labels:
       - kayobe
       - openstack
+      - "{{ kayobe_environment | default(omit) }}"
 
     # Dictionary of runners to be deployed using the role.
     # Each dict item can be provided with optional attributes
