@@ -127,3 +127,12 @@ Some final steps include the following: running config-diff will require that :c
 All such files can be found with :code:`grep -r "$ANSIBLE_VAULT;1.1;AES256" .` though make sure NOT to include `kolla/passwords.yml` and `secrets.yml`
 Also make sure tempest has been configured appropriately in :code:`.automation.conf/config.sh` to meet the limitations of a given deployment such as not using a too high of :code:`TEMPEST_CONCURRENCY` value and that overrides and load/skips lists are correct.
 Finally, once all the workflows and configuration has been pushed and reviewed you can build a kayobe image using the `Build Kayobe Docker Image` workflow. Once it is successfully built and pushed to a container registry, other workflows can be used.
+
+Sometimes the kayobe docker image must be rebuilt the reasons for this include but are not limited to the following;
+
+    * Change $KAYOBE_CONFIG_PATH/ansible/requirements.yml
+    * Change to requirements.txt
+    * Update Kayobe
+    * Update kolla-ansible
+    * UID/GID collision when deploying workflows to a new environment
+    * Prior to deployment of new a OpenStack release
