@@ -31,26 +31,26 @@ Runner Deployment
     Ideally an Infra VM could be used here or failing that the control host.
     Wherever it is deployed the host will need access to the :code:`admin_network`, :code:`public_network` and the :code:`pulp registry` on the seed.
 
-2. Edit the environment's :code:`inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
+2. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
 
 .. code-block:: ini
 
     [infra-vms:children]
     github-runners
 
-3. Edit the environment's :code:`inventory/hosts` to define the host(s) that will host the runners.
+3. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` to define the host(s) that will host the runners.
 
 .. code-block:: ini
 
     [github-runners]
     runner-01
 
-4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`inventory/group_vars/github-runners`
+4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/github-runners`
     * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
     * `network-interfaces`
     * `python-interpreter.yml` ensuring that `ansible_python_interpreter: /usr/bin/python3` has been set
 
-5. Create `runner.yml` file which will contain the variables required to deploy a series of runners
+5. Create `${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/github-runners/runner.yml` file which will contain the variables required to deploy a series of runners
 
 .. code-block:: yaml
 
@@ -98,7 +98,7 @@ Also feel free to change the number of runners and their names.
 Workflow Deployment
 -------------------
 
-1. Edit `inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
+1. Edit `${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-workflows.yml`
 
@@ -130,7 +130,7 @@ Finally, once all the workflows and configuration has been pushed and reviewed y
 
 Sometimes the kayobe docker image must be rebuilt the reasons for this include but are not limited to the following;
 
-    * Change $KAYOBE_CONFIG_PATH/ansible/requirements.yml
+    * Change :code:`$KAYOBE_CONFIG_PATH/ansible/requirements.yml`
     * Change to requirements.txt
     * Update Kayobe
     * Update kolla-ansible
