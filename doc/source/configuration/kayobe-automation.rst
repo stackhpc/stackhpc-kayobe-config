@@ -13,13 +13,13 @@ This is because operations such as opening a pull request will trigger a config 
 
 Kayobe automation has been designed to be independent of any CI/CD platform with all tasks running inside of a purpose built Kayobe container.
 However, platform specific workflows need to be deployed to bridge the gap between the contents of Kayobe Automation and these CI/CD platforms.
-To achieve this work has been carried to template workflows as deployment specific choices have to be made when writing workflows, such as; multiple environment support, container registry location and secret sharing.
+Workflows are templated for each Kayobe configuration repository, ensuring appropriate workflow input parameters are defined, and any necessary customisations can be applied.
 The templating of workflows is offered through the `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ collection which currently supports GitHub workflows.
 
-GitHub Deployment
+GitHub Actions
 =================
 
-To enable Kayobe Automation where GitHub Actions is used please follow the steps described below starting with the deployment the runners.
+To enable CI/CD where GitHub Actions is used please follow the steps described below starting with the deployment of the runners.
 
 Runner Deployment
 -----------------
@@ -42,11 +42,11 @@ Runner Deployment
 
 .. code-block:: ini
 
-    [github-runner]
+    [github-runners]
     runner-01
 
-4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`inventory/hosts/github-runners`
-    * `infra-vms` ensuring all required `infra_vm_extra_network_interface` are defined
+4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`inventory/group_vars/github-runners`
+    * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
     * `network-interfaces`
     * `python-interpreter.yml` ensuring that `ansible_python_interpreter: /usr/bin/python3` has been set
 
@@ -81,8 +81,9 @@ If using multiple environments add an extra label to :code:`default_runner_label
 Also feel free to change the number of runners and their names.
 
 6. Obtain a personal access token that would enable the registration of GitHub runners against the `github_account` and `github_repo` defined above.
-    This token ideally should be `fine-grain personal access token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>`__ which may require the organisation to enable such tokens beforehand steps can be found `here <https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization>`__
-    The repository permissions for a fine-grain personal access token should be; :code:`Actions: R/W, Administration: R/W, Metadata: R`
+    This token ideally should be `fine-grained personal access token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>`__ which may require the organisation to enable such tokens beforehand.
+    Steps can be found `here <https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization>`__.
+    The repository permissions for a fine-grained personal access token should be; :code:`Actions: R/W, Administration: R/W, Metadata: R`
     Once the key has been obtained, add it to :code:`secrets.yml` under :code:`secrets_github_access_token`
 
 7. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-github-runner.yml`
@@ -90,12 +91,12 @@ Also feel free to change the number of runners and their names.
 8. Check runners have registered properly by visiting the repository's :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
 
 9. Repeat the above steps for each environment you intend to deploy runners within.
-    You can share the fine-grain access token between environments.
+    You can share the fine-grained access token between environments.
 
 Workflow Deployment
 -------------------
 
-1. Edit `inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs see documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__
+1. Edit `inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-workflows.yml`
 
@@ -105,7 +106,7 @@ Workflow Deployment
     * REGISTRY_PASSWORD: password used to login to the docker registry such as Pulp.
     * TEMPEST_OPENRC: contents of :code:`kolla/public-openrc.sh`
 
-Note if you are using multiple environments and not sharing secrets between environments then each of must have the environment name prefix for each enviromment for example
+Note if you are using multiple environments and not sharing secrets between environments then each of these must have the environment name prefix for each environment, for example:
     * PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
     * PRODUCTION_KAYOBE_VAULT_PASSWORD
     * PRODUCTION_REGISTRY_PASSWORD
