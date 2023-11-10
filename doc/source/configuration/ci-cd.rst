@@ -2,8 +2,23 @@
 CI/CD
 =====
 
-What is Kayobe Automation
-=========================
+Concepts
+========
+
+The CI/CD system developed for managing Kayobe based OpenStack clouds is composed of three main components; workflows, runners and kayobe automation.
+Firstly, the workflows are files which describe a series of tasks to be performed in relation to the deployed cloud.
+These workflows are executed on request, on schedule or in response to an event such as a pull request being opened.
+The workflows are designed to carry out various day-to-day activites such as; running Tempest tests, configuring running services or displaying the change to configuration files if a pull request is merged.
+Secondly, in order for the workflows to run against a cloud we would need private runners present within the cloud positioned in such a way they can reach the internal network and public API.
+Deployment of private runners is supported by all major providers with the use of community developed Ansible roles.
+Finally, due to the requirement that we support various different platforms tooling in the form of `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ was developed.
+This tooling is not tied to any single CI/CD platform as all tasks are a series of shell script and Ansible playbooks which are designed to run in a purpose build kayobe container.
+This is complemented by the use of an Ansible collection known as `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ which aims to provide users with a quick and easy way of customising all workflows to fit within a customer's cloud.
+
+Currently we support the creation and deployment of workflows for GitHub with Gitlab support being actively worked upon. 
+
+Kayobe Automation
+-----------------
 
 `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ is a collection of scripts and tools that automate kayobe operations.
 It is deployed and controlled by CI/CD platforms such as GitHub actions and GitLab pipelines.
