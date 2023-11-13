@@ -8,7 +8,7 @@ CIS Benchmark Hardening
 The roles from the `Ansible-Lockdown <https://github.com/ansible-lockdown>`_
 project are used to harden hosts in accordance with the CIS benchmark criteria.
 It won't get your benchmark score to 100%, but should provide a significant
-improvement over an unhardened system. A typical score would be x%
+improvement over an unhardened system. A typical score would be 70%
  The following operating systems are...
 supported:
 
