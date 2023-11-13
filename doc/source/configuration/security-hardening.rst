@@ -8,9 +8,9 @@ CIS Benchmark Hardening
 The roles from the `Ansible-Lockdown <https://github.com/ansible-lockdown>`_
 project are used to harden hosts in accordance with the CIS benchmark criteria.
 It won't get your benchmark score to 100%, but should provide a significant
-improvement over an unhardened system. A typical score would be 70%
- The following operating systems are...
-supported:
+improvement over an unhardened system. A typical score would be 70%.
+
+The following operating systems are supported:
 
 - Rocky 8, RHEL 8, CentOS Stream 8
 - Ubuntu 22.04
@@ -38,13 +38,7 @@ playbooks, the playbooks are not currently enabled by default. It is recommended
 that they are first applied to a representative staging environment to determine
 whether or not workloads or API requests are affected by any configuration changes.
 
-The upstream roles do not currently support using
-`INJECT_FACTS_AS_VARS=False <https://docs.ansible.com/ansible/latest/reference_appendices/config.html#inject-facts-as-vars>`
-so you must enable this feature to be able to run the playbooks. This an be done on
-an adhoc basis using the environment variable. An example of how of to do that is
-shown below:
-
 .. code-block:: console
 
-    INJECT_FACTS_AS_VARS=False kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
 
