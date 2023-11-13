@@ -354,7 +354,7 @@ kolla_build_blocks:
     RUN \
         if [ -f /etc/yum.repos.d.backup/repos.tar.gz ]; then \
           tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
-          rm -rf /etc/yum.repos.d.backup/ \
+          rm -rf /etc/yum.repos.d.backup/; \
         fi && \
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
           echo "Found repository mirror in Yum repositories"; \
@@ -363,7 +363,7 @@ kolla_build_blocks:
     {% else %}
     RUN \
         if [ -f /etc/apt/sources.list.backup ]; then \
-          mv /etc/apt/sources.list.backup /etc/apt/sources.list \
+          mv /etc/apt/sources.list.backup /etc/apt/sources.list; \
         fi && \
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
           echo "Found repository mirror in APT repositories"; \
