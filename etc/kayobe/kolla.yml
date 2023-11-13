@@ -111,12 +111,9 @@ kolla_tag: "{{ openstack_release }}-{{ kolla_base_distro }}-{{ kolla_base_distro
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-# NOTE (Alex-Welsh): The reference for many of these entries could be
-# 'stackhpc/{{ openstack_release }}' which would keep the branch up to date
-# for the current release. This is nice in theory but in practice, the stackhpc
-# forks change with every release and the elements in this list change with
-# them. Explicitly using /zed makes it more intuitive to find and edit these
-# entries.
+# NOTE(upgrade): These sources should be checked with each release. StackHPC
+# branches are only required when we have custom backports. For a new release,
+# we may have caught up with upstream.
 kolla_sources:
   bifrost-base-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
@@ -126,11 +123,11 @@ kolla_sources:
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/zed
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/zed
+    reference: stackhpc/{{ openstack_release }}
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -139,7 +136,7 @@ kolla_sources:
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/zed
+    reference: stackhpc/{{ openstack_release }}
   neutron-base:
     type: git
     location: https://github.com/stackhpc/neutron.git
@@ -147,7 +144,7 @@ kolla_sources:
   neutron-base-plugin-networking-generic-switch:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/zed
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
