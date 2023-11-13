@@ -8,11 +8,13 @@ CIS Benchmark Hardening
 The roles from the `Ansible-Lockdown <https://github.com/ansible-lockdown>`_
 project are used to harden hosts in accordance with the CIS benchmark criteria.
 It won't get your benchmark score to 100%, but should provide a significant
-improvement over an unhardened system. The following operating systems are
+improvement over an unhardened system. A typical score would be x%
+ The following operating systems are...
 supported:
 
 - Rocky 8, RHEL 8, CentOS Stream 8
 - Ubuntu 22.04
+- Rocky 9
 
 Configuration
 --------------
@@ -26,6 +28,7 @@ about what each variable does. The documentation can be found here:
 
 - `Rocky 8, RHEL 8, CentOS Stream 8 <https://github.com/ansible-lockdown/RHEL8-CIS/tree/1.3.0>`__
 - `Ubuntu 22.04 <https://github.com/ansible-lockdown/UBUNTU22-CIS>`__
+- `Rocky 9 <https://github.com/ansible-lockdown/RHEL9-CIS>`__
 
 Running the playbooks
 ---------------------
