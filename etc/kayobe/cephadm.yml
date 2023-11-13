@@ -86,8 +86,14 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 # stackhpc.cephadm.commands for format. Pre commands run before the rest of the
 # post-deployment configuration, post commands run after the rest of the
 # post-deployment configuration.
-#cephadm_commands_pre:
-#cephadm_commands_post:
+cephadm_commands_pre: "{{ cephadm_commands_pre_default + cephadm_commands_pre_extra }}"
+cephadm_commands_post: "{{ cephadm_commands_post_default + cephadm_commands_post_extra }}"
+
+cephadm_commands_pre_default: []
+cephadm_commands_pre_extra: []
+
+cephadm_commands_post_default: "{{ ['mgr module enable prometheus'] if kolla_enable_prometheus_ceph_mgr_exporter | default(False) | bool else [] }}"
+cephadm_commands_post_extra: []
 
 ###############################################################################
 # Kolla Ceph auto-configuration.

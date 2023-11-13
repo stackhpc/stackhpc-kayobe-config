@@ -167,6 +167,10 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: Prune local Kolla container images over 1 week old
+        run: |
+          sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
+
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
@@ -200,16 +204,15 @@ jobs:
         run: |
           sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
 
+      - name: Fail if no images have been built
+        run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
+
       - name: Upload container images artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.distro }} container images
           path: ${{ matrix.distro }}-container-images
           retention-days: 7
-
-      - name: Prune local Kolla container images over 1 week old
-        run: |
-          sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
 
   sync-container-repositories:
     name: Trigger container image repository sync
@@ -231,7 +234,8 @@ jobs:
           container-sync.yml \
           --repo stackhpc/stackhpc-release-train \
           --ref main \
-          -f filter="$filter"
+          -f filter="$filter" \
+          -f sync-new-images=false
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
 
