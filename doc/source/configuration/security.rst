@@ -46,5 +46,5 @@ shown below:
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
+    INJECT_FACTS_AS_VARS=False kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
 
