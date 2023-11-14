@@ -15,15 +15,13 @@ kayobe_image_tags:
     centos: yoga-20231024T093507
     rocky: yoga-20231024T093507
     ubuntu: yoga-20231024T093507
-  nova_libvirt:
-    # Live-migration is broken from qemu-kvm-6.2.0-20.module_el8.7.0+1218+f626c2ff to qemu-kvm-6.2.0-39.module_el8+669+76cc32af
-    # with signature: `Missing section footer for 0000:00:01.3/piix4_pm`. Test carefully before bumping.
-    centos: yoga-20230718T112646
+  nova:
+    centos: yoga-20231113T171023
+    rocky: yoga-20231103T161400
+    ubuntu: yoga-20231103T161400
 
-neutron_tag: yoga-20231110T152125
-
-nova_tag: yoga-20231103T161400
-nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova_libvirt'][kolla_base_distro] | default(nova_tag) }}{% endraw %}"
+cloudkitty_tag: yoga-20231107T165648
+nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] }}{% endraw %}"
 
 # These overrides are currently redundant, but are kept because it's not obvious that you need them if setting haproxy_tag
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
