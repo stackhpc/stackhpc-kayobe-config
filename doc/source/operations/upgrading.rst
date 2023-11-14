@@ -81,7 +81,7 @@ There is currently not a tested migration path from OVS to OVN on a running
 system. If you are using a Neutron plugin other than ML2/OVN, set
 ``kolla_enable_ovn`` to ``false`` in ``etc/kayobe/kolla.yml``.
 
-For new deployments using OVN, See
+For new deployments using OVN, see
 :kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
 
 Known issues
