@@ -20,6 +20,9 @@ Currently we support the creation and deployment of workflows for GitHub with Gi
 Kayobe Automation
 -----------------
 
+Workflows
+---------
+
 `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ is a collection of scripts and tools that automate kayobe operations.
 It is deployed and controlled by CI/CD platforms such as GitHub actions and GitLab pipelines.
 Kayobe automation provides users with an easy process to perform tasks such as: overcloud service deploy, config-diff, tempest testing, and many more.
