@@ -86,6 +86,30 @@ Make the following changes to your Kayobe configuration:
   This change does not need to be applied before migrating to Rocky Linux 9, but it should cause no harm to do so.
   Note that this will not affect existing VMs, only newly created VMs.
 
+Routing rules
+-------------
+
+Routing rules referencing tables by name may need adapting to be compatible with NetworkManager
+e.g:
+
+  .. code-block:: yaml
+
+      undercloud_prov_rules:
+        - from {{ internal_net_name | net_cidr }} table ironic-api
+
+will need to be updated to use numeric IDs:
+
+  .. code-block:: yaml
+
+      undercloud_prov_rules:
+        - from {{ internal_net_name | net_cidr }} table 1
+
+The error from NetworkManager was:
+
+  .. code-block:: shell
+
+      [1697192659.9611] keyfile: ipv4.routing-rules: invalid value for "routing-rule1": invalid value for "table"
+
 Prerequisites
 =============
 
