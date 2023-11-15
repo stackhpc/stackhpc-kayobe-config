@@ -40,6 +40,7 @@ Runners
 Runners are purpose built services tied to a particular service vendor such as GitHub Actions or GitLab CI.
 These services will listen for jobs which have been tagged appropriately and dispatched to these specific runners.
 The runners will need to be deployed using existing roles and playbooks whereby the binary/package is downloaded and registered using a special token.
+In some deployments runner hosts can be shared between environments however this is not always true and dedicated hosts will need to be used for each environment you intend to deploy kayobe automation within.
 
 GitHub Actions
 =================
