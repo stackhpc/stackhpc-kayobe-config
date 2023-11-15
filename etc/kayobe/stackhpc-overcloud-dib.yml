@@ -55,7 +55,10 @@ stackhpc_overcloud_dib_env_vars:
   # Avoid DNS queries during sudo commands, since we might not always have working DNS.
   DIB_SUDOERS_CONFIG: |
     Defaults  !fqdn
-  DIB_YUM_MINIMAL_BOOTSTRAP_REPOS: /etc/yum.repos.d/
+  # On Rocky Linux 9, use the host's repo files.
+  # These will have been configured to point to Test Pulp repo snapshots during the 'host configure' step.
+  # FIXME: This assumes we are building on RL9, which may not be the case.
+  DIB_YUM_MINIMAL_BOOTSTRAP_REPOS: "{% if os_distribution == 'rocky' and os_release == '9' %}/etc/yum.repos.d/{% endif %}"
   YUM: dnf
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
