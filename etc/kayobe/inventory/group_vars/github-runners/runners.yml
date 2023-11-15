@@ -1,5 +1,5 @@
 ---
-runner_user: stack
+runner_user: "{{ kayobe_ansible_user }}"
 github_account: stackhpc
 github_repo: stackhpc-kayobe-config
 access_token: "{{ secrets_github_access_token }}"
@@ -9,9 +9,9 @@ base_runner_dir: /opt/actions-runner
 default_runner_labels:
   - kayobe
   - openstack
-  - "{{ kayobe_environment | default(omit) }}"
+  - "{{ kayobe_environment }}"
 
-# Dictionary of runners to be deployed using the role.
+# Dictionary of GitHub runners to be deployed to each runner host.
 # Each dict item can be provided with optional attributes
 # * labels - provide a list of labels for a specific runner
 #   overriding the contents of `default_runner_labels`

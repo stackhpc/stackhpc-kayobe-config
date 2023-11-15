@@ -75,7 +75,7 @@ Runner Deployment
     * `network-interfaces`
     * `python-interpreter.yml` ensuring that `ansible_python_interpreter: /usr/bin/python3` has been set
 
-5. Create or edit `${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-runners/runners.yml` file which will contain the variables required to deploy a series of runners
+5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-runners/runners.yml`` file which will contain the variables required to deploy a series of runners
 
 .. code-block:: yaml
 
