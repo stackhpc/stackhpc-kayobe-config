@@ -141,7 +141,7 @@ Workflow Deployment
 
 1. Edit `${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
-2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-workflows.yml`
+2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-github-workflows.yml`
 
 3. Add all required secrets to repository either via the GitHub UI or GitHub CLI (may require repository owner)
     * KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: private key used by Ansible to authenticate with machines.
