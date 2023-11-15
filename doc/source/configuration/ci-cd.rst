@@ -15,7 +15,7 @@ Finally, due to the requirement that we support various different platforms tool
 This tooling is not tied to any single CI/CD platform as all tasks are a series of shell script and Ansible playbooks which are designed to run in a purpose build kayobe container.
 This is complemented by the use of an Ansible collection known as `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ which aims to provide users with a quick and easy way of customising all workflows to fit within a customer's cloud.
 
-Currently we support the creation and deployment of workflows for GitHub with Gitlab support being actively worked upon. 
+Currently we support the creation and deployment of workflows for GitHub with Gitlab support being actively worked upon.
 
 Kayobe Automation
 -----------------
