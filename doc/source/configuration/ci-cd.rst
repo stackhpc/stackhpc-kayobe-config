@@ -75,7 +75,11 @@ Runner Deployment
     * `network-interfaces`
     * `python-interpreter.yml` ensuring that `ansible_python_interpreter: /usr/bin/python3` has been set
 
-5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-runners/runners.yml`` file which will contain the variables required to deploy a series of runners
+5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
+   Below is a core set of variables that will require consideration and modification for successful deployment of the runners.
+   The number of runners deployed can be configured by removing and extending the dict :code:`github-runners`.
+   As for how many runners present three is suitable number as this would prevent situations where long running jobs could halt progress other tasks whilst waiting for a free runner.
+   You might want to increase the number of runners if usage demands it or new workflows make use of multiple parallel jobs.
 
 .. code-block:: yaml
 
@@ -85,41 +89,15 @@ Runner Deployment
     github_repo: KAYOBE_CONFIG_REPO_NAME_HERE
     access_token: "{{ secrets_github_access_token }}"
 
-    base_runner_dir: /opt/actions-runner
-
     default_runner_labels:
       - kayobe
       - openstack
       - "{{ kayobe_environment | default(omit) }}"
 
-    # Dictionary of runners to be deployed using the role.
-    # Each dict item can be provided with optional attributes
-    # * labels - provide a list of labels for a specific runner
-    #   overriding the contents of `default_runner_labels`
-    # * state - either `started`` or `absent`. By default it will
-    #   be started if however the runner needs to be removed
-    #   then setting it to `absent` will unregister the runner with
-    #   GitHub and remove it from the system.
-    # Example
-    # github_runners:
-    #  runner_01: {}
-    #  runner_02:
-    #    labels: ['foo', 'bar', 'baz']
-    #  runner_03:
-    #    state: absent
     github_runners:
       runner_01: {}
       runner_02: {}
       runner_03: {}
-
-    docker_users:
-      - "{{ runner_user }}"
-
-    pip_install_packages:
-      - name: docker
-
-If using multiple environments add an extra label to :code:`default_runner_labels` to distinguish these runners from runners belonging to other environments.
-Also feel free to change the number of runners and their names.
 
 6. Obtain a personal access token that would enable the registration of GitHub runners against the `github_account` and `github_repo` defined above.
     This token ideally should be `fine-grained personal access token <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>`__ which may require the organisation to enable such tokens beforehand.
