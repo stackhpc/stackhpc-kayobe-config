@@ -18,3 +18,4 @@ the various features provided.
    wazuh
    vault
    magnum-capi
+   security-hardening
