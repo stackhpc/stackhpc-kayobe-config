@@ -67,6 +67,10 @@ Make the following changes to your Kayobe configuration:
 - Merge in the latest ``stackhpc-kayobe-config`` ``stackhpc/yoga`` branch.
 - Set ``os_distribution`` to ``rocky`` in ``etc/kayobe/globals.yml``.
 - Set ``os_release`` to ``"9"`` in ``etc/kayobe/globals.yml``.
+- Consider using a `prebuilt overcloud host image
+  <../configuration/host-images.html#pulling-host-images>`_ or building an
+  overcloud host image using the `standard configuration
+  <../configuration/host-images.html#building-host-images>`_.
 - If you are using Kayobe multiple environments, add the following into
   ``kayobe-config/etc/kayobe/environments/<env>/kolla/config/nova.conf``
   (as Kolla custom service config environment merging is not supported in
