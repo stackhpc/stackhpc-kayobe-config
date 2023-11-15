@@ -68,7 +68,7 @@ Runner Deployment
 .. code-block:: ini
 
     [github-runners]
-    runner-01
+    prod-runner-01
 
 4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/github-runners`
     * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
