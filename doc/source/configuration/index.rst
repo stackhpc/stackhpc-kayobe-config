@@ -19,3 +19,4 @@ the various features provided.
    vault
    magnum-capi
    ci-cd
+   security-hardening
