@@ -289,18 +289,22 @@ kolla_build_blocks:
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
     {% if kolla_base_distro == 'rocky' %}
     RUN \
-        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
-        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
-           echo "Found repository mirror in Yum repositories"; \
-           exit 1; \
+        if [ -f /etc/yum.repos.d.backup/repos.tar.gz ]; then \
+          tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+          rm -rf /etc/yum.repos.d.backup/; \
         fi && \
-        rm -rf /etc/yum.repos.d.backup/
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+          echo "Found repository mirror in Yum repositories"; \
+          exit 1; \
+        fi
     {% else %}
     RUN \
-        mv /etc/apt/sources.list.backup /etc/apt/sources.list && \
+        if [ -f /etc/apt/sources.list.backup ]; then \
+          mv /etc/apt/sources.list.backup /etc/apt/sources.list; \
+        fi && \
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
-           echo "Found repository mirror in APT repositories"; \
-           exit 1; \
+          echo "Found repository mirror in APT repositories"; \
+          exit 1; \
         fi
     {% endif %}
     {% endif %}
