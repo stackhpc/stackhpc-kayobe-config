@@ -340,6 +340,15 @@ Full procedure for one host
 
        kayobe overcloud database recover
 
+13. If you are using Wazuh, you will need to deploy the agent again.
+    Note that CIS benchmarks do not run on RL9 out-the-box. See
+    `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
+    for details.
+
+    .. code-block:: console
+
+       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
+
 After each controller has been migrated you may wish to perform some smoke testing, check for alerts and errors etc.
 
 Compute
@@ -430,6 +439,15 @@ Full procedure for one batch of hosts
 
       kayobe overcloud service deploy -kl <hostname>
 
+8. If you are using Wazuh, you will need to deploy the agent again.
+    Note that CIS benchmarks do not run on RL9 out-the-box. See
+    `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
+    for details.
+
+    .. code-block:: console
+
+       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
+
 If any VMs were powered off, they may now be powered back on.
 
 Wait for Prometheus alerts and errors in OpenSearch Dashboard to resolve, or
@@ -482,11 +500,11 @@ Full procedure for any storage host
 
    .. code-block:: console
 
-      kayobe overcloud host configure -l <hostname>
+      kayobe overcloud host configure -l <hostname> -kl <hostname>
 
 6. Make sure the cephadm public key is in ``authorized_keys`` for stack or
    root user - depends on your setup. For example, your SSH key may
-   already be defined in ``users.yml`` . If in doubt, run the cephadm
+   already be defined in ``users.yml``. If in doubt, run the cephadm
    deploy playbook to copy the SSH key and install the cephadm binary.
 
    .. code-block:: console
@@ -506,6 +524,21 @@ Full procedure for any storage host
 
       ceph -s
       ceph -w
+
+9. Deploy any services that are required, such as Prometheus exporters.
+
+   .. code-block:: console
+
+      kayobe overcloud service deploy -kl <hostname>
+
+10. If you are using Wazuh, you will need to deploy the agent again.
+    Note that CIS benchmarks do not run on RL9 out-the-box. See
+    `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
+    for details.
+
+    .. code-block:: console
+
+       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
 Seed
 ====
@@ -614,6 +647,15 @@ Full procedure
        kayobe seed service deploy
 
 14. Verify that Bifrost/Ironic is healthy.
+
+15. If you are using Wazuh, you will need to deploy the agent again.
+    Note that CIS benchmarks do not run on RL9 out-the-box. See
+    `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
+    for details.
+
+    .. code-block:: console
+
+       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
 Seed hypervisor
 ===============
