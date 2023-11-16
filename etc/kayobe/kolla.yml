@@ -106,12 +106,9 @@ kolla_tag: "{{ openstack_release }}-{{ kolla_base_distro }}-{{ kolla_base_distro
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-# NOTE (Alex-Welsh): The reference for many of these entries could be
-# 'stackhpc/{{ openstack_release }}' which would keep the branch up to date
-# for the current release. This is nice in theory but in practice, the stackhpc
-# forks change with every release and the elements in this list change with
-# them. Explicitly using /2021.3 makes it more intuitive to find and edit these
-# entries.
+# NOTE(upgrade): These sources should be checked with each release. StackHPC
+# branches are only required when we have custom backports. For a new release,
+# we may have caught up with upstream.
 kolla_sources:
   bifrost-base-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
@@ -121,11 +118,11 @@ kolla_sources:
   cloudkitty-base:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/2023.1
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
-    reference: stackhpc/2023.1
+    reference: stackhpc/{{ openstack_release }}
   ironic-inspector-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -135,11 +132,15 @@ kolla_sources:
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/2023.1
+    reference: stackhpc/{{ openstack_release }}
+  neutron-base:
+    type: git
+    location: https://github.com/stackhpc/neutron.git
+    reference: stackhpc/{{ openstack_release }}
   neutron-base-plugin-networking-generic-switch:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/2023.1
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -284,18 +285,22 @@ kolla_build_blocks:
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
     {% if kolla_base_distro == 'rocky' %}
     RUN \
-        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
-        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
-           echo "Found repository mirror in Yum repositories"; \
-           exit 1; \
+        if [ -f /etc/yum.repos.d.backup/repos.tar.gz ]; then \
+          tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+          rm -rf /etc/yum.repos.d.backup/; \
         fi && \
-        rm -rf /etc/yum.repos.d.backup/
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+          echo "Found repository mirror in Yum repositories"; \
+          exit 1; \
+        fi
     {% else %}
     RUN \
-        mv /etc/apt/sources.list.backup /etc/apt/sources.list && \
+        if [ -f /etc/apt/sources.list.backup ]; then \
+          mv /etc/apt/sources.list.backup /etc/apt/sources.list; \
+        fi && \
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
-           echo "Found repository mirror in APT repositories"; \
-           exit 1; \
+          echo "Found repository mirror in APT repositories"; \
+          exit 1; \
         fi
     {% endif %}
     {% endif %}

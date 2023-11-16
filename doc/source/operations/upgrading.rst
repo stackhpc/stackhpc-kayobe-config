@@ -71,6 +71,31 @@ to::
 
     ark.stackhpc.com/stackhpc/etcd:zed-rocky-9-20230821T155947
 
+OVN enabled by default
+----------------------
+
+OVN is now enabled by default in StackHPC Kayobe Configuration.  This change
+was made to align with our standard deployment configuration.
+
+There is currently not a tested migration path from OVS to OVN on a running
+system. If you are using a Neutron plugin other than ML2/OVN, set
+``kolla_enable_ovn`` to ``false`` in ``etc/kayobe/kolla.yml``.
+
+For new deployments using OVN, see
+:kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
+
+Known issues
+============
+
+* Rebuilds of servers with volumes are broken if there are any Nova compute
+  services running an older release, including any that are down. Old compute
+  services should be removed using ``openstack compute service delete``, then
+  remaining compute services restarted. See `LP#2040264
+  <https://bugs.launchpad.net/nova/+bug/2040264>`__.
+
+* The OVN sync repair tool removes metadata ports, breaking OVN load balancers.
+  See `LP#2038091 <https://bugs.launchpad.net/neutron/+bug/2038091>`__.
+
 Security baseline
 =================
 
