@@ -33,6 +33,16 @@ about what each variable does. The documentation can be found here:
 Running the playbooks
 ---------------------
 
+.. note:
+
+  On CentOS 8, you must run with `INJECT_FACT_AS_VARS <https://docs.ansible.com/ansible/latest/reference_appendices/config.html#inject-facts-as-vars>`__
+  enabled. To do this you for this playbook only, you can use:
+
+  .. code-block: shell
+
+    ANSIBLE_INJECT_FACT_VARS=true kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
+
+
 As there is potential for unintended side effects when applying the hardening
 playbooks, the playbooks are not currently enabled by default. It is recommended
 that they are first applied to a representative staging environment to determine
