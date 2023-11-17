@@ -3,70 +3,73 @@
   hosts: overcloud,seed,seed-hypervisor,infra-vms
   gather_facts: false
   vars:
-    ansible_user: stack
-    ansible_python_interpreter: /usr/bin/python3
+    new_key_type: ed25519
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    rekey_users:
+      - stack
+      - kolla
+    existing_key_path: "~/.ssh/id_rsa"
+    rekey_remove_existing_key: true
   tasks:
-    - name: Generate a fresh SSH key
+    - name: Stat existing key file
+      ansible.builtin.stat:
+        path: "{{ existing_key_path }}"
+      register: stat_result
+      delegate_to: localhost
+      run_once: true
+
+    - name: Fail when existing key does not exist
+      ansible.builtin.fail:
+        msg: "No existing key file found. Check existing_key_path is set correctly."
+      when:
+        - not stat_result.stat.exists
+      delegate_to: localhost
+      run_once: true
+
+    - name: Generate a new SSH key
       community.crypto.openssh_keypair:
-        path: ~/.ssh/id_rsa_new
+        path: "~/.ssh/id_{{ new_key_type }}_new"
+        type: "{{ new_key_type }}"
       delegate_to: localhost
+      run_once: true
 
-    # - name: Copy new key to hosts
-    #   ansible.builtin.copy:
-    #     src: /tmp/id_rsa_new.pub
-    #     dest: /tmp/id_rsa_new.pub
-    #     mode: '0600'
-    #   become: true
-
-    - name: Copy old key to hosts
-      ansible.builtin.copy:
-        src: ~/.ssh/id_rsa.pub
-        dest: /tmp/id_rsa_old.pub
-        mode: '0777'
-      become: true
-
-    - name: Set new stack authorized keys
+    - name: Set new authorized keys
+      vars:
+        lookup_path: "~/.ssh/id_{{ new_key_type }}_new.pub"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa_new.pub') }}"
-      loop:
-        - "stack"
-        - "kolla"
+        key: "{{ lookup('file', lookup_path) }}"
+      loop: "{{ rekey_users }}"
       become: true
 
-    - name: Set new stack authorized keys
-      ansible.posix.authorized_key:
-        user: "{{ item }}"
-        state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa_new.pub') }}"
-      loop:
-        - "stack"
-        - "kolla"
-      become: true
-
-    - name: Locally deprecate old key (private)
-      command: "mv ~/.ssh/id_rsa ~/.ssh/id_rsa_old"
+    - name: Locally deprecate existing key (private)
+      command: "mv {{ existing_key_path }} {{ existing_key_path }}_old"
       delegate_to: localhost
+      run_once: true
 
-    - name: Locally deprecate old key (public)
-      command: "mv ~/.ssh/id_rsa.pub ~/.ssh/id_rsa_old.pub"
+    - name: Locally deprecate existing key (public)
+      command: "mv {{ existing_key_path }}.pub {{ existing_key_path }}_old.pub"
       delegate_to: localhost
+      run_once: true
 
     - name: Locally promote new key (private)
-      command: "mv ~/.ssh/id_rsa_new ~/.ssh/id_rsa"
+      command: "mv ~/.ssh/id_{{ new_key_type }}_new ~/.ssh/id_{{ new_key_type }}"
       delegate_to: localhost
+      run_once: true
 
     - name: Locally promote new key (public)
-      command: " mv ~/.ssh/id_rsa_new.pub ~/.ssh/id_rsa.pub"
+      command: " mv ~/.ssh/id_{{ new_key_type }}_new.pub ~/.ssh/id_{{ new_key_type }}.pub"
       delegate_to: localhost
+      run_once: true
 
     - name: Remove old key from hosts
+      vars:
+        lookup_path: "{{ existing_key_path }}_old.pub"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: absent
-        key: "{{ lookup('file', '/tmp/id_rsa_old.pub') }}"
-      loop:
-        - "stack"
-        - "kolla"
+        key: "{{ lookup('file', lookup_path) }}"
+      loop: "{{ rekey_users }}"
       become: true
+      when: rekey_remove_existing_key
