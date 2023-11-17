@@ -36,7 +36,7 @@ Running the playbooks
 .. note:
 
   On CentOS 8, you must run with `INJECT_FACT_AS_VARS <https://docs.ansible.com/ansible/latest/reference_appendices/config.html#inject-facts-as-vars>`__
-  enabled. To do this you for this playbook only, you can use:
+  enabled. To do this for this playbook only, you can use:
 
   .. code-block: shell
 
