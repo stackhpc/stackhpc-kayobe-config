@@ -1,0 +1,72 @@
+---
+- name: Rekey hosts
+  hosts: overcloud,seed,seed-hypervisor,infra-vms
+  gather_facts: false
+  vars:
+    ansible_user: stack
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Generate a fresh SSH key
+      community.crypto.openssh_keypair:
+        path: ~/.ssh/id_rsa_new
+      delegate_to: localhost
+
+    # - name: Copy new key to hosts
+    #   ansible.builtin.copy:
+    #     src: /tmp/id_rsa_new.pub
+    #     dest: /tmp/id_rsa_new.pub
+    #     mode: '0600'
+    #   become: true
+
+    - name: Copy old key to hosts
+      ansible.builtin.copy:
+        src: ~/.ssh/id_rsa.pub
+        dest: /tmp/id_rsa_old.pub
+        mode: '0777'
+      become: true
+
+    - name: Set new stack authorized keys
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa_new.pub') }}"
+      loop:
+        - "stack"
+        - "kolla"
+      become: true
+
+    - name: Set new stack authorized keys
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa_new.pub') }}"
+      loop:
+        - "stack"
+        - "kolla"
+      become: true
+
+    - name: Locally deprecate old key (private)
+      command: "mv ~/.ssh/id_rsa ~/.ssh/id_rsa_old"
+      delegate_to: localhost
+
+    - name: Locally deprecate old key (public)
+      command: "mv ~/.ssh/id_rsa.pub ~/.ssh/id_rsa_old.pub"
+      delegate_to: localhost
+
+    - name: Locally promote new key (private)
+      command: "mv ~/.ssh/id_rsa_new ~/.ssh/id_rsa"
+      delegate_to: localhost
+
+    - name: Locally promote new key (public)
+      command: " mv ~/.ssh/id_rsa_new.pub ~/.ssh/id_rsa.pub"
+      delegate_to: localhost
+
+    - name: Remove old key from hosts
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: absent
+        key: "{{ lookup('file', '/tmp/id_rsa_old.pub') }}"
+      loop:
+        - "stack"
+        - "kolla"
+      become: true
