@@ -95,6 +95,11 @@ Runner Deployment
       - openstack
       - "{{ kayobe_environment | default(omit) }}"
 
+    github_registry:
+      url: pulp.example.com
+      username: admin
+      password: ${{ secrets.REGISTRY_PASSWORD }}
+
     github_runners:
       runner_01: {}
       runner_02: {}
@@ -122,21 +127,32 @@ Workflow Deployment
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-github-workflows.yml`
 
-3. Add all required secrets to repository either via the GitHub UI or GitHub CLI (may require repository owner)
+3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
     * KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: private key used by Ansible to authenticate with machines.
     * KAYOBE_VAULT_PASSWORD: password used by the config to encrypt Ansible Vault secrets.
     * REGISTRY_PASSWORD: password used to login to the docker registry such as Pulp.
     * TEMPEST_OPENRC: contents of :code:`kolla/public-openrc.sh`
+    * REGISTRY_PASSWORD: the password to access the docker registry for pushing and pulling containers. Recommend to use Pulp on the seed node.
 
 Note if you are using multiple environments and not sharing secrets between environments then each of these must have the environment name prefix for each environment, for example:
     * PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
     * PRODUCTION_KAYOBE_VAULT_PASSWORD
     * PRODUCTION_REGISTRY_PASSWORD
     * PRODUCTION_TEMPEST_OPENRC
+    * PRODUCTION_REGISTRY_URL*
+    * PRODUCTION_REGISTRY_USERNAME*
+    * PRODUCTION_REGISTRY_PASSWORD*
     * STAGING_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
     * STAGING_KAYOBE_VAULT_PASSWORD
     * STAGING_REGISTRY_PASSWORD
     * STAGING_TEMPEST_OPENRC
+    * STAGING_REGISTRY_URL*
+    * STAGING_REGISTRY_USERNAME*
+    * STAGING_REGISTRY_PASSWORD*
+
+Note regarding the :code:`REGISTRY_` secrets and variables if you are using a single environment then :code:`REGISTRY_URL` and :code:`REGISTRY_PASSWORD` can be added directly to the workflows.
+This is also true in the event of using multiple environments with a single shared Pulp registry.
+You only need to add the secrets and variables in the event of using multiple environments each with their own registry.
 
 4. Commit and push all newly generated workflows found under :code:`.github/workflows`
 
