@@ -3,24 +3,37 @@
   hosts: overcloud,seed,seed-hypervisor,infra-vms
   gather_facts: false
   vars:
-    new_key_type: ed25519
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     rekey_users:
       - stack
       - kolla
-    existing_key_path: "~/.ssh/id_rsa"
-    rekey_remove_existing_key: true
+    rekey_remove_existing_key: false
   tasks:
-    - name: Stat existing key file
+    - name: Stat existing private key file
       ansible.builtin.stat:
-        path: "{{ existing_key_path }}"
+        path: "{{ ssh_private_key_path }}"
       register: stat_result
       delegate_to: localhost
       run_once: true
 
-    - name: Fail when existing key does not exist
+    - name: Fail when existing private key does not exist
       ansible.builtin.fail:
-        msg: "No existing key file found. Check existing_key_path is set correctly."
+        msg: "No existing private key file found. Check ssh_private_key_path and  is set correctly."
+      when:
+        - not stat_result.stat.exists
+      delegate_to: localhost
+      run_once: true
+
+    - name: Stat existing public key file
+      ansible.builtin.stat:
+        path: "{{ ssh_public_key_path }}"
+      register: stat_result
+      delegate_to: localhost
+      run_once: true
+
+    - name: Fail when existing public key does not exist
+      ansible.builtin.fail:
+        msg: "No existing public key file found. Check ssh_public_key_path and  is set correctly."
       when:
         - not stat_result.stat.exists
       delegate_to: localhost
@@ -28,14 +41,14 @@
 
     - name: Generate a new SSH key
       community.crypto.openssh_keypair:
-        path: "~/.ssh/id_{{ new_key_type }}_new"
-        type: "{{ new_key_type }}"
+        path: "{{ ssh_private_key_path }}_new"
+        type: "{{ ssh_key_type }}"
       delegate_to: localhost
       run_once: true
 
     - name: Set new authorized keys
       vars:
-        lookup_path: "~/.ssh/id_{{ new_key_type }}_new.pub"
+        lookup_path: "{{ ssh_private_key_path }}_new.pub"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: present
@@ -44,28 +57,28 @@
       become: true
 
     - name: Locally deprecate existing key (private)
-      command: "mv {{ existing_key_path }} {{ existing_key_path }}_old"
+      command: "mv {{ ssh_private_key_path }} {{ ssh_private_key_path }}_old"
       delegate_to: localhost
       run_once: true
 
     - name: Locally deprecate existing key (public)
-      command: "mv {{ existing_key_path }}.pub {{ existing_key_path }}_old.pub"
+      command: "mv {{ ssh_public_key_path }} {{ ssh_public_key_path }}_old"
       delegate_to: localhost
       run_once: true
 
     - name: Locally promote new key (private)
-      command: "mv ~/.ssh/id_{{ new_key_type }}_new ~/.ssh/id_{{ new_key_type }}"
+      command: "mv {{ ssh_private_key_path }}_new {{ ssh_private_key_path }}"
       delegate_to: localhost
       run_once: true
 
     - name: Locally promote new key (public)
-      command: " mv ~/.ssh/id_{{ new_key_type }}_new.pub ~/.ssh/id_{{ new_key_type }}.pub"
+      command: "mv {{ ssh_private_key_path }}_new.pub {{ ssh_public_key_path }}"
       delegate_to: localhost
       run_once: true
 
     - name: Remove old key from hosts
       vars:
-        lookup_path: "{{ existing_key_path }}_old.pub"
+        lookup_path: "{{ ssh_public_key_path }}_old"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: absent
