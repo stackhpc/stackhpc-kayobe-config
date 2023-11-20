@@ -44,3 +44,40 @@ cephadm_crush_rules:
     device_class: ssd
     rule_type: replicated
     state: present
+
+cephadm_pools:
+  - name: cinder-backup
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: cinder-volumes
+    application: cinder-volumes
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: cinder-volumes-ssd
+    application: cinder-volumes
+    pool_type: replicated
+    rule_name: replicated_ssd
+    state: present
+  - name: ephemeral-vms
+    application: ephemeral-vms
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: glance-images
+    application: glance-images
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: gnocchi-metrics
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_hdd
+    state: present
+  - name: proxmox
+    application: rbd
+    pool_type: replicated
+    rule_name: replicated_ssd
+    state: present
