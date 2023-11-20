@@ -5,3 +5,28 @@ cephadm_image_tag: v18.2.0
 # Using distro-provided (universe) packages
 cephadm_custom_repos: true
 stackhpc_sync_ceph_images: false
+
+cephadm_osd_spec: |
+  service_type: osd
+  service_id: hdd
+  placement:
+    host_pattern: merlin-stor00[1-8].hpc.rug.nl
+  spec:
+    data_devices:
+      rotational: 1
+    db_devices:
+      rotational: 0
+    encrypted: true
+  ---
+  service_type: osd
+  service_id: nvme
+  placement:
+    hosts:
+      - merlin-stor009.hpc.rug.nl
+      - merlin-stor010.hpc.rug.nl
+      - merlin-stor011.hpc.rug.nl
+      - merlin-stor012.hpc.rug.nl
+  spec:
+    data_devices:
+      model: Dell Express Flash NVMe P4610 3.2TB SFF
+    encrypted: true
