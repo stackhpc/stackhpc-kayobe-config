@@ -82,6 +82,12 @@ Runner Deployment
    As for how many runners present three is suitable number as this would prevent situations where long running jobs could halt progress other tasks whilst waiting for a free runner.
    You might want to increase the number of runners if usage demands it or new workflows make use of multiple parallel jobs.
 
+   Note :code:`github_registry` and the elements of the dict control the registry settings for pulling and pushing container images used by the workflows.
+   In the example below the registry settings have been adapted to demonstrate what a shared registry between environments might look like.
+   This values maybe suitable for your deployment providing all environments can reach the same registry.
+   If the all of the environments use their own registry and nothing is shared between them then :code:`github_registry` can omitted from the file and the template will expect environment specific secrets and variables to be added to the repository settings.
+   This is discussed further in the next section.
+
 .. code-block:: yaml
 
     ---
@@ -99,6 +105,7 @@ Runner Deployment
       url: pulp.example.com
       username: admin
       password: ${{ secrets.REGISTRY_PASSWORD }}
+      share: true
 
     github_runners:
       runner_01: {}
@@ -123,36 +130,43 @@ Runner Deployment
 Workflow Deployment
 -------------------
 
-1. Edit `${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
+1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-github-workflows.yml`
 
 3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
-    * KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: private key used by Ansible to authenticate with machines.
-    * KAYOBE_VAULT_PASSWORD: password used by the config to encrypt Ansible Vault secrets.
-    * REGISTRY_PASSWORD: password used to login to the docker registry such as Pulp.
-    * TEMPEST_OPENRC: contents of :code:`kolla/public-openrc.sh`
-    * REGISTRY_PASSWORD: the password to access the docker registry for pushing and pulling containers. Recommend to use Pulp on the seed node.
 
-Note if you are using multiple environments and not sharing secrets between environments then each of these must have the environment name prefix for each environment, for example:
-    * PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
-    * PRODUCTION_KAYOBE_VAULT_PASSWORD
-    * PRODUCTION_REGISTRY_PASSWORD
-    * PRODUCTION_TEMPEST_OPENRC
-    * PRODUCTION_REGISTRY_URL*
-    * PRODUCTION_REGISTRY_USERNAME*
-    * PRODUCTION_REGISTRY_PASSWORD*
-    * STAGING_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY
-    * STAGING_KAYOBE_VAULT_PASSWORD
-    * STAGING_REGISTRY_PASSWORD
-    * STAGING_TEMPEST_OPENRC
-    * STAGING_REGISTRY_URL*
-    * STAGING_REGISTRY_USERNAME*
-    * STAGING_REGISTRY_PASSWORD*
+.. raw:: html
 
-Note regarding the :code:`REGISTRY_` secrets and variables if you are using a single environment then :code:`REGISTRY_URL` and :code:`REGISTRY_PASSWORD` can be added directly to the workflows.
-This is also true in the event of using multiple environments with a single shared Pulp registry.
-You only need to add the secrets and variables in the event of using multiple environments each with their own registry.
+    <center><table style="padding: 5px;">
+    <thead>
+        <tr>
+            <th style="text-align: center;padding: 5px;">Secrets</th>
+            <th style="text-align: center;padding: 5px;">Variables</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="text-align: center;padding: 5px;">KAYOBE_AUTOMATION_SSH_PRIVATE_KEY</td>
+            <td style="text-align: center;padding: 5px;">REGISTRY_USERNAME</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;padding: 5px;">KAYOBE_VAULT_PASSWORD</td>
+            <td style="text-align: center;padding: 5px;">REGISTRY_URL</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;padding: 5px;">REGISTRY_PASSWORD</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;padding: 5px;">TEMPEST_OPENRC</td>
+            <td></td>
+        </tr>
+    </tbody>
+    </table></center>
+
+Note the above table shows the secrets and variable one may need to add to GitHub for a successful deployment.
+However, these secrets and variables might not all be required for example if :code:`github_registry` has been configured with a single shared registry then :code:`REGISTRY_USERNAME` and :code:`REGISTRY_URL` can be ignored.
+Also it is important that if you are using multiple environments and secrets and variables are not being shared then each will require an environment prefix added in the form `ENVIRONMENT_NAME_SECRET_OR_VARIABLE_NAME` for example if there was two environments each name :code:`production` and :code:`staging` then :code:`KAYOBE_AUTOMATION_SSH_PRIVATE_KEY` would be replaced by :code:`PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY` and :code:`STAGING_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY`.
 
 4. Commit and push all newly generated workflows found under :code:`.github/workflows`
 
