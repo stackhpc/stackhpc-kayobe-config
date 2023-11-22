@@ -24,7 +24,7 @@ if type dnf; then
     sudo dnf -y install git
 else
     sudo apt update
-    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3
+    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv
 fi
 
 cd $BASE_PATH
