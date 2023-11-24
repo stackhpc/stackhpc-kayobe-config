@@ -233,11 +233,14 @@ Potential issues
    .. code-block:: yaml
 
       mariabackup_image_full: "{{ docker_registry }}/stackhpc/rocky-source-mariadb-server:yoga-20230310T170929"
-- When using Octavia load balancers, restarting Neutron causes load balancers
-  with floating IPs to stop processing traffic. See `LP#2042938
-  <https://bugs.launchpad.net/neutron/+bug/2042938>`__ for details. The issue
-  may be worked around after Neutron has been restarted by detaching then
-  reattaching the floating IP to the load balancer's virtual IP.
+-  When using Octavia load balancers, restarting Neutron causes load balancers
+   with floating IPs to stop processing traffic. See `LP#2042938
+   <https://bugs.launchpad.net/neutron/+bug/2042938>`__ for details. The issue
+   may be worked around after Neutron has been restarted by detaching then
+   reattaching the floating IP to the load balancer's virtual IP.
+
+-  If you are using hyper-convered Ceph, please also note the potential issues
+   in the Storage section below.
 
 Full procedure for one host
 ---------------------------
@@ -465,6 +468,45 @@ Potential issues
 -  The procedure for the bootstrap host and the other ceph hosts should
    be identical, now that the "maintenance mode approach" is being used.
    It is still recommended to do the bootstrap host last.
+
+-  Prior to reprovisioning the bootstrap host, it can be beneficial to backup
+   ``/etc/ceph`` and ``/var/lib/ceph``, as sometimes the keys, config, etc.
+   stored here will not be moved/recreated correctly.
+
+-  When a host is taken out of maintenance, you may see errors relating to
+   permissions of /tmp/etc and /tmp/var. These issues should be resolved in
+   Ceph version 17.2.7. See issue: https://github.com/ceph/ceph/pull/50736. In
+   the meantime, you can work around this by running the command below. You may
+   need to omit one or the other of ``/tmp/etc`` and ``/tmp/var``. You will
+   likely need to run this multiple times. Run ``ceph -W cephadm`` to monitor
+   the logs and see when permissions issues are hit.
+
+   .. code-block:: console
+
+      kayobe overcloud host command run --command "chown -R stack:stack /tmp/etc /tmp/var" -b -l storage
+
+
+-  It has been seen that sometimes the Ceph containers do not come up after
+   reprovisioning. This seems to be related to having ``/var/lib/ceph
+   ``persisted through the reprovision (e.g. seen at a customer in a volume
+   with software RAID). (Note: further investigation is needed for the root
+   cause). When this occurs, you will need to redeploy the daemons:
+
+   List the daemons on the host:
+
+   .. code-block:: console
+
+      ceph orch ps <hostname>
+
+
+   Redeploy the daemons, one at a time. It is recommended that you start with
+   the crash daemon, as this will have the least impact if unexpected issues
+   occur.
+
+   .. code-block:: console
+
+      ceph orch daemon redeploy <daemon name> to redeploy a daemon.
+
 
 -  Commands starting with ``ceph`` are all run on the cephadm bootstrap
    host in a cephadm shell unless stated otherwise.
