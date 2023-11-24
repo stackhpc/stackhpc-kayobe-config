@@ -1,0 +1,29 @@
+
+groups:
+- name: Docker
+  rules:
+
+  - alert: DockerContainerStopped
+    expr: 'engine_daemon_container_states_containers{state="stopped"} > 0'
+    labels:
+      severity: warning
+    annotations:
+      summary: "Containers not running (instance {{ $labels.instance }})"
+      description: "One or more container are stopped"
+
+  - alert: DockerContainerPaused
+    expr: 'engine_daemon_container_states_containers{state="paused"} > 0'
+    labels:
+      severity: warning
+    annotations:
+      summary: "Containers not running (instance {{ $labels.instance }})"
+      description: "One or more container are stopped"
+
+  - alert: DockerContainerHealthCheckFail
+    expr: rate(engine_daemon_health_checks_failed_total[1m]) > 1
+    labels:
+      severity: warning
+    annotations:
+      summary: "Containers health check failed (instance {{ $labels.instance }})"
+      description: "One or more container health checks failed"
+
