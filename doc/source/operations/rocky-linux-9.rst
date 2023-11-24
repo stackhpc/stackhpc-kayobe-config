@@ -239,7 +239,7 @@ Potential issues
    may be worked around after Neutron has been restarted by detaching then
    reattaching the floating IP to the load balancer's virtual IP.
 
--  If you are using hyper-convered Ceph, please also note the potential issues
+-  If you are using hyper-converged Ceph, please also note the potential issues
    in the Storage section below.
 
 Full procedure for one host
