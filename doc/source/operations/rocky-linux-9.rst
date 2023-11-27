@@ -485,10 +485,9 @@ Potential issues
 
       kayobe overcloud host command run --command "chown -R stack:stack /tmp/etc /tmp/var" -b -l storage
 
-
 -  It has been seen that sometimes the Ceph containers do not come up after
-   reprovisioning. This seems to be related to having ``/var/lib/ceph
-   ``persisted through the reprovision (e.g. seen at a customer in a volume
+   reprovisioning. This seems to be related to having ``/var/lib/ceph``
+   persisted through the reprovision (e.g. seen at a customer in a volume
    with software RAID). (Note: further investigation is needed for the root
    cause). When this occurs, you will need to redeploy the daemons:
 
