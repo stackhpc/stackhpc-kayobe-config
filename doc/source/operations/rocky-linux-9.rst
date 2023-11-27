@@ -456,6 +456,13 @@ address them.
 Once happy that the system has been restored to full health, move onto the next
 host or batch or hosts.
 
+9. Enable the hypervisor in Nova again:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <host>
+
+
 Storage
 =======
 
