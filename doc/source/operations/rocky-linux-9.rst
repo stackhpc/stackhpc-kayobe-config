@@ -461,7 +461,8 @@ Full procedure for one batch of hosts
 
       .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <host>
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <hostname>
+
 
 Storage
 =======
