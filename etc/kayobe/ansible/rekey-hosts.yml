@@ -1,9 +1,18 @@
 ---
+# Playbook to rotate SSH keys across the cloud. By default it will rotate the
+# standard keys used by kayobe/kolla-ansible, but it can be configured for any
+# keys.
+
 - name: Rekey hosts
   hosts: overcloud,seed,seed-hypervisor,infra-vms
   gather_facts: false
   vars:
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    existing_private_key_path: "{{ ssh_private_key_path }}"
+    existing_public_key_path: "{{ ssh_public_key_path }}"
+    new_private_key_path: "{{ ssh_private_key_path }}"
+    new_public_key_path: "{{ ssh_public_key_path }}"
+    new_key_type: "{{ ssh_key_type }}"
     rekey_users:
       - stack
       - kolla
@@ -11,14 +20,14 @@
   tasks:
     - name: Stat existing private key file
       ansible.builtin.stat:
-        path: "{{ ssh_private_key_path }}"
+        path: "{{ existing_private_key_path }}"
       register: stat_result
       delegate_to: localhost
       run_once: true
 
     - name: Fail when existing private key does not exist
       ansible.builtin.fail:
-        msg: "No existing private key file found. Check ssh_private_key_path and  is set correctly."
+        msg: "No existing private key file found. Check existing_private_key_path is set correctly."
       when:
         - not stat_result.stat.exists
       delegate_to: localhost
@@ -26,14 +35,14 @@
 
     - name: Stat existing public key file
       ansible.builtin.stat:
-        path: "{{ ssh_public_key_path }}"
+        path: "{{ existing_public_key_path }}"
       register: stat_result
       delegate_to: localhost
       run_once: true
 
     - name: Fail when existing public key does not exist
       ansible.builtin.fail:
-        msg: "No existing public key file found. Check ssh_public_key_path and  is set correctly."
+        msg: "No existing public key file found. Check existing_public_key_path is set correctly."
       when:
         - not stat_result.stat.exists
       delegate_to: localhost
@@ -41,14 +50,14 @@
 
     - name: Generate a new SSH key
       community.crypto.openssh_keypair:
-        path: "{{ ssh_private_key_path }}_new"
-        type: "{{ ssh_key_type }}"
+        path: "{{ existing_private_key_path }}_new"
+        type: "{{ new_key_type }}"
       delegate_to: localhost
       run_once: true
 
     - name: Set new authorized keys
       vars:
-        lookup_path: "{{ ssh_private_key_path }}_new.pub"
+        lookup_path: "{{ existing_private_key_path }}_new.pub"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: present
@@ -57,32 +66,32 @@
       become: true
 
     - name: Locally deprecate existing key (private)
-      command: "mv {{ ssh_private_key_path }} {{ ssh_private_key_path }}_old"
+      command: "mv {{ existing_private_key_path }} {{ existing_public_key_path }}_old"
       delegate_to: localhost
       run_once: true
 
     - name: Locally deprecate existing key (public)
-      command: "mv {{ ssh_public_key_path }} {{ ssh_public_key_path }}_old"
+      command: "mv {{ existing_public_key_path }} {{ existing_public_key_path }}_old"
       delegate_to: localhost
       run_once: true
 
     - name: Locally promote new key (private)
-      command: "mv {{ ssh_private_key_path }}_new {{ ssh_private_key_path }}"
+      command: "mv {{ existing_private_key_path }}_new {{ new_private_key_path }}"
       delegate_to: localhost
       run_once: true
 
     - name: Locally promote new key (public)
-      command: "mv {{ ssh_private_key_path }}_new.pub {{ ssh_public_key_path }}"
+      command: "mv {{ existing_private_key_path }}_new.pub {{ new_public_key_path }}"
       delegate_to: localhost
       run_once: true
 
     - name: Remove old key from hosts
       vars:
-        lookup_path: "{{ ssh_public_key_path }}_old"
+        lookup_path: "{{ existing_public_key_path }}_old"
       ansible.posix.authorized_key:
         user: "{{ item }}"
         state: absent
         key: "{{ lookup('file', lookup_path) }}"
       loop: "{{ rekey_users }}"
       become: true
-      when: rekey_remove_existing_key
+      when: rekey_remove_existing_key | bool
