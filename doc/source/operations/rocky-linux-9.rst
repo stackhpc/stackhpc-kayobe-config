@@ -451,13 +451,21 @@ Full procedure for one batch of hosts
 
        kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
-If any VMs were powered off, they may now be powered back on.
+9. Restore the system to full health.
 
-Wait for Prometheus alerts and errors in OpenSearch Dashboard to resolve, or
-address them.
+   1. If any VMs were powered off, they may now be powered back on.
 
-Once happy that the system has been restored to full health, move onto the next
-host or batch or hosts.
+   2. Wait for Prometheus alerts and errors in OpenSearch Dashboard to resolve,
+      or address them.
+
+   3. Once happy that the system has been restored to full health, enable the
+      hypervisor in Nova if it is still disabled and then move onto the next
+      host or batch or hosts.
+
+      .. code-block:: console
+
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <hostname>
+
 
 Storage
 =======
