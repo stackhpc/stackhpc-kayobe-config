@@ -1,9 +1,16 @@
 ---
-
+# This playbook is untested for Rocky Linux 9 hosts
 - name: Security hardening
   hosts: overcloud
   become: true
+  vars:
+    - i_am_aware_this_is_untested: false
   tasks:
+    - name: Warning
+      assert:
+        that: "{{ i_am_aware_this_is_untested }}"
+        msg: "This playbook has not been tested. To use it, set i_am_aware_this_is_untested to true"
+
     - name: Remove /etc/motd
       # See remediation in:
       # https://github.com/wazuh/wazuh/blob/bfa4efcf11e288c0a8809dc0b45fdce42fab8e0d/ruleset/sca/centos/8/cis_centos8_linux.yml#L777
@@ -12,4 +19,4 @@
         state: absent
 
     - include_role:
-        name: ansible-lockdown.rhel8_cis
+        name: ansible-lockdown.rhel9_cis
