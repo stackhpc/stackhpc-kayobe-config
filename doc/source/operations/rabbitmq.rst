@@ -98,7 +98,7 @@ Stop all the OpenStack services which use RabbitMQ.
 
 .. code-block:: console
 
-  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$NF }' | xargs docker stop"
+  kayobe overcloud host command run -b --command "systemctl -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$1 }' | xargs systemctl stop"
 
 Upgrade RabbitMQ.
 
@@ -136,7 +136,7 @@ procedure.
 
 .. code-block:: console
 
-  kayobe overcloud host command run --command "docker ps -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$NF }' | xargs docker start"
+  kayobe overcloud host command run -b --command "systemctl -a | egrep '(barbican|blazar|ceilometer|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|masakari|neutron|nova|octavia)' | awk '{ print \$1 }' | xargs systemctl start"
 
 Check to see if the expected queues are durable.
 
@@ -170,7 +170,7 @@ such as the following when other OpenStack services start::
     vhost '/': received 'true' but current is 'false'
 
 This may happen if a host is not in the inventory, leading to them not being
-targeted by the ``docker stop`` command. If this does happen, look for the
+targeted by the ``systemctl stop`` command. If this does happen, look for the
 hostname of the offending node in the queues created after the RabbitMQ reset.
 
 Once the rogue services have been stopped, reset the RabbitMQ cluster again to
