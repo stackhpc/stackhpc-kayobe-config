@@ -148,8 +148,8 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 Sync Release Train artifacts
 ----------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>`__ content should
+be synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 To sync host packages:
