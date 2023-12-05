@@ -58,10 +58,10 @@ stackhpc_overcloud_dib_env_vars:
   # On Rocky Linux 9, use the host's repo files.
   # These will have been configured to point to Test Pulp repo snapshots during the 'host configure' step.
   # FIXME: This assumes we are building on RL9, which may not be the case.
-  DIB_YUM_MINIMAL_BOOTSTRAP_REPOS: "{% if os_distribution == 'rocky' and os_release == '9' %}/etc/yum.repos.d/{% endif %}"
   YUM: dnf
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
+  DIB_CONTAINERFILE_BUILDOPTS: "--add-host pulp-server.internal.sms-cloud:10.205.3.187 --build-arg ROCKY_USE_MIRROR=true --build-arg ROCKY_APPSTREAM_URL={{ stackhpc_repo_rocky_9_appstream_url }} --build-arg ROCKY_BASEOS_URL={{ stackhpc_repo_rocky_9_baseos_url }} --build-arg ROCKY_CRB_URL={{ stackhpc_repo_rocky_9_crb_url }}"
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
