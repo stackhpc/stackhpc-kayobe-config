@@ -143,7 +143,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
 - ``kayobe overcloud container image pull -kt opensearch``
 - ``kayobe kolla ansible run opensearch-migration``
-- If old indices are detected, they may be removed by running ``kayobe kolla ansible run opensearch-migration -e prune_kibana_indices=true``
+- If old indices are detected, they may be removed by running ``kayobe kolla ansible run opensearch-migration -ke prune_kibana_indices=true``
 
 Sync Release Train artifacts
 ----------------------------
