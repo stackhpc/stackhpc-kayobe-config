@@ -119,14 +119,6 @@ The ``pxe`` boot_interface is currently broken. When provisioning, you will see 
 
       Failed to prepare to deploy: Could not link image http://192.168.1.1:8080/ipa.vmlinuz from /httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted to /tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel, error: [Errno 18] Invalid cross-device link: '/httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted' -> '/tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel'
 
-It is suggested that you migrate to iPXE.
-
-.. code-block:: yaml
-   :caption: ``$KAYOBE_CONFIG_PATH/kolla/config/bifrost/bifrost.yml``
-
-   enabled_boot_interfaces: "ipxe,pxe"
-   ipxe_efi_binary: "ipxe-snponly-x86_64.efi"
-
 After deprovisioning a node, switch the boot interface to iPXE:
 
   .. code-block:: shell
