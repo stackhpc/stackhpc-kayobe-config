@@ -2,6 +2,12 @@
 ###############################################################################
 # Cephadm deployment configuration.
 
+# Ceph release name.
+cephadm_ceph_release: "{{ 'quincy' if (ansible_facts['distribution_release'] == 'jammy') or (ansible_facts['distribution_release'] == '9') else 'pacific' }}"
+
+# Ceph container image tag.
+cephadm_image_tag: "{{ 'v17.2.7' if (os_release == 'jammy') or (os_release == '9') else 'v16.2.14' }}"
+
 # Ceph OSD specification.
 cephadm_osd_spec:
   service_type: osd
