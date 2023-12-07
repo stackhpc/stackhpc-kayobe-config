@@ -4,12 +4,18 @@
   hosts: overcloud
   become: true
   tasks:
-    - name: Remove /etc/motd
-      # See remediation in:
-      # https://github.com/wazuh/wazuh/blob/bfa4efcf11e288c0a8809dc0b45fdce42fab8e0d/ruleset/sca/centos/8/cis_centos8_linux.yml#L777
-      file:
-        path: /etc/motd
-        state: absent
+    - name: Ensure the cron package is installed on ubuntu
+      package:
+        name: cron
+        state: present
+      when: ansible_facts.distribution == 'Ubuntu'
 
     - include_role:
-        name: ansible-lockdown.rhel8_cis
+        name: ansible-lockdown.rhel9_cis
+      when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9'
+      tags: always
+
+    - include_role:
+        name: ansible-lockdown.ubuntu22_cis
+      when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '22'
+      tags: always
