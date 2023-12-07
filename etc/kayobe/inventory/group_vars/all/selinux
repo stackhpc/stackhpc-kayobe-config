@@ -1,9 +1,0 @@
----
-# Configure SELinux in permissive mode when configuring a Rocky Linux 9 host.
-selinux_state: "{{ 'permissive' if ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9' else 'disabled' }}"
-
-# Do NOT reboot Rocky Linux 9 hosts to apply SELinux config changes. Operators
-# must opt-in by changing this variable when applying host configuration. This
-# is to avoid automatically rebooting hosts originally deployed with SELinux
-# disabled and which now need to be changed to permissive.
-disable_selinux_do_reboot: "{{ not (ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9') }}"
