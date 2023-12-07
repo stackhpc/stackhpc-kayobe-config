@@ -12,7 +12,6 @@ improvement over an unhardened system. A typical score would be 70%.
 
 The following operating systems are supported:
 
-- Rocky 8, RHEL 8, CentOS Stream 8
 - Ubuntu 22.04
 - Rocky 9
 
@@ -26,22 +25,11 @@ instance, you may want different rules on a network node compared to a
 controller. It is best to consult the upstream role documentation for details
 about what each variable does. The documentation can be found here:
 
-- `Rocky 8, RHEL 8, CentOS Stream 8 <https://github.com/ansible-lockdown/RHEL8-CIS/tree/1.3.0>`__
 - `Ubuntu 22.04 <https://github.com/ansible-lockdown/UBUNTU22-CIS>`__
 - `Rocky 9 <https://github.com/ansible-lockdown/RHEL9-CIS>`__
 
 Running the playbooks
 ---------------------
-
-.. note:
-
-  On CentOS 8, you must run with `INJECT_FACT_AS_VARS <https://docs.ansible.com/ansible/latest/reference_appendices/config.html#inject-facts-as-vars>`__
-  enabled. To do this for this playbook only, you can use:
-
-  .. code-block: shell
-
-    ANSIBLE_INJECT_FACT_VARS=true kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
-
 
 As there is potential for unintended side effects when applying the hardening
 playbooks, the playbooks are not currently enabled by default. It is recommended
