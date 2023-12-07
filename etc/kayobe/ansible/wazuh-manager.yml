@@ -41,7 +41,9 @@
             dest: "/var/ossec/etc/shared/default/"
             owner: wazuh
             group: wazuh
-          when: custom_sca_policies.files | length > 0
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
 
         - name: Add custom policy definition(s) to the shared Agent config
           blockinfile:
@@ -61,7 +63,9 @@
                 </policies>
               </sca>
               {% endfilter %}
-          when: custom_sca_policies.files | length > 0
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
       notify:
         - Restart wazuh
 
