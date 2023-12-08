@@ -393,6 +393,13 @@ Then pull the images:
 
    kayobe overcloud container image pull
 
+Building Octavia Amphora images
+-------------------------------
+
+TODO
+
+Don't make available at this point?
+
 Preview overcloud service configuration changes
 -----------------------------------------------
 
@@ -929,6 +936,11 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+Rotating Octavia Amphora images
+-------------------------------
+
+TODO
 
 Testing
 -------
