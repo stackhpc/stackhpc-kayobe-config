@@ -563,6 +563,8 @@ Verify that Bifrost, Ironic and Inspector are running as expected:
 Building Ironic Deployment Images
 ---------------------------------
 
+FIXME: Move to preparation?
+
 .. note::
 
    It is possible to use prebuilt deployment images. In this case, this step
@@ -617,6 +619,8 @@ When ready to apply the changes:
 
 Building Container Images
 -------------------------
+
+FIXME: Move to preparation?
 
 .. note::
 
@@ -854,6 +858,8 @@ Alternatively, to apply the configuration to all hosts:
 
 Building Ironic Deployment Images
 ---------------------------------
+
+FIXME: Move to preparation?
 
 .. note::
 
