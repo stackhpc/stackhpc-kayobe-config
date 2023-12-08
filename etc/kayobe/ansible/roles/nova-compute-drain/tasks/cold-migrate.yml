@@ -1,0 +1,38 @@
+---
+
+- block:
+  - name: "Cold migrate instance: {{ instance_uuid }}"
+    command: >
+      {{ nova_compute_drain_venv }}/bin/openstack
+      --os-compute-api-version 2.25
+      server migrate
+      {{ instance_uuid }}
+      --wait
+    register: result
+
+  - name: "Wait for VERIFY_RESIZE: {{ instance_uuid }}"
+    command: >
+      {{ nova_compute_drain_venv }}/bin/openstack server show {{ instance_uuid }} -f value -c status
+    register: result
+    until: result.stdout == 'VERIFY_RESIZE' or result.stdout == 'SHUTOFF'
+    retries: 10
+    delay: 30
+
+  - name: "Confirm resize: {{ instance_uuid }}"
+    command: >
+      {{ nova_compute_drain_venv }}/bin/openstack server migrate confirm {{ instance_uuid }}
+    when: result.stdout == 'VERIFY_RESIZE'
+
+  - name: "Wait for SHUTOFF: {{ instance_uuid }}"
+    command: >
+      {{ nova_compute_drain_venv }}/bin/openstack server show {{ instance_uuid }} -f value -c status
+    register: result
+    until: result.stdout == 'SHUTOFF'
+    retries: 10
+    delay: 30
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ nova_compute_drain_delegate_host }}"
+  vars:
+    ansible_host: "{{ hostvars[nova_compute_drain_delegate_host].ansible_host }}"
+  rescue:
+    - meta: noop

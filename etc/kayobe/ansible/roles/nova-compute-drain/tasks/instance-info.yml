@@ -1,0 +1,16 @@
+---
+- name: Query instances
+  command: >
+    {{ nova_compute_drain_venv }}/bin/openstack
+    server list --host {{ ansible_facts.nodename }}
+    --all-projects
+    --format json
+  register: instances
+  delegate_to: "{{ nova_compute_drain_delegate_host }}"
+  environment: "{{ openstack_auth_env }}"
+  vars:
+    ansible_host: "{{ hostvars[nova_compute_drain_delegate_host].ansible_host }}"
+
+- name: Set fact containing list of instances
+  set_fact:
+    nova_compute_drain_instance_info: "{{ instances.stdout | from_json }}"

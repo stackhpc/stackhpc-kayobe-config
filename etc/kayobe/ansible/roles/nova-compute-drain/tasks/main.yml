@@ -1,0 +1,33 @@
+---
+- include_tasks:
+    name: setup.yml
+
+- include_tasks:
+    name: instance-info.yml
+
+- include_tasks:
+    name: live-migrate.yml
+  loop: "{{ nova_compute_drain_instance_info | selectattr('Status', 'equalto', 'ACTIVE') | list }}"
+  loop_control:
+    label: "{{ item.ID | default }}"
+  vars:
+    instance_uuid: "{{ item.ID | default }}"
+
+- include_tasks:
+    name: cold-migrate.yml
+  loop: "{{ nova_compute_drain_instance_info | selectattr('Status', 'equalto', 'SHUTOFF') | list }}"
+  loop_control:
+    label: "{{ item.ID | default }}"
+  vars:
+    instance_uuid: "{{ item.ID | default }}"
+
+- include_tasks:
+    name: instance-info.yml
+
+- name: Fail if there are instances still on the host
+  fail:
+    msg: >
+      Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
+  when:
+    - nova_compute_migration_fatal | bool
+    - nova_compute_drain_instance_info | length > 0

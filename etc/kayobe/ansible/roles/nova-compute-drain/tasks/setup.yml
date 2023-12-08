@@ -1,0 +1,27 @@
+---
+
+- name: Initiate openstack cli virtualenv
+  pip:
+    virtualenv: "{{ nova_compute_drain_venv }}"
+    name:
+      - pip
+      - setuptools
+    state: latest
+    virtualenv_command: /usr/bin/python3.6 -m venv
+  delegate_to: "{{ nova_compute_drain_delegate_host }}"
+  vars:
+    # NOTE: Without this, the delegate ansible_host variable will not
+    # be respected when using delegate_to.
+    ansible_host: "{{ hostvars[nova_compute_drain_delegate_host].ansible_host | default(nova_compute_drain_delegate_host) }}"
+
+- name: Install openstack CLI tools in virtualenv
+  pip:
+    virtualenv: "{{ nova_compute_drain_venv }}"
+    name:
+      - python-openstackclient
+    extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+  delegate_to: "{{ nova_compute_drain_delegate_host }}"
+  vars:
+    # NOTE: Without this, the delegate's ansible_host variable will not
+    # be respected when using delegate_to.
+    ansible_host: "{{ hostvars[nova_compute_drain_delegate_host].ansible_host | default(nova_compute_drain_delegate_host) }}"

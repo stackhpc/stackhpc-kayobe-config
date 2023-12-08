@@ -1,0 +1,17 @@
+---
+
+- name: "Live migrate instance: {{ instance_uuid }}"
+  command: >
+    {{ nova_compute_drain_venv }}/bin/openstack
+    --os-compute-api-version 2.25
+    server migrate
+    {{ instance_uuid }}
+    --live-migration
+    --wait
+  delegate_to: "{{ nova_compute_drain_delegate_host }}"
+  environment: "{{ openstack_auth_env }}"
+  vars:
+    ansible_host: "{{ hostvars[nova_compute_drain_delegate_host].ansible_host }}"
+  register: result
+  failed_when:
+    - result is failed
