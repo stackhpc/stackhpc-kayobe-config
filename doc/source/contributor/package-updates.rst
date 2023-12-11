@@ -113,7 +113,7 @@ Install new packages:
 
 Perform a rolling reboot of hosts:
 
-..note::
+.. note::
    For Multinode environment, seed-hypervisor cannot access control plane instances with the Openstack client.
    To use Openstack client, connect to the seed instance via SSH first.
    For authentication, use scp to copy ``public-openrc.sh`` to seed instance
