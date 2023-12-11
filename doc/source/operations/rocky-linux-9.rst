@@ -110,6 +110,21 @@ The error from NetworkManager was:
 
       [1697192659.9611] keyfile: ipv4.routing-rules: invalid value for "routing-rule1": invalid value for "table"
 
+Switching to iPXE
+-----------------
+
+The ``pxe`` boot_interface is currently broken. When provisioning, you will see an error similar to:
+
+  .. code-block:: shell
+
+      Failed to prepare to deploy: Could not link image http://192.168.1.1:8080/ipa.vmlinuz from /httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted to /tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel, error: [Errno 18] Invalid cross-device link: '/httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted' -> '/tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel'
+
+After deprovisioning a node, switch the boot interface to iPXE:
+
+  .. code-block:: shell
+
+       openstack baremetal node set <node> --boot-interface ipxe
+
 Prerequisites
 =============
 
