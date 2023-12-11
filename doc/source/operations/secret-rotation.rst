@@ -36,28 +36,28 @@ this guide. Installation:
 
 
 As of writing, there are three upstream patches in the works to make this
-process easier. 
+process easier.
 
 #. A change to Kolla, to automate :ref:`this<kolla-change>` step to change the
    extended start for the ``nova-api`` container.
 
    The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/kolla/+/902057>`__. 
+   <https://review.opendev.org/c/openstack/kolla/+/902057>`__.
 
    This was previously mitigated with a change to the StackHPC fork of
    Kolla-Ansible, which has since been reverted due to an unforeseen issue.
 
 #. A change to Nova, to automate :ref:`this<nova-change>` step to change the
    nova cell0 database connection string.
-   
+
    The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/nova/+/903140>`__. 
+   <https://review.opendev.org/c/openstack/nova/+/903140>`__.
 
 #. A change to Kolla-Ansible, to automate :ref:`this<k-a-change>` step to
    update service keystone user passwords.
-   
+
    The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__. 
+   <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__.
 
 
 Full method
@@ -83,7 +83,7 @@ Full method
    .. code::
 
       command: bash -c 'sudo -E kolla_set_configs && nova-manage api_db sync && nova-manage db sync --local_cell'
-   
+
    This change will break new deployments and should be reverted once this
    process is complete
 
@@ -162,7 +162,7 @@ Full method
 
        .. code:: bash
 
-          kayobe seed service deploy -t seed-deploy-containers -kt none 
+          kayobe seed service deploy -t seed-deploy-containers -kt none
 
        (note you may need to skip docker registry login since the password will
        now be ‘incorrect’ e.g. ``-e``
@@ -307,10 +307,10 @@ Full method
 
       .. note::
 
-         Alternatively, cherry-pick 
+         Alternatively, cherry-pick
          `this patch <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__
 
-   
+
     .. code:: bash
 
       openstack user delete glance cinder placement nova neutron heat magnum magnum_trustee_domain_admin barbican designate
