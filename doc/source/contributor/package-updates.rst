@@ -69,12 +69,12 @@ There is a comprehensive guide to setting up a multinode environment with Terraf
 
 * Remember to set different vxlan_vnis for each.
 
-* Before starting any tests, run ``dnf distro-sync`` on each host to ensure you are using the same snapshots as in the release train. You can do this using the following commands:
+* Before starting any tests, run ``dnf distro-sync -y`` on each host to ensure you are using the same snapshots as in the release train. Option ``-y`` is used to prevent hosts hang waiting for the confirmation input. You can do this using the following commands:
 
    .. code-block:: console
 
-      kayobe seed host command run -b --command "dnf distro-sync"
-      kayobe overcloud host command run -b --command "dnf distro-sync"
+      kayobe seed host command run -b --command "dnf distro-sync -y"
+      kayobe overcloud host command run -b --command "dnf distro-sync -y"
 
 * This may have installed a new kernel version. If so, you will need to reboot the overcloud hosts. You can check the installed kernels and the currently running kernel with the following commands. If the latest listed version is not running, you will need to reboot.
 
@@ -102,6 +102,7 @@ Bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
+   kayobe seed host configure -t dnf -kt none
    kayobe overcloud host configure -t dnf -kt none
 
 Install new packages:
@@ -112,14 +113,23 @@ Install new packages:
 
 Perform a rolling reboot of hosts:
 
+..note::
+   For Multinode environment, seed-hypervisor cannot access control plane instances with the Openstack client.
+   To use Openstack client, connect to the seed instance via SSH first.
+   For authentication, use scp to copy ``public-openrc.sh`` to seed instance
+
 .. code-block:: console
 
+   # Check your hypervisor hostname
+   openstack hypervisor list
+
+   # Reboot controller instances and zeroth compute instance
    export ANSIBLE_SERIAL=1
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit controllers
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[0]
 
    # Test live migration
-   openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname wallaby-pkg-refresh-ovs-compute-02.novalocal --os-compute-api-version 2.74 server1
+   openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname <Your Hypervisor Hostname> --os-compute-api-version 2.74 server1
    openstack server migrate --live-migration server1
    watch openstack server show server1
 
