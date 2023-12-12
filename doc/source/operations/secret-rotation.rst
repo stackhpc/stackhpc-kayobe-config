@@ -16,7 +16,7 @@ be automatically regenerated with a ``kayobe overcloud service deploy``.
 Some secrets require manual input from the operator to change.
 
 Following this process, there may be a few seconds of network downtime for
-running VMs when Neutron is reconfigured.
+running VMs when Neutron is reconfigured when using ML2/OVS.
 
 There will be API downtime for all services. The main reason for the outage is
 that RabbitMQ must be completely stopped to change the secrets it uses. The
@@ -45,7 +45,9 @@ process easier.
    <https://review.opendev.org/c/openstack/kolla/+/902057>`__.
 
    This was previously mitigated with a change to the StackHPC fork of
-   Kolla-Ansible, which has since been reverted due to an unforeseen issue.
+   Kolla-Ansible, which has since been reverted due to an unforeseen issue. See
+   `here <https://github.com/stackhpc/kolla-ansible/pull/503>` for more
+   details.
 
 #. A change to Nova, to automate :ref:`this<nova-change>` step to change the
    nova cell0 database connection string.
@@ -71,30 +73,41 @@ Full method
 1. Run a Tempest ``refstack`` & check Kibana/OpenSearch Dashboards to check
    the state of the cloud before any changes are made
 
+2. Edit your Kolla-Ansible checkout to include changes not yet included
+   upstream. 
+
 .. _kolla-change:
 
-2. Edit your Kolla-Ansible checkout to include this line within the
-   ``kolla_docker`` dict in ``ansible/roles/nova/tasks/bootstrap_service.yml`` See
-   `here
-   <https://github.com/stackhpc/kolla-ansible/pull/496/commits/9da473a63414493517da668075b8c958fec56e96>`__
-   for an example. (If you are using the latest ``stackhpc/yoga`` branch of
-   Kolla-Ansible this should already be set)
+   1. Add this line within the ``kolla_docker`` dict in
+      ``ansible/roles/nova/tasks/bootstrap_service.yml`` See `here
+      <https://github.com/stackhpc/kolla-ansible/pull/496/commits/9da473a63414493517da668075b8c958fec56e96>`__
+      for an example.
 
-   .. code::
+      .. code::
 
-      command: bash -c 'sudo -E kolla_set_configs && nova-manage api_db sync && nova-manage db sync --local_cell'
+         command: bash -c 'sudo -E kolla_set_configs && nova-manage api_db sync && nova-manage db sync --local_cell'
 
-   This change will break new deployments and should be reverted once this
-   process is complete
+      This change will break new deployments and should be reverted once this
+      process is complete
 
-3. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
-   environment
+.. _k-a-change:
 
-4. Navigate to the directory containing your ``passwords.yml`` file
+   2. Cherry-pick `this patch
+      <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__
+
+      .. code:: bash
+
+         git fetch https://review.opendev.org/openstack/kolla-ansible refs/changes/78/903178/2 && git cherry-pick FETCH_HEAD
+   
+   3. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
+      environment
+
+
+3. Navigate to the directory containing your ``passwords.yml`` file
    (``kayobe-config/etc/kolla/passwords.yml`` OR
    ``kayobe-config/etc/kayobe/environments/envname/kolla/passwords.yml``)
 
-5. Create a file called ``deletelist.txt`` and populate it with this content
+4. Create a file called ``deletelist.txt`` and populate it with this content
    (including all whitespace):
 
    .. code::
@@ -124,31 +137,42 @@ Full method
       ^haproxy_password
 
 
-6.  Decrypt your ``passwords.yml`` file with ``ansible-vault``
+5.  Decrypt your ``passwords.yml`` file with ``ansible-vault``
 
-7.  Delete all the passwords in the deletion list
+6.  Delete all the passwords in the deletion list
 
     .. code:: bash
 
        grep -vf deletelist.txt passwords.yml > new-passwords.yml
 
-8.  Check the new file for basic formatting errors. If it looks correct,
+7.  Check the new file for basic formatting errors. If it looks correct,
     replace the existing ``passwords.yml`` file with ``new-passwords.yml``
 
     .. code:: bash
 
        rm passwords.yml && mv new-passwords.yml passwords.yml
 
-9.  Use the ``rekey-hosts.yml`` playbook to rotate your SSH keys for hosts
+8.  Use the ``rekey-hosts.yml`` playbook to rotate your SSH keys for hosts
     across the cloud. The playbook should exist under
     ``kayobe-config/etc/kayobe/ansible/`` if not, merge the latest
     ``stackhpc-kayobe-config``
 
-    .. code:: bash
+    1. Run the playbook to generate a new keypair and add it to the authorised
+       keys of your hosts.
 
-       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rekey-hosts.yml
+       .. code:: bash
 
-10. Update the Pulp password
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rekey-hosts.yml
+
+    2. Ensure you can SSH to other nodes using the new keypair
+
+    3. Re-run the playbook with arguments to remove the old keypair.
+
+       .. code:: bash
+
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rekey-hosts.yml -t remove-key -e rekey_remove_existing_key=true
+
+9.  Update the Pulp password
 
     1. Generate a new Pulp password
 
@@ -164,11 +188,10 @@ Full method
 
           kayobe seed service deploy -t seed-deploy-containers -kt none
 
-       (note you may need to skip docker registry login since the password will
-       now be ‘incorrect’ e.g. ``-e``
-       ``deploy_containers_registry_attempt_login``)
+       (note you will need to skip Docker registry login since the password will
+       now be ‘incorrect’ e.g. ``-e deploy_containers_registry_attempt_login=false``)
 
-11. Rotate ``horizon_secret_key``
+10. Rotate ``horizon_secret_key``
 
     1. Generate a new secret:
 
@@ -189,7 +212,7 @@ Full method
        deleted & redeployed at a later date once all users have closed &
        reopened their sessions.
 
-12. Update ``grafana_admin_password``
+11. Update ``grafana_admin_password``
 
     1. Generate a new Grafana Admin password
 
@@ -197,21 +220,21 @@ Full method
 
           pwgen -s 40 1
 
-    2. Exec into the Grafana container on a controller
+    2. Update the value of ``grafana_admin_password`` in ``passwords.yml``
+
+    3. Exec into the Grafana container on a controller
 
        .. code:: bash
 
           sudo docker exec -it grafana bash
 
-    3. Run the password reset command, then enter the new password
+    4. Run the password reset command, then enter the new password
 
        .. code:: bash
 
           grafana-cli admin reset-admin-password --password-from-stdin
 
-    4. Update the value of ``grafana_admin_password`` in ``passwords.yml``
-
-13. Update the MariaDB database password
+12. Update the MariaDB database password
 
     1. Generate a new secret:
 
@@ -219,51 +242,50 @@ Full method
 
           pwgen -s 40 1
 
-    2. Exec into the MariaDB container on a controller
+    2. Update ``database_password`` in ``passwords.yml`` with your new
+       password. Make a note of the old password.
+
+    3. Exec into the MariaDB container on a controller
 
        .. code:: bash
 
           sudo docker exec -it mariadb bash
 
-    3. Log in to the database. You will be prompted for the password. Use the
-       existing value of ``database_password``
+    4. Log in to the database. You will be prompted for the password. Use the
+       old value of ``database_password``
 
        .. code:: bash
 
           mysql -uroot -p
 
-    4. Check the current state of the ``root`` user
+    5. Check the current state of the ``root`` user
 
        .. code:: bash
 
           SELECT Host,User,Password FROM mysql.user WHERE User='root';
 
-    5. Update the password for the ``root`` user
+    6. Update the password for the ``root`` user
 
        .. code:: bash
 
           SET PASSWORD FOR 'root'@'%' = PASSWORD('newpassword');
 
-    6. Check that the password hash has changed in the user list
+    7. Check that the password hash has changed in the user list
 
        .. code:: bash
 
           SELECT Host,User,Password FROM mysql.user WHERE User='root';
 
-    7. If there are any remaining root users with the old password e.g.
+    8. If there are any remaining root users with the old password e.g.
        ``root@localhost``, change the password for them too
-
-    8. Update ``database_password`` in ``passwords.yml`` with your new
-       password
-
 
 .. _nova-change:
 
-14. Update the Nova Database password
+13. Update the Nova Database password
+
       .. warning::
 
          From this point onward, service may be disrupted
-
 
     #. Create a new ``nova_database_password`` and store it in
        ``passwords.yml``
@@ -296,51 +318,15 @@ Full method
        ``00000000-0000-0000-0000-000000000000``, change the above command
        accordingly)
 
+14.  Re-encrypt your ``passwords.yml`` file
 
-15.  Re-encrypt your ``passwords.yml`` file
-
-
-.. _k-a-change:
-
-16. Delete the service users in Keystone. The exact users will depend on the
-    deployment. Multinode example:
-
-      .. note::
-
-         Alternatively, cherry-pick
-         `this patch <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__
-
-
-    .. code:: bash
-
-      openstack user delete glance cinder placement nova neutron heat magnum magnum_trustee_domain_admin barbican designate
-
-17. Stop services using RabbitMQ
+15. Stop all OpenStack services
 
     .. code:: bash
 
        kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/stop-openstack-services.yml
 
-18. Nuke RabbitMQ
-
-    .. code:: bash
-
-       kayobe overcloud host command run -l controllers --become --command "docker stop rabbitmq && docker rm rabbitmq && docker volume rm rabbitmq"
-
-19. Reconfigure Overcloud services to apply changes
-
-
-      .. warning::
-
-         VMs should continue running, but connections to them will briefly be
-         disrupted when Neutron is redeployed
-
-   .. code:: bash
-
-      kayobe overcloud service deploy
-
-
-20. Flush the Memcached data on all controllers (any old data will now be
+16. Flush the Memcached data on all controllers (any old data will now be
     inaccessible)
 
     #. Install Telnet (on one of the controllers)
@@ -367,23 +353,40 @@ Full method
           flush_all
           quit
 
-21. Manually update ``heat_domain_admin_password``
+17. Nuke RabbitMQ
+
+    .. code:: bash
+
+       kayobe overcloud host command run -l controllers --become --command "docker stop rabbitmq && docker rm rabbitmq && docker volume rm rabbitmq"
+
+19. Reconfigure Overcloud services to apply changes
+
+      .. warning::
+
+         VMs should continue running, but connections to them will briefly be
+         disrupted when Neutron is redeployed when using ML2/OVS
+
+   .. code:: bash
+
+      kayobe overcloud service deploy
+
+20. Manually update ``heat_domain_admin_password``
 
     #. TODO: Instructions
        This has not been tested yet
 
-22. Re-run Tempest to make sure everything has come back
+21. Re-run Tempest to make sure everything has come back
 
-23. Inform other users of the steps they’ll need to take now that the secrets
+22. Inform other users of the steps they’ll need to take now that the secrets
     have been rotated:
 
     1. SSH keys have been rotated, so the new key will have to be distributed
        if individual user accounts are used
 
     2. Any existing ``openrc`` files generated by Kolla Ansible will need to be
-       re-generated or edited to use the new Kolla admin password
+       re-generated or edited to use the new Keystone admin password
 
-24. Create a PR to merge the new secrets into your main Kayobe configuration
+23. Create a PR to merge the new secrets into your main Kayobe configuration
     branch
 
    .. warning::
@@ -391,7 +394,7 @@ Full method
       Unless you **really** enjoyed this process, RE-ENCRYPT
       ``passwords.yml`` BEFORE COMMITTING
 
-25. Approximately 1 week after deploying, remove the old horizon secret key
+24. Approximately 1 week after deploying, remove the old horizon secret key
     from ``passwords.yml`` and reconfigure horizon
 
 
@@ -505,6 +508,7 @@ Full password list
    docker_registry_password
    secrets_pulp_password
    redis_master_password
+   haproxy_password
    keystone_ssh_key
       private_key
       public_key
