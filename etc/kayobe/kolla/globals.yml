@@ -13,16 +13,24 @@ kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky
 kayobe_image_tags:
   openstack:
     centos: yoga-20231024T093507
-    rocky: yoga-20231024T093507
+    rocky: yoga-20231211T151419
     ubuntu: yoga-20231024T093507
   nova:
     centos: yoga-20231113T171023
-    rocky: yoga-20231103T161400
+    rocky: yoga-20231211T151419
     ubuntu: yoga-20231103T161400
+  cloudkitty:
+    centos: yoga-20231107T165648
+    rocky: yoga-20231211T151419
+    ubuntu: yoga-20231107T165648
+  neutron:
+    centos: yoga-20231114T125927
+    rocky: yoga-20231211T151419
+    ubuntu: yoga-20231114T125927
 
-cloudkitty_tag: yoga-20231107T165648
+cloudkitty_tag: "{% raw %}{{ kayobe_image_tags['cloudkitty'][kolla_base_distro] }}{% endraw %}"
 nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] }}{% endraw %}"
-neutron_tag: yoga-20231114T125927
+neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] }}{% endraw %}"
 
 # These overrides are currently redundant, but are kept because it's not obvious that you need them if setting haproxy_tag
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
