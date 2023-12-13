@@ -436,7 +436,7 @@ Compare the old & new configuration:
 
 .. code-block:: console
 
-   diff -ru ~/kolla-diff-{old,new} > ~/kolla-diff.diff
+   diff -ru ~/kolla-diff/{old,new} > ~/kolla-diff.diff
    less ~/kolla-diff.diff
 
 Upgrading the Seed Hypervisor
