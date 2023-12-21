@@ -396,6 +396,10 @@ kolla_build_blocks:
     {% endif %}
     {% endraw %}
     {% endif %}
+    # Fix for https://bugs.launchpad.net/ubuntu/+source/pyroute2/+bug/1995469
+    # which was experienced on Rocky Linux 9.3 kernel. This file is from
+    # pyroute2 0.6.6 with the fix backported from 0.6.10.
+    RUN curl -o /var/lib/kolla/venv/lib/python3.9/site-packages/pr2modules/iproute/linux.py https://raw.githubusercontent.com/stackhpc/pyroute2/stackhpc/yoga/pyroute2.core/pr2modules/iproute/linux.py
   magnum_base_footer: |
     RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
     {% raw %}
