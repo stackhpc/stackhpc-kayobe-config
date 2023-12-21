@@ -143,22 +143,22 @@ Workflow Deployment
 +-----------------------------------+----------------------------------------------+
 | KAYOBE_AUTOMATION_SSH_PRIVATE_KEY | <ENV_NAME>_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY |
 +-----------------------------------+----------------------------------------------+
-|       KAYOBE_VAULT_PASSWORD       |  <ENV_NAME>_KAYOBE_VAULT_PASSWORD |
+|       KAYOBE_VAULT_PASSWORD       |  <ENV_NAME>_KAYOBE_VAULT_PASSWORD            |
 +-----------------------------------+----------------------------------------------+
 |         REGISTRY_PASSWORD         |         <ENV_NAME>_REGISTRY_PASSWORD         |
 +-----------------------------------+----------------------------------------------+
-|           TEMPEST_OPENRC          |     <ENV_NAME>_TEMPEST_OPENRC     |
+|           TEMPEST_OPENRC          |     <ENV_NAME>_TEMPEST_OPENRC                |
 +-----------------------------------+----------------------------------------------+
 
-    +----------------------------------------------+
-    |                   VARIABLES                  |
-    +====================+=========================+
-    | Single Environment |  Multiple Environments  |
-    +--------------------+-------------------------+
-    |    REGISTRY_URL    | <ENV_NAME>_REGISTRY_URL |
-    +--------------------+-------------------------+
+    +-------------------------------------------------------+
+    |                   VARIABLES                           |
+    +====================+==================================+
+    | Single Environment |  Multiple Environments           |
+    +--------------------+----------------------------------+
+    |    REGISTRY_URL    | <ENV_NAME>_REGISTRY_URL          |
+    +--------------------+----------------------------------+
     |  REGISTRY_USERNAME |    <ENV_NAME>_REGISTRY_USERNAME  |
-    +--------------------+-------------------------+
+    +--------------------+----------------------------------+
 
 Note the above tables shows the secrets and variables one may need to add to GitHub for a successful deployment.
 When adding secrets and variables make sure to adhere to the naming standards and ensure the :code:`<ENV_NAME>` is replaced with all supported kayobe environments in uppercase.
