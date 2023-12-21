@@ -136,37 +136,32 @@ Workflow Deployment
 
 3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
 
-.. raw:: html
++----------------------------------------------------------------------------------+
+|                                      Secrets                                     |
++===================================+==============================================+
+|         Single Environment        |             Multiple Environments            |
++-----------------------------------+----------------------------------------------+
+| KAYOBE_AUTOMATION_SSH_PRIVATE_KEY | <ENV_NAME>_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY |
++-----------------------------------+----------------------------------------------+
+|       KAYOBE_VAULT_PASSWORD       |  <ENV_NAME>_PRODUCTION_KAYOBE_VAULT_PASSWORD |
++-----------------------------------+----------------------------------------------+
+|         REGISTRY_PASSWORD         |         <ENV_NAME>_REGISTRY_PASSWORD         |
++-----------------------------------+----------------------------------------------+
+|           TEMPEST_OPENRC          |     <ENV_NAME>_PRODUCTION_TEMPEST_OPENRC     |
++-----------------------------------+----------------------------------------------+
 
-    <center><table style="padding: 5px;">
-    <thead>
-        <tr>
-            <th style="text-align: center;padding: 5px;">Secrets</th>
-            <th style="text-align: center;padding: 5px;">Variables</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td style="text-align: center;padding: 5px;">KAYOBE_AUTOMATION_SSH_PRIVATE_KEY</td>
-            <td style="text-align: center;padding: 5px;">REGISTRY_USERNAME</td>
-        </tr>
-        <tr>
-            <td style="text-align: center;padding: 5px;">KAYOBE_VAULT_PASSWORD</td>
-            <td style="text-align: center;padding: 5px;">REGISTRY_URL</td>
-        </tr>
-        <tr>
-            <td style="text-align: center;padding: 5px;">REGISTRY_PASSWORD</td>
-        </tr>
-        <tr>
-            <td style="text-align: center;padding: 5px;">TEMPEST_OPENRC</td>
-            <td></td>
-        </tr>
-    </tbody>
-    </table></center>
+    +----------------------------------------------+
+    |                   VARIABLES                  |
+    +====================+=========================+
+    | Single Environment |  Multiple Environments  |
+    +--------------------+-------------------------+
+    |    REGISTRY_URL    | <ENV_NAME>_REGISTRY_URL |
+    +--------------------+-------------------------+
+    |  REGISTRY_USERNAME |    <ENV_NAME>_USERNAME  |
+    +--------------------+-------------------------+
 
-Note the above table shows the secrets and variable one may need to add to GitHub for a successful deployment.
-However, these secrets and variables might not all be required for example if :code:`github_registry` has been configured with a single shared registry then :code:`REGISTRY_USERNAME` and :code:`REGISTRY_URL` can be ignored.
-Also it is important that if you are using multiple environments and secrets and variables are not being shared then each will require an environment prefix added in the form `ENVIRONMENT_NAME_SECRET_OR_VARIABLE_NAME` for example if there was two environments each name :code:`production` and :code:`staging` then :code:`KAYOBE_AUTOMATION_SSH_PRIVATE_KEY` would be replaced by :code:`PRODUCTION_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY` and :code:`STAGING_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY`.
+Note the above tables shows the secrets and variables one may need to add to GitHub for a successful deployment.
+When adding secrets and variables make sure to adhere to the naming standards and ensure the :code:`<ENV_NAME>` is replaced with all supported kayobe environments in uppercase.
 
 4. Commit and push all newly generated workflows found under :code:`.github/workflows`
 
