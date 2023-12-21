@@ -18,4 +18,5 @@ the various features provided.
    wazuh
    vault
    magnum-capi
+   ci-cd
    security-hardening
