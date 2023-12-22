@@ -8,9 +8,10 @@ kolla_docker_namespace: stackhpc-dev
 ###############################################################################
 # Network configuration.
 
-# Don't touch resolv.conf: use Neutron DNS for accessing Pulp server via
-# hostname.
-resolv_is_managed: false
+# Allow resolv.conf to be managed for Ubuntu
+resolv_is_managed: "{{ os_distribution == 'ubuntu' }}"
+resolv_nameservers: [ "8.8.8.8", "8.8.4.4" ]
+resolv_domain: "internal.sms-cloud"
 
 ###############################################################################
 # StackHPC configuration.
