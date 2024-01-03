@@ -370,10 +370,12 @@ Full method
 
       kayobe overcloud service deploy
 
-20. Manually update ``heat_domain_admin_password``
+20. Manually update ``heat_domain_admin_password``, using the newly generated
+    OpenStack Admin credentials.
 
-    #. TODO: Instructions
-       This has not been tested yet
+    .. code:: bash
+
+       openstack user set --domain heat_user_domain --password <password> heat_domain_admin
 
 21. Re-run Tempest to make sure everything has come back
 
