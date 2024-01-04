@@ -357,7 +357,7 @@ Full method
 
     .. code:: bash
 
-       kayobe overcloud host command run -l controllers --become --command "docker stop rabbitmq && docker rm rabbitmq && docker volume rm rabbitmq"
+       kayobe overcloud host command run -l controllers --become --command "systemctl stop kolla-rabbitmq-container.service && docker rm rabbitmq && docker volume rm rabbitmq"
 
 19. Reconfigure Overcloud services to apply changes
 
