@@ -239,7 +239,7 @@ Enable the required TLS variables in kayobe and kolla
 
    .. code-block::
 
-      kayobe overcloud host command run --command "docker restart nova_compute" --become --show-output -l compute
+      kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
 
 Barbican integration
 ====================

@@ -26,4 +26,4 @@
   tasks:
     - name: Stop OpenStack services
       shell: >-
-        docker ps -a | egrep '({{ stop_service_list | join('|') }})' | awk '{ print $NF }' | xargs docker stop
+        systemctl -a | egrep '({{ stop_service_list | join('|') }})' | awk '{ print $1 }' | xargs systemctl stop
