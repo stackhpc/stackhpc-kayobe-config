@@ -27,6 +27,9 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # Uncomment this to perform a full tempest test
     # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
+    
+    # Skip tests that check if public TLS is used
+    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-skip-public-tls
   fi
 
 fi
