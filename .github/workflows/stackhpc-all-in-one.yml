@@ -55,6 +55,10 @@ on:
         description: Whether to run the workflow (workaround for required status checks issue)
         type: boolean
         default: true
+      upgrade:
+        description: Whether to perform an upgrade
+        type: boolean
+        default: false
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -76,10 +80,27 @@ jobs:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+      # NOTE(upgrade): Reference the PREVIOUS release here.
+      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-yoga
+      # NOTE(upgrade): Reference the PREVIOUS release branch here.
+      PREVIOUS_BRANCH: stackhpc/yoga
     steps:
-      - uses: actions/checkout@v3
+      # If testing upgrade, checkout previous release, otherwise checkout current branch
+      - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
+        uses: actions/checkout@v3
         with:
-           submodules: true
+          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || github.ref }}
+          submodules: true
+
+      - name: Output Kayobe image
+        id: kayobe_image
+        run: |
+          if ${{ inputs.upgrade }}; then
+            kayobe_image=$PREVIOUS_KAYOBE_IMAGE
+          else
+            kayobe_image=$KAYOBE_IMAGE
+          fi
+          echo kayobe_image=$kayobe_image >> $GITHUB_OUTPUT
 
       - name: Output image tag
         id: image_tag
@@ -125,6 +146,7 @@ jobs:
           aio_vm_flavor = "${{ env.VM_FLAVOR }}"
           aio_vm_network = "${{ env.VM_NETWORK }}"
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
+          aio_vm_volume_size = "${{ env.VM_VOLUME_SIZE }}"
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
@@ -135,6 +157,7 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
+          VM_VOLUME_SIZE: ${{ inputs.upgrade && '45' || '35' }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -206,8 +229,14 @@ jobs:
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # The same tag may be reused (e.g. stackhpc/yoga), so ensure we have the latest image.
+      - name: Pull previous Kayobe image
+        run: |
+          sudo docker image pull ${{ steps.kayobe_image.outputs.kayobe_image }}
+        if: inputs.upgrade
+
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
-      - name: Pull latest Kayobe image
+      - name: Pull current Kayobe image
         run: |
           sudo docker image pull $KAYOBE_IMAGE
 
@@ -216,10 +245,69 @@ jobs:
           sudo -E docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            $KAYOBE_IMAGE \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Host configure
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Service deploy
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Configure aio resources
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      # If testing upgrade, checkout the current release branch
+      # Stash changes to tracked files, and set clean=false to avoid removing untracked files.
+      - name: Stash config changes
+        run: git stash
+        if: inputs.upgrade
+
+      - name: Checkout current release config
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          clean: false
+        if: inputs.upgrade
+
+      - name: Pop stashed config changes
+        run: git stash pop
+        if: inputs.upgrade
+
+      # Now begin upgrade
+      - name: Host upgrade
+        run: |
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-upgrade.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
 
       - name: Host configure
         run: |
@@ -230,26 +318,18 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
 
-      - name: Service deploy
+      - name: Service upgrade
         run: |
           sudo -E docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-upgrade.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-
-      - name: Configure aio resources
-        run: |
-          sudo -E docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
 
       - name: Tempest tests
         run: |
@@ -266,7 +346,7 @@ jobs:
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
+          name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' }}
           path: tempest-artifacts/*
 
       - name: Fail if any Tempest tests failed
