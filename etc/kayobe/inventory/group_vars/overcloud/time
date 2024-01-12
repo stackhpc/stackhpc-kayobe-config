@@ -1,0 +1,7 @@
+---
+# NTP services for overcloud hosts
+# During early initialisation we use the seed Node
+# Following deployment we include the OpenStack VIP
+
+chrony_ntp_servers:
+  - server: "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
