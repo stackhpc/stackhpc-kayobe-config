@@ -5,6 +5,11 @@
 name: Build kayobe image
 
 on:
+  push:
+    branches:
+      # NOTE(upgrade): Reference only the current release branch here.
+      - stackhpc/yoga
+
   workflow_call:
     inputs:
       http_proxy:
@@ -32,7 +37,7 @@ env:
 jobs:
   build-kayobe-image:
     name: Build kayobe image
-    if: inputs.if
+    if: inputs.if || github.repository == 'stackhpc/stackhpc-kayobe-config' && github.event_name == 'push'
     runs-on: ubuntu-20.04
     permissions:
       contents: read
