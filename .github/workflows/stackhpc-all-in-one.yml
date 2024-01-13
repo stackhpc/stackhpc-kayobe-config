@@ -179,6 +179,7 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
       - name: Terraform Apply
+        id: tf_apply
         run: |
           for attempt in $(seq 5); do
               if terraform apply -auto-approve; then
@@ -355,6 +356,7 @@ jobs:
         if: inputs.upgrade
 
       - name: Tempest tests
+        id: tempest
         run: |
           mkdir -p tempest-artifacts
           docker run -t --rm \
@@ -367,6 +369,7 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: StackHPC OpenStack tests
+        id: sot
         run: |
           mkdir -p sot-results
           docker run -t --rm \
@@ -378,13 +381,29 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      - name: Collect diagnostic information
+        id: diagnostics
+        run: |
+          mkdir -p diagnostics
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v $(pwd)/diagnostics:/stack/diagnostics \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/diagnostics.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}
+
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
           path: |
+            diagnostics/
             tempest-artifacts/
             sot-results/
+        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.sot.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
       - name: Fail if any tests failed
         run: |
