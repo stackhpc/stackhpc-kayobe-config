@@ -77,13 +77,9 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - name: Checkout submodules
-        run: |
-          git submodule update --init --recursive
-
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-           submodules: true
+           submodules: recursive
 
       - name: Output image tag
         id: image_tag
