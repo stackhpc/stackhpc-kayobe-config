@@ -33,6 +33,11 @@ variable "aio_vm_subnet" {
   type = string
 }
 
+variable "aio_vm_volume_size" {
+  type = number
+  default = 35
+}
+
 locals {
   image_is_uuid = length(regexall("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", var.aio_vm_image)) > 0
 }
@@ -59,7 +64,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   block_device {
     uuid                  = local.image_is_uuid ? var.aio_vm_image: data.openstack_images_image_v2.image[0].id
     source_type           = "image"
-    volume_size           = 35
+    volume_size           = var.aio_vm_volume_size
     boot_index            = 0
     destination_type      = "volume"
     delete_on_termination = true
