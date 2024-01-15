@@ -77,9 +77,13 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      - name: Install or Update Git.
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+
       - uses: actions/checkout@v4
         with:
-           submodules: recursive
+           submodules: true
 
       - name: Output image tag
         id: image_tag
