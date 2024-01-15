@@ -70,16 +70,25 @@ jobs:
   all-in-one:
     name: All in one
     if: inputs.if
-    runs-on: [self-hosted, stackhpc-kayobe-config-aio]
+    runs-on: arc-skc-aio-runner
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: build-essential git unzip nodejs python3 python3-pip python3-wheel python-is-python3
+
       - uses: actions/checkout@v4
         with:
            submodules: true
+
+      - name: Make sure dockerd is running and test Docker.
+        run: |
+          docker run --rm hello-world
 
       - name: Output image tag
         id: image_tag
@@ -209,11 +218,11 @@ jobs:
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
         run: |
-          sudo docker image pull $KAYOBE_IMAGE
+          docker image pull $KAYOBE_IMAGE
 
       - name: Run growroot
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -223,7 +232,7 @@ jobs:
 
       - name: Host configure
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -233,7 +242,7 @@ jobs:
 
       - name: Service deploy
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -243,7 +252,7 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -254,7 +263,7 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
@@ -284,5 +293,5 @@ jobs:
 
       - name: Prune Docker images over 1 week old
         # May fail if another prune is running
-        run: sudo docker image prune --all --force --filter until=168h || true
+        run: docker image prune --all --force --filter until=168h || true
         if: always()
