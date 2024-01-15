@@ -82,6 +82,19 @@ system. If you are using a Neutron plugin other than ML2/OVN, set
 For new deployments using OVN, see
 :kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
 
+Kolla config merging
+--------------------
+
+The Antelope release introduces Kolla config merging between Kayobe
+environments and base configurations. Before Antelope, any configuration under
+``$KAYOBE_CONFIG_PATH/kolla/config`` would be ignored when any Kayobe
+environment was activated.
+
+In Antelope, the Kolla configuration from the base will be merged with the
+environment. This can result in significant changes to the Kolla config. Take
+extra care when creating the Antelope branch of the kayobe-config and always
+check the config diff.
+
 Known issues
 ============
 
