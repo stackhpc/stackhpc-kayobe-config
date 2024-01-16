@@ -72,7 +72,7 @@ Some things to watch out for:
   as to add the ``creator`` role for Barbican, you will need to also add the
   ``member role``. eg:
 
-  .. code-block:: console
+  .. code-block:: ini
 
      [auth]
      tempest_roles = creator,member
