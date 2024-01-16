@@ -11,7 +11,7 @@
 
 # Wazuh IP accessible from nodes running agents
 # Change network as needed
-wazuh_manager_ip: "{{ provision_oc_net_name | net_ip }}"
+wazuh_manager_ip: "{{ provision_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
 
 # Single node setup
 single_node: true
@@ -28,7 +28,7 @@ local_custom_certs_path: "{{ playbook_dir }}/wazuh/custom_certificates"
 indexer_node_name: "{{ inventory_hostname }}"
 
 # IP to which indexer will bind on host.
-indexer_network_host: "{{ provision_oc_net_name | net_ip }}"
+indexer_network_host: "{{ provision_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
 
 # Even in a single node setup this must be defined. If not defaults to 127.0.0.1
 indexer_cluster_nodes: 
