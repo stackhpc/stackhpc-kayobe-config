@@ -130,13 +130,13 @@ Known issues
 
   .. code-block:: console
 
-      curl http://<controller-ip>:9200/_cluster/settings
+     curl http://<controller-ip>:9200/_cluster/settings
 
   For now, the easiest way to fix this is to turn allocation back on:
 
-   .. code-block:: console
+  .. code-block:: console
 
-      curl -X PUT http://<controller-ip>:9200/_cluster/settings -H 'Content-Type:application/json' -d '{"transient":{"cluster":{"routing":{"allocation":{"enable":"all"}}}}}'
+     curl -X PUT http://<controller-ip>:9200/_cluster/settings -H 'Content-Type:application/json' -d '{"transient":{"cluster":{"routing":{"allocation":{"enable":"all"}}}}}'
 
 Security baseline
 =================
