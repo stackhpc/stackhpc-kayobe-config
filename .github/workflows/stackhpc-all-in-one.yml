@@ -77,8 +77,11 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      - name: Upgrade apt
+        run: sudo apt update
+        
       - name: Install Package
-        uses: ConorMacBride/install-package@v1.1.0
+        uses: ConorMacBride/install-package@main
         with:
           apt: git, unzip, nodejs, build-essential
         
