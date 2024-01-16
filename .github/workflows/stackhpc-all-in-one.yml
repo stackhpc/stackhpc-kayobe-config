@@ -77,10 +77,11 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - name: Install or Update Git.
-        run: |
-          sudo apt-get update && sudo apt-get install -y git && sudo apt-get install -y nodejs && sudo apt-get install -y unzip && sudo apt-get install -y nodejs && sudo apt-get install -y -f && sudo apt-get build-dep build-essential
-
+      - name: Install Package
+        uses: ConorMacBride/install-package@v1.1.0
+        with:
+          apt: git, unzip, nodejs, build-essential
+        
       - uses: actions/checkout@v4
         with:
            submodules: true
