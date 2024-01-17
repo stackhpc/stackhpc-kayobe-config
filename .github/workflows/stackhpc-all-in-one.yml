@@ -89,13 +89,9 @@ jobs:
         with:
            submodules: true
 
-      - name: wait 10 minutes for debug time.
-        run: |
-          sleep 600
-
       - name: Make sure dockerd is running and test Docker.
         run: |
-          sudo systemctl start docker && docker run --rm hello-world
+          docker run --rm hello-world -v /var/run/docker.sock:/var/run/docker.sock 
 
       - name: Output image tag
         id: image_tag
