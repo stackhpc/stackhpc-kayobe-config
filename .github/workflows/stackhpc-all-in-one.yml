@@ -92,7 +92,6 @@ jobs:
       - name: Make sure dockerd is running and test Docker.
         run: |
           docker run --rm hello-world 
-#-v /var/run/docker.sock:/var/run/docker.sock 
 
       - name: Output image tag
         id: image_tag
@@ -222,7 +221,7 @@ jobs:
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
         run: |
-          sudo docker image pull $KAYOBE_IMAGE
+          docker image pull $KAYOBE_IMAGE
 
       - name: Run growroot
         run: |
@@ -297,5 +296,5 @@ jobs:
 
       - name: Prune Docker images over 1 week old
         # May fail if another prune is running
-        run: sudo docker image prune --all --force --filter until=168h || true
+        run: docker image prune --all --force --filter until=168h || true
         if: always()
