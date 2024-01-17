@@ -84,7 +84,7 @@ Make the following changes to your Kayobe configuration:
      num_pcie_ports = 16
 
   This change does not need to be applied before migrating to Rocky Linux 9,
-  but it is likely to best place to do so.
+  but it is likely the best time to do so.
 
   .. warning::
 
