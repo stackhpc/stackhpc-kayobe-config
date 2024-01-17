@@ -89,9 +89,9 @@ jobs:
         with:
            submodules: true
 
-      - name: Test Docker
+      - name: Make sure docker has group privileges and test Docker.
         run: |
-          sudo docker run --rm hello-world
+          sudo groupadd docker && sudo usermod -aG docker $USER && newgrp docker && docker run --rm hello-world
 
       - name: Output image tag
         id: image_tag
