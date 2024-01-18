@@ -31,33 +31,33 @@ jobs:
           # Filters are defined in this file.
           filters: .github/path-filters.yml
 
-  # tox:
-  #   runs-on: ubuntu-20.04
-  #   permissions: {}
-  #   strategy:
-  #     matrix:
-  #       include:
-  #         - environment: pep8
-  #           python-version: 3.8
-  #         - environment: releasenotes
-  #           python-version: 3.8
-  #         - environment: docs
-  #           python-version: 3.8
-  #   name: Tox ${{ matrix.environment }} with Python ${{ matrix.python-version }}
-  #   if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-  #   steps:
-  #     - name: GitHub Checkout 🛎
-  #       uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Setup Python ${{ matrix.python-version }} 🐍
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     - name: Install Tox 📦
-  #       run: pip install tox
-  #     - name: Run Tox ${{ matrix.environment }} 🧪
-  #       run: tox -e ${{ matrix.environment }}
+  tox:
+    runs-on: ubuntu-20.04
+    permissions: {}
+    strategy:
+      matrix:
+        include:
+          - environment: pep8
+            python-version: 3.8
+          - environment: releasenotes
+            python-version: 3.8
+          - environment: docs
+            python-version: 3.8
+    name: Tox ${{ matrix.environment }} with Python ${{ matrix.python-version }}
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    steps:
+      - name: GitHub Checkout 🛎
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Python ${{ matrix.python-version }} 🐍
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Tox 📦
+        run: pip install tox
+      - name: Run Tox ${{ matrix.environment }} 🧪
+        run: tox -e ${{ matrix.environment }}
 
   # A skipped job is treated as success when used as a required status check.
   # The registered required status checks refer to the name of the job in the
@@ -67,23 +67,23 @@ jobs:
   # when the parent jobs completed successfully or were skipped. We pass an
   # 'if' argument to the called workflow to allow running it conditionally.
 
-  # build-kayobe-image:
-  #   name: Build Kayobe Image
-  #   needs:
-  #     - check-changes
-  #   uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
-  #   with:
-  #     if: ${{ needs.check-changes.outputs.aio == 'true' }}
-  #   if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+  build-kayobe-image:
+    name: Build Kayobe Image
+    needs:
+      - check-changes
+    uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
+    with:
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   all-in-one-centos-ovs:
     name: aio (CentOS OVS)
     needs:
       - check-changes
-      # - build-kayobe-image
+      - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
-      kayobe_image: default #${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovs
       OS_CLOUD: sms-lab-release
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
