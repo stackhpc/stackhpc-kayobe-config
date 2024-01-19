@@ -232,10 +232,16 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+      
+      - name: Debug current working-directory and print permissions
+        run: |
+          pwd && ls -l
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |
-          docker run -t --rm \
+          docker run -t --rm --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
