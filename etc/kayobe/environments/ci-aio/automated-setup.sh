@@ -69,8 +69,6 @@ source kayobe-env --environment ci-aio
 
 kayobe control host bootstrap
 
-kayobe playbook run etc/kayobe/ansible/growroot.yml
-
 kayobe overcloud host configure
 
 kayobe overcloud service deploy
