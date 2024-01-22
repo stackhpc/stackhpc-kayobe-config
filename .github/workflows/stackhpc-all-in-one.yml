@@ -225,10 +225,14 @@ jobs:
       
       - name: Find and then test ~/.ssh/id_rsa to see if the file or the repo exists.
         run: |
-            find . -type d -name "*ssh*" 2>/dev/null \
-            find . -type f -name "*id_rsa*" 2>/dev/null \
-            sudo ls -ltra ~/.ssh/id_rsa \
-            sudo ls -ltra ~/.ssh/ \
+          docker exec -t --rm -u 0 --privileged \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            find . -type d -name "*ssh*" 2>/dev/null && \
+            find . -type f -name "*id_rsa*" 2>/dev/null && \
+            sudo ls -ltra ~/.ssh/id_rsa && \
+            sudo ls -ltra ~/.ssh/ && \
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -239,7 +243,7 @@ jobs:
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
       
