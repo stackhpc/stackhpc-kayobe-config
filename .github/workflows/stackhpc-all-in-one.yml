@@ -70,12 +70,13 @@ jobs:
   all-in-one:
     name: All in one
     if: inputs.if
-    runs-on: [self-hosted, stackhpc-kayobe-config-aio]
+    runs-on: arc-skc-aio-runner
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+    container: $KAYOBE_IMAGE
     steps:
       - uses: actions/checkout@v3
         with:
@@ -205,11 +206,11 @@ jobs:
           echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
+          
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
-      - name: Pull latest Kayobe image
-        run: |
-          sudo docker image pull $KAYOBE_IMAGE
+      # - name: Pull latest Kayobe image
+      #   run: |
+      #     sudo docker image pull $KAYOBE_IMAGE
 
       - name: Run growroot
         run: |
