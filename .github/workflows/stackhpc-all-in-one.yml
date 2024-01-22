@@ -80,6 +80,14 @@ jobs:
       image: ${{ inputs.kayobe_image }}
       options: --privileged
     steps:
+      - name: Upgrade apt
+        run: sudo apt-get update
+
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: build-essential git unzip nodejs 
+          
       - uses: actions/checkout@v4
         with:
            submodules: true
