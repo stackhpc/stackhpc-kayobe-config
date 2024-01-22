@@ -225,7 +225,7 @@ jobs:
 
       - name: Run growroot
         run: |
-          docker run -t --rm \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -251,7 +251,7 @@ jobs:
 
       - name: Service deploy
         run: |
-          docker run -t --rm \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -261,7 +261,7 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          docker run -t --rm \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -272,7 +272,7 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          docker run -t --rm \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
