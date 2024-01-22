@@ -222,6 +222,20 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           docker image pull $KAYOBE_IMAGE
+      
+      - name: Find and then test ~/.ssh/id_rsa to see if the file or the repo exists.
+        run: |
+          docker run -t --rm -u 0 --privileged \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            find . -type d -name '.ssh' \
+            find . -type f -name 'id_rsa' \ 
+            sudo ls -ltra ~/.ssh/id_rsa \
+            sudo ls -ltra ~/.ssh/ \
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
 
       - name: Run growroot
         run: |
