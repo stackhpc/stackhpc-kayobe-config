@@ -71,6 +71,19 @@ jobs:
     name: All in one
     if: inputs.if
     runs-on: arc-skc-aio-runner
+    services:
+      kayobe_container:
+        image: ${{ inputs.kayobe_image }}
+        env:
+          KAYOBE_ENVIRONMENT: ci-aio
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        options: >-
+          --privileged
+        # --mount type=bind,source=${{ github.workspace }},target=/stack/kayobe-automation-env/src/kayobe-config
+        # volumes:
+        #   - .:/stack/kayobe-automation-env/src/kayobe-config
+        #   - /tempest-artifacts:/stack/tempest-artifacts
+          
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
@@ -213,50 +226,53 @@ jobs:
           echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
-      # # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
-      # - name: Create wrkd variable for the current working directory to mount. 
-      #   run: |
-      #     echo wrkd=$(pwd) >> $GITHUB_OUTPUT
-          
-  containerjobs:
-    name: Container Jobs 
-    needs: all-in-one
-    if: inputs.if
-    runs-on: arc-skc-aio-runner
-    permissions: {}
-    container: 
-      image: ${{ inputs.kayobe_image }}
-      options: --privileged
-      volumes: 
-        - .:/stack/kayobe-automation-env/src/kayobe-config
-        - ./tempest-artifacts:/stack/tempest-artifacts
-      env:
-        KAYOBE_ENVIRONMENT: ci-aio
-        KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
-        KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-    steps:
+
       - name: Run growroot
         run: |
-          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
-
+          docker exec -t -it kayobe_container \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+    
       - name: Host configure
         run: |
-          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
-
+          docker exec -t -it kayobe_container \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+  
       - name: Service deploy
         run: |
-          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
-  
+          docker exec -t -it kayobe_container \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
       - name: Configure aio resources
         run: |
-          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+          docker exec -t -it kayobe_container \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+          docker exec -t -it kayobe_container \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
@@ -279,5 +295,68 @@ jobs:
 
       - name: Prune Docker images over 1 week old
         # May fail if another prune is running
-        run: sudo docker image prune --all --force --filter until=168h || true
+        run: docker image prune --all --force --filter until=168h || true
         if: always()
+          
+  # containerjobs:
+  #   name: Container Jobs 
+  #   needs: all-in-one
+  #   if: inputs.if
+  #   runs-on: arc-skc-aio-runner
+  #   permissions: {}
+  #   container: 
+  #     image: ${{ inputs.kayobe_image }}
+  #     options: --privileged
+  #     volumes: 
+  #       - .:/stack/kayobe-automation-env/src/kayobe-config
+  #       - ./tempest-artifacts:/stack/tempest-artifacts
+  #     env:
+  #       KAYOBE_ENVIRONMENT: ci-aio
+  #       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  #       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+  #       KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+  #   steps:
+      # - name: Run growroot
+      #   run: |
+      #     /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+
+      # - name: Host configure
+      #   run: |
+      #     /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+
+      # - name: Service deploy
+      #   run: |
+      #     /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+  
+      # - name: Configure aio resources
+      #   run: |
+      #     /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+
+      # - name: Tempest tests
+      #   run: |
+      #     mkdir -p tempest-artifacts
+      #     /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+
+      # - name: Upload test result artifacts
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
+      #     path: tempest-artifacts/*
+
+      # - name: Fail if any Tempest tests failed
+      #   run: |
+      #     test $(wc -l < tempest-artifacts/failed-tests) -lt 1
+
+      # - name: Destroy
+      #   run: terraform destroy -auto-approve
+      #   working-directory: ${{ github.workspace }}/terraform/aio
+      #   env:
+      #     OS_CLOUD: ${{ inputs.OS_CLOUD }}
+      #     OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+      #     OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+      #   if: always()
+
+      # - name: Prune Docker images over 1 week old
+      #   # May fail if another prune is running
+      #   run: sudo docker image prune --all --force --filter until=168h || true
+      #   if: always()
