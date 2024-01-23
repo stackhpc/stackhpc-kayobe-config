@@ -80,14 +80,17 @@ jobs:
       - name: Upgrade apt
         run: sudo apt-get update
 
-      - name: Upgrade python version
-        run: sudo apt-get -y install python3.8
-
       - name: Install Package
         uses: ConorMacBride/install-package@main
         with:
-          apt: build-essential git unzip nodejs wheel
-        
+          apt: build-essential git unzip nodejs
+
+      - name: Upgrade python version
+        run: sudo apt-get -y install python3 pip python-is-python3
+
+      - name: Install wheel from pip
+        run: sudo pip install wheel        
+      
       - uses: actions/checkout@v4
         with:
            submodules: true
@@ -118,8 +121,15 @@ jobs:
         run: terraform init
         working-directory: ${{ github.workspace }}/terraform/aio
 
+      - name: Create SSH key directory
+        run: mkdir -p ~/.ssh/
+
       - name: Generate SSH keypair
         run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Copy SSH keypair to ~/.ssh/
+        run: cp id_rsa* ~/.ssh/
         working-directory: ${{ github.workspace }}/terraform/aio
 
       - name: Generate clouds.yaml
@@ -240,6 +250,7 @@ jobs:
         run: |
           docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v ~/.ssh:/root/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
@@ -254,8 +265,9 @@ jobs:
 
       - name: Host configure
         run: |
-          docker exec -it $(docker ps --latest --quiet) -u 0 --privileged \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v ~/.ssh:/root/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
@@ -264,8 +276,9 @@ jobs:
 
       - name: Service deploy
         run: |
-          docker exec -it $(docker ps --latest --quiet) -u 0 --privileged \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v ~/.ssh:/root/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
@@ -274,8 +287,9 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          docker exec -it $(docker ps --latest --quiet) -u 0 --privileged \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v ~/.ssh:/root/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
@@ -285,9 +299,10 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          docker exec -it $(docker ps --latest --quiet) -u 0 --privileged \
+          docker run -t --rm -u 0 --privileged \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+            -v ~/.ssh:/root/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
