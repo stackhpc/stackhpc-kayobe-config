@@ -79,6 +79,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         options: >-
           --privileged
+          --name kayobe_container
         # --mount type=bind,source=${{ github.workspace }},target=/stack/kayobe-automation-env/src/kayobe-config
         # volumes:
         #   - .:/stack/kayobe-automation-env/src/kayobe-config
@@ -229,7 +230,7 @@ jobs:
 
       - name: Run growroot
         run: |
-          docker exec -t -it kayobe_container \
+          docker exec -it kayobe_container bash \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
@@ -238,7 +239,7 @@ jobs:
     
       - name: Host configure
         run: |
-          docker exec -t -it kayobe_container \
+          docker exec -it kayobe_container bash \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
@@ -247,7 +248,7 @@ jobs:
   
       - name: Service deploy
         run: |
-          docker exec -t -it kayobe_container \
+          docker exec -it kayobe_container bash \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
@@ -256,7 +257,7 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          docker exec -t -it kayobe_container \
+          docker exec -it kayobe_container bash \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
@@ -266,7 +267,7 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          docker exec -t -it kayobe_container \
+          docker exec -it kayobe_container bash \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
