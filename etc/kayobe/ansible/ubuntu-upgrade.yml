@@ -49,18 +49,6 @@
             Tyche - Greek goddess of success, fortune, Luck, and prosperity
             Nang Kwak - Thai folklore goddess deemed to bring good fortune and prosperity
 
-    - name: Reboot and wait
-      reboot:
-
-    - name: Gather facts
-      gather_facts:
-
-    - name: Assert that hosts are now using Ubuntu 22
-      assert:
-        that:
-          - ansible_facts.distribution_major_version == '22'
-          - ansible_facts.distribution_release == 'jammy'
-
     - name: Ensure Jammy repo definitions do not exist in sources.list
       blockinfile:
         path: /etc/apt/sources.list
@@ -78,3 +66,24 @@
       loop:
         - kayobe
         - kolla-ansible
+
+    - name: debug
+      debug: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
+
+    - name: Run kayobe-target-venv playbook to ensure kayobe venv exists on remote host
+      import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/kayobe-target-venv.yml"
+
+    - name: Run network playbook to ensure networking config is not reliant on ifupdown
+      import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
+
+    - name: Reboot and wait
+      reboot:
+
+    - name: Gather facts
+      gather_facts:
+
+    - name: Assert that hosts are now using Ubuntu 22
+      assert:
+        that:
+          - ansible_facts.distribution_major_version == '22'
+          - ansible_facts.distribution_release == 'jammy'
