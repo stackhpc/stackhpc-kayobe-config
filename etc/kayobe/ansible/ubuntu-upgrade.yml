@@ -30,6 +30,12 @@
           deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main restricted universe multiverse
       become: true
 
+    - name: Ensure do-release-upgrade is installed
+      package:
+        name: ubuntu-release-upgrader-core
+        state: latest
+      become: true 
+
     - name: Do release upgrade
       command: do-release-upgrade -f DistUpgradeViewNonInteractive
       become: true
