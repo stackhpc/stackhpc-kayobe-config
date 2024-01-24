@@ -27,10 +27,16 @@ jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder-rl9]
+    runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
-      - uses: actions/checkout@v4
+      - name: Install package dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv
+
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           path: src/kayobe-config
 
@@ -61,24 +67,9 @@ jobs:
           ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
           path: src/kayobe
 
-      - name: Install dependencies
+      - name: Install image build dependencies
         run: |
-          sudo dnf -y install zstd debootstrap
-
-      - name: Setup networking
-        run: |
-          if ! ip l show breth1 >/dev/null 2>&1; then
-              sudo ip l add breth1 type bridge
-          fi
-          sudo ip l set breth1 up
-          if ! ip a show breth1 | grep 192.168.33.3/24; then
-              sudo ip a add 192.168.33.3/24 dev breth1
-          fi
-          if ! ip l show dummy1 >/dev/null 2>&1; then
-              sudo ip l add dummy1 type dummy
-          fi
-          sudo ip l set dummy1 up
-          sudo ip l set dummy1 master breth1
+          sudo apt -y install debootstrap gdisk zstd
 
       - name: Install Kayobe
         run: |
@@ -93,21 +84,11 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe control host bootstrap
-
-      - name: Configure the seed host
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          kayobe control host bootstrap --skip-tags bootstrap
 
       - name: Create bifrost_httpboot Docker volume
         run: |
-          if [[ $(sudo docker volume ls -f Name=bifrost_httpboot -q | wc -l) = 0 ]]; then
-            sudo docker volume create bifrost_httpboot
-          fi
+          sudo mkdir -p /var/lib/docker/volumes/bifrost_httpboot/_data
 
       - name: Generate clouds.yaml
         run: |
