@@ -132,6 +132,7 @@ jobs:
         run: cp id_rsa* ~/.ssh/
         working-directory: ${{ github.workspace }}/terraform/aio
 
+
       - name: Generate clouds.yaml
         run: |
           cat << EOF > clouds.yaml
@@ -248,12 +249,12 @@ jobs:
 
       - name: Run growroot
         run: |
-          docker run -t --rm -u 0 --privileged \
+          docker run -t --rm -u 1001 \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/root/.ssh \
+            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
       
@@ -265,47 +266,47 @@ jobs:
 
       - name: Host configure
         run: |
-          docker run -t --rm -u 0 --privileged \
+          docker run -t --rm -u 1001 \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/root/.ssh \
+            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Service deploy
         run: |
-          docker run -t --rm -u 0 --privileged \
+          docker run -t --rm -u 1001 \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/root/.ssh \
+            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Configure aio resources
         run: |
-          docker run -t --rm -u 0 --privileged \
+          docker run -t --rm -u 1001 \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/root/.ssh \
+            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          docker run -t --rm -u 0 --privileged \
+          docker run -t --rm -u 1001 \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
-            -v ~/.ssh:/root/.ssh \
+            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            sudo /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
