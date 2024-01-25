@@ -76,6 +76,17 @@ Some things to watch out for:
 
      [auth]
      tempest_roles = creator,member
+* To check trusts for the _member_ role, you will need to list the role
+  assignments in the database, as only the trustor and trustee users can show
+  trust details from the CLI:
+
+  .. code-block:: console
+
+     openstack trust list
+     docker exec -it mariadb bash
+     mysql -u root -p  keystone
+     # Enter the database password when prompted.
+     SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
 
 OVN enabled by default
 ----------------------

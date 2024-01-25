@@ -61,7 +61,7 @@ Access the database from a controller:
 
   docker exec -it mariadb bash
   mysql -u root -p  octavia
-  # Enter the database password when promted.
+  # Enter the database password when prompted.
 
 List the load balancers to find the ID of the broken one(s):
 
