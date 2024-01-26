@@ -41,14 +41,15 @@ kolla_ansible_source_url: "{{ stackhpc_kolla_ansible_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
+kolla_ansible_source_version: yoga-continue-on-error
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
 #kolla_ansible_venv:
 
 # Extra requirements to install inside the kolla-ansible virtualenv.
-#kolla_ansible_venv_extra_requirements:
+kolla_ansible_venv_extra_requirements:
+  - "ansible-core @ git+https://github.com/stackhpc/ansible@issues/81549-2.11"
 
 # Pip requirement specifier for the ansible package. NOTE: This limits the
 # version of ansible used by kolla-ansible to avoid new releases from breaking
@@ -568,6 +569,8 @@ kolla_build_args:
 # to kolla-ansible hosts, if set. See also
 # kolla_overcloud_inventory_pass_through_host_vars_map.
 #kolla_overcloud_inventory_pass_through_host_vars_extra:
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - api_interface_address
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
@@ -585,6 +588,8 @@ kolla_build_args:
 # kolla-ansible. If a variable name is not in this mapping the kayobe name is
 # used.
 #kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+  api_interface_address: api_interface_address
 
 # Dict mapping names of variables in
 # kolla_overcloud_inventory_pass_through_host_vars to the variable to use in
