@@ -23,6 +23,12 @@
         src: templates/os_capacity-clouds.yml.j2
         dest: /opt/kayobe/os-capacity/clouds.yaml
 
+    - name: Copy haproxy certificate to monitoring nodes
+      ansible.builtin.copy:
+        src: ../kolla/certificates/haproxy-internal.pem
+        dest: /opt/kayobe/os-capacity/haproxy-internal.pem
+      when: not stackhpc_os_capacity_openstack_verify
+
     - name: Ensure os_capacity container is running
       docker_container:
         name: os_capacity
