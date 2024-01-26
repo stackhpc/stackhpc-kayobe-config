@@ -7,6 +7,7 @@ cat << EOF | sudo tee -a /etc/hosts
 EOF
 
 if sudo vgdisplay | grep -q lvm2; then
+   sudo pvresize $(sudo pvs --noheadings | head -n 1 | awk '{print $1}')
    sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
    sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
 fi
