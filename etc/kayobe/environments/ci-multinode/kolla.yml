@@ -4,7 +4,8 @@ kolla_enable_cinder_backup: true
 kolla_enable_neutron_provider_networks: true
 kolla_enable_ovn: true
 kolla_enable_octavia: true
-kolla_enable_magnum: true
+kolla_enable_magnum: false
+kolla_enable_heat: false
 kolla_enable_designate: true
 kolla_enable_redis: true
 kolla_enable_barbican: true
@@ -13,7 +14,7 @@ kolla_enable_barbican: true
 # enabled in the correct order. See
 # https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/vault.html
 # for details.
-# kolla_enable_tls_internal: true
+kolla_enable_tls_internal: true
 
 # The multinode environment supports Manila but it is not enabled by default.
 # kolla_enable_manila: true
@@ -24,3 +25,17 @@ kolla_internal_fqdn: "internal.infra.mos.{{ root_domain | default('example.com')
 
 kolla_external_vip_address: "192.168.39.2"
 kolla_external_fqdn: "public.infra.mos.{{ root_domain | default('example.com') }}"
+
+
+# List of names of additional host variables to pass through from kayobe hosts
+# to kolla-ansible hosts, if set. See also
+# kolla_overcloud_inventory_pass_through_host_vars_map.
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - api_interface_address
+
+# Dict mapping names of additional variables in
+# kolla_overcloud_inventory_pass_through_host_vars to the variable to use in
+# kolla-ansible. If a variable name is not in this mapping the kayobe name is
+# used.
+kolla_overcloud_inventory_pass_through_host_vars_map_extra:
+  api_interface_address: api_interface_address

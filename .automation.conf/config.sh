@@ -5,7 +5,7 @@
 # You can override tempest parameters like so:
 export TEMPEST_CONCURRENCY=2
 # Specify single test whilst experimenting
-#export TEMPEST_PATTERN="${TEMPEST_PATTERN:-tempest.api.compute.servers.test_create_server.ServersTestJSON.test_host_name_is_same_as_server_name}"
+export TEMPEST_PATTERN="${TEMPEST_PATTERN:-tempest.api.compute.volumes.test_attach_volume.AttachVolumeTestJSON.test_attach_detach_volume}"
 
 if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="${KAYOBE_AUTOMATION_CONFIG_PATH}/tempest/tempest-${KAYOBE_ENVIRONMENT}-${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}.overrides.conf"
@@ -24,8 +24,8 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # SMSLab is currently running with 1G switches. This causes tests using volumes and images to fail if
     # the concurrency is set too high.
     export TEMPEST_CONCURRENCY=1
-    export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
-    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
+    #export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
+    #export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
   fi
 
 fi
@@ -37,3 +37,5 @@ fi
 if [[ -f ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh ]]; then
     export TEMPEST_OPENRC="$(< ${KAYOBE_AUTOMATION_REPO_ROOT}/etc/kolla/public-openrc.sh)"
 fi
+
+export KAYOBE_AUTOMATION_LOG_LEVEL=debug

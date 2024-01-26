@@ -1,4 +1,9 @@
 ---
+# Reduce the control plane's memory footprint by limiting the number of worker
+# processes to two per-service when running in a VM.
+openstack_service_workers: "{% raw %}{{ [ansible_facts.processor_vcpus, 2 if ansible_facts.virtualization_role == 'guest' else 5] | min }}{% endraw %}"
+openstack_service_rpc_workers: "{% raw %}{{ [ansible_facts.processor_vcpus, 2 if ansible_facts.virtualization_role == 'guest' else 3] | min }}{% endraw %}"
+
 # Glance Ceph configuration
 glance_backend_ceph: "yes"
 
@@ -34,3 +39,21 @@ designate_ns_record:
 designate_backend: "bind9"
 designate_recursion: "yes"
 designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
+############################################################################
+# This content is copied into globals.yml during automated setup, but cannot
+# exist during the initial configuration
+
+# Internal TLS configuration
+# Copy the self-signed CA into the kolla containers
+kolla_copy_ca_into_containers: "yes"
+# Use the following trust store within the container
+openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
+
+# Backend TLS config
+# Enable backend TLS
+kolla_enable_tls_backend: "yes"
+
+# If using RabbitMQ TLS:
+rabbitmq_enable_tls: "yes"
+
+############################################################################
