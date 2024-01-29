@@ -151,16 +151,18 @@ def get_parent_tag_name(kolla_image_tags: KollaImageTags, base_distro: Optional[
     """Return the parent tag variable for a container in the tag variable hierarchy."""
 
     if container in CONTAINER_TO_PREFIX_VAR_EXCEPTIONS:
-        parent = CONTAINER_TO_PREFIX_VAR_EXCEPTIONS[container]
-        if parent in kolla_image_tags:
-            return parent
+        prefix_var = CONTAINER_TO_PREFIX_VAR_EXCEPTIONS[container]
+        if prefix_var in kolla_image_tags:
+            return prefix_var
+    else:
+        prefix_var = container
 
     def tag_key(tag):
         """Return a sort key to order the tags."""
         if tag == "openstack":
             # This is the default tag.
             return 0
-        elif tag != container and container.startswith(tag) and (base_distro is None or base_distro in kolla_image_tags[tag]):
+        elif tag != prefix_var and prefix_var.startswith(tag) and (base_distro is None or base_distro in kolla_image_tags[tag]):
             # Prefix match - sort by the longest match.
             return -len(tag)
         else:
