@@ -209,11 +209,11 @@ def get_openstack_release() -> str:
         if "=" not in line:
             continue
         key, value = line.split("=")
-        if key.strip().strip() == "defaultbranch":
-            value = value.strip().rstrip()
-            prefix = "stable/"
-            assert value.startswith(prefix)
-            return value[len(prefix):]
+        if key.strip() == "defaultbranch":
+            value = value.strip()
+            for prefix in ("stable/", "unmaintained/"):
+                if value.startswith(prefix):
+                    return value[len(prefix):]
     raise Exception("Failed to determine OpenStack release")
 
 
