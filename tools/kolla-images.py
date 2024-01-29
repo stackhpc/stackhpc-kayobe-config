@@ -246,6 +246,11 @@ def validate(kolla_image_tags: KollaImageTags):
 
 def check_tags(base_distros: List[str], kolla_image_tags: KollaImageTags, registry: str, namespace: str):
     """Check whether expected tags are present in container image registry."""
+    try:
+        subprocess.check_output("type skopeo", shell=True)
+    except subprocess.CalledProcessError:
+        print("Failed to find skopeo. Please install it.")
+        sys.exit(1)
     image_tags = get_tags(base_distros, kolla_image_tags)
 
     missing = {}
