@@ -27,6 +27,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # Uncomment this to perform a full tempest test
     # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
+    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-pagination
   fi
 
 fi
