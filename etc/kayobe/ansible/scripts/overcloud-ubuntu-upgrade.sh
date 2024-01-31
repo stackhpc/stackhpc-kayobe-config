@@ -31,4 +31,4 @@ set -x
 
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml --limit $1
 
-kayobe overcloud host configure --limit $1
+kayobe overcloud host configure --limit $1 --kolla-limit $1 -e os_release=jammy
