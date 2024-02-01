@@ -226,11 +226,12 @@ You may need to modify some of the variables, including:
 
 .. note::
 
-    NOTE:
     If you are using multiple environments, and you need to customise Wazuh in
     each environment, create override files in an appropriate directory,
-    for example `etc/kayobe/environments/production/inventory/group_vars/`
+    for example ``etc/kayobe/environments/production/inventory/group_vars/``.
+
     Files which values can be overridden (in the context of Wazuh):
+    
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
     - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
