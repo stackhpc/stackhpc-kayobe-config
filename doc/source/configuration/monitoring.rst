@@ -197,3 +197,38 @@ If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
 set correctly, double check you have entered the correct authentication
 information appropiate to your cloud and re-deploy.
+
+Redfish exporter
+================
+
+Redfish exporter will query the overcloud BMCs via their redfish interfaces
+to produce various metrics relating to the hardware, and system health.
+
+To configure the exporter, adjust the variables in
+``$KAYOBE_CONFIG_PATH/stackhpc-monitoring.yml`` to use appropriate values:
+
+.. code-block:: yaml
+
+    # Whether the redfish exporter is enabled.
+    stackhpc_enable_redfish_exporter: true
+
+    # Redfish exporter credentials
+    redfish_exporter_default_username: "{{ ipmi_username }}"
+    redfish_exporter_default_password: "{{ ipmi_password }}"
+
+    # The address of the BMC that is queried by redfish exporter for metrics.
+    redfish_exporter_target_address: "{{ ipmi_address }}"
+
+Deploy the exporter on the seed:
+
+.. code-block:: console
+
+    kayobe seed service deploy -t seed-deploy-containers -kt none
+
+It is required that you re-configure the Prometheus, Grafana
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus
+

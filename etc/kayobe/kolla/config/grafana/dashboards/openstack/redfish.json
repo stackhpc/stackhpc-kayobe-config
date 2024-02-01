@@ -1,10 +1,68 @@
 {% raw %}
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.2.2"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph (old)",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "heatmap",
+      "name": "Heatmap",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table-old",
+      "name": "Table (old)",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -14,37 +72,31 @@
     ]
   },
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "gnetId": 12403,
   "graphTooltip": 0,
-  "id": 130,
-  "iteration": 1616784463607,
+  "id": null,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 1277
-              },
-              {
-                "color": "yellow",
-                "value": 1287
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -60,45 +112,28 @@
       "id": 53,
       "options": {
         "colorMode": "value",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": true
-        },
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "count"
+            "mean"
           ],
           "fields": "",
-          "values": false
+          "values": true
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "6.6.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
-          "expr": "count(up{job=\"redfish-exporter\"} == 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count(up{job=~\"redfish-exporter.*\"} == 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -107,6 +142,10 @@
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "",
           "format": "table",
           "hide": false,
@@ -116,36 +155,27 @@
           "refId": "B"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "iDRAC Up",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "yellow",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 1277
-              },
-              {
-                "color": "yellow",
-                "value": 1287
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -161,44 +191,26 @@
       "id": 54,
       "options": {
         "colorMode": "value",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": true
-        },
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "count"
+            "mean"
           ],
           "fields": "",
-          "values": false
+          "values": true
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "6.6.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_power_state == 1)",
           "format": "table",
           "hide": false,
@@ -208,36 +220,28 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Powered On",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "yellow",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 1277
-              },
-              {
-                "color": "yellow",
-                "value": 1287
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -253,44 +257,26 @@
       "id": 55,
       "options": {
         "colorMode": "value",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": true
-        },
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "count"
+            "mean"
           ],
           "fields": "",
-          "values": false
+          "values": true
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "6.6.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_power_state != 1)",
           "format": "table",
           "hide": false,
@@ -300,36 +286,27 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Powered Off",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 1277
-              },
-              {
-                "color": "yellow",
-                "value": 1287
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -345,44 +322,26 @@
       "id": 56,
       "options": {
         "colorMode": "value",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": true
-        },
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "count"
+            "mean"
           ],
           "fields": "",
-          "values": false
+          "values": true
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "6.6.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_chassis_health != 1)",
           "format": "table",
           "hide": false,
@@ -392,36 +351,27 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Unhealthy Nodes",
       "type": "stat"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 1277
-              },
-              {
-                "color": "yellow",
-                "value": 1287
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -437,44 +387,26 @@
       "id": 57,
       "options": {
         "colorMode": "value",
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": true
-        },
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "count"
+            "mean"
           ],
           "fields": "",
-          "values": false
+          "values": true
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "6.6.1",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_logservices_entry_count{name=\"SEL Log Service\", severity!=\"OK\"} != 0)",
           "format": "table",
           "hide": false,
@@ -484,14 +416,15 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Nodes with SEL Logs",
       "type": "stat"
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -500,6 +433,15 @@
       },
       "id": 31,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "grafana"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "Overview",
       "type": "row"
     },
@@ -510,11 +452,10 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -544,10 +485,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -557,15 +498,17 @@
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "sum(redfish_chassis_power_average_consumed_watts)",
           "legendFormat": "Rack power consumption",
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Power Consumption",
       "tooltip": {
         "shared": true,
@@ -574,33 +517,24 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "watt",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -610,11 +544,10 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -646,10 +579,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -659,6 +592,10 @@
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "sum(redfish_chassis_power_average_consumed_watts) by (env)",
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -666,9 +603,7 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Power Consumption",
       "tooltip": {
         "shared": true,
@@ -677,46 +612,31 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "watt",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
       "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
+        "uid": "${DS_PROMETHEUS}"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -726,11 +646,8 @@
         "y": 4
       },
       "id": 38,
-      "options": {},
-      "pageSize": null,
       "showHeader": true,
       "sort": {
-        "col": null,
         "desc": false
       },
       "styles": [
@@ -744,7 +661,6 @@
         {
           "alias": "BMC",
           "align": "left",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -793,7 +709,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -810,7 +725,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -827,7 +741,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -844,7 +757,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -861,7 +773,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -878,7 +789,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -898,7 +808,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -915,6 +824,10 @@
       ],
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "sort_desc(redfish_system_power_state)",
           "format": "table",
           "instant": true,
@@ -923,23 +836,15 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Power states",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
+        "uid": "${DS_PROMETHEUS}"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -950,11 +855,9 @@
       },
       "id": 33,
       "interval": "",
-      "options": {},
-      "pageSize": null,
       "showHeader": true,
       "sort": {
-        "col": 8,
+        "col": 9,
         "desc": true
       },
       "styles": [
@@ -1003,7 +906,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -1024,6 +926,10 @@
       ],
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "sort(redfish_chassis_health)",
           "format": "table",
           "hide": false,
@@ -1033,11 +939,9 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Chassis status",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "aliasColors": {},
@@ -1046,11 +950,10 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -1083,10 +986,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1096,17 +999,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"}) by (env)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "max inlet {{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Max Inlet Temp",
       "tooltip": {
         "shared": true,
@@ -1115,9 +1022,7 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
@@ -1126,22 +1031,17 @@
           "format": "celsius",
           "label": "",
           "logBase": 1,
-          "max": null,
           "min": "16",
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -1151,12 +1051,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -1191,10 +1090,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1204,17 +1103,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"}) by (env)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"} or redfish_chassis_temperature_celsius{sensor=~\".*CPU1.*\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Max CPU1 Temp",
       "tooltip": {
         "shared": true,
@@ -1223,33 +1126,25 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "celsius",
-          "label": null,
           "logBase": 1,
-          "max": null,
           "min": "40",
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -1259,11 +1154,10 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -1298,10 +1192,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1311,17 +1205,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU2Temp\"}) by (env)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU2Temp\"} or redfish_chassis_temperature_celsius{sensor=~\"CPU2.*\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Max CPU2 Temp",
       "tooltip": {
         "shared": true,
@@ -1330,33 +1228,25 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "celsius",
-          "label": null,
           "logBase": 1,
-          "max": null,
           "min": "40",
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -1366,28 +1256,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
-          "links": [],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
+          "links": []
         },
         "overrides": []
       },
@@ -1417,10 +1290,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1430,6 +1303,10 @@
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_power_state == 1) by (env)",
           "hide": false,
           "interval": "",
@@ -1437,6 +1314,10 @@
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_power_state == 2) by (env) * -1",
           "hide": true,
           "interval": "",
@@ -1445,9 +1326,7 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Powered ON by Rack",
       "tooltip": {
         "shared": true,
@@ -1456,33 +1335,24 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -1492,28 +1362,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
-          "links": [],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
+          "links": []
         },
         "overrides": []
       },
@@ -1543,10 +1396,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1556,13 +1409,23 @@
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
           "expr": "count(redfish_system_power_state == 1) by (env)",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
+          "range": true,
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_power_state == 2) by (env)",
           "hide": false,
           "interval": "",
@@ -1571,9 +1434,7 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Powered OFF by Rack",
       "tooltip": {
         "shared": true,
@@ -1582,40 +1443,28 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
+      "cards": {},
       "color": {
         "cardColor": "#b4ff00",
         "colorScale": "sqrt",
@@ -1626,12 +1475,20 @@
       "dataFormat": "timeseries",
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "links": []
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
         },
         "overrides": []
       },
@@ -1649,21 +1506,61 @@
       "legend": {
         "show": false
       },
-      "options": {},
-      "pluginVersion": "7.1.5",
+      "options": {
+        "calculate": true,
+        "calculation": {},
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "RdYlGn",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": false
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.2.2",
       "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\"}",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Max Inlet Temp",
       "tooltip": {
         "show": true,
@@ -1673,26 +1570,15 @@
       "xAxis": {
         "show": true
       },
-      "xBucketNumber": null,
-      "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
         "format": "short",
         "logBase": 1,
-        "max": null,
-        "min": null,
-        "show": true,
-        "splitFactor": null
+        "show": true
       },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
+      "yBucketBound": "auto"
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
+      "cards": {},
       "color": {
         "cardColor": "#b4ff00",
         "colorScale": "sqrt",
@@ -1703,13 +1589,21 @@
       "dataFormat": "timeseries",
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "links": []
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
         },
         "overrides": []
       },
@@ -1727,11 +1621,51 @@
       "legend": {
         "show": false
       },
-      "options": {},
-      "pluginVersion": "7.1.5",
+      "options": {
+        "calculate": true,
+        "calculation": {},
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "RdYlGn",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": false
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.2.2",
       "reverseYBuckets": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "max(redfish_chassis_fan_rpm_percentage) by (server) > 0",
           "hide": false,
           "interval": "",
@@ -1740,8 +1674,6 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Max server fan speed",
       "tooltip": {
         "show": true,
@@ -1751,26 +1683,15 @@
       "xAxis": {
         "show": true
       },
-      "xBucketNumber": null,
-      "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
         "format": "short",
         "logBase": 1,
-        "max": null,
-        "min": null,
-        "show": true,
-        "splitFactor": null
+        "show": true
       },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
+      "yBucketBound": "auto"
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
+      "cards": {},
       "color": {
         "cardColor": "#b4ff00",
         "colorScale": "sqrt",
@@ -1781,13 +1702,21 @@
       "dataFormat": "timeseries",
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "links": []
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
         },
         "overrides": []
       },
@@ -1805,21 +1734,63 @@
       "legend": {
         "show": false
       },
-      "options": {},
-      "pluginVersion": "7.1.5",
+      "options": {
+        "calculate": true,
+        "calculation": {},
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "RdYlGn",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": false
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "max": "95",
+          "min": "25",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.2.2",
       "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"} != 0",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"} or redfish_chassis_temperature_celsius{sensor=~\"CPU1.*\"}) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "CPU1 Temp",
       "tooltip": {
         "show": true,
@@ -1829,26 +1800,17 @@
       "xAxis": {
         "show": true
       },
-      "xBucketNumber": null,
-      "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
         "format": "short",
         "logBase": 1,
         "max": "95",
         "min": "25",
-        "show": true,
-        "splitFactor": null
+        "show": true
       },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
+      "yBucketBound": "auto"
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
+      "cards": {},
       "color": {
         "cardColor": "#b4ff00",
         "colorScale": "sqrt",
@@ -1859,13 +1821,21 @@
       "dataFormat": "timeseries",
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "links": []
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
         },
         "overrides": []
       },
@@ -1883,21 +1853,63 @@
       "legend": {
         "show": false
       },
-      "options": {},
-      "pluginVersion": "7.1.5",
+      "options": {
+        "calculate": true,
+        "calculation": {},
+        "cellGap": 2,
+        "cellValues": {},
+        "color": {
+          "exponent": 0.5,
+          "fill": "#b4ff00",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "RdYlGn",
+          "steps": 128
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": false
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "showValue": "never",
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "max": "95",
+          "min": "25",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.2.2",
       "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*CPU2Temp\"} != 0",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU2Temp\"} or redfish_chassis_temperature_celsius{sensor=~\"CPU2.*\"}) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "CPU2 Temp",
       "tooltip": {
         "show": true,
@@ -1907,20 +1919,14 @@
       "xAxis": {
         "show": true
       },
-      "xBucketNumber": null,
-      "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
         "format": "short",
         "logBase": 1,
         "max": "95",
         "min": "25",
-        "show": true,
-        "splitFactor": null
+        "show": true
       },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
+      "yBucketBound": "auto"
     },
     {
       "aliasColors": {},
@@ -1929,28 +1935,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": null
-          },
-          "links": [],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
+          "links": []
         },
         "overrides": []
       },
@@ -1981,10 +1970,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1994,17 +1983,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"} or redfish_chassis_temperature_celsius{sensor=~\"CPU2.*\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
+          "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Max Inlet Temp",
       "tooltip": {
         "shared": true,
@@ -2013,33 +2006,24 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -2049,12 +2033,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -2086,10 +2069,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2099,17 +2082,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"} != 0",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "(redfish_chassis_temperature_celsius{sensor_id=~\".*CPU1Temp\"} or redfish_chassis_temperature_celsius{sensor=~\"CPU1.*\"}) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
+          "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Max CPU1 Temp",
       "tooltip": {
         "shared": true,
@@ -2118,46 +2105,31 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
       "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
+        "uid": "${DS_PROMETHEUS}"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -2167,8 +2139,6 @@
         "y": 50
       },
       "id": 34,
-      "options": {},
-      "pageSize": null,
       "showHeader": true,
       "sort": {
         "col": 8,
@@ -2220,7 +2190,6 @@
         {
           "alias": "BMC",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -2241,7 +2210,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -2258,7 +2226,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -2275,6 +2242,10 @@
       ],
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "sort(redfish_logservices_entry_count{name=\"SEL Log Service\", severity!=\"OK\"})",
           "format": "table",
           "instant": true,
@@ -2283,11 +2254,9 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Errors in event log",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "collapsed": false,
@@ -2304,24 +2273,25 @@
       "id": 29,
       "panels": [],
       "repeat": "server",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "refId": "A"
         }
-      },
+      ],
       "title": "$server",
       "type": "row"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "mappings": [],
           "max": 500,
           "min": 0,
@@ -2333,12 +2303,8 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 250
-              },
-              {
                 "color": "red",
-                "value": 400
+                "value": 80
               }
             ]
           },
@@ -2354,29 +2320,8 @@
       },
       "id": 19,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -2388,16 +2333,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\"}",
           "hide": false,
           "interval": "",
@@ -2405,19 +2347,16 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Power consumption",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "displayName": "Disks",
           "mappings": [],
           "min": 0,
@@ -2430,7 +2369,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
           }
@@ -2445,33 +2384,12 @@
       },
       "id": 24,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "min"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2479,16 +2397,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_storage_drive_state{server=~\"$server\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
@@ -2497,19 +2412,16 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Disk with errors",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "displayName": "Controllers",
           "mappings": [],
           "min": 0,
@@ -2522,7 +2434,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
           }
@@ -2537,33 +2449,12 @@
       },
       "id": 25,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "min"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2571,16 +2462,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_system_pcie_device_health_state{server=~\"$server\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
@@ -2589,19 +2477,16 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "PCI-E with errors",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "displayName": "Fans",
           "mappings": [],
           "min": 0,
@@ -2614,7 +2499,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
           }
@@ -2629,33 +2514,12 @@
       },
       "id": 26,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "min"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2663,16 +2527,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_chassis_temperature_sensor_state{server=~\"$server\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
@@ -2681,19 +2542,16 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Sensors with errors",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "displayName": "Power Supply",
           "mappings": [],
           "min": 0,
@@ -2706,7 +2564,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
           }
@@ -2721,33 +2579,12 @@
       },
       "id": 27,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "min"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2755,16 +2592,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "count(redfish_chassis_power_powersupply_health{server=~\"$server\"} > 1) or vector(0)",
           "format": "table",
           "instant": true,
@@ -2773,19 +2607,16 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "PS with errors",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "mappings": [],
           "max": 80,
           "min": 0,
@@ -2797,12 +2628,8 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 50
-              },
-              {
                 "color": "red",
-                "value": 70
+                "value": 80
               }
             ]
           },
@@ -2818,33 +2645,12 @@
       },
       "id": 17,
       "options": {
-        "fieldOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [],
-          "values": false
-        },
-        "orientation": "horizontal",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2852,55 +2658,65 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "6.6.1",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_chassis_temperature_celsius{server=~\"$server\"}",
           "interval": "",
           "legendFormat": "{{sensor}}",
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Temperatures",
       "type": "gauge"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": true,
-      "colorPostfix": false,
-      "colorPrefix": false,
-      "colorValue": false,
-      "colors": [
-        "#d44a3a",
-        "#299c46",
-        "#299c46"
-      ],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "text": "Up"
+                },
+                "2": {
+                  "text": "Down"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "#299c46",
+                "value": 0
+              },
+              {
+                "color": "#299c46",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 2,
@@ -2909,52 +2725,30 @@
         "y": 62
       },
       "id": 6,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "options": {},
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
-      },
-      "tableColumn": "",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_system_power_state{server=~\"$server\"}",
           "format": "time_series",
           "instant": true,
@@ -2963,54 +2757,55 @@
           "refId": "A"
         }
       ],
-      "thresholds": "0,2",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Power Status",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "Up",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "Down",
-          "value": "2"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": true,
-      "colorPostfix": false,
-      "colorPrefix": false,
-      "colorValue": false,
-      "colors": [
-        "#299c46",
-        "#299c46",
-        "#d44a3a"
-      ],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "text": "OK"
+                },
+                "2": {
+                  "text": "WARNING"
+                },
+                "3": {
+                  "text": "CRITICAL"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46",
+                "value": null
+              },
+              {
+                "color": "#299c46",
+                "value": 1
+              },
+              {
+                "color": "#d44a3a",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 2,
@@ -3019,113 +2814,90 @@
         "y": 62
       },
       "id": 7,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "options": {},
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "/^Value$/",
+          "values": false
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
-      },
-      "tableColumn": "",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
           "expr": "redfish_chassis_health{server=~\"$server\"}",
-          "format": "time_series",
+          "format": "table",
           "instant": true,
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{chassis_id}}",
+          "range": false,
           "refId": "A"
         }
       ],
-      "thresholds": "1,2",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "General Health",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "OK",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "WARNING",
-          "value": "2"
-        },
-        {
-          "op": "=",
-          "text": "CRITICAL",
-          "value": "3"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": true,
-      "colorPostfix": false,
-      "colorPrefix": false,
-      "colorValue": false,
-      "colors": [
-        "#d44a3a",
-        "#299c46",
-        "#299c46"
-      ],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "text": "Healthy"
+                },
+                "2": {
+                  "text": "Warning"
+                },
+                "3": {
+                  "text": "Critical"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "#299c46",
+                "value": 1
+              },
+              {
+                "color": "#299c46",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 2,
@@ -3134,52 +2906,30 @@
         "y": 62
       },
       "id": 8,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "options": {},
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
-      },
-      "tableColumn": "",
+      "pluginVersion": "10.2.2",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_manager_health_state{server=~\"$server\"}",
           "format": "time_series",
           "instant": true,
@@ -3188,45 +2938,21 @@
           "refId": "A"
         }
       ],
-      "thresholds": "1,2",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "BMC Health",
-      "type": "singlestat",
-      "valueFontSize": "70%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "Healthy",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "Warning",
-          "value": "2"
-        },
-        {
-          "op": "=",
-          "text": "Critical",
-          "value": "3"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
       "aliasColors": {},
       "bars": false,
-      "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -3252,8 +2978,6 @@
         "min": false,
         "rightSide": true,
         "show": true,
-        "sort": null,
-        "sortDesc": null,
         "total": false,
         "values": true
       },
@@ -3262,26 +2986,23 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_chassis_fan_rpm_percentage{server=~\"$server\"}",
           "format": "time_series",
           "instant": false,
@@ -3300,9 +3021,7 @@
           "yaxis": "left"
         }
       ],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Fans",
       "tooltip": {
         "shared": true,
@@ -3311,9 +3030,7 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
@@ -3323,23 +3040,16 @@
           "format": "rpm",
           "label": "",
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
-          "decimals": null,
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
@@ -3349,31 +3059,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {},
-          "mappings": [],
-          "max": 80,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 70
-              }
-            ]
-          },
+          "links": [],
           "unit": "degree"
         },
         "overrides": []
@@ -3404,26 +3094,23 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_chassis_temperature_celsius{server=~\"$server\"}",
           "interval": "",
           "legendFormat": "{{sensor}}",
@@ -3431,9 +3118,7 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Temperatures",
       "tooltip": {
         "shared": true,
@@ -3442,47 +3127,31 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
           "format": "degree",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
-      "cacheTimeout": null,
       "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
+        "uid": "${DS_PROMETHEUS}"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -3494,17 +3163,7 @@
       "id": 2,
       "interval": "",
       "links": [],
-      "options": {},
-      "pageSize": null,
       "pluginVersion": "6.7.3",
-      "repeat": null,
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
       "showHeader": true,
       "sort": {
         "col": 7,
@@ -3514,7 +3173,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3531,7 +3189,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3548,7 +3205,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3565,7 +3221,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3582,7 +3237,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3667,7 +3321,6 @@
         {
           "alias": "",
           "align": "auto",
-          "colorMode": null,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
@@ -3684,6 +3337,10 @@
       ],
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_system_storage_drive_state{server=~\"$server\"}",
           "format": "table",
           "instant": true,
@@ -3692,11 +3349,9 @@
           "refId": "A"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Disk states / health",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "aliasColors": {},
@@ -3705,12 +3360,11 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 0,
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "links": []
         },
         "overrides": []
@@ -3744,26 +3398,23 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "10.2.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "scopedVars": {
-        "server": {
-          "selected": true,
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        }
-      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\"}",
           "interval": "",
           "legendFormat": "{{resource}}",
@@ -3771,9 +3422,7 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Power consumption",
       "tooltip": {
         "shared": true,
@@ -3782,9 +3431,7 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
@@ -3792,31 +3439,23 @@
         {
           "decimals": 0,
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         },
         {
           "decimals": 0,
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": true
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     }
   ],
-  "refresh": false,
-  "schemaVersion": 22,
-  "style": "dark",
+  "refresh": "",
+  "schemaVersion": 38,
   "tags": [],
   "templating": {
     "list": [
@@ -3824,7 +3463,7 @@
         "current": {
           "selected": false,
           "text": "Prometheus",
-          "value": "Prometheus"
+          "value": "PBFA97CFB590B2093"
         },
         "description": "The prometheus datasource used for queries.",
         "hide": 0,
@@ -3841,14 +3480,10 @@
         "type": "datasource"
       },
       {
-        "allValue": null,
-        "current": {
-          "text": "cpu-e-1041",
-          "value": "cpu-e-1041"
-        },
+        "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "${datasource}"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(redfish_exporter_collector_duration_seconds, server)",
         "hide": 0,
@@ -3863,7 +3498,6 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -3871,8 +3505,8 @@
     ]
   },
   "time": {
-    "from": "now-30m",
-    "to": "now-5m"
+    "from": "now-12h",
+    "to": "now-1m"
   },
   "timepicker": {
     "nowDelay": "1m",
@@ -3891,7 +3525,8 @@
   },
   "timezone": "",
   "title": "Redfish exporter",
-  "uid": "b02mElQGX",
-  "version": 7
+  "uid": "redfish",
+  "version": 4,
+  "weekStart": ""
 }
 {% endraw %}
