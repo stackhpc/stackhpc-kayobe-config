@@ -329,8 +329,12 @@ If you are using the wazuh generated certificates,
 this will result in the creation of some certificates and keys (in case of custom certs adjust path to it).
 Encrypt the keys (and remember to commit to git):
 
+``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key``
+
+if using the kayobe environments feature, otherwise:
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
+
 
 .. _wazuh-verification:
 
