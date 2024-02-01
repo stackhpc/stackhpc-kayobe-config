@@ -319,7 +319,7 @@ Encrypt the keys (and remember to commit to git):
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key``
 
-if using the kayobe environments feature, otherwise:
+If using the kayobe environments feature, otherwise:
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
 
