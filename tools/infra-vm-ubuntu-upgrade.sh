@@ -3,7 +3,7 @@
 set -e
 
 if [[ ! $1 ]]; then
-    echo "Usage: seed-ubuntu-upgrade.sh <seed-hostname>"
+    echo "Usage: infra-vm-ubuntu-upgrade.sh <infra-vm-hostname>"
     exit 2
 fi
 
@@ -31,4 +31,4 @@ set -x
 
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml --limit $1
 
-kayobe seed host configure --limit $1
+kayobe infra vm host configure --limit $1 --kolla-limit $1 -e os_release=jammy

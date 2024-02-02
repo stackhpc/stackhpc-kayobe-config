@@ -1,8 +1,8 @@
 ---
 # To prevent Ansible role dependency errors, this playbook requires that environment variable
-# ANSIBLE_ROLES_PATH is defined and includes '$KAYOBE_PATH/ansible/roles' at seed-hypervisor.
+# ANSIBLE_ROLES_PATH is defined and includes '$KAYOBE_PATH/ansible/roles' on the Ansible control host.
 - name: Migrate hosts from Ubuntu Focal 20.04 to Jammy 22.04
-  hosts: overcloud:infra-vms:seed
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
   tasks:
@@ -18,10 +18,23 @@
           that you are limiting it to only run on Focal hosts and
           os_distribution is set to ubuntu.
 
+    - name: Assert os_release is jammy
+      assert:
+        that:
+          - os_release == 'jammy'
+        fail_msg: >-
+          Ensure that os_release is set to jammy before upgrading hosts.
+
     - name: Ensure apt packages are up to date
       apt:
         update_cache: true
         upgrade: yes
+      become: true
+
+    - name: Ensure do-release-upgrade is installed
+      package:
+        name: ubuntu-release-upgrader-core
+        state: latest
       become: true
 
     # NOTE: We cannot use apt_repository here because definitions must exist within the standard repos.list
@@ -35,12 +48,6 @@
           deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main restricted universe multiverse
       become: true
 
-    - name: Ensure do-release-upgrade is installed
-      package:
-        name: ubuntu-release-upgrader-core
-        state: latest
-      become: true
-
     - name: Do release upgrade
       command: do-release-upgrade -f DistUpgradeViewNonInteractive
       become: true
@@ -49,11 +56,6 @@
       blockinfile:
         path: /etc/apt/sources.list
         state: absent
-        block: |
-          deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main restricted universe multiverse
       become: true
 
     - name: Ensure old venvs do not exist
@@ -67,21 +69,17 @@
 
     - name: Update Python and current user facts before re-creating Kayobe venv
       ansible.builtin.setup:
-        gather_subset:
-          - '!all'
-          - python
-          - python_version
-          - user_uid
-          - user_gid
+        filter: "{{ kayobe_ansible_setup_filter }}"
+        gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
-- name: Run kayobe-target-venv playbook to ensure kayobe venv exists on remote host
+- name: Run the Kayobe kayobe-target-venv playbook to ensure kayobe venv exists on remote host
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/kayobe-target-venv.yml"
 
-- name: Run network playbook to ensure networking config is not reliant on ifupdown
+- name: Run the Kayobe network configuration playbook, to ensure definitions are not lost on reboot
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
 
 - name: Reboot and confirm the host is upgraded to Jammy 22.04
-  hosts: overcloud:infra-vms:seed
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
   tasks:
@@ -91,10 +89,8 @@
 
     - name: Update distribution facts
       ansible.builtin.setup:
-        gather_subset:
-          - '!all'
-          - distribution_major_version
-          - distribution_release
+        filter: "{{ kayobe_ansible_setup_filter }}"
+        gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
     - name: Assert that hosts are now using Ubuntu 22
       assert:
