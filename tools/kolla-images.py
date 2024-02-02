@@ -221,7 +221,7 @@ def get_openstack_release() -> str:
 
 def validate(kolla_image_tags: KollaImageTags):
     """Validate the kolla_image_tags variable."""
-    tag_var_re = re.compile(r"^[a-z0-9_]+$")
+    tag_var_re = re.compile(r"^[a-z0-9_-]+$")
     openstack_release = get_openstack_release()
     tag_res = {
         base_distro: re.compile(f"^{openstack_release}-{base_distro}-[\d]{{8}}T[\d]{{6}}$")
