@@ -565,7 +565,7 @@ stackhpc_pulp_distribution_container_kolla_common:
 stackhpc_pulp_distribution_container_kolla: >-
   {%- set distributions = [] -%}
   {%- for image in stackhpc_pulp_images_kolla_filtered -%}
-  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro]-%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro_and_version]-%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ image -%}
   {%- set distribution = {"name": image_repo, "repository": image_repo, "base_path": image_repo} -%}
   {%- set _ = distributions.append(stackhpc_pulp_distribution_container_kolla_common | combine(distribution)) -%}
