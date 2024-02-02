@@ -10,32 +10,21 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names }}{% endraw %}"
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}"
 
-kayobe_image_tags:
-  openstack:
-    rocky: zed-rocky-9-20230921T153510
-    ubuntu: zed-ubuntu-jammy-20230921T153510
-  bifrost:
-    rocky: zed-rocky-9-20230927T142529
-    ubuntu: zed-ubuntu-jammy-20230927T154443
-  ovn:
-    rocky: zed-rocky-9-20230925T132313
-    ubuntu: zed-ubuntu-jammy-20230821T155947
-  cloudkitty:
-    rocky: zed-rocky-9-20231114T124701
-    ubuntu: zed-ubuntu-jammy-20231114T124701
-  neutron:
-    rocky: zed-rocky-9-20231115T094053
-    ubuntu: zed-ubuntu-jammy-20231115T094053
-  opensearch:
-    rocky: zed-rocky-9-20231214T095452
-    ubuntu: zed-ubuntu-jammy-20231214T095452
+# Convenience variable for base distro and version string.
+kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
 
-openstack_tag: "{% raw %}{{ kayobe_image_tags['openstack'][kolla_base_distro] }}{% endraw %}"
-bifrost_tag: "{% raw %}{{ kayobe_image_tags['bifrost'][kolla_base_distro] }}{% endraw %}"
-ovn_tag: "{% raw %}{{ kayobe_image_tags['ovn'][kolla_base_distro] }}{% endraw %}"
-cloudkitty_tag: "{% raw %}{{ kayobe_image_tags['cloudkitty'][kolla_base_distro] }}{% endraw %}"
-neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] }}{% endraw %}"
-opensearch_tag: "{% raw %}{{ kayobe_image_tags['opensearch'][kolla_base_distro] }}{% endraw %}"
+# Dict of Kolla image tags to deploy for each service.
+# Each key is the tag variable prefix name, and the value is another dict,
+# where the key is the OS distro and the value is the tag to deploy.
+# NOTE: This is defined in etc/kayobe/kolla-image-tags.yml.
+kolla_image_tags:
+{{ kolla_image_tags | to_nice_yaml | indent(width=4, first=true) }}
+
+# Variables defining which tag to use for each container's image.
+{{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}
+
+#############################################################################
+# RabbitMQ
 
 om_enable_rabbitmq_high_availability: true
 

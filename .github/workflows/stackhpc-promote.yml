@@ -1,5 +1,5 @@
 ---
-name: Promote package repositories
+name: Promote Pulp repositories
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
       - stackhpc/zed
 jobs:
   promote:
-    name: Trigger package repository promotion
+    name: Trigger Pulp promotion workflows
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
     permissions: {}
@@ -27,3 +27,19 @@ jobs:
       - name: Display link to package repository promotion workflows
         run: |
           echo "::notice Package repository promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/package-promote.yml"
+
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger container image promotion
+        run: |
+          gh workflow run \
+          container-promote.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main \
+          -f kayobe_config_branch=${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
+      - name: Display link to container image promotion workflows
+        run: |
+          echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
