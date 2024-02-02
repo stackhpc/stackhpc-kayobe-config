@@ -152,7 +152,7 @@ def get_parent_tag_name(kolla_image_tags: KollaImageTags, base_distro: Optional[
 
     if container in CONTAINER_TO_PREFIX_VAR_EXCEPTIONS:
         prefix_var = CONTAINER_TO_PREFIX_VAR_EXCEPTIONS[container]
-        if prefix_var in kolla_image_tags:
+        if prefix_var in kolla_image_tags and (base_distro is None or base_distro in kolla_image_tags[prefix_var]):
             return prefix_var
     else:
         prefix_var = container
