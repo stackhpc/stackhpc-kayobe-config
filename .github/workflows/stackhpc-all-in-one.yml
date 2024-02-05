@@ -112,17 +112,9 @@ jobs:
         run: terraform init
         working-directory: ${{ github.workspace }}/terraform/aio
 
-      - name: Create SSH key directory
-        run: mkdir -p ~/.ssh/
-
       - name: Generate SSH keypair
         run: ssh-keygen -f id_rsa -N ''
         working-directory: ${{ github.workspace }}/terraform/aio
-
-      - name: Copy SSH keypair to ~/.ssh/
-        run: cp id_rsa* ~/.ssh/
-        working-directory: ${{ github.workspace }}/terraform/aio
-
 
       - name: Generate clouds.yaml
         run: |
@@ -227,50 +219,31 @@ jobs:
       - name: Pull latest Kayobe image
         run: |
           docker image pull $KAYOBE_IMAGE
-      
-      # - name: Find and then test ~/.ssh/id_rsa to see if the file or the repo exists.
-      #   run: |
-      #     find . -type d -name "*ssh*" 2>/dev/null && \
-      #     find . -type f -name "*id_rsa*" 2>/dev/null && \
-      #     sudo ls -ltra ~/.ssh/id_rsa && \
-      #     sudo ls -ltra ~/.ssh/ && \
-      #   env:
-      #     KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-
 
       - name: Run growroot
         run: |
-          docker run -t --rm -u 1001 \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-      
-      # - name: Debug current working-directory and print permissions
-      #   run: |
-      #     pwd && ls -l && ls -l ../
-      #   env:
-      #     KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Host configure
         run: |
-          docker run -t --rm -u 1001 \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -vvv
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Service deploy
         run: |
-          docker run -t --rm -u 1001 \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
@@ -279,9 +252,8 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          docker run -t --rm -u 1001 \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
@@ -291,10 +263,9 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          docker run -t --rm -u 1001 \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
-            -v ~/.ssh:/.ssh \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
