@@ -84,6 +84,16 @@ system. If you are using a Neutron plugin other than ML2/OVN, set
 For new deployments using OVN, see
 :kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
 
+Keystone admin port change
+--------------------------
+
+The Keystone admin port has changed to be the same as the public port (5000).
+This is a change in Kolla Ansible, and is not specific to StackHPC Kayobe
+Configuration. However, it is worth noting that this change will affect any
+custom configuration that uses the Keystone admin port. One such example is the
+config for Ceph RGW in ``etc/kayobe/cephadm.yml``. Be sure to update any manual
+references to the old port.
+
 Known issues
 ============
 
