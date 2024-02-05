@@ -18,13 +18,6 @@
           that you are limiting it to only run on Focal hosts and
           os_distribution is set to ubuntu.
 
-    - name: Assert os_release is jammy
-      assert:
-        that:
-          - os_release == 'jammy'
-        fail_msg: >-
-          Ensure that os_release is set to jammy before upgrading hosts.
-
     - name: Ensure apt packages are up to date
       apt:
         update_cache: true
@@ -36,6 +29,16 @@
         name: ubuntu-release-upgrader-core
         state: latest
       become: true
+
+    - name: Check whether a reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: file_status
+
+    - name: Reboot to apply updates
+      reboot:
+      become: true
+      when: file_status.stat.exists  
 
     # NOTE: We cannot use apt_repository here because definitions must exist within the standard repos.list
     - name: Ensure Jammy repo definitions exist in sources.list

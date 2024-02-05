@@ -24,6 +24,6 @@ fi
 
 set -x
 
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml --limit seed
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release=jammy --limit seed
 
 kayobe seed host configure
