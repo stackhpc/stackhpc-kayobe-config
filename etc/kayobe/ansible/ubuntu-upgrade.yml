@@ -100,3 +100,7 @@
         that:
           - ansible_facts.distribution_major_version == '22'
           - ansible_facts.distribution_release == 'jammy'
+
+- name: Run the OVN chassis priority fix playbook
+  import_playbook: "{{ lookup('ansible.builtin.env', 'KAYOBE_CONFIG_PATH') }}/ansible/ovn-fix-chassis-priorities.yml"
+  when: kolla_enable_ovn
