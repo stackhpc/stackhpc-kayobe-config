@@ -94,6 +94,23 @@ jobs:
           source venvs/kayobe/bin/activate &&
           pip install python-openstackclient -c https://opendev.org/openstack/requirements/raw/branch/stable/yoga/upper-constraints.txt
 
+      - name: Output CentOS Stream 8 image tag
+        id: centos_8_stream_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_centos_8_stream_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: centos_8_stream_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-centos-8-stream-${{ steps.centos_8_stream_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
+
       - name: Download CentOS Stream 8 overcloud host image from Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -104,12 +121,7 @@ jobs:
           -e os_release="8-stream"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.centos
-
-      - name: Output CentOS Stream 8 image tag
-        id: centos_8_stream_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_centos_8_stream_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: inputs.centos && steps.centos_8_stream_image_exists.outcome == 'failure'
 
       - name: Upload CentOS Stream 8 overcloud host image to Cloud
         run: |
@@ -125,7 +137,24 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.centos
+        if: inputs.centos && steps.centos_8_stream_image_exists.outcome == 'failure'
+
+      - name: Output Rocky Linux 8 image tag
+        id: rocky_8_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_8_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: rocky_8_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-rocky-8-${{ steps.rocky_8_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
 
       - name: Download Rocky Linux 8 overcloud host image from Ark
         run: |
@@ -137,12 +166,7 @@ jobs:
           -e os_release="8"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky8
-
-      - name: Output Rocky Linux 8 image tag
-        id: rocky_8_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_rocky_8_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: inputs.rocky8 && steps.rocky_8_image_exists.outcome == 'failure'
 
       - name: Upload Rocky Linux 8 overcloud host image to Cloud
         run: |
@@ -158,7 +182,24 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky8
+        if: inputs.rocky8 && steps.rocky_8_image_exists.outcome == 'failure'
+
+      - name: Output Rocky Linux 9 image tag
+        id: rocky_9_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: rocky_9_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-rocky-9-${{ steps.rocky_9_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
 
       - name: Download Rocky Linux 9 overcloud host image from Ark
         run: |
@@ -170,12 +211,7 @@ jobs:
           -e os_release="9"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky9
-
-      - name: Output Rocky Linux 9 image tag
-        id: rocky_9_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
 
       - name: Upload Rocky Linux 9 overcloud host image to Cloud
         run: |
@@ -191,7 +227,24 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9
+        if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
+
+      - name: Output Ubuntu Focal image tag
+        id: ubuntu_focal_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_ubuntu_focal_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: ubuntu_focal_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-ubuntu-focal-${{ steps.ubuntu_focal_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
 
       - name: Download Ubuntu Focal 20.04 overcloud host image from Ark
         run: |
@@ -203,12 +256,7 @@ jobs:
           -e os_release="focal"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-focal
-
-      - name: Output Ubuntu Focal image tag
-        id: ubuntu_focal_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_ubuntu_focal_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: inputs.ubuntu-focal && steps.ubuntu_focal_image_exists.outcome == 'failure'
 
       - name: Upload Ubuntu Focal 20.04 overcloud host image to Cloud
         run: |
@@ -224,7 +272,24 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-focal
+        if: inputs.ubuntu-focal && steps.ubuntu_focal_image_exists.outcome == 'failure'
+
+      - name: Output Ubuntu Jammy image tag
+        id: ubuntu_jammy_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_ubuntu_jammy_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: ubuntu_jammy_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-ubuntu-jammy-${{ steps.ubuntu_jammy_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
 
       - name: Download Ubuntu Jammy 22.04 overcloud host image from Ark
         run: |
@@ -236,12 +301,7 @@ jobs:
           -e os_release="jammy"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy
-
-      - name: Output Ubuntu Jammy image tag
-        id: ubuntu_jammy_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_ubuntu_jammy_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'
 
       - name: Upload Ubuntu Jammy 22.04 overcloud host image to Cloud
         run: |
@@ -257,4 +317,4 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy
+        if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'
