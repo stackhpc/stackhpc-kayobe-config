@@ -87,6 +87,14 @@ Some things to watch out for:
      mysql -u root -p  keystone
      # Enter the database password when prompted.
      SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
+* Policies may require the ``reader`` role rather than the non-standardised
+  ``observer`` role. The following error was observed in Horizon: ``Policy doesn’t allow os_compute_api:os-simple-tenant-usage:show to be performed``,
+    when the user only had the observer role in the project. It is best to keep the observer role until all projects have the ``enforce_new_defaults``
+    config option set. A one liner is shown below (or update your projects config):
+
+  .. code-block:: console
+
+     openstack role assignment list --effective --role observer -f value -c User -c Project | while read line; do echo $line | xargs bash -c 'openstack role add --user $1 --project $2 reader' _; done
 
 OVN enabled by default
 ----------------------
