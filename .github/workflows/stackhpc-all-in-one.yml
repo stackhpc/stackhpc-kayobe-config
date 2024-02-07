@@ -69,7 +69,7 @@ jobs:
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
-    if: inputs.if
+    if: inputs.if && !cancelled()
     runs-on: arc-skc-aio-runner
     permissions: {}
     env:
@@ -81,6 +81,7 @@ jobs:
         uses: ConorMacBride/install-package@main
         with:
           apt: build-essential git unzip nodejs python3 python3-pip python3-wheel python-is-python3
+        if: ${{ !cancelled() }}
 
       - uses: actions/checkout@v4
         with:
@@ -89,11 +90,13 @@ jobs:
       - name: Make sure dockerd is running and test Docker.
         run: |
           docker run --rm hello-world
+        if: ${{ !cancelled() }}
 
       - name: Output image tag
         id: image_tag
         run: |
           echo image_tag=$(grep stackhpc_${{ inputs.os_distribution }}_$(sed s/-/_/ <(echo "${{ inputs.os_release }}"))_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        if: ${{ !cancelled() }}
 
       # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
@@ -104,17 +107,21 @@ jobs:
           else
             echo image_name=${{ inputs.vm_image_override }} >> $GITHUB_OUTPUT
           fi
+        if: ${{ !cancelled() }}
 
       - name: Install terraform
         uses: hashicorp/setup-terraform@v2
+        if: ${{ !cancelled() }}
 
       - name: Initialise terraform
         run: terraform init
         working-directory: ${{ github.workspace }}/terraform/aio
+        if: ${{ !cancelled() }}
 
       - name: Generate SSH keypair
         run: ssh-keygen -f id_rsa -N ''
         working-directory: ${{ github.workspace }}/terraform/aio
+        if: ${{ !cancelled() }}
 
       - name: Generate clouds.yaml
         run: |
@@ -122,6 +129,7 @@ jobs:
           ${{ secrets.CLOUDS_YAML }}
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
+        if: ${{ !cancelled() }}
 
       - name: Generate terraform.tfvars
         run: |
@@ -144,6 +152,7 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
+        if: ${{ !cancelled() }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -152,6 +161,7 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: ${{ !cancelled() }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -160,18 +170,21 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: ${{ !cancelled() }}
 
       - name: Get Terraform outputs
         id: tf_outputs
         run: |
           terraform output -json
         working-directory: ${{ github.workspace }}/terraform/aio
+        if: ${{ !cancelled() }}
 
       - name: Write Terraform outputs
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-outputs.yml
           ${{ steps.tf_outputs.outputs.stdout }}
           EOF
+        if: ${{ !cancelled() }}
 
       - name: Write Terraform network config
         run: |
@@ -186,12 +199,14 @@ jobs:
           admin_ips:
             controller0: "{{ access_ip_v4.value }}"
           EOF
+        if: ${{ !cancelled() }}
 
       - name: Write Terraform network interface config
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/controllers/tf-network-interfaces
           admin_interface: "{{ access_interface.value }}"
           EOF
+        if: ${{ !cancelled() }}
 
       - name: Write all-in-one scenario config
         run: |
@@ -205,6 +220,7 @@ jobs:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
           OS_DISTRIBUTION: ${{ inputs.os_distribution }}
           OS_RELEASE: ${{ inputs.os_release }}
+        if: ${{ !cancelled() }}
 
       # Use a heredoc to define a multiline string output
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -214,11 +230,13 @@ jobs:
           echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        if: ${{ !cancelled() }}
 
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
         run: |
           docker image pull $KAYOBE_IMAGE
+        if: ${{ !cancelled() }}
 
       - name: Run growroot
         run: |
@@ -229,6 +247,7 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() }}
 
       - name: Host configure
         run: |
@@ -239,6 +258,7 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() }}
 
       - name: Service deploy
         run: |
@@ -249,6 +269,7 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() }}
 
       - name: Configure aio resources
         run: |
@@ -259,6 +280,8 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() }}
+
 
       - name: Tempest tests
         run: |
@@ -271,6 +294,7 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() }}
 
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v3
