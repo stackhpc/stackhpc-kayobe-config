@@ -11,26 +11,26 @@
   become: yes
 
   tasks:
-   - name: Ensure rsyslog is installed
-     package:
+  - name: Ensure rsyslog is installed
+    package:
       name: rsyslog
       state: present
 
-   - name: Ensure rsyslog is started and enabled
-     systemd:
+  - name: Ensure rsyslog is started and enabled
+    systemd:
       state: started
       enabled: yes
       name: rsyslog
 
-   - name: Update rsyslog configuration
-     lineinfile:
+  - name: Update rsyslog configuration
+    lineinfile:
       path: /etc/rsyslog.conf
       insertafter: "^#*.* @@remote-host:514"
       line: "*.* @{{ internal_net_name | net_ip }}:5140"
-     register: rsyslog_config
+    register: rsyslog_config
 
-   - name: Restart rsyslog
-     systemd:
+  - name: Restart rsyslog
+    systemd:
       state: restarted
       name: rsyslog
-     when: rsyslog_config.changed
+    when: rsyslog_config.changed
