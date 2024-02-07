@@ -226,11 +226,12 @@ You may need to modify some of the variables, including:
 
 .. note::
 
-    NOTE:
     If you are using multiple environments, and you need to customise Wazuh in
     each environment, create override files in an appropriate directory,
-    for example `etc/kayobe/environments/production/inventory/group_vars/`
+    for example ``etc/kayobe/environments/production/inventory/group_vars/``.
+
     Files which values can be overridden (in the context of Wazuh):
+
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
     - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
@@ -328,6 +329,9 @@ If you are using the wazuh generated certificates,
 this will result in the creation of some certificates and keys (in case of custom certs adjust path to it).
 Encrypt the keys (and remember to commit to git):
 
+``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key``
+
+If using the kayobe environments feature, otherwise:
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
 
