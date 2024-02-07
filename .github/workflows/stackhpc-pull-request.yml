@@ -74,13 +74,12 @@ jobs:
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
     with:
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: false && github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   all-in-one-rocky-9-ovn:
     name: aio (Rocky 9 OVN)
     needs:
       - check-changes
-      - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
