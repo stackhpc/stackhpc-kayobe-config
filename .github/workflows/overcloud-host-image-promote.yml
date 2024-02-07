@@ -21,9 +21,9 @@ jobs:
   overcloud-host-image-promote:
     name: Promote overcloud host image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder-rl9]
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: src/kayobe-config
 
@@ -32,9 +32,10 @@ jobs:
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
           echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
 
       - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: stackhpc/kayobe
           ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
