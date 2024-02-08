@@ -328,6 +328,10 @@ kolla_build_blocks:
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/auth.conf && \
+    {% if stackhpc_repo_mirror_url | urlsplit('scheme') == 'https' %}
+    {# We lack the ca-certificates package at this stage, so don't verify the CA #}
+        echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% endif %}
     {% if stackhpc_repo_mirror_username is truthy %}
         echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
         echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
@@ -365,6 +369,7 @@ kolla_build_blocks:
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/auth.conf && \
+        rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
     {% if stackhpc_repo_mirror_username is truthy %}
         echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
         echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
