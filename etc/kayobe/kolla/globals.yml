@@ -10,6 +10,10 @@ enable_docker_repo: "{% raw %}{{ 'overcloud' not in group_names }}{% endraw %}"
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}"
 
+# Use facts so this is determined correctly when the control host OS differs
+# from os_distribuition.
+kolla_base_distro_version: "{% raw %}{{ ansible_facts.distribution_major_version }}{% raw %}"
+
 # Convenience variable for base distro and version string.
 kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
 
