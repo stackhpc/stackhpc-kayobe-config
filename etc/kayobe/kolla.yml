@@ -317,12 +317,22 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+    {% if stackhpc_repo_mirror_username is truthy %}
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
+    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
     {% else %}
     RUN \
         rm /etc/apt/sources.list && \
+        rm -f /etc/apt/auth.conf && \
+    {% if stackhpc_repo_mirror_username is truthy %}
+        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
+        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
+        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
+    {% endif %}
     {% for repo in stackhpc_ubuntu_focal_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
@@ -340,6 +350,10 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+    {% if stackhpc_repo_mirror_username is truthy %}
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
+    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
@@ -350,6 +364,12 @@ kolla_build_blocks:
     {% endif %}
     RUN \
         rm /etc/apt/sources.list && \
+        rm -f /etc/apt/auth.conf && \
+    {% if stackhpc_repo_mirror_username is truthy %}
+        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
+        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
+        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
+    {% endif %}
     {% for repo in stackhpc_ubuntu_focal_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
