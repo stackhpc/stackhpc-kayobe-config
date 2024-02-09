@@ -75,6 +75,22 @@ apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names el
 # repository mirrors are deployed.
 apt_disable_sources_list: "{{ 'overcloud' in group_names }}"
 
+# Apt auth configuration for accessing the package repository mirror.
+stackhpc_apt_auth:
+  - machine: "{{ stackhpc_repo_mirror_url }}"
+    login: "{{ stackhpc_repo_mirror_username }}"
+    password: "{{ stackhpc_repo_mirror_password }}"
+    filename: "kayobe.conf"
+
+# List of Apt auth configurations. Each item is a dict with the following keys:
+# * machine: 'machine' entry in the auth file
+# * login: 'login' entry in the auth file
+# * password: 'password' entry in the auth file
+# * filename: Name of a file in which to store the auth configuration. The
+#   extension should be '.conf'.
+# Default is an empty list.
+apt_auth: "{{ stackhpc_apt_auth if 'overcloud' in group_names and stackhpc_repo_mirror_username is truthy else [] }}"
+
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes
