@@ -89,13 +89,11 @@ jobs:
       - name: Make sure dockerd is running and test Docker.
         run: |
           docker run --rm hello-world
-        
 
       - name: Output image tag
         id: image_tag
         run: |
           echo image_tag=$(grep stackhpc_${{ inputs.os_distribution }}_$(sed s/-/_/ <(echo "${{ inputs.os_release }}"))_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
-        
 
       # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
@@ -106,21 +104,17 @@ jobs:
           else
             echo image_name=${{ inputs.vm_image_override }} >> $GITHUB_OUTPUT
           fi
-        
 
       - name: Install terraform
         uses: hashicorp/setup-terraform@v2
-        
 
       - name: Initialise terraform
         run: terraform init
         working-directory: ${{ github.workspace }}/terraform/aio
-        
 
       - name: Generate SSH keypair
         run: ssh-keygen -f id_rsa -N ''
         working-directory: ${{ github.workspace }}/terraform/aio
-        
 
       - name: Generate clouds.yaml
         run: |
@@ -128,7 +122,6 @@ jobs:
           ${{ secrets.CLOUDS_YAML }}
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
-        
 
       - name: Generate terraform.tfvars
         run: |
@@ -151,7 +144,6 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
-        
 
       - name: Terraform Plan
         run: terraform plan
@@ -160,7 +152,6 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -169,21 +160,18 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        
 
       - name: Get Terraform outputs
         id: tf_outputs
         run: |
           terraform output -json
         working-directory: ${{ github.workspace }}/terraform/aio
-        
 
       - name: Write Terraform outputs
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-outputs.yml
           ${{ steps.tf_outputs.outputs.stdout }}
           EOF
-        
 
       - name: Write Terraform network config
         run: |
@@ -198,14 +186,12 @@ jobs:
           admin_ips:
             controller0: "{{ access_ip_v4.value }}"
           EOF
-        
 
       - name: Write Terraform network interface config
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/controllers/tf-network-interfaces
           admin_interface: "{{ access_interface.value }}"
           EOF
-        
 
       - name: Write all-in-one scenario config
         run: |
@@ -219,7 +205,6 @@ jobs:
           ENABLE_OVN: ${{ inputs.neutron_plugin == 'ovn' }}
           OS_DISTRIBUTION: ${{ inputs.os_distribution }}
           OS_RELEASE: ${{ inputs.os_release }}
-        
 
       # Use a heredoc to define a multiline string output
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -229,13 +214,11 @@ jobs:
           echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-        
 
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
         run: |
           docker image pull $KAYOBE_IMAGE
-        
 
       - name: Run growroot
         run: |
@@ -246,7 +229,6 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        
 
       - name: Host configure
         run: |
@@ -257,7 +239,6 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        
 
       - name: Service deploy
         run: |
@@ -268,7 +249,6 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        
 
       - name: Configure aio resources
         run: |
@@ -279,8 +259,6 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        
-
 
       - name: Tempest tests
         run: |
@@ -293,7 +271,6 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        
 
       - name: Upload test result artifacts
         uses: actions/upload-artifact@v4
