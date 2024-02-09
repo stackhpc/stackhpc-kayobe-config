@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check changed files
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: changes
         with:
           # Filters are defined in this file.
@@ -51,7 +51,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Tox 📦
@@ -85,7 +85,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
     if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
