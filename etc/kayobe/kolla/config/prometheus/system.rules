@@ -104,4 +104,24 @@ groups:
     annotations:
       summary: Host conntrack limit (instance {{ $labels.instance }})
       description: "The number of conntrack is approaching limit"
+
+  - alert: NodeRAIDDegraded
+    expr: |
+      node_md_disks_required{job="node",device!=""} - ignoring (state) (node_md_disks{state="active",job="node",device!=""}) > 0
+    for: "15m"
+    labels:
+      severity: critical
+    annotations:
+      description: "RAID array '{{ $labels.device }}' at {{ $labels.instance }} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically."
+      summary: "RAID Array is degraded."
+
+  - alert: NodeRAIDDiskFailure
+    expr: |
+      node_md_disks{state="failed",job="node",device!=""} > 0
+    labels:
+      severity: warning
+    annotations:
+      description: "At least one device in RAID array at {{ $labels.instance }} failed. Array '{{ $labels.device }}' needs attention and possibly a disk swap."
+      summary: "Failed device in RAID array."
+
 {% endraw %}
