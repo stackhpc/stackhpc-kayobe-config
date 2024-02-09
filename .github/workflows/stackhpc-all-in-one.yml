@@ -38,7 +38,7 @@ on:
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
-        default: en1.medium
+        default: en1.large
       vm_network:
         description: Network for the all-in-one VM
         type: string
@@ -289,9 +289,4 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
-
-      - name: Prune Docker images over 1 week old
-        # May fail if another prune is running
-        run: docker image prune --all --force --filter until=168h || true
         if: always()
