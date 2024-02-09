@@ -58,6 +58,8 @@ dnf_custom_repos_el9:
     file: epel
     gpgkey: "{{ dnf_epel_9_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   docker:
     baseurl: "{{ stackhpc_repo_centos_stream_9_docker_url }}"
     description: "Package repository for installing docker"
@@ -65,6 +67,8 @@ dnf_custom_repos_el9:
     file: docker
     gpgkey: "{{ dnf_docker_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # ELRepo 9
 dnf_custom_repos_elrepo_9:
@@ -75,6 +79,8 @@ dnf_custom_repos_elrepo_9:
     file: elrepo
     gpgkey: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Rocky 9 specific repositories
 dnf_custom_repos_rocky_9:
@@ -84,24 +90,32 @@ dnf_custom_repos_rocky_9:
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   baseos:
     baseurl: "{{ stackhpc_repo_rocky_9_baseos_url }}"
     description: "Rocky Linux $releasever - BaseOS"
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   crb:
     baseurl: "{{ stackhpc_repo_rocky_9_crb_url }}"
     description: "Rocky Linux $releasever - CRB"
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   extras:
     baseurl: "{{ stackhpc_repo_rocky_9_extras_url }}"
     description: "Rocky Linux $releasever - Extras"
     file: rocky-extras
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
