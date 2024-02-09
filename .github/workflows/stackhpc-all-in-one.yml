@@ -154,7 +154,17 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  break
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
