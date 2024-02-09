@@ -68,6 +68,25 @@ Some things to watch out for:
   will not be granted those roles. This may include the ``reader`` role, which
   is referenced in some of the new secure RBAC policies.  See `Keystone bug
   2030061 <https://bugs.launchpad.net/keystone/+bug/2030061>`_.
+* If you have overwritten ``[auth] tempest_roles`` in your Tempest config, such
+  as to add the ``creator`` role for Barbican, you will need to also add the
+  ``member role``. eg:
+
+  .. code-block:: ini
+
+     [auth]
+     tempest_roles = creator,member
+* To check trusts for the _member_ role, you will need to list the role
+  assignments in the database, as only the trustor and trustee users can show
+  trust details from the CLI:
+
+  .. code-block:: console
+
+     openstack trust list
+     docker exec -it mariadb bash
+     mysql -u root -p  keystone
+     # Enter the database password when prompted.
+     SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
 
 OVN enabled by default
 ----------------------
@@ -82,6 +101,19 @@ system. If you are using a Neutron plugin other than ML2/OVN, set
 For new deployments using OVN, see
 :kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
 
+Kolla config merging
+--------------------
+
+The Antelope release introduces Kolla config merging between Kayobe
+environments and base configurations. Before Antelope, any configuration under
+``$KAYOBE_CONFIG_PATH/kolla/config`` would be ignored when any Kayobe
+environment was activated.
+
+In Antelope, the Kolla configuration from the base will be merged with the
+environment. This can result in significant changes to the Kolla config. Take
+extra care when creating the Antelope branch of the kayobe-config and always
+check the config diff.
+
 Known issues
 ============
 
@@ -93,6 +125,29 @@ Known issues
 
 * The OVN sync repair tool removes metadata ports, breaking OVN load balancers.
   See `LP#2038091 <https://bugs.launchpad.net/neutron/+bug/2038091>`__.
+
+* When you try to generate config before the 2023.1 upgrade (i.e. using 2023.1
+  Kolla-Ansible but still running Zed kolla-toolbox), it will fail on Octavia.
+  This patch is needed to fix this:
+  https://review.opendev.org/c/openstack/kolla-ansible/+/905500
+
+* If you run ``kayobe overcloud service upgrade`` twice, it will cause shard
+  allocation to be disabled in OpenSearch. See `LP#2049512
+  <https://bugs.launchpad.net/kolla-ansible/+bug/2049512>`__ for details.
+
+  You can check if this is affecting your system with the following command. If
+  ``transient.cluster.routing.allocation.enable=none`` is present, shard
+  allocation is disabled.
+
+  .. code-block:: console
+
+     curl http://<controller-ip>:9200/_cluster/settings
+
+  For now, the easiest way to fix this is to turn allocation back on:
+
+  .. code-block:: console
+
+     curl -X PUT http://<controller-ip>:9200/_cluster/settings -H 'Content-Type:application/json' -d '{"transient":{"cluster":{"routing":{"allocation":{"enable":"all"}}}}}'
 
 Security baseline
 =================
@@ -436,7 +491,7 @@ Compare the old & new configuration:
 
 .. code-block:: console
 
-   diff -ru ~/kolla-diff-{old,new} > ~/kolla-diff.diff
+   diff -ru ~/kolla-diff/{old,new} > ~/kolla-diff.diff
    less ~/kolla-diff.diff
 
 Upgrading the Seed Hypervisor

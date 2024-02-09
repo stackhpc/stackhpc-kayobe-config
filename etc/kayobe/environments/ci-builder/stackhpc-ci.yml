@@ -17,6 +17,7 @@ kolla_enable_etcd: true
 kolla_enable_grafana: true
 kolla_enable_influxdb: true
 kolla_enable_ironic: true
+kolla_enable_letsencrypt: true
 kolla_enable_magnum: true
 kolla_enable_manila: true
 kolla_enable_mariabackup: true
@@ -38,7 +39,10 @@ resolv_is_managed: false
 
 # Host and port of a package repository mirror.
 # Build against the development Pulp service repositories.
-stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+# Use Ark's package repositories to install packages.
+stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
+stackhpc_repo_mirror_username: "{{ stackhpc_docker_registry_username }}"
+stackhpc_repo_mirror_password: "{{ stackhpc_docker_registry_password }}"
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"

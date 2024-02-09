@@ -74,6 +74,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 # Default is kolla_base_distro_version_default_map[kolla_base_distro].
 #kolla_base_distro_version:
 
+kolla_base_distro_and_version: "{{ kolla_base_distro }}-{{ kolla_base_distro_version }}"
+
 # URL of docker registry to use for Kolla images. Default is not set, in which
 # case Quay.io will be used.
 #kolla_docker_registry:
@@ -244,12 +246,26 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+    {% if stackhpc_repo_mirror_username is truthy %}
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
+    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
     {% else %}
     RUN \
         rm /etc/apt/sources.list && \
+        rm -f /etc/apt/auth.conf && \
+    {% if stackhpc_repo_mirror_url | urlsplit('scheme') == 'https' %}
+    {# We lack the ca-certificates package at this stage, so don't verify the CA #}
+        echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% endif %}
+    {% if stackhpc_repo_mirror_username is truthy %}
+        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
+        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
+        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
+    {% endif %}
     {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
@@ -267,6 +283,10 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+    {% if stackhpc_repo_mirror_username is truthy %}
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
+    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
@@ -277,6 +297,13 @@ kolla_build_blocks:
     {% endif %}
     RUN \
         rm /etc/apt/sources.list && \
+        rm -f /etc/apt/auth.conf && \
+        rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% if stackhpc_repo_mirror_username is truthy %}
+        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
+        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
+        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
+    {% endif %}
     {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
@@ -630,7 +657,7 @@ kolla_enable_mariabackup: True
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
 #kolla_enable_outward_rabbitmq:
-kolla_enable_ovn: yes
+kolla_enable_ovn: true
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
 kolla_enable_prometheus: true

@@ -5,6 +5,11 @@
 name: Build kayobe image
 
 on:
+  push:
+    branches:
+      # NOTE(upgrade): Reference only the current release branch here.
+      - stackhpc/2023.1
+
   workflow_call:
     inputs:
       http_proxy:
@@ -36,7 +41,7 @@ env:
 jobs:
   build-kayobe-image:
     name: Build kayobe image
-    if: inputs.if
+    if: inputs.if || github.repository == 'stackhpc/stackhpc-kayobe-config' && github.event_name == 'push'
     runs-on: ubuntu-20.04
     permissions:
       contents: read
@@ -46,12 +51,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout kayobe config
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -59,12 +64,12 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: |
             image=moby/buildkit:master
@@ -77,15 +82,19 @@ jobs:
            https_proxy: ${{ inputs.https_proxy }}
            no_proxy: ${{ inputs.no_proxy }}
 
+      # Setting KAYOBE_USER_UID and KAYOBE_USER_GID to 1001 to match docker's defaults
+      # so that docker can run as a privileged user within the Kayobe image.
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: ./.automation/docker/kayobe/Dockerfile
           context: .
           build-args: |
              http_proxy=${{ inputs.http_proxy }}
              https_proxy=${{ inputs.https_proxy }}
-             BASE_IMAGE=${{ inputs.base_image }}
+             BASE_IMAGE=${{ inputs.base_image || 'rockylinux:9' }}
+             KAYOBE_USER_UID=1001
+             KAYOBE_USER_GID=1001
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -1,0 +1,34 @@
+---
+- name: Deploy GitHub Runner
+  hosts: github-runners
+  become: yes
+  roles:
+    - role: geerlingguy.pip
+    - role: geerlingguy.docker
+  tasks:
+    - name: Deploy runners
+      ansible.builtin.include_role:
+        role: monolithprojects.github_actions_runner
+      vars:
+        runner_name: "{{ ansible_facts.nodename }}-{{ runner.key }}"
+        runner_dir: "{{ base_runner_dir }}/{{ runner.key }}"
+        runner_labels: "{{ runner.value.labels | default(default_runner_labels) }}"
+        runner_state: "{{ runner.value.state | default('started') }}"
+      with_dict:
+        "{{ github_runners }}"
+      loop_control:
+        loop_var: runner
+
+    # FIXME: Sometimes the runner service is not running at the end of the role.
+    # Start the service manually.
+    - name: Ensure runner service is running
+      ansible.builtin.service:
+        name: actions.runner.{{ github_account }}-{{ github_repo }}.{{ ansible_facts.nodename }}-{{ runner.key }}.service
+        state: started
+        enabled: true
+      become: true
+      when: runner_state | default('started') == 'started'
+      with_dict:
+        "{{ github_runners }}"
+      loop_control:
+        loop_var: runner

@@ -28,7 +28,9 @@
         owner: wazuh
         group: wazuh
         block: sca.remote_commands=1
-      when: custom_sca_policies.files | length > 0
+      when:
+        - custom_sca_policies_folder.stat.exists
+        - custom_sca_policies.files | length > 0
       notify:
         - Restart wazuh-agent
 

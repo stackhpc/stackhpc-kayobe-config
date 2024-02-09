@@ -1,6 +1,6 @@
 ---
 # Reset a broken RabbitMQ cluster.
-# Also restarts OpenStack services which may be broken.
+# Also restarts all OpenStack services using RabbitMQ.
 
 - name: Reset RabbitMQ
   hosts: controllers
@@ -12,7 +12,6 @@
     - container_name: rabbitmq
   tasks:
     - name: Checking timedatectl status
-      become: true
       command: timedatectl status
       register: timedatectl_status
       changed_when: false
@@ -32,7 +31,7 @@
       register: inspection
 
     - name: Ensure the {{ container_name }} container is running
-      command: "docker start {{ container_name }}"
+      command: "systemctl start kolla-{{ container_name }}-container.service"
       when: inspection.stdout == 'false'
 
     - name: Wait for the {{ container_name }} container to reach state 'Running'
@@ -66,7 +65,7 @@
   tags:
     - restart-openstack
   tasks:
-    # The following services can have problems if the cluster gets broken.
+    # The following services use RabbitMQ.
     - name: Restart OpenStack services
       shell: >-
-        docker ps -a | egrep '(cinder|heat|ironic|keystone|magnum|neutron|nova)' | awk '{ print $NF }' | xargs docker restart
+        systemctl -a | egrep '(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' | awk '{ print $1 }' | xargs systemctl restart

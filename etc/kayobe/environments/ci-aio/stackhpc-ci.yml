@@ -17,7 +17,10 @@ resolv_is_managed: false
 
 # Host and port of a package repository mirror.
 # Build and deploy the development Pulp service repositories.
-stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+# Use Ark's package repositories to install packages.
+stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
+stackhpc_repo_mirror_username: "{{ stackhpc_docker_registry_username }}"
+stackhpc_repo_mirror_password: "{{ stackhpc_docker_registry_password }}"
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
@@ -54,11 +57,17 @@ stackhpc_include_os_minor_version_in_repo_url: true
 stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
 
 # Username and password of container registry.
-stackhpc_docker_registry_username: "admin"
+stackhpc_docker_registry_username: "release-train-ci"
 stackhpc_docker_registry_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
-  38653432663133653430323937626239323836653537633633326265643930653034306532646464
-  3766353637326534643136326533633034666535323364660a633639393433376564363666663233
-  38333133393730633666613965653364316162353337313330346164303631313731646461363461
-  3963323635373866630a633533376339363734626664333765313665623662613764363038383735
-  38646138376438643533376161376634653439386230353365316239613430363338
+  38356134376436656165303634626531653836366233383531343439646433376334396438373735
+  3135643664353934356237376134623235356137383263300a333165386562396134633534376532
+  34386133383366326639353432386235336132663839333337323739633434613934346462363031
+  3265323831663964360a643962346231386462323236373963633066393736323234303833363535
+  3664
+
+# Override Pulp credentials to allow querying container image tags in the
+# check-tags.yml custom playbook.
+pulp_url: "{{ stackhpc_repo_mirror_url }}"
+pulp_username: "{{ stackhpc_docker_registry_username }}"
+pulp_password: "{{ stackhpc_docker_registry_password }}"
