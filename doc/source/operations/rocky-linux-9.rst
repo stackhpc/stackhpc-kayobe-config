@@ -161,7 +161,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 - Read the `Kolla Ansible OpenSearch migration
   docs <https://docs.openstack.org/kolla-ansible/yoga/reference/logging-and-monitoring/central-logging-guide-opensearch.html#migration>`__
 - If necessary, take a backup of the Elasticsearch data.
-- Ensure ``kolla_enable_elasticsearch`` is unset in ``etc/kayobe/kolla.yml``
+- Ensure ``kolla_enable_elasticsearch`` is set to false in ``etc/kayobe/kolla.yml``
 - If you have a custom Kolla Ansible inventory, ensure that it contains the ``opensearch`` and ``opensearch-dashboards`` groups. Otherwise, sync with the inventory in Kayobe.
 - Set ``kolla_enable_opensearch: true`` in ``etc/kayobe/kolla.yml``
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
