@@ -34,19 +34,19 @@ on:
       vm_interface:
         description: Default network interface name
         type: string
-        default: enp3s0
+        default: ens3
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
-        default: general.v1.medium
+        default: en1.large
       vm_network:
         description: Network for the all-in-one VM
         type: string
-        default: stackhpc-release
+        default: stackhpc-ci
       vm_subnet:
         description: Subnet for the all-in-one VM
         type: string
-        default: stackhpc-release-subnet
+        default: stackhpc-ci
       OS_CLOUD:
         description: Name of cloud in clouds.yaml
         type: string
@@ -74,7 +74,7 @@ jobs:
   all-in-one:
     name: All in one
     if: inputs.if
-    runs-on: [self-hosted, stackhpc-kayobe-config-aio]
+    runs-on: arc-skc-aio-runner
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
@@ -85,6 +85,11 @@ jobs:
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
       PREVIOUS_BRANCH: stackhpc/yoga
     steps:
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: build-essential git unzip nodejs python3 python3-pip python3-wheel python-is-python3
+
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
         uses: actions/checkout@v4
@@ -101,6 +106,10 @@ jobs:
             kayobe_image=$KAYOBE_IMAGE
           fi
           echo kayobe_image=$kayobe_image >> $GITHUB_OUTPUT
+
+      - name: Make sure dockerd is running and test Docker.
+        run: |
+          docker run --rm hello-world
 
       - name: Output image tag
         id: image_tag
@@ -238,11 +247,11 @@ jobs:
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull current Kayobe image
         run: |
-          sudo docker image pull $KAYOBE_IMAGE
+          docker image pull $KAYOBE_IMAGE
 
       - name: Run growroot
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
@@ -252,7 +261,7 @@ jobs:
 
       - name: Host configure
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
@@ -322,7 +331,7 @@ jobs:
 
       - name: Service upgrade
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -334,7 +343,7 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
@@ -344,7 +353,7 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Upload test result artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' }}
           path: tempest-artifacts/*
@@ -360,9 +369,4 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
-
-      - name: Prune Docker images over 1 week old
-        # May fail if another prune is running
-        run: sudo docker image prune --all --force --filter until=168h || true
         if: always()
