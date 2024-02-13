@@ -136,10 +136,11 @@ jobs:
           pip install -U pip &&
           pip install ../src/kayobe
 
-      # Required for Docker registry login. Normally installed during host configure.
+      # Required for Pulp auth proxy deployment and Docker registry login.
+      # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          pip install --user docker
+          sudo pip install docker
 
       - name: Configure localhost as a seed
         run: |
@@ -150,11 +151,23 @@ jobs:
           localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
           EOF
 
+      # See etc/kayobe/ansible/roles/pulp_auth_proxy/README.md for details.
+      # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+      # runner and dind containers.
+      - name: Deploy an authenticating package repository mirror proxy
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -169,6 +182,7 @@ jobs:
         run: |
           args="-e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
