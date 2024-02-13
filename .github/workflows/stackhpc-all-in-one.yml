@@ -158,13 +158,15 @@ jobs:
           for attempt in $(seq 5); do
               if terraform apply -auto-approve; then
                   echo "Created infrastructure on attempt $attempt"
-                  break
+                  exit 0
               fi
               echo "Failed to create infrastructure on attempt $attempt"
               sleep 10
               terraform destroy -auto-approve
               sleep 60
           done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
