@@ -16,10 +16,6 @@
       set_fact:
         kolla_images: "{{ kolla_images_result.stdout | from_yaml }}"
 
-    - name: Set a fact about the Pulp URL
-      set_fact:
-        pulp_url: "{{ stackhpc_repo_mirror_url }}"
-
     # Use state=read and allow_missing=false to check for missing tags in test pulp.
     - import_role:
         name: stackhpc.pulp.pulp_container_content
@@ -30,6 +26,7 @@
           {%- set repository = kolla_docker_namespace ~ "/" ~ image -%}
           {%- set content = {
             "allow_missing": False,
+            "is_push": pulp_url == stackhpc_release_pulp_url,
             "repository": repository,
             "state": "read",
             "tags": tags,

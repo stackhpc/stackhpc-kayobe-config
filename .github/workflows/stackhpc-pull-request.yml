@@ -20,6 +20,7 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     outputs:
       aio: ${{ steps.changes.outputs.aio }}
+      check-tags: ${{ steps.changes.outputs.check-tags }}
     steps:
       - name: GitHub Checkout
         uses: actions/checkout@v4
@@ -79,12 +80,14 @@ jobs:
   check-tags:
     name: Check container image tags
     needs:
+      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-check-tags.yml
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
     secrets: inherit
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)

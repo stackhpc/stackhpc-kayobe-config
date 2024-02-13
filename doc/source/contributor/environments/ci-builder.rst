@@ -101,6 +101,34 @@ Next, configure the host OS & services.
 
    kayobe seed host configure
 
+.. _authenticating-pulp-proxy:
+
+Authenticating Pulp proxy
+-------------------------
+
+If you are building against authenticated package repositories such as those in
+`Ark <https://ark.stackhpc.com>`_, you will need to provide secure access to
+the repositories without leaking credentials into the built images or their
+metadata.  This is typically not the case for a client-local Pulp, which
+provides unauthenticated read-only access to the repositories on a trusted
+network.
+
+Docker provides `build
+secrets <https://docs.docker.com/build/building/secrets/>`_, but these must be
+explicitly requested for each RUN statement, making them challenging to use in
+Kolla.
+
+StackHPC Kayobe Configuration provides support for deploying an authenticating
+Pulp proxy that injects an HTTP basic auth header into requests that it
+proxies. Because this proxy bypasses Pulp's authentication, it must not be
+exposed to any untrusted environment.
+
+To deploy the proxy:
+
+.. parsed-literal::
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml
+
 Building images
 ===============
 
@@ -110,6 +138,9 @@ At this point you are ready to build and push some container images.
 
    kayobe seed container image build --push
    kayobe overcloud container image build --push
+
+If using an :ref:`authenticating Pulp proxy <authenticating-pulp-proxy>`,
+append ``-e stackhpc_repo_mirror_auth_proxy_enabled=true`` to these commands.
 
 The container images are tagged as |current_release|-<datetime>.
 
