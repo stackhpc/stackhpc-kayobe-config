@@ -216,16 +216,21 @@ stackhpc_epel_9_repos:
 base_centos_repo_overrides_post_yum_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
 stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
 
+# Apt sources.list entry prefix.
+# If using an authenticating Pulp proxy we need to trust the repository because
+# the certificate provided by the upstream repo will not match the proxy's IP.
+stackhpc_ubuntu_repo_prefix: "deb {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}[trusted=yes] {% endif %}"
+
 # List of base repositories for Ubuntu Jammy.
 stackhpc_ubuntu_jammy_base_repos:
-  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
-  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
-  - "deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
-  - "deb {{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
 
 # List of UCA repositories for Ubuntu Jammy.
 stackhpc_ubuntu_jammy_uca_repos:
-  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release_codename }} main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release_codename }} main"
 
 # List of repositories for Ubuntu Jammy.
 stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
@@ -246,25 +251,15 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
-    {% if stackhpc_repo_mirror_username is truthy %}
-               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
-               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
-    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
     {% else %}
     RUN \
         rm /etc/apt/sources.list && \
-        rm -f /etc/apt/auth.conf && \
-    {% if stackhpc_repo_mirror_url | urlsplit('scheme') == 'https' %}
-    {# We lack the ca-certificates package at this stage, so don't verify the CA #}
+    {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
+    {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% endif %}
-    {% if stackhpc_repo_mirror_username is truthy %}
-        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
-        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
-        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
     {% endif %}
     {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
@@ -283,10 +278,6 @@ kolla_build_blocks:
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
-    {% if stackhpc_repo_mirror_username is truthy %}
-               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nusername={{ stackhpc_repo_mirror_username }}|' \
-               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\npassword={{ stackhpc_repo_mirror_password }}|' \
-    {% endif %}
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
@@ -297,13 +288,7 @@ kolla_build_blocks:
     {% endif %}
     RUN \
         rm /etc/apt/sources.list && \
-        rm -f /etc/apt/auth.conf && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% if stackhpc_repo_mirror_username is truthy %}
-        echo 'machine {{ stackhpc_repo_mirror_url }}' >> /etc/apt/auth.conf && \
-        echo 'login {{ stackhpc_repo_mirror_username }}' >> /etc/apt/auth.conf && \
-        echo 'password {{ stackhpc_repo_mirror_password }}' >> /etc/apt/auth.conf && \
-    {% endif %}
     {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}

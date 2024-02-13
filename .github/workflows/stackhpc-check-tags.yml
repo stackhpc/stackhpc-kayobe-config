@@ -10,6 +10,10 @@ on:
         description: Kayobe container image
         type: string
         required: true
+      if:
+        description: Whether to run the workflow (workaround for required status checks issue)
+        type: boolean
+        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -19,7 +23,7 @@ env:
 jobs:
   check-tags:
     name: Check container image tags
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    if: inputs.if
     runs-on: arc-skc-aio-runner
     permissions: {}
     env:
