@@ -66,8 +66,48 @@ Some things to watch out for:
   required by the secure RBAC policies.
 * Application credentials generated before the existence of any implicit roles
   will not be granted those roles. This may include the ``reader`` role, which
-  is referenced in some of the new secure RBAC policies.  See `Keystone bug
-  2030061 <https://bugs.launchpad.net/keystone/+bug/2030061>`_.
+  is referenced in some of the new secure RBAC policies. This issue has been
+  seen in app creds generated in the Yoga release. See `Keystone bug 2030061
+  <https://bugs.launchpad.net/keystone/+bug/2030061>`_.
+
+  While the Keystone docs suggest that the ``member`` role should imply the
+  ``reader`` role, it has been seen at a customer that newly-generated app
+  creds in the Antelope release may need both the ``member`` and ``reader``
+  role specified.
+
+  Here are some SQL scripts you can call to first see if any app creds are
+  affected, and then add the reader role where needed. It is recommended to
+  `backup the database
+  <https://docs.openstack.org/kayobe/latest/administration/overcloud.html#performing-database-backups>`__
+  before running these.
+
+  .. code-block:: sql
+
+     docker exec -it mariadb bash
+     mysql -u root -p  keystone
+     # Enter the database password when prompted.
+
+     SELECT application_credential.internal_id, role.id AS reader_role_id
+     FROM application_credential, role
+     WHERE role.name = 'reader'
+     AND NOT EXISTS (
+         SELECT 1
+         FROM application_credential_role
+         WHERE application_credential_role.application_credential_id = application_credential.internal_id
+         AND application_credential_role.role_id = role.id
+     );
+
+     INSERT INTO application_credential_role (application_credential_id, role_id)
+     SELECT application_credential.internal_id, role.id
+     FROM application_credential, role
+     WHERE role.name = 'reader'
+     AND NOT EXISTS (
+         SELECT 1
+         FROM application_credential_role
+         WHERE application_credential_role.application_credential_id = application_credential.internal_id
+         AND application_credential_role.role_id = role.id
+     );
+
 * If you have overwritten ``[auth] tempest_roles`` in your Tempest config, such
   as to add the ``creator`` role for Barbican, you will need to also add the
   ``member role``. eg:
