@@ -37,6 +37,8 @@
 
     - name: Reboot to apply updates
       reboot:
+        reboot_timeout: 1200
+        connect_timeout: 600
       become: true
       when: file_status.stat.exists
 
@@ -53,12 +55,6 @@
 
     - name: Do release upgrade
       command: do-release-upgrade -f DistUpgradeViewNonInteractive
-      become: true
-
-    - name: Ensure Jammy repo definitions do not exist in sources.list
-      blockinfile:
-        path: /etc/apt/sources.list
-        state: absent
       become: true
 
     - name: Ensure old venvs do not exist
@@ -86,8 +82,16 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
   tasks:
+    - name: Ensure Jammy repo definitions do not exist in sources.list
+      blockinfile:
+        path: /etc/apt/sources.list
+        state: absent
+      become: true
+
     - name: Reboot and wait
       reboot:
+        reboot_timeout: 1200
+        connect_timeout: 600
       become: true
 
     - name: Update distribution facts
