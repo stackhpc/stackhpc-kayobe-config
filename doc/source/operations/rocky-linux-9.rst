@@ -83,8 +83,17 @@ Make the following changes to your Kayobe configuration:
      hw_machine_type = x86_64=q35
      num_pcie_ports = 16
 
-  This change does not need to be applied before migrating to Rocky Linux 9, but it should cause no harm to do so.
-  Note that this will not affect existing VMs, only newly created VMs.
+  This change does not need to be applied before migrating to Rocky Linux 9,
+  but it is likely the best time to do so.
+
+  .. warning::
+
+     This change will cause the interface names to change on any new VMs
+     launched with images that do not specify a hw_machine_type already.
+     Existing VMs will not be affected, but a rebuild will have the names
+     changed. Customers should be informed of this in case they have any
+     tooling that relies on interface names within their VMs.
+
 
 Routing rules
 -------------
@@ -152,7 +161,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 - Read the `Kolla Ansible OpenSearch migration
   docs <https://docs.openstack.org/kolla-ansible/yoga/reference/logging-and-monitoring/central-logging-guide-opensearch.html#migration>`__
 - If necessary, take a backup of the Elasticsearch data.
-- Ensure ``kolla_enable_elasticsearch`` is unset in ``etc/kayobe/kolla.yml``
+- Ensure ``kolla_enable_elasticsearch`` is set to false in ``etc/kayobe/kolla.yml``
 - If you have a custom Kolla Ansible inventory, ensure that it contains the ``opensearch`` and ``opensearch-dashboards`` groups. Otherwise, sync with the inventory in Kayobe.
 - Set ``kolla_enable_opensearch: true`` in ``etc/kayobe/kolla.yml``
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
