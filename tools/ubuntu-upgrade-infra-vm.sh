@@ -31,4 +31,4 @@ set -x
 
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release=jammy --limit $1
 
-kayobe infra vm host configure --limit $1 --kolla-limit $1 -e os_release=jammy
+kayobe infra vm host configure --limit $1 -e os_release=jammy
