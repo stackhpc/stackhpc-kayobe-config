@@ -6,17 +6,8 @@ groups:
 - name: HAProxy
   rules:
 
-  - alert: HaproxyDown
-    expr: haproxy_up == 0
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "HAProxy down (instance {{ $labels.instance }})"
-      description: "HAProxy down"
-
   - alert: HaproxyBackendDown
-    expr: haproxy_backend_up == 0
+    expr: haproxy_backend_status{state="DOWN"} == 1
     for: 1m
     labels:
       severity: critical
@@ -25,12 +16,12 @@ groups:
       description: "HAProxy backend is down"
 
   - alert: HaproxyServerDown
-    expr: haproxy_server_up == 0
+    expr: haproxy_server_status{state="DOWN"} == 1
     for: 1m
     labels:
       severity: critical
     annotations:
       summary: "HAProxy server down at {{ $labels.server }}"
-      description: "HAProxy server for {{ $labels.backend }} is down at {{ $labels.server }}"
+      description: "HAProxy server for {{ $labels.proxy }} is down at {{ $labels.server }}"
 
 {% endraw %}
