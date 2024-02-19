@@ -429,13 +429,33 @@ Full procedure for one batch of hosts
 
       kayobe overcloud provision -l <hostname>
 
-5. Host configure:
+5. If the compute node is using Libvirt on the Host, and one wants to transition to containerized Libvirt.
+
+   1. Update kolla.yml
+
+      .. code-block:: yaml
+
+         kolla_enable_nova_libvirt_container: "{{ inventory_hostname != 'localhost' and ansible_facts.distribution_major_version == '9' }}"
+
+   2. Update kolla/globals.yml
+
+      .. code-block:: yaml
+
+         enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.distribution_major_version == '9' }}{% endraw %}"
+
+   .. note::
+
+      Those settings are needed only for the timeframe of migration to Rocky Linux 9,
+      when CentOS Stream 8 or Rocky Linux 8 hosts with Libvirt on the hosts exists
+      in the environment.
+
+6. Host configure:
 
    .. code:: console
 
       kayobe overcloud host configure -l <hostname> -kl <hostname>
 
-6. If the compute node is running Ceph OSD services:
+7. If the compute node is running Ceph OSD services:
 
    1. Make sure the cephadm public key is in ``authorized_keys`` for stack or
       root user - depends on your setup. For example, your SSH key may
@@ -460,13 +480,13 @@ Full procedure for one batch of hosts
          ceph -s
          ceph -w
 
-7. Service deploy:
+8. Service deploy:
 
    .. code:: console
 
       kayobe overcloud service deploy -kl <hostname>
 
-8. If you are using Wazuh, you will need to deploy the agent again.
+9. If you are using Wazuh, you will need to deploy the agent again.
     Note that CIS benchmarks do not run on RL9 out-the-box. See
     `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
     for details.
@@ -475,7 +495,7 @@ Full procedure for one batch of hosts
 
        kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
-9. Restore the system to full health.
+10. Restore the system to full health.
 
    1. If any VMs were powered off, they may now be powered back on.
 
