@@ -40,8 +40,8 @@ jobs:
         run: |
           result=0
           changes_before=$(date -Imin -d -3hours)
-          for status in ACTIVE ERROR SHUTOFF; do
-              for instance in $(openstack server list --tags skc-ci-aio --os-compute-api-version 2.66 --format value --column Name --changes-before $changes_before --status $status); do
+          for status in ACTIVE BUILD ERROR SHUTOFF; do
+              for instance in $(openstack server list --tags skc-ci-aio --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
                   echo "Cleaning up $status instance $instance"
                   openstack server show $instance
                   if ! openstack server delete $instance; then
