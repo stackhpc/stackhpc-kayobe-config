@@ -266,6 +266,14 @@ Potential issues
 -  If you are using hyper-converged Ceph, please also note the potential issues
    in the Storage section below.
 
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
+
 Full procedure for one host
 ---------------------------
 
@@ -391,7 +399,13 @@ The possible batches depend on a number of things:
 Potential issues
 ----------------
 
-Nothing yet!
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one batch of hosts
 -------------------------------------
@@ -541,6 +555,14 @@ Potential issues
 
 -  Commands starting with ``ceph`` are all run on the cephadm bootstrap
    host in a cephadm shell unless stated otherwise.
+
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for any storage host
 -----------------------------------
