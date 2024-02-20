@@ -38,6 +38,11 @@ variable "aio_vm_volume_size" {
   default = 35
 }
 
+variable "aio_vm_tags" {
+  type = list(string)
+  default = []
+}
+
 locals {
   image_is_uuid = length(regexall("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", var.aio_vm_image)) > 0
 }
@@ -69,6 +74,8 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     destination_type      = "volume"
     delete_on_termination = true
   }
+
+  tags = var.aio_vm_tags
 }
 
 # Wait for the instance to be accessible via SSH before progressing.
