@@ -134,6 +134,7 @@ jobs:
           aio_vm_flavor = "${{ env.VM_FLAVOR }}"
           aio_vm_network = "${{ env.VM_NETWORK }}"
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
+          aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
@@ -144,6 +145,7 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
+          VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
         run: terraform plan
