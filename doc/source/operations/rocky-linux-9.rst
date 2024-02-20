@@ -245,9 +245,10 @@ Potential issues
 -  Network interface names may change between CentOS Stream 8 and Rocky Linux
    9, in which case you will need to update Kayobe configuration. Note that the
    configuration should remain correct for hosts not yet migrated, otherwise
-   fact gathering may fail. For example, this can be done using ``host_vars``.
-   Once all hosts are migrated, the change can be moved to ``group_vars`` and
-   the temporary ``host_vars`` deleted.
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one host
 ---------------------------
@@ -377,9 +378,10 @@ Potential issues
 -  Network interface names may change between CentOS Stream 8 and Rocky Linux
    9, in which case you will need to update Kayobe configuration. Note that the
    configuration should remain correct for hosts not yet migrated, otherwise
-   fact gathering may fail. For example, this can be done using ``host_vars``.
-   Once all hosts are migrated, the change can be moved to ``group_vars`` and
-   the temporary ``host_vars`` deleted.
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one batch of hosts
 -------------------------------------
@@ -533,9 +535,10 @@ Potential issues
 -  Network interface names may change between CentOS Stream 8 and Rocky Linux
    9, in which case you will need to update Kayobe configuration. Note that the
    configuration should remain correct for hosts not yet migrated, otherwise
-   fact gathering may fail. For example, this can be done using ``host_vars``.
-   Once all hosts are migrated, the change can be moved to ``group_vars`` and
-   the temporary ``host_vars`` deleted.
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for any storage host
 -----------------------------------
