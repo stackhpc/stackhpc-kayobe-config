@@ -22,8 +22,14 @@ resolv_is_managed: false
 # Build and deploy the development Pulp service repositories.
 # Use Ark's package repositories to install packages.
 stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
-stackhpc_repo_mirror_username: "{{ stackhpc_docker_registry_username }}"
-stackhpc_repo_mirror_password: "{{ stackhpc_docker_registry_password }}"
+stackhpc_repo_mirror_username: "skc-ci-aio"
+stackhpc_repo_mirror_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  31386366383365666135336331663635396237623139306362633933636233613765663731666338
+  3633633736333936383439623066653663333964343234350a393137383537316164323837386437
+  36613139323161643766666565643739373037623363636234343965343436653261326238393566
+  3837336661653962340a316631366463623138623530373133336665376433633437306631383666
+  30333461333535363433363336663664316634343432633766346564323833346663
 
 # Build and deploy released Pulp repository versions.
 stackhpc_repo_centos_stream_baseos_version: "{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
@@ -78,13 +84,5 @@ stackhpc_include_os_minor_version_in_repo_url: true
 # Host and port of container registry.
 # Push built images to the development Pulp service registry.
 stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
-
-# Username and password of container registry.
-stackhpc_docker_registry_username: "release-train-ci"
-stackhpc_docker_registry_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  38356134376436656165303634626531653836366233383531343439646433376334396438373735
-  3135643664353934356237376134623235356137383263300a333165386562396134633534376532
-  34386133383366326639353432386235336132663839333337323739633434613934346462363031
-  3265323831663964360a643962346231386462323236373963633066393736323234303833363535
-  3664
+stackhpc_docker_registry_username: "{{ stackhpc_repo_mirror_username }}"
+stackhpc_docker_registry_password: "{{ stackhpc_repo_mirror_password }}"
