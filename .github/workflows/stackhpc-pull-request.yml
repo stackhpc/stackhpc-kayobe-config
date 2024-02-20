@@ -87,7 +87,7 @@ jobs:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)
@@ -104,7 +104,7 @@ jobs:
       OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovn:
     name: aio (Ubuntu Jammy OVN)
@@ -121,7 +121,7 @@ jobs:
       OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovs:
     name: aio (Rocky 9 OVS)
@@ -138,7 +138,7 @@ jobs:
       OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovn:
     name: aio (Rocky 9 OVN)
@@ -155,7 +155,7 @@ jobs:
       OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   # Test two upgrade scenarios: Ubuntu Jammy OVS and Rocky 9 OVN.
 
@@ -175,7 +175,7 @@ jobs:
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
       upgrade: true
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-upgrade-rocky-9-ovn:
     name: aio upgrade (Rocky 9 OVN)
@@ -193,4 +193,4 @@ jobs:
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
       upgrade: true
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}

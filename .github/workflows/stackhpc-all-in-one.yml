@@ -38,7 +38,7 @@ on:
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
-        default: en1.large
+        default: en1.medium
       vm_network:
         description: Network for the all-in-one VM
         type: string
@@ -73,7 +73,7 @@ jobs:
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
-    if: inputs.if
+    if: ${{ inputs.if && !cancelled() }}
     runs-on: arc-skc-aio-runner
     permissions: {}
     env:
@@ -156,6 +156,7 @@ jobs:
           aio_vm_network = "${{ env.VM_NETWORK }}"
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
           aio_vm_volume_size = "${{ env.VM_VOLUME_SIZE }}"
+          aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
@@ -167,6 +168,7 @@ jobs:
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
           VM_VOLUME_SIZE: ${{ inputs.upgrade && '45' || '35' }}
+          VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
         run: terraform plan
@@ -181,13 +183,15 @@ jobs:
           for attempt in $(seq 5); do
               if terraform apply -auto-approve; then
                   echo "Created infrastructure on attempt $attempt"
-                  break
+                  exit 0
               fi
               echo "Failed to create infrastructure on attempt $attempt"
               sleep 10
               terraform destroy -auto-approve
               sleep 60
           done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
