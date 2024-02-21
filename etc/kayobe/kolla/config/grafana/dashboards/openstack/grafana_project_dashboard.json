@@ -25,7 +25,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2084480,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -89,9 +88,10 @@
           "fields": "",
           "values": false
         },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
@@ -134,6 +134,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -175,6 +176,7 @@
         "y": 11
       },
       "id": 5,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -199,7 +201,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(openstack_project_usage{project_id=~\"${project_id}\"}) by (placement_resource)",
+          "expr": "sum(avg_over_time(openstack_project_usage{project_id=~\"${project_id}\"}[30m:])) by (placement_resource)",
           "hide": false,
           "legendFormat": "{{placement_resource}}",
           "range": true,
@@ -234,6 +236,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -275,6 +278,7 @@
         "y": 11
       },
       "id": 19,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -299,7 +303,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "openstack_project_quota{project_id=~\"${project_id}\"}",
+          "expr": "avg_over_time(openstack_project_quota{project_id=~\"${project_id}\"}[30m:])",
           "hide": false,
           "legendFormat": "{{project_name}}:{{quota_resource}}",
           "range": true,
@@ -333,6 +337,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -433,6 +438,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -474,6 +480,7 @@
         "y": 20
       },
       "id": 20,
+      "interval": "30m",
       "options": {
         "legend": {
           "calcs": [
@@ -498,7 +505,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(irate(libvirt_domain_vcpu_time_seconds_total{}[5m]) / ignoring(instance,vcpu) group_left(domain) libvirt_domain_info_virtual_cpus{}) by (domain) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "expr": "avg(sum(irate(libvirt_domain_vcpu_time_seconds_total{}[5m]) / ignoring(instance,vcpu) group_left(domain) libvirt_domain_info_virtual_cpus{}) by (domain) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}) by (project_name)",
           "hide": false,
           "legendFormat": "{{instance_name}}",
           "range": true,
@@ -532,6 +539,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -598,7 +606,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "libvirt_domain_memory_stats_used_percent * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "expr": "avg(libvirt_domain_memory_stats_used_percent * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}) by (project_name)",
           "hide": false,
           "legendFormat": "{{instance_name}}",
           "range": true,
@@ -633,6 +641,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -700,9 +709,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(libvirt_domain_block_stats_read_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "expr": "avg(rate(libvirt_domain_block_stats_read_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}) by (project_name)",
           "hide": false,
-          "legendFormat": "{{instance_name}} : read {{target_device}}",
+          "legendFormat": "read: {{project_name}}",
           "range": true,
           "refId": "B"
         },
@@ -712,9 +721,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(libvirt_domain_block_stats_write_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"} * -1",
+          "expr": "avg(rate(libvirt_domain_block_stats_write_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"} * -1) by (project_name)",
           "hide": false,
-          "legendFormat": "{{instance_name}} : write {{target_device}}",
+          "legendFormat": " write: {{project_name}}",
           "range": true,
           "refId": "C"
         }
@@ -732,8 +741,212 @@
       },
       "id": 15,
       "panels": [],
-      "title": "Per Hypervisor Free Capacity",
+      "title": "Per Instance Utilization",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 1,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 30
+      },
+      "id": 23,
+      "interval": "30m",
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(irate(libvirt_domain_vcpu_time_seconds_total{}[5m]) / ignoring(instance,vcpu) group_left(domain) libvirt_domain_info_virtual_cpus{}) by (domain) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "hide": false,
+          "legendFormat": "{{instance_name}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "CPU utilization per instance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 30
+      },
+      "id": 24,
+      "interval": "30m",
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "libvirt_domain_memory_stats_used_percent * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "hide": false,
+          "legendFormat": "{{instance_name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Memory utilization per instance",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -744,63 +957,111 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
+          "max": 1,
+          "min": -1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "semi-dark-yellow",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 4
+                "color": "red",
+                "value": 80
               }
             ]
-          }
+          },
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
+        "h": 9,
+        "w": 8,
+        "x": 16,
         "y": 30
       },
-      "id": 2,
+      "id": 25,
       "options": {
-        "displayMode": "basic",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "orientation": "horizontal",
-        "reduceOptions": {
+        "legend": {
           "calcs": [
-            "lastNotNull"
+            "min",
+            "max"
           ],
-          "fields": "",
-          "values": false
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
-        "showUnfilled": true
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
-      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "builder",
-          "expr": "openstack_free_capacity_by_flavor_total",
-          "format": "time_series",
-          "legendFormat": "{{flavor_name}}",
+          "editorMode": "code",
+          "expr": "rate(libvirt_domain_block_stats_read_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"}",
+          "hide": false,
+          "legendFormat": "{{instance_name}} : read {{target_device}}",
           "range": true,
-          "refId": "A"
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "avg(rate(libvirt_domain_block_stats_write_time_seconds_total[5m]) * on(domain) group_left(instance_name,project_name,project_uuid) libvirt_domain_info_meta{project_uuid=~\"${project_id}\"} * -1) by (project_name)",
+          "hide": false,
+          "legendFormat": "{{instance_name}} : write {{target_device}}",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "Free Capacity by Flavor",
-      "type": "bargauge"
+      "title": "Disk utilization per instance",
+      "type": "timeseries"
     }
   ],
   "refresh": "",
@@ -817,7 +1078,7 @@
         "current": {
           "selected": false,
           "text": "Prometheus",
-          "value": "Prometheus"
+          "value": "PBFA97CFB590B2093"
         },
         "description": "The prometheus datasource used for queries.",
         "hide": 0,
@@ -867,14 +1128,14 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "OpenStack Project Metrics",
   "uid": "mXiuBDe7z",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }
 {% endraw %}
