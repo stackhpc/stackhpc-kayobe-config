@@ -45,7 +45,7 @@ jobs:
   generate-tag:
     name: Generate container image tag
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    runs-on: ubuntu-latest
     permissions: {}
     outputs:
       kolla_tag: ${{ steps.kolla_tag.outputs.kolla_tag }}
@@ -97,7 +97,7 @@ jobs:
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    runs-on: arc-skc-container-image-builder-runner
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -106,7 +106,13 @@ jobs:
     needs:
       - generate-tag
     steps:
-      - uses: actions/checkout@v4
+      - name: Install package dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv
+
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           path: src/kayobe-config
 
@@ -117,33 +123,9 @@ jobs:
           ref: refs/heads/stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
           path: src/kayobe
 
-      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
-      - name: Install dependencies
+      - name: Make sure dockerd is running and test Docker
         run: |
-          sudo dnf -y install python3-virtualenv
-
-      - name: Setup networking
-        run: |
-          if ! ip l show breth1 >/dev/null 2>&1; then
-              sudo ip l add breth1 type bridge
-          fi
-          sudo ip l set breth1 up
-          if ! ip a show breth1 | grep 192.168.33.3/24; then
-              sudo ip a add 192.168.33.3/24 dev breth1
-          fi
-          if ! ip l show dummy1 >/dev/null 2>&1; then
-              sudo ip l add dummy1 type dummy
-          fi
-          sudo ip l set dummy1 up
-          sudo ip l set dummy1 master breth1
-
-      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
-      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
-      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
-      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
-      - name: Kill dhclient (workaround)
-        run: |
-          (sudo killall dhclient || true) && sudo systemctl restart network
+          docker ps
 
       - name: Install Kayobe
         run: |
@@ -154,29 +136,38 @@ jobs:
           pip install -U pip &&
           pip install ../src/kayobe
 
-      - name: Bootstrap the control host
+      # Required for Pulp auth proxy deployment and Docker registry login.
+      # Normally installed during host configure.
+      - name: Install Docker Python SDK
         run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe control host bootstrap
+          sudo pip install docker
 
-      - name: Configure the seed host
+      - name: Configure localhost as a seed
+        run: |
+          cat > src/kayobe-config/etc/kayobe/environments/ci-builder/inventory/hosts << EOF
+          # A 'seed' host used for building images.
+          # Use localhost for container image builds.
+          [seed]
+          localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+          EOF
+
+      # See etc/kayobe/ansible/roles/pulp_auth_proxy/README.md for details.
+      # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+      # runner and dind containers.
+      - name: Deploy an authenticating package repository mirror proxy
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-
-      - name: Prune local Kolla container images over 1 week old
-        run: |
-          sudo docker image prune --all --force --filter until=168h --filter="label=kolla_version"
 
       - name: Build and push kolla overcloud images
         run: |
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -191,6 +182,7 @@ jobs:
         run: |
           args="-e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
@@ -203,13 +195,13 @@ jobs:
 
       - name: Get built container images
         run: |
-          sudo docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
+          docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Upload container images artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.distro }} container images
           path: ${{ matrix.distro }}-container-images

@@ -161,7 +161,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 - Read the `Kolla Ansible OpenSearch migration
   docs <https://docs.openstack.org/kolla-ansible/yoga/reference/logging-and-monitoring/central-logging-guide-opensearch.html#migration>`__
 - If necessary, take a backup of the Elasticsearch data.
-- Ensure ``kolla_enable_elasticsearch`` is unset in ``etc/kayobe/kolla.yml``
+- Ensure ``kolla_enable_elasticsearch`` is set to false in ``etc/kayobe/kolla.yml``
 - If you have a custom Kolla Ansible inventory, ensure that it contains the ``opensearch`` and ``opensearch-dashboards`` groups. Otherwise, sync with the inventory in Kayobe.
 - Set ``kolla_enable_opensearch: true`` in ``etc/kayobe/kolla.yml``
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
@@ -265,6 +265,14 @@ Potential issues
 
 -  If you are using hyper-converged Ceph, please also note the potential issues
    in the Storage section below.
+
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one host
 ---------------------------
@@ -391,7 +399,13 @@ The possible batches depend on a number of things:
 Potential issues
 ----------------
 
-Nothing yet!
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one batch of hosts
 -------------------------------------
@@ -429,13 +443,33 @@ Full procedure for one batch of hosts
 
       kayobe overcloud provision -l <hostname>
 
-5. Host configure:
+5. If the compute node is using Libvirt on the Host, and one wants to transition to containerized Libvirt.
+
+   1. Update kolla.yml
+
+      .. code-block:: yaml
+
+         kolla_enable_nova_libvirt_container: "{{ inventory_hostname != 'localhost' and ansible_facts.distribution_major_version == '9' }}"
+
+   2. Update kolla/globals.yml
+
+      .. code-block:: yaml
+
+         enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.distribution_major_version == '9' }}{% endraw %}"
+
+   .. note::
+
+      Those settings are needed only for the timeframe of migration to Rocky Linux 9,
+      when CentOS Stream 8 or Rocky Linux 8 hosts with Libvirt on the hosts exists
+      in the environment.
+
+6. Host configure:
 
    .. code:: console
 
       kayobe overcloud host configure -l <hostname> -kl <hostname>
 
-6. If the compute node is running Ceph OSD services:
+7. If the compute node is running Ceph OSD services:
 
    1. Make sure the cephadm public key is in ``authorized_keys`` for stack or
       root user - depends on your setup. For example, your SSH key may
@@ -460,13 +494,13 @@ Full procedure for one batch of hosts
          ceph -s
          ceph -w
 
-7. Service deploy:
+8. Service deploy:
 
    .. code:: console
 
       kayobe overcloud service deploy -kl <hostname>
 
-8. If you are using Wazuh, you will need to deploy the agent again.
+9. If you are using Wazuh, you will need to deploy the agent again.
     Note that CIS benchmarks do not run on RL9 out-the-box. See
     `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
     for details.
@@ -475,7 +509,7 @@ Full procedure for one batch of hosts
 
        kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
-9. Restore the system to full health.
+10. Restore the system to full health.
 
    1. If any VMs were powered off, they may now be powered back on.
 
@@ -541,6 +575,14 @@ Potential issues
 
 -  Commands starting with ``ceph`` are all run on the cephadm bootstrap
    host in a cephadm shell unless stated otherwise.
+
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for any storage host
 -----------------------------------
