@@ -13,3 +13,4 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    rocky-linux-9
    ubuntu-jammy
    secret-rotation
+   tempest
