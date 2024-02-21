@@ -171,9 +171,6 @@ jobs:
           if ${{ inputs.push }} == 'true'; then
             args="$args --push"
           fi
-          if [[ "${{ github.event.inputs.regexes }}" == "" ]]; then
-            args="$args -e kolla_build_neutron_ovs=true"
-          fi
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
