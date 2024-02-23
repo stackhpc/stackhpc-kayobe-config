@@ -38,11 +38,6 @@ on:
         type: boolean
         required: false
         default: true
-      scan:
-        description: Scan images?
-        type: boolean
-        required: false
-        default: true
       scan-push:
         description: Push scanned images that have vulnerabilities?
         type: boolean
@@ -177,6 +172,8 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Build kolla overcloud images
+        id: build_overcloud_images
+        continue-on-error: true
         run: |
           args="${{ github.event.inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
@@ -190,6 +187,8 @@ jobs:
         if: github.event.inputs.overcloud == 'true'
 
       - name: Build kolla seed images
+        id: build_seed_images
+        continue-on-error: true
         run: |
           args="-e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
@@ -209,48 +208,57 @@ jobs:
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Scan built container images
-        run: |
-          src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
-        shell: bash
-        if: github.event.inputs.scan == 'true'
-
-      - name: Upload built container images artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.distro }}-container-images
-          path: ${{ matrix.distro }}-container-images
-          retention-days: 7
+        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
 
       - name: Upload Trivy scan results artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.distro }}-image-scan-output
-          path: ${{ matrix.distro }}-image-scan-output
+          path: image-scan-output
           retention-days: 7
-        if: always()
+
+      - name: Fail if no images have passed scanning
+        run: if [ $(wc -l < image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
+        if: github.event.inputs.scan-push == 'false'
+
+      - name: Append dirty images to clean list
+        run: |
+          cat image-scan-output/dirty-images.txt >> image-scan-output/clean-images.txt
+        if: github.event.inputs.scan-push == 'true'
 
       - name: Push images
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run --become ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml
+          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml &&
 
           while read -r image; do
             # Retries!
             for i in {1..10}; do 
-              sudo docker push ${image} && break || sleep 5
+              docker push ${image} && break || sleep 5
             done
-          done < ${{ matrix.distro }}-docker-images.txt
+          done < image-scan-output/clean-images.txt
         shell: bash
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: github.event.inputs.push == 'true'
 
+      - name: Upload pushed container images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}-pushed-container-images
+          path: image-scan-output/clean-images.txt
+          retention-days: 7
+
+      - name: Fail when images failed to build
+        run: exit 1
+        if: steps.build_overcloud_images.outcome == 'failure' || steps.build_seed_images.outcome == 'failure'
+
   sync-container-repositories:
     name: Trigger container image repository sync
     needs:
       - container-image-build
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push == 'true'
     runs-on: ubuntu-latest
     permissions: {}
     steps:
