@@ -119,7 +119,7 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -208,27 +208,20 @@ jobs:
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
-      - name: Upload container images artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.distro }} container images
-          path: ${{ matrix.distro }}-container-images
-          retention-days: 7
-
-      - name: Generate list of images to scan/push
-        run: |
-          # Make a file of imagename:tag
-          grep --invert-match --no-filename ^REPOSITORY ${{ matrix.distro }}-container-images |\
-          sed 's/ \+/:/g' |\
-          cut -f 1,2 -d: > ${{ matrix.distro }}-docker-images.txt
-          
       - name: Scan built container images
         run: |
-          src/kayobe-config/tools/scan-images.sh
+          src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
         shell: bash
         if: github.event.inputs.scan == 'true'
 
-      - name: Upload Trivy scan artefacts
+      - name: Upload built container images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}-container-images
+          path: ${{ matrix.distro }}-container-images
+          retention-days: 7
+
+      - name: Upload Trivy scan results artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.distro }}-image-scan-output
