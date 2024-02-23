@@ -141,6 +141,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -153,8 +157,8 @@ stackhpc_centos_stream_repos:
   - url: "{{ stackhpc_repo_centos_stream_appstream_url }}"
     file: "CentOS-Stream-AppStream.repo"
     tag: "appstream"
-  - url: "{{ stackhpc_repo_centos_stream_extras_url }}"
-    file: "CentOS-Stream-Extras.repo"
+  - url: "{{ stackhpc_repo_centos_stream_extras_common_url }}"
+    file: "CentOS-Stream-Extras-common.repo"
     tag: "extras"
 
 # List of repositories for EPEL.
@@ -264,6 +268,12 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
+  - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-2.x"
+  - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-dashboards-2.x"
 
 # List of EPEL 9
 stackhpc_epel_9_repos:
@@ -277,19 +287,37 @@ base_centos_repo_overrides_post_yum_rocky_list: "{{ stackhpc_rocky_9_repos + sta
 base_centos_repo_overrides_post_yum_list: "{{ base_centos_repo_overrides_post_yum_centos_list if kolla_base_distro == 'centos' else base_centos_repo_overrides_post_yum_rocky_list }}"
 stackhpc_yum_repos: "{{ stackhpc_centos_stream_repos if kolla_base_distro == 'centos' else stackhpc_rocky_9_repos }}"
 
-# List of repositories for Ubuntu focal.
-stackhpc_ubuntu_focal_repos:
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
-  - "deb {{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
-  - "deb {{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/{{ openstack_release }} main"
+# Apt sources.list entry prefix.
+# If using an authenticating Pulp proxy we need to trust the repository because
+# the certificate provided by the upstream repo will not match the proxy's IP.
+stackhpc_ubuntu_repo_prefix: "deb {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}[trusted=yes] {% endif %}"
+
+# List of base repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_focal_url }} focal main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_focal_url }} focal-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_focal_url }} focal-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_focal_security_url }} focal-security main universe"
+
+# List of UCA repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_uca_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} focal-updates/{{ openstack_release }} main"
+
+# List of repositories for Ubuntu Focal.
+stackhpc_ubuntu_focal_repos: "{{ stackhpc_ubuntu_focal_base_repos + stackhpc_ubuntu_focal_uca_repos }}"
+
+# Whether to revert to the upstream mirrors in built Kolla container images.
+stackhpc_kolla_clean_up_repo_mirrors: true
 
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
 kolla_build_blocks:
   base_header: |
     {% if kolla_base_distro in ['centos', 'rocky'] %}
     RUN \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        mkdir -p /etc/yum.repos.d.backup && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in stackhpc_yum_repos %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -297,11 +325,26 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    RUN \
+        rm /etc/apt/sources.list && \
+    {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
+    {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
+        echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% endif %}
+    {% for repo in stackhpc_ubuntu_focal_base_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
     {% if kolla_base_distro in ['centos', 'rocky'] %}
         && \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -309,13 +352,41 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
+  # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    COPY sources.list.ubuntu /etc/apt/sources.list.backup
+    {% endif %}
     RUN \
-        rm -f /etc/apt/sources.list && \
+        rm /etc/apt/sources.list && \
+        rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
     {% for repo in stackhpc_ubuntu_focal_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+  footer: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro in ['centos', 'rocky'] %}
+    RUN \
+        if [ -f /etc/yum.repos.d.backup/repos.tar.gz ]; then \
+          tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+          rm -rf /etc/yum.repos.d.backup/; \
+        fi && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+          echo "Found repository mirror in Yum repositories"; \
+          exit 1; \
+        fi
+    {% else %}
+    RUN \
+        if [ -f /etc/apt/sources.list.backup ]; then \
+          mv /etc/apt/sources.list.backup /etc/apt/sources.list; \
+        fi && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
+          echo "Found repository mirror in APT repositories"; \
+          exit 1; \
+        fi
+    {% endif %}
+    {% endif %}
   bifrost_base_header: |
     ADD additions-archive /
   grafana_plugins_install: |
@@ -343,6 +414,10 @@ kolla_build_blocks:
     {% endif %}
   magnum_base_footer: |
     RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
+    {% raw %}
+    {% set magnum_capi_packages = ['git+https://github.com/stackhpc/magnum-capi-helm.git@v0.1.0'] %}
+    RUN {{ macros.install_pip(magnum_capi_packages | customizable("pip_packages")) }}
+    {% endraw %}
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
 # <image name>_<customization>_<operation>
@@ -355,7 +430,7 @@ kolla_build_customizations_common:
   ironic_inspector_pip_packages_append:
     - /additions/*
 
-kolla_build_customizations_centos:
+kolla_build_customizations_el:
   base_yum_repo_files_remove:
     - proxysql.repo
   neutron_base_packages_remove:
@@ -381,15 +456,15 @@ kolla_build_customizations_centos:
     - openvswitch2.17
     - python3-openvswitch2.17
   ovn_base_packages_override:
-    - ovn22.09
+    - ovn22.12
   ovn_controller_packages_override:
-    - ovn22.09-host
+    - ovn22.12-host
   ovn_nb_db_server_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   ovn_northd_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   ovn_sb_db_server_packages_override:
-    - ovn22.09-central
+    - ovn22.12-central
   openvswitch_base_packages_remove:
     - openvswitch
     - python3-openvswitch
@@ -405,7 +480,7 @@ kolla_build_customizations_ubuntu: {}
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_centos if kolla_base_distro == 'centos' else kolla_build_customizations_ubuntu) }}"
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_el if kolla_base_distro in ['centos', 'rocky'] else kolla_build_customizations_ubuntu) }}"
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args:

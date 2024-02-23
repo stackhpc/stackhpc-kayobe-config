@@ -107,6 +107,23 @@ apt repositories. This can be done on a host-by host basis by defining the
 variables as host or group vars under ``etc/kayobe/inventory/host_vars`` or
 ``etc/kayobe/inventory/group_vars``.
 
+For Ubuntu-based deployments, Pulp currently `lacks support
+<https://github.com/pulp/pulp_deb/issues/419>`_ for certain types of content,
+including i18n files and command-not-found indices. This breaks APT when the
+``command-not-found`` package is installed:
+
+.. code:: console
+
+   E: Failed to fetch https://pulp.example.com/pulp/content/ubuntu/jammy-security/development/dists/jammy-security/main/cnf/Commands-amd64   404  Not Found
+
+The ``purge-command-not-found.yml`` custom playbook can be used to uninstall
+the package, prior to running any other APT commands. It may be installed as a
+:kayobe-doc:`pre-hook <custom-ansible-playbooks.html#hooks>` to the ``host
+configure`` commands. Note that if used as a hook, this playbook matches all
+hosts, so will run against the seed, even when running ``overcloud host
+configure``. Depending on the stage of deployment, some hosts may be
+unreachable.
+
 For CentOS and Rocky Linux based systems, package manager configuration is
 provided by ``stackhpc_dnf_repos`` in ``etc/kayobe/dnf.yml``, which points to
 package repositories on the local Pulp server. To use this configuration, the
@@ -191,6 +208,16 @@ promoted to production:
 .. code-block:: console
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+
+Synchronising all Kolla container images can take a long time. A limited list
+of images can be synchronised using the ``stackhpc_pulp_images_kolla_filter``
+variable, which accepts a whitespace-separated list of regular expressions
+matching Kolla image names. Usage is similar to ``kolla-build`` CLI arguments.
+For example:
+
+.. code-block:: console
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
 
 Initial seed deployment
 -----------------------

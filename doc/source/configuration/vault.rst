@@ -229,6 +229,18 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud service deploy
 
+   If VM provisioning fails with an error with this format:
+
+   .. code-block::
+
+      Unable to establish connection to http://<kolla internal vip/fqdn>:9696/v2.0/ports/some-sort-of-uuid: Connection aborted
+
+   Restart the nova-compute container on all hypervisors:
+
+   .. code-block::
+
+      kayobe overcloud host command run --command "docker restart nova_compute" --become --show-output -l compute
+
 Barbican integration
 ====================
 
@@ -284,6 +296,7 @@ Configure Barbican
       [vault_plugin]
       vault_url = https://{{ kolla_internal_vip_address }}:8200
       use_ssl = True
+      ssl_ca_crt_file = {% raw %}{{ openstack_cacert }}{% endraw %}
       approle_role_id = {{ secrets_barbican_approle_role_id }}
       approle_secret_id = {{ secrets_barbican_approle_secret_id }}
       kv_mountpoint = barbican

@@ -17,8 +17,8 @@ The short version
 #. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
 
-Wazuh Manager
-=============
+Wazuh Manager Host
+==================
 
 Provision using infra-vms
 -------------------------
@@ -57,7 +57,9 @@ Define VM sizing in ``etc/kayobe/inventory/group_vars/wazuh-manager/infra-vms``:
   infra_vm_data_capacity: "200G"
 
 
-Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``:
+Optional: define LVM volumes in ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``.
+``/var/ossec`` often requires greater storage space, and ``/var/lib/wazuh-indexer``
+may be beneficial too.
 
 .. code-block:: console
 
@@ -73,7 +75,7 @@ Optional: define LVM volumes ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm
           size: "100%VG"
           filesystem: "ext4"
           mount: true
-          mntp: “/var/lib/elasticsearch”
+          mntp: "/var/ossec"
           create: true
 
 
@@ -224,11 +226,12 @@ You may need to modify some of the variables, including:
 
 .. note::
 
-    NOTE:
     If you are using multiple environments, and you need to customise Wazuh in
     each environment, create override files in an appropriate directory,
-    for example `etc/kayobe/environments/production/inventory/group_vars/`
+    for example ``etc/kayobe/environments/production/inventory/group_vars/``.
+
     Files which values can be overridden (in the context of Wazuh):
+
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
     - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
@@ -249,7 +252,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-manager/wazuh-secrets
+  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
 
 TLS (optional)
@@ -288,6 +291,21 @@ Example OpenSSL rune to convert to PKCS#8:
 
 TODO: document how to use a local certificate. Do we need to override all certificates?
 
+Custom SCA Policies (optional)
+------------------------------
+
+Wazuh ships with a large selection of Security Configuration Assessment
+rulesets. However, you may find you want to add more. This can be achieved via
+`custom policies <https://documentation.wazuh.com/current/user-manual/capabilities/sec-config-assessment/how-to-configure.html>`_.
+
+SKC supports this automatically, just add the policy file from this PR to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies``.
+
+Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
+the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
+include this in your deployment, simply copy it to
+``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
+
 Deploy
 ------
 
@@ -299,11 +317,14 @@ If you are using the wazuh generated certificates,
 this will result in the creation of some certificates and keys (in case of custom certs adjust path to it).
 Encrypt the keys (and remember to commit to git):
 
+``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key``
+
+If using the kayobe environments feature, otherwise:
 
 ``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
 
 Verification
-==============
+------------
 
 The Wazuh portal should be accessible on port 443 of the Wazuh
 manager’s IPs (using HTTPS, with the root CA cert in ``etc/kayobe/ansible/wazuh/certificates/wazuh-certificates/root-ca.pem``).
@@ -315,10 +336,8 @@ Troubleshooting
 
 Logs are in ``/var/log/wazuh-indexer/wazuh.log``. There are also logs in the journal.
 
-============
 Wazuh agents
 ============
-
 
 Wazuh agent playbook is located in ``etc/kayobe/ansible/wazuh-agent.yml``.
 
@@ -333,13 +352,13 @@ Deploy the Wazuh agents:
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
 Verification
-=============
+------------
 
 The Wazuh agents should register with the Wazuh manager. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
 
-Additional resources:
-=====================
+Additional resources
+--------------------
 
 For times when you need to upgrade wazuh with elasticsearch to version with opensearch or you just need to deinstall all wazuh components:
 Wazuh purge script: https://github.com/stackhpc/wazuh-server-purge

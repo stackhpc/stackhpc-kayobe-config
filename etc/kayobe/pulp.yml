@@ -217,8 +217,8 @@ stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
 # Whether to sync Rocky Linux 8 packages.
 stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' and os_release == '8' }}"
-# Rocky 8 minor version number. Supported values: 6, 7
-stackhpc_pulp_repo_rocky_8_minor_version: 7
+# Rocky 8 minor version number. Supported values: 6, 7, 8
+stackhpc_pulp_repo_rocky_8_minor_version: 8
 # Rocky 8 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_8_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_appstream_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
@@ -232,8 +232,8 @@ stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_ce
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' and os_release == '9' }}"
-# Rocky 9 minor version number. Supported values: 1, 2. Default is 2
-stackhpc_pulp_repo_rocky_9_minor_version: 2
+# Rocky 9 minor version number. Supported values: 1, 2, 3. Default is 3
+stackhpc_pulp_repo_rocky_9_minor_version: 3
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
@@ -275,6 +275,12 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
     distribution_name: "centos-stream-8-extras-"
     base_path: "centos/8-stream/extras/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+
+  - name: CentOS Stream 8 - Extras Common packages
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/extras-common/{{ stackhpc_pulp_repo_centos_stream_8_extras_common_version }}"
+    distribution_name: "centos-stream-8-extras-common-"
+    base_path: "centos/8-stream/extras/x86_64/extras-common/"
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # Base Rocky 8 repositories
@@ -460,6 +466,14 @@ stackhpc_pulp_rpm_repos:
     sync_policy: mirror_content_only
     required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
 
+  # ELRepo 9 repository
+  - name: ELRepo.org Community Enterprise Linux Repository - el9
+    url: "{{ stackhpc_release_pulp_content_url }}/elrepo/elrepo/el9/x86_64/{{ stackhpc_pulp_repo_elrepo_9_version }}"
+    distribution_name: elrepo-el9-x86_64-
+    base_path: elrepo/elrepo/el9/x86_64/
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+
   # Third-party repositories
   - name: Docker CE for CentOS 9
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/9/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
@@ -484,6 +498,18 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
     distribution_name: "rhel-9-influxdb-"
     base_path: "influxdb/rhel/9/x86_64/stable/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
+  - name: OpenSearch 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+    distribution_name: "opensearch-2-x-"
+    base_path: "opensearch/2.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
+  - name: OpenSearch Dashboards 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+    distribution_name: "opensearch-dashboards-2-x-"
+    base_path: "opensearch-dashboards/2.x/yum/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
 # RPM repositories
@@ -560,6 +586,7 @@ stackhpc_pulp_images_kolla:
   - bifrost-deploy
   - blazar-api
   - blazar-manager
+  - caso
   - cinder-api
   - cinder-backup
   - cinder-scheduler

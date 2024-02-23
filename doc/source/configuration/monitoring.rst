@@ -136,3 +136,64 @@ mgrs group and list them as the endpoints for prometheus. Additionally,
 depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
+
+OpenStack Capacity
+==================
+
+OpenStack Capacity allows you to see how much space you have available
+in your cloud. StackHPC Kayobe Config includes a playbook for manual
+deployment, and it's necessary that some variables are set before
+running this playbook.
+
+To successfully deploy OpenStack Capacity, you are required to specify
+the OpenStack application credentials in ``kayobe/secrets.yml`` as:
+
+.. code-block:: yaml
+
+    secrets_os_capacity_credential_id: <some_credential_id>
+    secrets_os_capacity_credential_secret: <some_credential_secret>
+
+The Keystone authentication URL and OpenStack region can be changed
+from their defaults in ``stackhpc-monitoring.yml`` should you need to
+set a different OpenStack region for your cloud. The authentication
+URL is set to use ``kolla_internal_fqdn`` by default:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_auth_url: <some_authentication_url>
+    stackhpc_os_capacity_openstack_region_name: <some_openstack_region>
+
+Additionally, you are required to enable a conditional flag to allow
+HAProxy and Prometheus configuration to be templated during deployment.
+
+.. code-block:: yaml
+
+    stackhpc_enable_os_capacity: true
+
+If you are deploying in a cloud with internal TLS, you may be required
+to disable certificate verification for the OpenStack Capacity exporter
+if your certificate is not signed by a trusted CA.
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_verify: false
+
+After defining your credentials, you may deploy OpenStack Capacity
+using the ``ansible/deploy-os-capacity-exporter.yml`` Ansible playbook
+via Kayobe.
+
+.. code-block:: console
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
+
+It is required that you re-configure the Prometheus, Grafana and HAProxy
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus,loadbalancer
+
+If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
+alerts after deployment it's likely the os_exporter secrets have not been
+set correctly, double check you have entered the correct authentication
+information appropiate to your cloud and re-deploy.

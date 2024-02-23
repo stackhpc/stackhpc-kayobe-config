@@ -1,0 +1,26 @@
+---
+- name: "Ensure {{ pulp_auth_proxy_conf_path }} exists"
+  ansible.builtin.file:
+    path: "{{ pulp_auth_proxy_conf_path }}"
+    state: directory
+    mode: 0700
+  become: true
+
+- name: Ensure pulp_proxy.conf is templated
+  ansible.builtin.template:
+    src: pulp_proxy.conf.j2
+    dest: "{{ pulp_auth_proxy_conf_path }}/pulp_proxy.conf"
+    mode: 0600
+  become: true
+  register: pulp_proxy_conf
+
+- name: Ensure pulp_proxy container is running
+  community.docker.docker_container:
+    name: pulp_proxy
+    image: nginx:stable-alpine
+    ports:
+      - "{{ pulp_auth_proxy_listen_ip }}:{{ pulp_auth_proxy_listen_port }}:80"
+    restart_policy: "no"
+    restart: "{{ pulp_proxy_conf is changed }}"
+    volumes:
+      - "{{ pulp_auth_proxy_conf_path }}/pulp_proxy.conf:/etc/nginx/conf.d/default.conf:ro"

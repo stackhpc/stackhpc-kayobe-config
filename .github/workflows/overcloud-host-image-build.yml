@@ -23,10 +23,6 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
-      SMS:
-        description: Push images to SMS
-        type: boolean
-        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -46,7 +42,7 @@ jobs:
     runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
     permissions: {}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: src/kayobe-config
 
@@ -71,7 +67,7 @@ jobs:
           rm -f /tmp/updated_images.txt
 
       - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: stackhpc/kayobe
           ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
@@ -143,7 +139,7 @@ jobs:
       - name: Install OpenStack client
         run: |
           source venvs/kayobe/bin/activate &&
-          pip install python-openstackclient
+          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
 
       - name: Build a CentOS Stream 8 overcloud host image
         id: build_centos_stream_8
@@ -187,7 +183,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.centos && steps.build_centos_stream_8.outcome == 'success' && inputs.sms
+        if: inputs.centos && steps.build_centos_stream_8.outcome == 'success'
 
       - name: Build a Rocky Linux 8 overcloud host image
         id: build_rocky_8
@@ -231,7 +227,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky8 && steps.build_rocky_8.outcome == 'success' && inputs.sms
+        if: inputs.rocky8 && steps.build_rocky_8.outcome == 'success'
 
       - name: Build a Rocky Linux 9 overcloud host image
         id: build_rocky_9
@@ -275,7 +271,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success' && inputs.sms
+        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Focal 20.04 overcloud host image
         id: build_ubuntu_focal
@@ -319,7 +315,7 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-focal && steps.build_ubuntu_focal.outcome == 'success' && inputs.sms
+        if: inputs.ubuntu-focal && steps.build_ubuntu_focal.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
         id: build_ubuntu_jammy
@@ -363,10 +359,10 @@ jobs:
         env:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success' && inputs.sms
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Upload updated images artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Updated images list
           path: /tmp/updated_images.txt
@@ -378,7 +374,7 @@ jobs:
             steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Upload CentOS build logs if build failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: CentOS build logs
           path: |
@@ -388,7 +384,7 @@ jobs:
         if: steps.build_centos_stream_8.outcome == 'failure'
 
       - name: Upload Rocky 8 build logs if build failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Rocky 8 build logs
           path: |
@@ -398,7 +394,7 @@ jobs:
         if: steps.build_rocky_8.outcome == 'failure'
 
       - name: Upload Rocky 9 build logs if build failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Rocky 9 build logs
           path: |
@@ -408,7 +404,7 @@ jobs:
         if: steps.build_rocky_9.outcome == 'failure'
 
       - name: Upload Ubuntu Focal 20.04 build logs if build failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Ubuntu Focal 20.04 build logs
           path: |
@@ -418,7 +414,7 @@ jobs:
         if: steps.build_ubuntu_focal.outcome == 'failure'
 
       - name: Upload Ubuntu Jammy 22.04 build logs if build failed
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Ubuntu Jammy 22.04 build logs
           path: |
