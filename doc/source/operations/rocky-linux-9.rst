@@ -45,11 +45,6 @@ The following patches have been **merged** to the downstream StackHPC ``stackhpc
 
 -  https://review.opendev.org/c/openstack/kayobe/+/898563 (to fix ``kayobe overcloud deprovision``)
 -  https://review.opendev.org/c/openstack/kayobe/+/898284 (if deployment predates Ussuri)
-
-   - TODO: Put this into the procedure.
-   -  **Must reprocess inspection data to update IPA kernel URL (see
-      release note)**
-
 -  https://review.opendev.org/c/openstack/kayobe/+/898777
 -  https://review.opendev.org/c/openstack/kayobe/+/898915
 -  https://review.opendev.org/c/openstack/kayobe/+/898905
@@ -118,6 +113,30 @@ The error from NetworkManager was:
   .. code-block:: shell
 
       [1697192659.9611] keyfile: ipv4.routing-rules: invalid value for "routing-rule1": invalid value for "table"
+
+Updating the IPA kernel URL
+---------------------------
+
+If the enrolment of the overcloud nodes in Bifrost predates Ussuri, the
+``deploy_kernel`` configuration probably still points to the old
+``ipa.vmlinuz`` file, resulting in the following error in Bifrost:
+
+.. code-block:: shell
+
+   Failed to prepare to deploy: Validation of image href http://10.161.0.3:8080/ipa.vmlinuz failed, reason: Got HTTP code 404 instead of 200 in response to HEAD request.
+
+Switch the deployment kernel to ``ipa.kernel``:
+
+.. code-block:: shell
+
+   (bifrost-deploy) OS_CLOUD=bifrost baremetal node set <node> --driver-info deploy_kernel=http://<seed-ip>:8080/ipa.kernel
+
+Alternatively, the node inspection data can be reprocessed, but this may erase
+any manual configuration changes applied since the last inspection:
+
+.. code-block:: shell
+
+   (bifrost-deploy) OS_CLOUD=bifrost baremetal introspection reprocess <node>
 
 Switching to iPXE
 -----------------
