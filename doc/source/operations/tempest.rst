@@ -101,7 +101,7 @@ Build a Kayobe automation image:
     git submodule update
     # If running on Ubuntu, the fact cache can confuse Kayobe in the Rocky-based container
     mv etc/kayobe/facts{,-old}
-    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+    sudo DOCKER_BUILDKIT=1 docker build --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 
 Configuration
 =============
