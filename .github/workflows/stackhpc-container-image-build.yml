@@ -38,10 +38,11 @@ on:
         type: boolean
         required: false
         default: true
-      scan-push:
+      push-dirty:
         description: Push scanned images that have vulnerabilities?
         type: boolean
         required: false
+        # NOTE(Alex-Welsh): This default should be flipped once we resolve existing failures
         default: true
 
 env:
@@ -171,11 +172,14 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: Create build logs output directory
+        run: mkdir image-build-logs 
+
       - name: Build kolla overcloud images
         id: build_overcloud_images
         continue-on-error: true
         run: |
-          args="${{ github.event.inputs.regexes }}"
+          args="${{ inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ needs.generate-tag.outputs.kolla_tag }}"
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
@@ -184,7 +188,11 @@ jobs:
           kayobe overcloud container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.event.inputs.overcloud == 'true'
+        if: inputs.overcloud
+
+      - name: Copy overcloud container image build logs to output directory
+        run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-overcloud.log
+        if: inputs.overcloud
 
       - name: Build kolla seed images
         id: build_seed_images
@@ -198,7 +206,11 @@ jobs:
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.event.inputs.seed == 'true'
+        if: inputs.seed
+
+      - name: Copy seed container image build logs to output directory
+        run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
+        if: inputs.seed
 
       - name: Get built container images
         run: |
@@ -208,57 +220,74 @@ jobs:
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Scan built container images
-        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
-
-      - name: Upload Trivy scan results artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.distro }}-image-scan-output
-          path: image-scan-output
-          retention-days: 7
+        run: |
+          src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
 
       - name: Fail if no images have passed scanning
         run: if [ $(wc -l < image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
-        if: github.event.inputs.scan-push == 'false'
+        if: ${{ !inputs.push-dirty }}
 
-      - name: Append dirty images to clean list
+      - name: Copy clean images to push-attempt-images list
+        run: cp image-scan-output/clean-images.txt image-scan-output/push-attempt-images.txt
+
+      - name: Append dirty images to push list
         run: |
-          cat image-scan-output/dirty-images.txt >> image-scan-output/clean-images.txt
-        if: github.event.inputs.scan-push == 'true'
+          cat image-scan-output/dirty-images.txt >> image-scan-output/push-attempt-images.txt
+        if: inputs.push-dirty
 
       - name: Push images
         run: |
+          touch image-scan-output/push-failed-images.txt
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml &&
 
           while read -r image; do
             # Retries!
-            for i in {1..10}; do 
-              docker push ${image} && break || sleep 5
+            for i in {1..5}; do 
+              if docker push $image; then
+                echo "Pushed $image"
+                break
+              elif $i == 5; then
+                echo "Failed to push $image"
+                echo $image >> image-scan-output/push-failed-images.txt
+              else
+                echo "Failed on retry $i"
+                sleep 5
+              fi;
             done
-          done < image-scan-output/clean-images.txt
+          done < image-scan-output/push-attempt-images.txt &&
+          mv image-scan-output image-build-logs/image-scan-output
         shell: bash
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: github.event.inputs.push == 'true'
+        if: inputs.push
 
-      - name: Upload pushed container images artifact
+      - name: Upload output artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.distro }}-pushed-container-images
-          path: image-scan-output/clean-images.txt
+          name: ${{ matrix.distro }}-logs
+          path: image-build-logs
           retention-days: 7
+        if: ${{ !cancelled() }}
 
       - name: Fail when images failed to build
-        run: exit 1
-        if: steps.build_overcloud_images.outcome == 'failure' || steps.build_seed_images.outcome == 'failure'
+        run: echo "An image build failed. Check the workflow artifact for build logs" && exit 1
+        if: ${{ steps.build_overcloud_images.outcome == 'failure' || steps.build_seed_images.outcome == 'failure' }}
+
+      - name: Fail when images failed to push
+        run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
+        if: ${{ !cancelled() }}
+
+      - name: Fail when images failed scanning
+        run: if [ $(wc -l < image-build-logs/dirty-images.txt) -gt 0 ]; then cat image-build-logs/dirty-images.txt && exit 1; fi
+        if: ${{ !inputs.push-dirty && !cancelled() }}
 
   sync-container-repositories:
     name: Trigger container image repository sync
     needs:
       - container-image-build
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push == 'true'
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -267,7 +296,7 @@ jobs:
       - name: Trigger container image repository sync
         run: |
           filter='${{ inputs.regexes }}'
-          if [[ -n $filter ]] && [[ ${{ github.event.inputs.seed }} == 'true' ]]; then
+          if [[ -n $filter ]] && [[ ${{ inputs.seed }} == 'true' ]]; then
             filter="$filter bifrost"
           fi
           gh workflow run \
