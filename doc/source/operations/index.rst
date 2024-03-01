@@ -12,3 +12,4 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    octavia
    hotfix-playbook
    secret-rotation
+   tempest
