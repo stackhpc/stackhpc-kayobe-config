@@ -176,7 +176,7 @@ you understand all the options before applying them.
     min_compute_nodes = 2
     # Required to test some API features
     min_microversion = 2.1
-    max_microversion = 2.90
+    max_microversion = 2.93
     # Flavors for creating test servers and server resize. The ``alt`` flavor should be larger.
     flavor_ref = <flavor UUID>
     flavor_ref_alt = <different flavor UUID>
@@ -190,14 +190,14 @@ you understand all the options before applying them.
     volume_backed_live_migration = true
 
     [placement]
-    min_microversion = "1.0"
-    max_microversion = "1.39"
+    min_microversion = 1.0
+    max_microversion = 1.39
 
     [volume]
     storage_protocol = ceph
     # Required to test some API features
     min_microversion = 3.0
-    max_microversion = 3.68
+    max_microversion = 3.70
 
 Tempest configuration override files are stored in
 ``.automation.conf/tempest/``. The default file used is
