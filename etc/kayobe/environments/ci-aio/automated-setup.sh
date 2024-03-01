@@ -2,30 +2,35 @@
 
 set -eux
 
-cat << EOF | sudo tee -a /etc/hosts
-10.205.3.187 pulp-server pulp-server.internal.sms-cloud
-EOF
-
-if sudo vgdisplay | grep -q lvm2; then
-   sudo pvresize $(sudo pvs --noheadings | head -n 1 | awk '{print $1}')
-   sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
-   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
-fi
-
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/yoga
 KAYOBE_CONFIG_BRANCH=stackhpc/yoga
+KAYOBE_AIO_LVM=true
 
 if [[ ! -f $BASE_PATH/vault-pw ]]; then
     echo "Vault password file not found at $BASE_PATH/vault-pw"
     exit 1
 fi
 
+if sudo vgdisplay | grep -q lvm2; then
+   sudo pvresize $(sudo pvs --noheadings | head -n 1 | awk '{print $1}')
+   sudo lvextend -L 4G /dev/rootvg/lv_home -r || true
+   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r || true
+elif $KAYOBE_AIO_LVM; then
+   echo "This environment is only designed for LVM images. If possible, switch to an LVM image.
+   To ignore this warning, set KAYOBE_AIO_LVM to false in this script."
+   exit 1
+fi
+
+cat << EOF | sudo tee -a /etc/hosts
+10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+EOF
+
 if type dnf; then
     sudo dnf -y install git
 else
     sudo apt update
-    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3
+    sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv
 fi
 
 cd $BASE_PATH
@@ -34,6 +39,11 @@ pushd src
 [[ -d kayobe ]] || git clone https://github.com/stackhpc/kayobe.git -b $KAYOBE_BRANCH
 [[ -d kayobe-config ]] || git clone https://github.com/stackhpc/stackhpc-kayobe-config kayobe-config -b $KAYOBE_CONFIG_BRANCH
 popd
+
+if ! sudo vgdisplay | grep -q lvm2; then
+   rm $BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/inventory/group_vars/controllers/lvm.yml
+   sed -i -e '/controller_lvm_groups/,+2d' $BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/controllers.yml
+fi
 
 mkdir -p venvs
 pushd venvs
@@ -68,7 +78,7 @@ source kayobe-env --environment ci-aio
 
 kayobe control host bootstrap
 
-kayobe playbook run etc/kayobe/ansible/growroot.yml
+kayobe playbook run etc/kayobe/ansible/growroot.yml etc/kayobe/ansible/purge-command-not-found.yml
 
 kayobe overcloud host configure
 
