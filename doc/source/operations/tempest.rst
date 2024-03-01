@@ -65,7 +65,7 @@ To install Docker on Ubuntu:
     sudo apt-get update
     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-Installing Docker on CentOS/Rocky:
+Installing Docker on Rocky:
 
 .. code-block:: bash
 
@@ -99,7 +99,7 @@ Build a Kayobe automation image:
 
     git submodule init
     git submodule update
-    # If running on Ubuntu, the fact cache can confuse Kayobe in the CentOS-based container
+    # If running on Ubuntu, the fact cache can confuse Kayobe in the Rocky-based container
     mv etc/kayobe/facts{,-old}
     sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 

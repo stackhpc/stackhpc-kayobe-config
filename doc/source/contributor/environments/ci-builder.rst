@@ -25,7 +25,7 @@ Access the host via SSH.
 
 Install package dependencies.
 
-On CentOS:
+On Rocky Linux:
 
 .. parsed-literal::
 
