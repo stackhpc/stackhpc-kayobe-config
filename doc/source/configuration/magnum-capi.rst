@@ -15,7 +15,7 @@ The Cluster API architecture relies on a CAPI management cluster in order to run
 
 2. It must be reachable from the control plane nodes (either controllers or dedicated network hosts) on which the Magnum container is running (so that the Magnum can reach the IP listed in the management cluster's ``kubeconfig`` file).
 
-For testing purposes, a simple `k3s <https://k3s.io>`_ cluster would suffice. For production deployments, the recommended solution is to instead set up a separate HA management cluster in an isolated OpenStack project by leveraging the CAPI management cluster configuration used in Azimuth. This approach will provide a resilient HA management cluster with a standard set of component versions which are regularly tested in Azimuth CI. 
+For testing purposes, a simple `k3s <https://k3s.io>`_ cluster would suffice. For production deployments, the recommended solution is to instead set up a separate HA management cluster in an isolated OpenStack project by leveraging the CAPI management cluster configuration used in Azimuth. This approach will provide a resilient HA management cluster with a standard set of component versions which are regularly tested in Azimuth CI.
 The general process for setting up this CAPI management cluster using Azimuth tooling is described here, but the `Azimuth operator documentation <https://stackhpc.github.io/azimuth-config/#deploying-azimuth>`_ should be consulted for additional information if required.
 
 The diagram below shows the general architecture of the CAPI management cluster provisioned using Azimuth tooling. It consists of a Seed VM running a small k3s cluster (which itself is actually a CAPI management cluster but only for the purpose of managing the HA cluster) as well as a HA management cluster made up of (by default) 3 control plane VMs and 3 worker VMs. This HA cluster runs the various Kubernetes component responsible for managing Magnum tenant clusters.
@@ -69,7 +69,7 @@ To deploy the CAPI management cluster using this site-specific environment, run
     ansible-galaxy install -f -r ./requirements.yml
 
     # Run the provision playbook from the azimuth-ops collection
-    # NOTE: THIS COMMAND RUNS A DIFFERENT PLAYBOOK FROM 
+    # NOTE: THIS COMMAND RUNS A DIFFERENT PLAYBOOK FROM
     # THE STANDARD AZIMUTH DEPLOYMENT INSTRUCTIONS
     ansible-playbook stackhpc.azimuth_ops.provision_capi_mgmt
 
@@ -97,7 +97,7 @@ It is possible to reconfigure or upgrade the management cluster after initial de
 Kayobe Config
 ==============
 
-To configure the Magnum service with the Cluster API driver enabled, first ensure that your kayobe-config branch is up to date with |current_release_git_branch_name|. 
+To configure the Magnum service with the Cluster API driver enabled, first ensure that your kayobe-config branch is up to date with |current_release_git_branch_name|.
 
 Next, copy the CAPI management cluster's kubeconfig file into to your stackhpc-kayobe-config environment (e.g. ``<your-skc-environment>/kolla/config/magnum/kubeconfig``). This file must be Ansible vault encrypted.
 
@@ -122,6 +122,6 @@ Magnum Cluster Templates
 
 The clusters deployed by the Cluster API driver make use of the Ubuntu Kubernetes images built in the `azimuth-images <https://github.com/stackhpc/azimuth-images>`_ repository and then use `capi-helm-charts <https://github.com/stackhpc/capi-helm-charts>`_ to provide the Helm charts which define the clusters based on these images. Between them, these two repositories have CI jobs which regularly build and test images and Helm charts for the latest Kubernetes versions. It is therefore important to update the cluster templates on each cloud regularly to make use of these new releases.
 
-Magnum templates should be defined within an existing client-specific `openstack-config <https://github.com/stackhpc/openstack-config>`_ repository. 
+Magnum templates should be defined within an existing client-specific `openstack-config <https://github.com/stackhpc/openstack-config>`_ repository.
 
 TODO: Add more info here once we decide how to manage template updates in openstack-config.
