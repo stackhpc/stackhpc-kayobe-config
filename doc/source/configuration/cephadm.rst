@@ -448,7 +448,7 @@ Configure the Ceph hosts:
 
 .. code:: bash
 
-   kayobe overcloud host configure --limit storage --kolla-limit storage
+   kayobe overcloud host configure --limit storage
 
 Ceph deployment
 ---------------

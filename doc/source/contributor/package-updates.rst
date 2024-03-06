@@ -102,7 +102,7 @@ For Rocky Linux 9, bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
-   kayobe overcloud host configure -t dnf -kt none
+   kayobe overcloud host configure -t dnf
 
 Install new packages:
 
