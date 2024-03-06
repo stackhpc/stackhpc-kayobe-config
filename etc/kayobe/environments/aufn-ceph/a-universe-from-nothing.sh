@@ -87,7 +87,7 @@ kayobe seed vm provision
 kayobe seed host configure
 
 # Deploy local pulp server as a container on the seed VM
-kayobe seed service deploy --tags seed-deploy-containers --kolla-tags
+kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
 
 # Deploying the seed restarts networking interface, run configure-local-networking.sh again to re-add routes.
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
