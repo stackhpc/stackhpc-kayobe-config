@@ -115,7 +115,15 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
+
+      - name: Install gh
+        run: |
+          sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -213,31 +221,33 @@ jobs:
         if: inputs.seed
 
       - name: Get built container images
-        run: |
-          docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/${{ matrix.distro }}-*:${{ needs.generate-tag.outputs.kolla_tag }}" > ${{ matrix.distro }}-container-images
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Scan built container images
-        run: |
-          src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
+        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ needs.generate-tag.outputs.kolla_tag }}
+
+      - name: Move image scan logs to output artifact
+        run: mv image-scan-output image-build-logs/image-scan-output
 
       - name: Fail if no images have passed scanning
-        run: if [ $(wc -l < image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
         if: ${{ !inputs.push-dirty }}
 
       - name: Copy clean images to push-attempt-images list
-        run: cp image-scan-output/clean-images.txt image-scan-output/push-attempt-images.txt
+        run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
+        if: inputs.push
 
       - name: Append dirty images to push list
         run: |
-          cat image-scan-output/dirty-images.txt >> image-scan-output/push-attempt-images.txt
-        if: inputs.push-dirty
+          cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push && inputs.push-dirty }}
 
       - name: Push images
         run: |
-          touch image-scan-output/push-failed-images.txt
+          touch image-build-logs/push-failed-images.txt
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml &&
@@ -250,14 +260,13 @@ jobs:
                 break
               elif $i == 5; then
                 echo "Failed to push $image"
-                echo $image >> image-scan-output/push-failed-images.txt
+                echo $image >> image-build-logs/push-failed-images.txt
               else
                 echo "Failed on retry $i"
                 sleep 5
               fi;
             done
-          done < image-scan-output/push-attempt-images.txt &&
-          mv image-scan-output image-build-logs/image-scan-output
+          done < image-build-logs/push-attempt-images.txt
         shell: bash
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -283,14 +292,6 @@ jobs:
         run: if [ $(wc -l < image-build-logs/dirty-images.txt) -gt 0 ]; then cat image-build-logs/dirty-images.txt && exit 1; fi
         if: ${{ !inputs.push-dirty && !cancelled() }}
 
-  sync-container-repositories:
-    name: Trigger container image repository sync
-    needs:
-      - container-image-build
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
       - name: Trigger container image repository sync
@@ -307,7 +308,9 @@ jobs:
           -f sync-new-images=false
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
 
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
+        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
