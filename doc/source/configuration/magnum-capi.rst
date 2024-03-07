@@ -4,7 +4,7 @@ Magnum Cluster API Driver
 
 A new driver for Magnum has been written which is an alternative to Heat (as Heat gets phased out due to maintenance burden) and instead uses the Kubernetes `Cluster API project <https://cluster-api.sigs.k8s.io>`_ to manage the OpenStack infrastructure required by Magnum clusters. The idea behind the Cluster API (CAPI) project is that infrastructure is managed using Kubernetes-style declarative APIs, which in practice means a set of Custom Resource Definitions (CRDs) and Kubernetes `operators <https://kubernetes.io/docs/concepts/extend-kubernetes/operator/>`_ to translate instances of those custom Kubernetes resources into the required OpenStack API resources. These same operators also handle resource reconciliation (i.e. when the Kubernetes custom resource is modified, the operator will make the required OpenStack API calls to reflect those changes).
 
-The new CAPI driver and the old Heat driver are compatible and can both be active on the same deployment, and the decision of which driver is used for a given template depends on certain parameters inferred from the Magnum cluster template. For the new driver, these parameters are ``{'server_type' : 'vm', 'os': 'ubuntu', 'coe': kubernetes'}``. Drivers can be enabled and disabled using the ``disabled_drivers`` parameter in the ``[drivers]`` section of ``magnum.conf``.
+The new CAPI driver and the old Heat driver are compatible and can both be active on the same deployment, and the decision of which driver is used for a given template depends on certain parameters inferred from the Magnum cluster template. For the new driver, these parameters are ``{'server_type': 'vm', 'os': 'ubuntu', 'coe': kubernetes'}``. Drivers can be enabled and disabled using the ``disabled_drivers`` parameter in the ``[drivers]`` section of ``magnum.conf``.
 
 Deployment Prerequisites
 ========================
@@ -46,13 +46,15 @@ Having created this concrete environment to hold site-specific configuration, ne
 
 The comments surrounding each option in the ``variables.yml`` provide some tips on choosing sensible values (e.g. resource requirements for each flavor). In most cases, other configuration options can be left blank since they will fall back to the upstream defaults; however, if the default configuration is not suitable, the roles in `ansible-collection-azimuth-ops <https://github.com/stackhpc/ansible-collection-azimuth-ops>`_ contain a range of config variables which can be overridden in ``variables.yml`` as required. In particular, the `infra role variables <https://github.com/stackhpc/ansible-collection-azimuth-ops/blob/main/roles/infra/defaults/main.yml>`_ are mostly relevant to the seed VM configuration, and the `capi_cluster role variables <https://github.com/stackhpc/ansible-collection-azimuth-ops/blob/main/roles/capi_cluster/defaults/main.yml>`_ are relevant for HA cluster config.
 
-*Note* - One important distinction between azimuth-config and stackhpc-kayobe-config is that the environments in azimuth-config are `layered`. This can be seen in the ``ansible.cfg`` file for each environment, which will contain a line such as ``inventory = ../base/inventory,../ha/inventory,../capi-mgmt/inventory,./inventory`` showing the inheritance chain for variables defined in each environment. See `these docs <https://stackhpc.github.io/azimuth-config/environments/>`_ for more details.
+:Note:
+
+    One important distinction between azimuth-config and stackhpc-kayobe-config is that the environments in azimuth-config are `layered`. This can be seen in the ``ansible.cfg`` file for each environment, which will contain a line of the form ``inventory = <list-of-environments>`` showing the inheritance chain for variables defined in each environment. See `these docs <https://stackhpc.github.io/azimuth-config/environments/>`_ for more details.
 
 In addition to setting the required infrastructure variables, Terraform must also be configured to use a remote state store (either GitLab or S3) for the seed VM state. To do so, follow the instructions found `here <https://stackhpc.github.io/azimuth-config/repository/terraform/>`_.
 
 The HA cluster also contains a deployment of `kube-prometheus-stack <https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack>`_ for monitoring and alerting. To send the cluster alerts to Slack, the ``alertmanager_config_slack_webhook_url`` variable should be set in ``environments/<site-specific-name>/inventory/group-vars/all/secrets.yml``. If the repository was encrypted correctly above, this file will automatically be encrypted before a git push. Run ``git-crypt status -e`` to verify that this file is included in the encrypted list before git-committing the webhook URL.
 
-The final step before beginning deployment of the CAPI management cluster is to provide some cloud credentials. It is recommended that the CAPI management cluster is deployed in an isolated OpenStack project. After creating the target project (preferably using openstack-config), generate an application credential for the project using the Identity tab in Horizon and then download the corresponding ``clouds.yaml`` file and place it in ``environments/<site-specific-name>/clouds.yaml``.
+The final step before beginning deployment of the CAPI management cluster is to provide some cloud credentials. It is recommended that the CAPI management cluster is deployed in an isolated OpenStack project. After creating the target project (preferably using `openstack-config <https://github.com/stackhpc/openstack-config>`_), generate an application credential for the project using the Identity tab in Horizon and then download the corresponding ``clouds.yaml`` file and place it in ``environments/<site-specific-name>/clouds.yaml``.
 
 To deploy the CAPI management cluster using this site-specific environment, run
 
@@ -88,7 +90,9 @@ The general running order of the provisioning playbook is the following:
 
 Once the seed VM has been provisioned, it can be accessed via SSH by running ``./bin/seed-ssh`` from the root of the azimuth-config repository. Within the seed VM, the k3s cluster and the HA cluster can both be accessed using the pre-installed ``kubectl`` and ``helm`` command line tools. Both of these tools will target the k3s cluster by default; however, the ``kubeconfig`` file for the HA cluster can be found in the seed's home directory (named e.g. ``kubeconfig-capi-mgmt-<site-specific-name>.yaml``).
 
-*Note* - The provision playbook is responsible for copying the HA ``kubeconfig`` to this location *after* the HA cluster is up and running. If you need to access the HA cluster while it is still deploying, the ``kubeconfig`` file can be found stored as a Kubernetes secret on the k3s cluster.
+:Note:
+
+    The provision playbook is responsible for copying the HA ``kubeconfig`` to this location *after* the HA cluster is up and running. If you need to access the HA cluster while it is still deploying, the ``kubeconfig`` file can be found stored as a Kubernetes secret on the k3s cluster.
 
 It is possible to reconfigure or upgrade the management cluster after initial deployment by simply re-running the ``provision_capi_mgmt`` playbook. However, it's preferable that most Day 2 ops (i.e. reconfigures and upgrades) be done via a CD Pipeline. See `these Azimuth docs <https://stackhpc.github.io/azimuth-config/deployment/automation/>`_ for more information.
 
