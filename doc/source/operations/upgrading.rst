@@ -106,6 +106,24 @@ Known issues
 * The OVN sync repair tool removes metadata ports, breaking OVN load balancers.
   See `LP#2038091 <https://bugs.launchpad.net/neutron/+bug/2038091>`__.
 
+* If you run ``kayobe overcloud service upgrade`` twice, it will cause shard
+  allocation to be disabled in OpenSearch. See `LP#2049512
+  <https://bugs.launchpad.net/kolla-ansible/+bug/2049512>`__ for details.
+
+  You can check if this is affecting your system with the following command. If
+  ``transient.cluster.routing.allocation.enable=none`` is present, shard
+  allocation is disabled.
+
+  .. code-block:: console
+
+     curl http://<controller-ip>:9200/_cluster/settings
+
+  For now, the easiest way to fix this is to turn allocation back on:
+
+  .. code-block:: console
+
+     curl -X PUT http://<controller-ip>:9200/_cluster/settings -H 'Content-Type:application/json' -d '{"transient":{"cluster":{"routing":{"allocation":{"enable":"all"}}}}}'
+
 Security baseline
 =================
 
