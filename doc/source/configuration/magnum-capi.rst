@@ -46,7 +46,7 @@ Having created this concrete environment to hold site-specific configuration, ne
 
 The comments surrounding each option in the ``variables.yml`` provide some tips on choosing sensible values (e.g. resource requirements for each flavor). In most cases, other configuration options can be left blank since they will fall back to the upstream defaults; however, if the default configuration is not suitable, the roles in `ansible-collection-azimuth-ops <https://github.com/stackhpc/ansible-collection-azimuth-ops>`_ contain a range of config variables which can be overridden in ``variables.yml`` as required. In particular, the `infra role variables <https://github.com/stackhpc/ansible-collection-azimuth-ops/blob/main/roles/infra/defaults/main.yml>`_ are mostly relevant to the seed VM configuration, and the `capi_cluster role variables <https://github.com/stackhpc/ansible-collection-azimuth-ops/blob/main/roles/capi_cluster/defaults/main.yml>`_ are relevant for HA cluster config.
 
-:Note:
+.. note::
 
     One important distinction between azimuth-config and stackhpc-kayobe-config is that the environments in azimuth-config are `layered`. This can be seen in the ``ansible.cfg`` file for each environment, which will contain a line of the form ``inventory = <list-of-environments>`` showing the inheritance chain for variables defined in each environment. See `these docs <https://stackhpc.github.io/azimuth-config/environments/>`_ for more details.
 
@@ -90,7 +90,7 @@ The general running order of the provisioning playbook is the following:
 
 Once the seed VM has been provisioned, it can be accessed via SSH by running ``./bin/seed-ssh`` from the root of the azimuth-config repository. Within the seed VM, the k3s cluster and the HA cluster can both be accessed using the pre-installed ``kubectl`` and ``helm`` command line tools. Both of these tools will target the k3s cluster by default; however, the ``kubeconfig`` file for the HA cluster can be found in the seed's home directory (named e.g. ``kubeconfig-capi-mgmt-<site-specific-name>.yaml``).
 
-:Note:
+.. note::
 
     The provision playbook is responsible for copying the HA ``kubeconfig`` to this location *after* the HA cluster is up and running. If you need to access the HA cluster while it is still deploying, the ``kubeconfig`` file can be found stored as a Kubernetes secret on the k3s cluster.
 
