@@ -210,7 +210,13 @@ It is also possible to use an arbitrary ``host`` name, but you will need
 to edit the database again. That is an optional exercise left for the reader.
 See [1] for further details.
 
-TODO: Investigate KA bug with assumption about host field.
+.. note::
+
+  There is a bug when overriding the host name in Kolla Ansible, where it
+  is currently assumed that it will be set to the actual hostname + an
+  -ironic postfix. The service will come up correctly, but Kolla Ansible
+  will not detect it. See here:
+  https://bugs.launchpad.net/kolla-ansible/+bug/2056571
 
 Re-deploying Nova Compute Ironic
 --------------------------------
