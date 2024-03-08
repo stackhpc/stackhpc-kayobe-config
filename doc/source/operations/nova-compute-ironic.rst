@@ -41,7 +41,11 @@ Ironic nodes can be managed. In many environments the loss of the Ironic
 API for short periods is acceptable, providing that it can be easily
 resurrected. The purpose of this document is to faciliate that.
 
-TODO: Add caveats about new sharding mode (not covered here).
+.. note::
+
+  The new sharding mode is not covered here and it is assumed that you are
+  not using it. See [1] for further information. This will be updated in
+  the future.
 
 Optimal configuration of Nova Compute Ironic
 ============================================
@@ -207,6 +211,91 @@ to edit the database again. That is an optional exercise left for the reader.
 See [1] for further details.
 
 TODO: Investigate KA bug with assumption about host field.
+
+Re-deploying Nova Compute Ironic
+--------------------------------
+
+The decision to re-deploy Nova Compute Ironic to another host should only be
+taken if there is a strong reason to do so. The objective is to minimise
+the chance of the old instance starting up alongside the new one. If the
+original host has been re-imaged, or physically replaced there is no risk.
+However, if the original host has been taken down for non-destructive
+maintenance, it is better to avoid re-deploying the service if the end users
+can tolerate the wait. If you are forced to re-deploy the service, knowing
+that the original instance may start when the host comes back online, you
+must plan accordingly. For example, by booting the original host in maintenance
+mode and removing the old service before it can start, or by stopping the
+new instance before the original one comes back up, and then reverting the
+config to move it to the new host.
+
+There are essentially two scenarios for re-deploying Nova Compute Ironic.
+These are described in the following sub-sections:
+
+Current host is accessible
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adjust the ``kolla_nova_compute_ironic_host`` variable to point to the
+new host, eg.
+
+.. code-block:: diff
+
+  +kolla_nova_compute_ironic_host: controller2
+  -kolla_nova_compute_ironic_host: controller1
+
+Remove the old container:
+
+.. code-block:: console
+
+  $ ssh controller1 sudo docker rm -f nova_compute_ironic
+
+Deploy the new service:
+
+.. code-block:: console
+
+  $ kayobe overcloud service deploy -kl controller2 -l controller2 -kt nova
+
+Verify that the new service appears as 'up' and 'enabled':
+
+.. code-block:: console
+
+  $ openstack compute service list
+
+Current host is not accessible
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this case you will need to remove the inaccessible host from the inventory.
+For example, in ``etc/kayobe/inventory/hosts``, remove ``controller1`` from
+the ``controllers`` group.
+
+Adjust the ``kolla_nova_compute_ironic_host`` variable to point to the
+new host, eg.
+
+.. code-block:: diff
+
+  +kolla_nova_compute_ironic_host: controller2
+  -kolla_nova_compute_ironic_host: controller1
+
+Deploy the new service:
+
+.. code-block:: console
+
+  $ kayobe overcloud service reconfigure -kl controller2 -l controller2 -kt nova
+
+Verify that the new service appears as 'up' and 'enabled':
+
+.. code-block:: console
+
+  $ openstack compute service list
+
+.. note::
+
+  It is important to stop the original service from starting up again. It is
+  up to you to prevent this.
+
+.. note::
+
+  Once merged, the work on 'Kayobe reliability' may allow this step to run
+  without modifying the inventory to remove the broken host.
 
 [1] https://specs.openstack.org/openstack/nova-specs/specs/2024.1/approved/ironic-shards.html#migrate-from-peer-list-to-shard-key
 [2] https://www.cloudfest.com/world-server-throwing-championship
