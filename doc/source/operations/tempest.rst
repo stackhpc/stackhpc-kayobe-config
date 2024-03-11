@@ -277,7 +277,10 @@ command from the base of the ``kayobe-config`` directory:
 
 .. code-block:: bash
 
-    sudo -E docker run --detach -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+    sudo -E docker run --name kayobe-automation --detach -it --rm --network host \
+    -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+    -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest \
+    /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
 
 By default, ``no_log`` is set to stop credentials from leaking. This can be
 disabled by adding ``-e rally_no_sensitive_log=false`` to the end.
