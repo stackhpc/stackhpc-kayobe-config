@@ -948,7 +948,7 @@ least start with a small number of hosts.:
 
 .. code-block:: console
 
-   kayobe overcloud host configure --limit <host> --kolla-limit <host>
+   kayobe overcloud host configure --limit <host>
 
 Alternatively, to apply the configuration to all hosts:
 
