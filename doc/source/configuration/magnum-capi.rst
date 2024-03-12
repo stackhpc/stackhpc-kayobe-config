@@ -50,7 +50,7 @@ The comments surrounding each option in the ``variables.yml`` provide some tips 
 
     One important distinction between azimuth-config and stackhpc-kayobe-config is that the environments in azimuth-config are `layered`. This can be seen in the ``ansible.cfg`` file for each environment, which will contain a line of the form ``inventory = <list-of-environments>`` showing the inheritance chain for variables defined in each environment. See `these docs <https://stackhpc.github.io/azimuth-config/environments/>`_ for more details.
 
-In addition to setting the required infrastructure variables, Terraform must also be configured to use a remote state store (either GitLab or S3) for the seed VM state. To do so, follow the instructions found `here <https://stackhpc.github.io/azimuth-config/repository/terraform/>`_.
+In addition to setting the required infrastructure variables, Terraform must also be configured to use a remote state store (either GitLab or S3) for the seed VM state. To do so, follow the instructions found `here <https://stackhpc.github.io/azimuth-config/repository/opentofu/>`_.
 
 The HA cluster also contains a deployment of `kube-prometheus-stack <https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack>`_ for monitoring and alerting. To send the cluster alerts to Slack, the ``alertmanager_config_slack_webhook_url`` variable should be set in ``environments/<site-specific-name>/inventory/group-vars/all/secrets.yml``. If the repository was encrypted correctly above, this file will automatically be encrypted before a git push. Run ``git-crypt status -e`` to verify that this file is included in the encrypted list before git-committing the webhook URL.
 
