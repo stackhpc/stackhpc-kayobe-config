@@ -175,6 +175,9 @@ controller_firewalld_rules:
     zone: provision_wl
   - port: 8089/tcp
     zone: provision_wl
+  - service: cockpit
+    state: disabled
+    zone: public
   - service: dhcpv6-client
     state: disabled
     zone: public
@@ -194,6 +197,12 @@ controller_firewalld_rules:
   # GENEVE
   - port: 6081/udp
     zone: tunnel
+  # VXLAN
+  - port: 4789/udp
+    zone: tunnel
+  # Octavia
+  - port: 5555/udp
+    zone: lb_mgmt
 
 ###############################################################################
 # Controller node swap configuration.
