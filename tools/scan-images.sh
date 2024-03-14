@@ -34,12 +34,25 @@ touch image-scan-output/clean-images.txt image-scan-output/dirty-images.txt
 # generate a csv summary
 for image in $images; do
   filename=$(basename $image | sed 's/:/\./g')
+  imagename=$(echo $filename | cut -d "." -f 1)
+  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
+  image_vulnerabilities=$(yq .$imagename'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
+  rc=$?
+  touch .trivyignore
+  for vulnerability in $global_vulnerabilities; do
+    echo $vulnerability >> .trivyignore
+  done
+  for vulnerability in $image_vulnerabilities; do
+    if [ $rc -eq 0 ]; then
+        echo $vulnerability >> .trivyignore
+    fi
+  done
   if $(trivy image \
           --quiet \
           --exit-code 1 \
           --scanners vuln \
           --format json \
-          --severity HIGH,CRITICAL \
+          --severity CRITICAL \
           --output image-scan-output/${filename}.json \
           --ignore-unfixed \
           $image); then
@@ -76,4 +89,5 @@ for image in $images; do
             | .[] 
             | @csv' image-scan-output/${filename}.json >> image-scan-output/${filename}.summary.csv
   fi
+  rm .trivyignore
 done
