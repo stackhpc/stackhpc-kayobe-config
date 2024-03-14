@@ -134,15 +134,28 @@
 ###############################################################################
 # Controller node firewalld configuration.
 
+# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
+# provision_oc_net_name }}).
+
 # Whether to install and enable firewalld.
-#controller_firewalld_enabled:
+# FIXME: Disable by default?
+controller_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-#controller_firewalld_zones:
+# FIXME: Filter out duplicates and unset networks?
+controller_firewalld_zones:
+  - zone: external
+  - zone: mgmt_wl
+  - zone: provision_oc
+  - zone: provision_wl
+  - zone: public
+  - zone: storage
+  - zone: tunnel
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-#controller_firewalld_default_zone:
+# FIXME: Try setting to drop
+controller_firewalld_default_zone: trusted
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -150,7 +163,37 @@
 # - offline: true
 # - permanent: true
 # - state: enabled
-#controller_firewalld_rules:
+# FIXME: Add all services, add conditionals, filter out unused
+controller_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
+  - service: dhcp
+    zone: provision_wl
+  - service: ntp
+    zone: provision_wl
+  - service: tftp
+    zone: provision_wl
+  - port: 8089/tcp
+    zone: provision_wl
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
+  # Designate
+  - port: 53/tcp
+    zone: public
+  - port: 53/udp
+    zone: public
+  # Designate AXFR
+  - port: 5354/tcp
+    zone: public
+  - port: 5354/udp
+    zone: public
+  # GENEVE
+  - port: 6081/udp
+    zone: tunnel
 
 ###############################################################################
 # Controller node swap configuration.

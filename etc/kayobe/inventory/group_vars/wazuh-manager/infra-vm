@@ -1,0 +1,43 @@
+---
+###############################################################################
+# Infrastructure VM node firewalld configuration.
+
+# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
+# provision_oc_net_name }}).
+
+# Whether to install and enable firewalld.
+infra_vm_firewalld_enabled: true
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+infra_vm_firewalld_zones:
+  - zone: provision_oc
+  - zone: public
+  - zone: switch_mgmt
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+infra_vm_firewalld_default_zone: drop
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+infra_vm_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
+  - port: 1514/tcp
+    zone: provision_oc
+  - port: 1514/udp
+    zone: provision_oc
+  - port: 1515/tcp
+    zone: provision_oc
+  - port: 443/tcp
+    zone: public
+  - port: 9200/tcp
+    zone: provision_oc
+  - port: 9300-9400/tcp
+    zone: provision_oc
+  - port: 55000/tcp
+    zone: provision_oc
