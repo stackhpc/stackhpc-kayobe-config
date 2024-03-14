@@ -125,15 +125,22 @@
 ###############################################################################
 # Compute node firewalld configuration.
 
+# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
+# provision_oc_net_name }}).
+
 # Whether to install and enable firewalld.
-#compute_firewalld_enabled:
+compute_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-#compute_firewalld_zones:
+compute_firewalld_zones:
+  - zone: provision_oc
+  - zone: storage
+  - zone: tunnel
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-#compute_firewalld_default_zone:
+# FIXME: Try setting to drop
+compute_firewalld_default_zone: trusted
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -141,7 +148,18 @@
 # - offline: true
 # - permanent: true
 # - state: enabled
-#compute_firewalld_rules:
+compute_firewalld_rules:
+  - service: ssh
+    zone: provision_oc
+  - service: dhcpv6-client
+    state: disabled
+    zone: public
+  - service: ssh
+    state: disabled
+    zone: public
+  # GENEVE
+  - port: 6081/udp
+    zone: tunnel
 
 ###############################################################################
 # Compute node host libvirt configuration.
