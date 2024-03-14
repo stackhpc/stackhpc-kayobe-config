@@ -318,9 +318,6 @@ kolla_build_blocks:
     {% endif %}
   bifrost_base_header: |
     ADD additions-archive /
-  grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel \
-        && grafana-cli plugins install grafana-piechart-panel
   ironic_inspector_header: |
     ADD additions-archive /
   magnum_base_footer: |
@@ -338,6 +335,9 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  grafana_plugins_append:
+    - grafana-piechart-panel
+    - vonage-status-panel
   ironic_inspector_pip_packages_append:
     - /additions/*
 
