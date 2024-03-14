@@ -147,8 +147,8 @@ by default on a service deploy, this can be disabled by setting
 
 OpenStack Capacity is deployed automatically using a service deploy hook
 with the generated kolla-ansible admin credentials, you can override these
-by setting the authentication url, username, password, project name and
-project domain name in ``stackhpc-monitoring.yml``:
+by setting the authentication url, username, password, region name, interface,
+project name and project domain name in ``stackhpc-monitoring.yml``:
 
 .. code-block:: yaml
 
@@ -158,15 +158,7 @@ project domain name in ``stackhpc-monitoring.yml``:
     stackhpc_os_capacity_project_name: <openstack_project_name>
     stackhpc_os_capacity_domain_name: <openstack_project_domain_name>
     stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
-
-Additionally, you should ensure these credentials have the correct permissions
-for the exporter. If you are deploying in a cloud with internal TLS, you may be required
-to disable certificate verification for the OpenStack Capacity exporter
-if your certificate is not signed by a trusted CA.
-
-.. code-block:: yaml
-
-    stackhpc_os_capacity_openstack_verify: false
+    stackhpc_os_capacity_openstack_interface: <openstack_interface>
 
 If you've modified your credentials, you will need to re-deploy OpenStack Capacity
 using the ``deploy-os-capacity-exporter.yml`` Ansible playbook
