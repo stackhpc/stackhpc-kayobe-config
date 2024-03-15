@@ -36,7 +36,7 @@
       vars:
         hotfix_containers: "{{ containers_list | split('\n') | regex_search(container_hotfix_container_regex) }}"
       fail:
-        msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers | split('\n') }}"
+        msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers.stdout_lines }}"
       when: hotfix_containers == ""
 
     - name: Ensure hotfix-files directory exists on the remote host
