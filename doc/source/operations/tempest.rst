@@ -65,7 +65,7 @@ To install Docker on Ubuntu:
     sudo apt-get update
     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-Installing Docker on CentOS/Rocky:
+Installing Docker on Rocky:
 
 .. code-block:: bash
 
@@ -99,9 +99,9 @@ Build a Kayobe automation image:
 
     git submodule init
     git submodule update
-    # If running on Ubuntu, the fact cache can confuse Kayobe in the CentOS-based container
+    # If running on Ubuntu, the fact cache can confuse Kayobe in the Rocky-based container
     mv etc/kayobe/facts{,-old}
-    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+    sudo DOCKER_BUILDKIT=1 docker build --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 
 Configuration
 =============
@@ -277,7 +277,10 @@ command from the base of the ``kayobe-config`` directory:
 
 .. code-block:: bash
 
-    sudo -E docker run --detach -it --rm --network host -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+    sudo -E docker run --name kayobe-automation --detach -it --rm --network host \
+    -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+    -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest \
+    /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
 
 By default, ``no_log`` is set to stop credentials from leaking. This can be
 disabled by adding ``-e rally_no_sensitive_log=false`` to the end.
