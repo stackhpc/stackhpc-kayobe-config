@@ -222,7 +222,7 @@ has not yet been deployed. This can be avoided with the following workflow:
 
 .. code-block:: console
 
-   kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
+   kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none -e deploy_containers_registry_attempt_login=false
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
    kayobe seed service deploy
