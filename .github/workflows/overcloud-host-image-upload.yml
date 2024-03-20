@@ -59,7 +59,7 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
-          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
       - name: Clone StackHPC Kayobe repository
         uses: actions/checkout@v4
