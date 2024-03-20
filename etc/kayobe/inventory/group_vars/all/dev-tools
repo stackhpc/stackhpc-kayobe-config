@@ -1,0 +1,11 @@
+---
+########################################################################
+# List of development tool packages to install during host configuration
+dev_tools_packages_extra: "{{ stackhpc_dev_tools_packages | select() }}"
+
+stackhpc_dev_tools_packages:
+  - jq
+  - wget
+  - "{{ 'htop' if (os_distribution == 'ubuntu') or dnf_enable_epel | bool }}"
+  - "{{ 'btop' if (os_release == 'jammy') or dnf_enable_epel | bool }}"
+  - "{{ 'skopeo' if os_release != 'focal' }}"
