@@ -65,3 +65,32 @@ rabbitmq_image: "{% raw %}{{ docker_registry ~ '/' if docker_registry else '' }}
 # https://github.com/sysown/proxysql/issues/4877 or K-A bumps ProxySQL to 3.x.
 database_enable_tls_internal: false
 database_enable_tls_backend: false
+
+#############################################################################
+# HAProxy tunings
+
+{% if kolla_enable_ironic | bool and "genericswitch" in kolla_neutron_ml2_mechanism_drivers %}
+# NOTE: We are increasing the HAProxy timeouts to 5 minutes due to the neutron
+# generic switch driver, which synchronously applies switch configuration for
+# each ironic port during node provisioning and tear down.
+# The specific API calls that require this long timeout are:
+# - Creation and deletion of VLAN networks.
+# - Creation or update of ports, adding binding information.
+# - Update of ports, removing binding information.
+# - Deletion of ports.
+haproxy_client_timeout: 5m30
+haproxy_server_timeout: 5m30
+# If using Neutron backend TLS:
+neutron_tls_proxy_client_timeout: 5m30
+neutron_tls_proxy_server_timeout: 5m30
+{% endif %}
+
+#############################################################################
+# Neutron tunings
+
+{% if kolla_enable_ironic | bool and "genericswitch" in kolla_neutron_ml2_mechanism_drivers %}
+neutron_tls_proxy_client_timeout: 5m30
+neutron_tls_proxy_server_timeout: 5m30
+{% endif %}
+
+#############################################################################
