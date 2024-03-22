@@ -1,5 +1,5 @@
 Policy for a baremetaluser role
-===============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When deploying Slurm on baremetal nodes, it is typical to select a specific
 baremetal node, and give it the expected hostname. We allow this via a tweak to
@@ -11,3 +11,20 @@ not own the network.
 
 We should never use the admin role to do these operations, as it has far too
 much privilege.
+
+Consuming this environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Add the ``baremetal-policy`` environment to your  ``.kayobe-environment`` file:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/$KAYOBE_ENVIRONMENT/.kayobe-environment
+
+   dependencies:
+     - baremetal-policy
+
+Redeploy Neutron, and Nova:
+
+.. code-block:: console
+
+   kayobe overcloud service deploy -kt neutron,nova
