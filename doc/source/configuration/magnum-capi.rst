@@ -105,16 +105,10 @@ Next, copy the CAPI management cluster's kubeconfig file into your stackhpc-kayo
 
 The following config should also be set in your stackhpc-kayobe-config environment:
 
-.. code-block:: ini
-    :caption: magnum.conf
-
-    [nova_client]
-    endpoint_type = publicURL
-
 .. code-block:: yaml
     :caption: kolla/globals.yml
 
-    magnum_cluster_api_driver_enabled: true
+    magnum_capi_helm_driver_enabled: true
 
 To apply the configuration, run ``kayobe overcloud service reconfigure -kt magnum``.
 
