@@ -1,0 +1,23 @@
+---
+- name: Upload and create a distribution for an image
+  hosts: seed
+  vars:
+    local_image_path: "/opt/kayobe/images/overcloud-{{ os_distribution }}-{{ os_release }}/overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
+    image_name: "overcloud-{{ os_distribution }}-{{ os_release }}"
+  tasks:
+    - name: Write out clouds.yml
+      copy:
+        content: lookup('ansible.builtin.env', 'CLOUDS_YAML')
+        dest: clouds.yml
+
+    - name: Upload an image to Glance
+      openstack.cloud.image:
+        cloud: openstack
+        name: "{{ image_name }}"
+        container_format: bare
+        disk_format: qcow2
+        state: present
+        filename: "{{ local_image_path }}"
+      environment:
+        OS_APPLICATION_CREDENTIAL_ID: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_ID') }}"
+        OS_APPLICATION_CREDENTIAL_SECRET: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_SECRET') }}"

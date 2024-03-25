@@ -1,0 +1,9 @@
+ssh_public_key = "id_rsa.pub"
+ssh_username = "rocky"
+host_image_builder_name = "skc-ci-host-image-builder"
+host_image_builder_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+host_image_builder_flavor = "en1.medium"
+host_image_builder_network = "stackhpc-ci"
+host_image_builder_subnet = "stackhpc-ci"
+host_image_builder_tags = ["skc-ci-host-image-builder", "alex-testo"]
+host_image_builder_interface = "eth0"
