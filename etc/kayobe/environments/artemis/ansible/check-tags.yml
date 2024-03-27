@@ -1,0 +1,36 @@
+---
+# This playbook queries the Pulp server to check that all image tags specified
+# in kolla_image_tags are present.
+
+- name: Check whether tags exist in Pulp container registry
+  hosts: localhost
+  tasks:
+    - name: Query images and tags
+      command:
+        cmd: >-
+          {{ kayobe_config_path }}/../../tools/kolla-images.py list-tags
+      register: kolla_images_result
+      changed_when: false
+
+    - name: Set a fact about images and tags
+      set_fact:
+        kolla_images: "{{ kolla_images_result.stdout | from_yaml }}"
+
+    # Use state=read and allow_missing=false to check for missing tags in test pulp.
+    - import_role:
+        name: stackhpc.pulp.pulp_container_content
+      vars:
+        pulp_container_content: >-
+          {%- set contents = [] -%}
+          {%- for image, tags in kolla_images.items() -%}
+          {%- set repository = kolla_docker_namespace ~ "/" ~ image -%}
+          {%- set content = {
+            "allow_missing": False,
+            "is_push": pulp_url == stackhpc_release_pulp_url,
+            "repository": repository,
+            "state": "read",
+            "tags": tags,
+          } -%}
+          {%- set _ = contents.append(content) -%}
+          {%- endfor -%}
+          {{ contents }}

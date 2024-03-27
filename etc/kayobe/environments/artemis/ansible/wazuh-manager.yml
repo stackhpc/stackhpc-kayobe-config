@@ -1,0 +1,128 @@
+---
+- name: Pre-checks
+  gather_facts: false
+  hosts: localhost
+  tags:
+    - prechecks
+  tasks:
+    - block:
+        - name: Fail if using old path for Wazuh certificates
+          fail:
+            msg: >-
+              The path used for Wazuh SSL certificates was changed in a previous release. The certificates
+              were found in the wrong location. Please move all files and directories in
+              {{ playbook_dir }}/wazuh/certificates to {{ kayobe_env_config_path }}/wazuh/ and remove the
+              empty directory.
+          when:
+            - (playbook_dir ~ '/wazuh/certificates') is exists
+
+        - name: Fail if using old path for custom certificates
+          fail:
+            msg: >-
+              Wazuh custom SSL certificates have been merged with regular certificates. The certificates
+              were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
+              to {{ kayobe_env_config_path }}/wazuh/wazuh-certificates and remove the empty directory.
+          when:
+            - (playbook_dir ~ '/wazuh/custom_certificates') is exists
+
+        - name: Check that removed variable, local_custom_certs_path, is not set
+          assert:
+            that: local_custom_certs_path is not defined
+            fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
+      when:
+        - groups["wazuh-manager"] | length > 0
+
+# Certificates generation
+- hosts: localhost
+  roles:
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
+      perform_installation: false
+  become: no
+  tags:
+    - generate-certs
+# Single node
+- hosts: wazuh-manager
+  become: yes
+  become_user: root
+  roles:
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard"
+  post_tasks:
+    - block:
+        - name: Check if custom SCA policies directory exists
+          stat:
+            path: "{{ local_custom_sca_policies_path }}"
+          register: custom_sca_policies_folder
+          delegate_to: localhost
+          become: no
+
+        - name: Gather list of custom SCA policies
+          find:
+            paths: "{{ local_custom_sca_policies_path }}"
+            patterns: '*.yml'
+          delegate_to: localhost
+          register: custom_sca_policies
+          when: custom_sca_policies_folder.stat.exists
+          become: no
+
+        - name: Copy custom SCA policy files to Wazuh manager
+          copy:
+            # Note the trailing slash to copy directory contents
+            src: "{{ local_custom_sca_policies_path }}/"
+            dest: "/var/ossec/etc/shared/default/"
+            owner: wazuh
+            group: wazuh
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+
+        - name: Add custom policy definition(s) to the shared Agent config
+          blockinfile:
+            path: "/var/ossec/etc/shared/default/agent.conf"
+            state: present
+            owner: wazuh
+            group: wazuh
+            marker: "{mark} ANSIBLE MANAGED BLOCK Custom SCA Policies"
+            insertafter: "<!-- Shared agent configuration here -->"
+            block: |
+              {% filter indent(width=2, first=true) %}
+              <sca>
+                <policies>
+              {% for item in custom_sca_policies.files %}
+                  <policy>etc/shared/{{ item.path | basename }}</policy>
+              {% endfor %}
+                </policies>
+              </sca>
+              {% endfilter %}
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+      notify:
+        - Restart wazuh
+
+    - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
+      blockinfile:
+        path: "/var/ossec/etc/ossec.conf"
+        state: present
+        owner: root
+        group: ossec
+        block: |
+          HTTPS_PROXY={{ http_proxy_url }}
+          HTTP_PROXY={{ http_proxy_url }}
+        backup: yes
+      when: http_proxy_url is defined
+      notify:
+        - Restart wazuh
+
+    - name: Perform health check against filebeat
+      command: filebeat test output
+      changed_when: false
+      retries: 2
+
+  handlers:
+    - name: Restart wazuh
+      service:
+        name: wazuh-manager
+        state: restarted

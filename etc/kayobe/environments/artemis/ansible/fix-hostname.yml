@@ -1,0 +1,23 @@
+---
+- name: Fix hostname on storage nodes for cephadm
+  hosts: storage
+  gather_facts: false
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    # We can't assume that a virtualenv exists at this point, so use the system
+    # python interpreter.
+    ansible_python_interpreter: /usr/bin/python3
+    # Work around no known_hosts entry on first boot.
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  tasks:
+    - name: Get current hostname
+      ansible.builtin.command:
+        cmd: hostname
+      changed_when: false
+      register: current_hostname
+
+    - name: Set hostname to a non FQDN
+      ansible.builtin.command:
+        cmd: hostnamectl set-hostname "{{ inventory_hostname }}"
+      when: current_hostname.stdout != inventory_hostname
+      become: true

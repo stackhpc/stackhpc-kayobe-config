@@ -1,0 +1,155 @@
+---
+# Kayobe configuration for Bifrost.
+
+###############################################################################
+# Bifrost installation.
+
+# URL of Bifrost source code repository.
+#kolla_bifrost_source_url:
+
+# Version (branch, tag, etc.) of Bifrost source code repository. Default is
+# {{ openstack_branch }}.
+#kolla_bifrost_source_version:
+
+# Whether Bifrost uses firewalld. Default value is false to avoid conflicting
+# with iptables rules configured on the seed host by Kayobe.
+#kolla_bifrost_use_firewalld:
+
+# Firewalld zone used by Bifrost. Default is "trusted", to avoid blocking other
+# services running on the seed host.
+#kolla_bifrost_firewalld_internal_zone:
+
+###############################################################################
+# Diskimage-builder configuration.
+
+# DIB base OS element. Default is {{ os_distribution }}.
+#kolla_bifrost_dib_os_element:
+
+# DIB image OS release. Default is {{ os_release }}.
+#kolla_bifrost_dib_os_release:
+
+# List of default DIB elements. Default is ["disable-selinux",
+# "enable-serial-console", "vm"] when os_distribution is "centos", or
+# ["enable-serial-console", "vm"] otherwise.
+#kolla_bifrost_dib_elements_default:
+
+# List of additional DIB elements. Default is none.
+#kolla_bifrost_dib_elements_extra:
+
+# List of DIB elements. Default is a combination of
+# kolla_bifrost_dib_elements_default and kolla_bifrost_dib_elements_extra.
+#kolla_bifrost_dib_elements:
+
+# DIB init element. Default is "cloud-init-datasources".
+#kolla_bifrost_dib_init_element:
+
+# DIB default environment variables. Default is
+# {DIB_BOOTLOADER_DEFAULT_CMDLINE:
+# "nofb nomodeset gfxpayload=text net.ifnames=1",
+# "DIB_CLOUD_INIT_DATASOURCES": "ConfigDrive"}.
+#kolla_bifrost_dib_env_vars_default:
+
+# DIB additional environment variables. Default is none.
+#kolla_bifrost_dib_env_vars_extra:
+
+# DIB environment variables. Default is combination of
+# kolla_bifrost_dib_env_vars_default and kolla_bifrost_dib_env_vars_extra.
+#kolla_bifrost_dib_env_vars:
+
+# List of DIB packages to install. Default is to install no extra packages.
+#kolla_bifrost_dib_packages:
+
+###############################################################################
+# Disk image deployment configuration.
+
+# Name of disk image file to deploy. Default is "deployment_image.qcow2".
+#kolla_bifrost_deploy_image_filename:
+
+# UUID of the root filesystem contained within the deployment image.
+# See below URL for instructions on how to extract it:
+# https://docs.openstack.org/ironic/latest/admin/raid.html#image-requirements
+# Default is none.
+#kolla_bifrost_deploy_image_rootfs:
+
+###############################################################################
+# Ironic configuration.
+
+# List of hardware types to enable for Bifrost's Ironic.
+#kolla_bifrost_enabled_hardware_types:
+
+# List of extra kernel parameters for Bifrost's Ironic PXE configuration.
+# Default is empty.
+#kolla_bifrost_extra_kernel_options:
+
+###############################################################################
+# Ironic Inspector configuration.
+
+# List of of inspector processing plugins.
+#kolla_bifrost_inspector_processing_hooks:
+
+# Which MAC addresses to add as ports during introspection. One of 'all',
+# 'active' or 'pxe'.
+#kolla_bifrost_inspector_port_addition:
+
+# List of extra kernel parameters for the inspector default PXE configuration.
+# Default is {{ inspector_extra_kernel_options }}, defined in inspector.yml.
+# When customising this variable, the default extra kernel parameters should be
+# kept to retain full node inspection capabilities.
+#kolla_bifrost_inspector_extra_kernel_options:
+
+# List of introspection rules for Bifrost's Ironic Inspector service.
+#kolla_bifrost_inspector_rules:
+
+# Ironic inspector IPMI username to set.
+#kolla_bifrost_inspector_ipmi_username:
+
+# Ironic inspector IPMI password to set.
+#kolla_bifrost_inspector_ipmi_password:
+
+# Ironic inspector network interface name on which to check for an LLDP switch
+# port description to use as the node's name.
+#kolla_bifrost_inspector_lldp_switch_port_interface:
+
+# Ironic inspector deployment kernel location.
+#kolla_bifrost_inspector_deploy_kernel:
+
+# Ironic inspector deployment ramdisk location.
+#kolla_bifrost_inspector_deploy_ramdisk:
+
+# Ironic inspector legacy deployment kernel location.
+#kolla_bifrost_inspector_legacy_deploy_kernel:
+
+# Timeout of hardware inspection on overcloud nodes, in seconds. Default is
+# {{ inspector_inspection_timeout }}.
+#kolla_bifrost_inspection_timeout:
+
+###############################################################################
+# Ironic Python Agent (IPA) configuration.
+
+# URL of Ironic Python Agent (IPA) kernel image.
+#kolla_bifrost_ipa_kernel_upstream_url:
+
+# URL of checksum of Ironic Python Agent (IPA) kernel image.
+#kolla_bifrost_ipa_kernel_checksum_url:
+
+# Algorithm of checksum of Ironic Python Agent (IPA) kernel image.
+#kolla_bifrost_ipa_kernel_checksum_algorithm:
+
+# URL of Ironic Python Agent (IPA) ramdisk image.
+#kolla_bifrost_ipa_ramdisk_upstream_url:
+
+# URL of checksum of Ironic Python Agent (IPA) ramdisk image.
+#kolla_bifrost_ipa_ramdisk_checksum_url:
+
+# Algorithm of checksum of Ironic Python Agent (IPA) ramdisk image.
+#kolla_bifrost_ipa_ramdisk_checksum_algorithm:
+
+###############################################################################
+# Inventory configuration.
+
+# Server inventory for Bifrost.
+#kolla_bifrost_servers:
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

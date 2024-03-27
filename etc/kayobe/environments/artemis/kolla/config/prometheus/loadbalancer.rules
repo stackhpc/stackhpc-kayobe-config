@@ -1,0 +1,35 @@
+{% raw %}
+
+groups:
+- name: Loadbalancer
+  rules:
+
+  - alert: LoadBalancerError
+    expr: openstack_loadbalancer_loadbalancer_status{operating_status="ERROR"} > 0 OR openstack_loadbalancer_loadbalancer_status{provisioning_status="ERROR"} > 0
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Load balancer in error state"
+      description: "Load balancer {{ $labels.id }} is in an error state"
+
+  - alert: LoadBalancerDegraded
+    expr: openstack_loadbalancer_loadbalancer_status{operating_status="DEGRADED"} > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Load balancer in degraded state"
+      description: "Load balancer {{ $labels.id }} is in a degraded state"
+
+  - alert: AmphoraError
+    expr: openstack_loadbalancer_amphora_status{status="ERROR"} > 0
+    for: 1m
+    labels:
+      severity: alert
+    annotations:
+      summary: "Amphora in error state"
+      description: "Amphora {{ $labels.id }} is in an error state"
+
+
+{% endraw %}

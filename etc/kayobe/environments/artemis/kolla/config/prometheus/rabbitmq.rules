@@ -1,0 +1,80 @@
+# https://awesome-prometheus-alerts.grep.to/rules#rabbitmq-1
+
+{% raw %}
+
+groups:
+- name: rabbitmq.rules
+  rules:
+  - alert: RabbitMQNodeDown
+    expr: sum(rabbitmq_build_info{instance!=""}) < 3
+    for: 30m
+    labels:
+      severity: critical
+    annotations:
+      description: RabbitMQ node down on {{ $labels.instance }}
+  - alert: RabbitMQConsumersLowUtilization
+    expr: rabbitmq_queue_consumer_utilisation < 0.4
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ consumers message consumption speed is low on {{ $labels.instance }}
+  - alert: RabbitMQNodeNotDistributed
+    expr: erlang_vm_dist_node_state < 3
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: RabbitMQ node not distributed on node {{ $labels.instance }}
+  - alert: RabbitMQMemoryHigh
+    expr: rabbitmq_process_resident_memory_bytes / rabbitmq_resident_memory_limit_bytes
+      * 100 > 90
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ memory too high on {{ $labels.instance }}
+  - alert: RabbitMQFileDescriptorsUsage
+    expr: rabbitmq_process_open_fds / rabbitmq_process_max_fds * 100 > 90
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ file descriptors usage on {{ $labels.instance }}
+  - alert: RabbitMQTooMuchReady
+    expr: rabbitmq_queue_messages_ready > 100
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ too much ready on {{ $labels.instance }}
+  - alert: RabbitMQTooMuchUnack
+    expr: rabbitmq_queue_messages_unacked > 100
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ too much unack on {{ $labels.instance }}
+  - alert: RabbitMQTooMuchConnections
+    expr: rabbitmq_connections > {% endraw %}{{ (1500 * groups['controllers'] | length + 50 * groups['compute'] | length) }}{% raw %}
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ too much connections on {{ $labels.instance }}
+  - alert: RabbitMQNoQueueConsumer
+    expr: rabbitmq_queue_consumers < 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ no queue consumer on {{ $labels.instance }}
+  - alert: RabbitMQUnroutableMessages
+    expr: increase(rabbitmq_channel_messages_unroutable_returned_total[1m]) > 0 or  increase(rabbitmq_channel_messages_unroutable_dropped_total[1m]) > 0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      description: RabbitMQ unroutable messages on {{ $labels.instance }}
+
+{% endraw %}

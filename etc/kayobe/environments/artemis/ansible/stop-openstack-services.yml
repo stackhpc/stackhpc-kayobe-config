@@ -1,0 +1,29 @@
+---
+# Stops containers running OpenStack services
+
+- name: Stop OpenStack services
+  hosts: overcloud
+  become: true
+  gather_facts: false
+  vars:
+    - stop_service_list:
+        - "blazar"
+        - "barbican"
+        - "cinder"
+        - "cloudkitty"
+        - "designate"
+        - "glance"
+        - "heat"
+        - "horizon"
+        - "ironic"
+        - "keystone"
+        - "magnum"
+        - "manila"
+        - "neutron"
+        - "nova"
+        - "octavia"
+        - "placement"
+  tasks:
+    - name: Stop OpenStack services
+      shell: >-
+        systemctl -a | egrep '({{ stop_service_list | join('|') }})' | awk '{ print $1 }' | xargs systemctl stop

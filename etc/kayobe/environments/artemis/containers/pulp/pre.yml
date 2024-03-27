@@ -1,0 +1,43 @@
+---
+- name: Ensure /opt/kayobe/containers/pulp exists
+  file:
+    path: "/opt/kayobe/containers/pulp"
+    state: directory
+  become: true
+
+- name: Ensure required Docker volumes exist
+  docker_volume:
+    name: "{{ item }}"
+  loop:
+    - pulp_containers
+    - pulp_pgsql
+    - pulp_storage
+
+- name: Copy modified settings.py
+  template:
+    src: "{{ kayobe_config_path }}/containers/pulp/settings.py"
+    dest: /opt/kayobe/containers/pulp/settings.py
+    mode: 0644
+  become: true
+  register: pulp_settings
+
+- name: Configure TLS for local Pulp
+  when: pulp_enable_tls | bool
+  become: true
+  block:
+    - name: Ensure /opt/kayobe/containers/pulp/certs exists
+      file:
+        path: "/opt/kayobe/containers/pulp/certs"
+        state: directory
+
+    - name: Copy TLS cert and key into container directory
+      template:
+        src: "{{ item.src }}"
+        dest: "/opt/kayobe/containers/pulp/certs/{{ item.dest }}"
+        mode: 0600
+      become: true
+      loop:
+        - src: "{{ pulp_cert_path }}"
+          dest: 'pulp_webserver.crt'
+        - src: "{{ pulp_key_path }}"
+          dest: 'pulp_webserver.key'

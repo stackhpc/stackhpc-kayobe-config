@@ -1,0 +1,10 @@
+---
+- name: Publish Pulp container images
+  hosts: localhost
+  gather_facts: True
+  tasks:
+    - import_role:
+        name: stackhpc.pulp.pulp_distribution
+      # NOTE: use intermediate variable to avoid distributing RPMs.
+      vars:
+        pulp_distribution_container: "{{ stackhpc_pulp_distribution_container }}"

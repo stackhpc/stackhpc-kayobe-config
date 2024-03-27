@@ -1,0 +1,189 @@
+---
+###############################################################################
+# Seed node configuration.
+
+# User with which to access the seed via SSH during bootstrap, in order to
+# setup the Kayobe user account. Default is {{ os_distribution }}.
+#seed_bootstrap_user:
+
+###############################################################################
+# Seed network interface configuration.
+
+# List of networks to which seed nodes are attached.
+#seed_network_interfaces:
+
+# List of default networks to which seed nodes are attached.
+#seed_default_network_interfaces:
+
+# List of extra networks to which seed nodes are attached.
+#seed_extra_network_interfaces:
+
+# Whether to enable SNAT on seed nodes. Default is false.
+#seed_enable_snat:
+
+###############################################################################
+# Seed node software RAID configuration.
+
+# List of software RAID arrays. See mrlesmithjr.mdadm role for format.
+#seed_mdadm_arrays:
+
+###############################################################################
+# Seed node encryption configuration.
+
+# List of block devices to encrypt. See stackhpc.luks role for format.
+#seed_luks_devices:
+
+###############################################################################
+# Seed node LVM configuration.
+
+# List of seed volume groups. See mrlesmithjr.manage_lvm role for format.
+#seed_lvm_groups:
+
+# Default list of seed volume groups. See mrlesmithjr.manage_lvm role for
+# format.
+#seed_lvm_groups_default:
+
+# Additional list of seed volume groups. See mrlesmithjr.manage_lvm role for
+# format.
+#seed_lvm_groups_extra:
+
+# Whether a 'data' LVM volume group should exist on the seed. By default this
+# contains a 'docker-volumes' logical volume for Docker volume storage. It will
+# also be used for Docker container and image storage if
+# 'docker_storage_driver' is set to 'devicemapper'. Default is true if
+# 'docker_storage_driver' is set to 'devicemapper', or false otherwise.
+#seed_lvm_group_data_enabled:
+
+# Seed LVM volume group for data. See mrlesmithjr.manage_lvm role for format.
+#seed_lvm_group_data:
+
+# List of disks for use by seed LVM data volume group. Default to an invalid
+# value to require configuration.
+#seed_lvm_group_data_disks:
+
+# List of LVM logical volumes for the data volume group.
+#seed_lvm_group_data_lvs:
+
+# Docker volumes LVM backing volume.
+#seed_lvm_group_data_lv_docker_volumes:
+
+# Size of docker volumes LVM backing volume.
+#seed_lvm_group_data_lv_docker_volumes_size:
+
+# Filesystem for docker volumes LVM backing volume. ext4 allows for shrinking.
+#seed_lvm_group_data_lv_docker_volumes_fs:
+
+###############################################################################
+# Seed node sysctl configuration.
+
+# Dict of sysctl parameters to set.
+#seed_sysctl_parameters:
+
+###############################################################################
+# Seed node tuned configuration.
+
+# Builtin tuned profile to use. Format is same as that used by giovtorres.tuned
+# role. Default is virtual-guest.
+#seed_tuned_active_builtin_profile:
+
+###############################################################################
+# Seed node user configuration.
+
+# List of users to create. This should be in a format accepted by the
+# singleplatform-eng.users role.
+#seed_users:
+
+###############################################################################
+# Seed node additional containers configuration
+
+# Seed container running a "Pulp in one" service.
+# https://pulpproject.org/pulp-in-one-container/
+# This can be used as a package mirror, and container image registry.
+seed_pulp_container_enabled: true
+
+seed_pulp_container:
+  pulp:
+    image: pulp/pulp
+    pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
+    tag: "3.43.1"
+    network_mode: host
+    # Override deploy_containers_defaults.init == true to ensure
+    # s6-overlay-suexec starts as pid 1
+    init: false
+    env:
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
+    volumes:
+      - /opt/kayobe/containers/pulp:/etc/pulp
+      - pulp_storage:/var/lib/pulp
+      - pulp_pgsql:/var/lib/pgsql
+      - pulp_containers:/var/lib/containers
+    restart_policy: unless-stopped
+
+# Seed container running a Squid caching proxy. This can be used to proxy
+# HTTP(S) requests from control plane hosts.
+seed_squid_container_enabled: false
+
+seed_squid_container:
+  squid:
+    image: stackhpc/squid
+    pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
+    tag: "4.15"
+    network_mode: host
+    volumes:
+      - squid_spool:/var/spool/squid
+      - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
+      - /var/log/squid:/var/log/squid
+
+# Dict of container images to start
+# Example:
+# seed_containers:
+#   squid:
+#     image: "stackhpc/squid:3.5.20-1"
+#     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
+#     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
+#
+seed_containers: >-
+  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
+        | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_extra_containers) }}
+
+seed_extra_containers: {}
+
+# Whether to attempt a basic authentication login to a registry when
+# deploying seed containers
+seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabled | bool }}"
+
+###############################################################################
+# Seed node firewalld configuration.
+
+# Whether to install and enable firewalld.
+#seed_firewalld_enabled:
+
+# A list of zones to create. Each item is a dict containing a 'zone' item.
+#seed_firewalld_zones:
+
+# A firewalld zone to set as the default. Default is unset, in which case the
+# default zone will not be changed.
+#seed_firewalld_default_zone:
+
+# A list of firewall rules to apply. Each item is a dict containing arguments
+# to pass to the firewalld module. Arguments are omitted if not provided, with
+# the following exceptions:
+# - offline: true
+# - permanent: true
+# - state: enabled
+#seed_firewalld_rules:
+
+###############################################################################
+# Seed node swap configuration.
+
+# List of swap devices. Each item is a dict containing a 'device' item. Default
+# is an empty list.
+# seed_swap:
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
