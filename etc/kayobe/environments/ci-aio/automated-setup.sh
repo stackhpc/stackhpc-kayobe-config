@@ -84,6 +84,10 @@ kayobe overcloud host configure
 
 kayobe overcloud service deploy
 
+if type apt; then
+    sudo cp /run/systemd/network/* /etc/systemd/network
+fi
+
 export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
 export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
 pushd $BASE_PATH/src/kayobe
