@@ -13,7 +13,7 @@ oob_oc_net_name: mgmt_oc
 
 # Name of the network used by the seed to provision the bare metal overcloud
 # hosts.
-#provision_oc_net_name:
+provision_oc_net_name: provision_oc
 
 # Name of the network used by the overcloud hosts to manage the bare metal
 # compute hosts via their out-of-band management controllers.
@@ -21,10 +21,10 @@ oob_wl_net_name: mgmt_wl
 
 # Name of the network used by the overcloud hosts to provision the bare metal
 # workload hosts.
-#provision_wl_net_name:
+provision_wl_net_name: provision_wl
 
 # Name of the network used to expose the internal OpenStack API endpoints.
-#internal_net_name:
+internal_net_name: internal
 
 # List of names of networks used to provide external network access via
 # Neutron.
@@ -34,16 +34,16 @@ oob_wl_net_name: mgmt_wl
 #external_net_names:
 
 # Name of the network used to expose the public OpenStack API endpoints.
-#public_net_name:
+public_net_name: external_intranet
 
 # Name of the network used by Neutron to carry tenant overlay network traffic.
-#tunnel_net_name:
+tunnel_net_name: tunnel
 
 # Name of the network used to carry storage data traffic.
-#storage_net_name:
+storage_net_name: storage
 
 # Name of the network used to carry storage management traffic.
-#storage_mgmt_net_name:
+storage_mgmt_net_name: storage_mgmt
 
 # Name of the network used to carry swift storage data traffic.
 #swift_storage_net_name:
@@ -53,11 +53,11 @@ oob_wl_net_name: mgmt_wl
 
 # Name of the network used to perform hardware introspection on the bare metal
 # workload hosts.
-inspection_net_name: provision_wl_mgmt
+inspection_net_name: provision_wl
 
 # Name of the network used to perform cleaning on the bare metal workload
 # hosts
-cleaning_net_name: provision_wl_mgmt
+cleaning_net_name: provision_wl
 
 ###############################################################################
 # Network definitions.
@@ -93,7 +93,7 @@ provision_oc_allocation_pool_start: 10.171.0.1
 provision_oc_allocation_pool_end: 10.171.0.1
 provision_oc_inspection_allocation_pool_start: 10.171.0.1
 provision_oc_inspection_allocation_pool_end: 10.171.0.1
-provision_oc_vlan: 3001
+provision_oc_untagged_vlan: 3001
 provision_oc_zone: provision_oc
 
 # Internal network IP information.
@@ -105,12 +105,12 @@ internal_vlan: 3002
 internal_zone: trusted
 
 # Storage network IP information.
-storage_net_cidr: 10.173.0.0/16
+storage_cidr: 10.173.0.0/16
 storage_allocation_pool_start: 10.173.0.1
 storage_allocation_pool_end: 10.173.0.1
-storage_net_mtu: 9000
-storage_net_vlan: 3003
-storage_net_zone: storage
+storage_mtu: 9000
+storage_vlan: 3003
+storage_zone: storage
 
 # Storage mgmt network IP information.
 storage_mgmt_cidr: 10.174.0.0/16
@@ -120,6 +120,7 @@ storage_mgmt_mtu: 9000
 storage_mgmt_vlan: 3004
 storage_mgmt_zone: storage
 
+# Tunnel network IP information.
 tunnel_cidr: 10.175.0.0/16
 tunnel_allocation_pool_start: 10.175.0.1
 tunnel_allocation_pool_end: 10.175.0.1
@@ -127,19 +128,15 @@ tunnel_mtu: 9150
 tunnel_vlan: 3005
 tunnel_zone: tunnel
 
-provision_wl_mgmt_cidr: 10.176.0.0/16
-provision_wl_mgmt_allocation_pool_start: 10.176.0.1
-provision_wl_mgmt_allocation_pool_end: 10.176.0.1
-provision_wl_mgmt_inspection_allocation_pool_start: 10.176.0.1
-provision_wl_mgmt_inspection_allocation_pool_end: 10.176.0.1
-provision_wl_mgmt_inspection_gateway: 10.176.0.1
-provision_wl_mgmt_neutron_allocation_pool_start: 10.176.0.1
-provision_wl_mgmt_neutron_allocation_pool_end: 10.176.0.1
-provision_wl_mgmt_neutron_gateway: 10.176.0.1
-provision_wl_mgmt_mtu: 1500
-provision_wl_mgmt_vlan: 3006
-provision_wl_mgmt_zone: provision_wl_mgmt
+# OOB WL network IP information.
+mgmt_wl_cidr: 10.176.0.0/16
+mgmt_wl_allocation_pool_start: 10.176.0.1
+mgmt_wl_allocation_pool_end: 10.176.0.1
+mgmt_wl_mtu: 1500
+mgmt_wl_vlan: 3006
+mgmt_wl_zone: mgmt_wl
 
+# Provision WL network IP information.
 provision_wl_cidr: 10.177.0.0/16
 provision_wl_allocation_pool_start: 10.177.0.1
 provision_wl_allocation_pool_end: 10.177.0.1
@@ -153,11 +150,26 @@ provision_wl_mtu: 1500
 provision_wl_vlan: 3007
 provision_wl_zone: provision_wl
 
+# External Admin network IP information.
+external_admin_cidr: "{{ undef(hint='Subnet has not been assigned yet') }}"
+external_admin_allocation_pool_start: 0.0.0.0
+external_admin_allocation_pool_end: 0.0.0.0
+external_admin_vlan: "{{ undef(hint='VLAN ID has not been assigned yet') }}"
+external_admin_zone: external_admin
+
+# Public network IP information.
+external_intranet_cidr: 139.184.82.0/23
+external_intranet_allocation_pool_start: 139.184.82.1
+external_intranet_allocation_pool_end: 139.184.82.1
+external_intranet_vlan: 82
+external_intranet_zone: external_intranet
+
 # Octavia network IP information.
 octavia_net_cidr: 10.178.0.0/16
 octavia_net_allocation_pool_start: 10.178.0.1
 octavia_net_allocation_pool_end: 10.178.0.1
 octavia_net_vlan: 3008
+octavia_net_zone: octavia
 
 ###############################################################################
 # Network virtual patch link configuration.
