@@ -1,0 +1,20 @@
+---
+- name: Fix networking
+  hosts: controllers,compute,infra-vms,seed,storage
+  gather_facts: false
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    # We can't assume that a virtualenv exists at this point, so use the system
+    # python interpreter.
+    ansible_python_interpreter: /usr/bin/python3
+    # Work around no known_hosts entry on first boot.
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  tasks:
+    - name: Ensure `hosts` file contains pulp entries
+      blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} Kayobe Pulp entries"
+        block: |
+          10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
+          10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+      become: true

@@ -1,0 +1,71 @@
+---
+
+- name: Ensure dependencies are installed
+  hosts: controllers[0]
+  gather_facts: true
+  vars:
+    venv: '{{ virtualenv_path }}/openstack'
+  tasks:
+    - name: Install python build dependencies
+      package:
+        name: "{{ packages | select | list }}"
+        cache_valid_time: "{{ apt_cache_valid_time if ansible_facts.os_family == 'Debian' else omit }}"
+        update_cache: "{{ True if ansible_facts.os_family == 'Debian' else omit }}"
+        state: present
+      become: true
+      vars:
+        packages:
+          - "{% if ansible_facts.os_family == 'RedHat' %}gcc{% else %}build-essential{% endif %}"
+          - "python3-dev{% if ansible_facts.os_family == 'RedHat' %}el{% endif %}"
+          - "{% if ansible_facts.os_family == 'Debian' %}python3-venv{% endif %}"
+
+    - name: Ensure latest version of pip is installed
+      pip:
+        name: pip
+        state: latest
+        virtualenv: '{{ venv }}'
+        virtualenv_command: "/usr/bin/python3 -m venv"
+
+    - name: Ensure python openstack client is installed
+      pip:
+        name: python-openstackclient
+        virtualenv: '{{ venv }}'
+        extra_args: -c "{{ pip_upper_constraints_file }}"
+
+    - name: Include kolla secrets
+      include_vars:
+        dir: '{{ kayobe_env_config_path }}/kolla/'
+        files_matching: passwords.yml
+        name: kolla_passwords
+
+    - name: Add an IP to connect to the instances
+      # FIXME: host configure will have bounced the bridge
+      # and removed the IP
+      command: ip a add 10.0.2.1/24 dev breth1
+      register: result
+      failed_when: 'result.rc !=0 and "RTNETLINK answers: File exists" not in
+        result.stderr'
+      changed_when: result.rc == 0
+      become: true
+
+    - name: Run init-run-once
+      script:
+        cmd: scripts/aio-init.sh
+        creates: /tmp/.init-runonce
+      environment:
+        KOLLA_OPENSTACK_COMMAND: '{{ venv }}/bin/openstack'
+        OS_PROJECT_DOMAIN_NAME: Default
+        OS_USER_DOMAIN_NAME: Default
+        OS_PROJECT_NAME: admin
+        OS_TENANT_NAME: admin
+        OS_USERNAME: admin
+        OS_PASSWORD: "{{ kolla_passwords.keystone_admin_password | mandatory('Could\
+          \ not find keystone_admin_password in passwords.yml') }}"
+        # Use kolla_external_fqdn in wallaby
+        OS_AUTH_URL: http://{{ kolla_external_fqdn | default(public_net_name
+          | net_fqdn) | default(public_net_name | net_vip_address, true) }}:5000
+        OS_INTERFACE: public
+        OS_ENDPOINT_TYPE: publicURL
+        OS_IDENTITY_API_VERSION: 3
+        OS_REGION_NAME: RegionOne
+        OS_AUTH_PLUGIN: password

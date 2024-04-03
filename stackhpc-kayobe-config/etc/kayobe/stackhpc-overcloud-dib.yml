@@ -1,0 +1,238 @@
+---
+# StackHPC overcloud host disk image configuration.
+
+###############################################################################
+# Diskimage-builder configuration for overcloud host disk images.
+
+# StackHPC overcloud host disk image Diskimage Builder recipe. This may be used
+# as an item in the overcloud_dib_host_images list when
+# overcloud_dib_build_host_images is true.
+# Example:
+# overcloud_dib_host_images:
+#   - "{{ stackhpc_overcloud_dib_host_image }}"
+stackhpc_overcloud_dib_host_image:
+  name: "{{ stackhpc_overcloud_dib_name }}"
+  elements: "{{ stackhpc_overcloud_dib_elements }}"
+  env: "{{ stackhpc_overcloud_dib_env_vars }}"
+  packages: "{{ stackhpc_overcloud_dib_packages }}"
+
+# StackHPC overcloud DIB image name.
+stackhpc_overcloud_dib_name: "deployment_image"
+
+# StackHPC overcloud DIB image elements.
+stackhpc_overcloud_dib_elements:
+  - "{{ os_distribution }}-{% if os_distribution == 'rocky' %}container-stackhpc{% else %}minimal{% endif %}"
+  - "cloud-init-datasources"
+  - "{% if os_distribution == 'rocky' %}disable-selinux{% endif %}"
+  - "enable-serial-console"
+  - "{% if kayobe_environment == 'ci-builder' %}etc-hosts{% endif %}"
+  - "vm"
+  - "block-device-efi"
+  - "cloud-init"
+  - "{% if os_distribution == 'rocky' %}dracut-regenerate{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}lvm{% endif %}"
+  - "openssh-server"
+  - "{% if os_distribution == 'ubuntu' %}sudoers{% endif %}"
+
+# StackHPC overcloud DIB image environment variables.
+stackhpc_overcloud_dib_env_vars:
+  DIB_BLOCK_DEVICE_CONFIG: "{{ stackhpc_overcloud_dib_block_device_config_uefi_lvm }}"
+  DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1 rd.auto"
+  DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
+  DIB_CONTAINERFILE_RUNTIME: "docker"
+  DIB_CONTAINERFILE_NETWORK_DRIVER: "host"
+  DIB_CONTAINERFILE_DOCKERFILE: "/opt/kayobe/src/stackhpc-image-elements/elements/rocky-container-stackhpc/containerfiles/9-stackhpc"
+  # NOTE: Not currently syncing Ubuntu packages, since the on_demand mirror in
+  # Ark does not work if the upstream mirror pulls packages (which it does
+  # sometimes).
+  # DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_focal_url if os_distribution == 'ubuntu' else '' }}"
+  DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: "{{ stackhpc_overcloud_dib_dracut_enabled_modules_default_config }}"
+  # FIXME: Workaround for lack of internal DNS on SMS lab.
+  DIB_ETC_HOSTS_EXTRA: |
+    10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+  DIB_RELEASE: "{{ overcloud_dib_os_release }}"
+  DIB_SUDOERS_FILENAME: "no-fqdn"
+  # Avoid DNS queries during sudo commands, since we might not always have working DNS.
+  DIB_SUDOERS_CONFIG: |
+    Defaults  !fqdn
+  # FIXME: Support templating repo files.
+  # DIB_YUM_MINIMAL_BOOTSTRAP_REPOS: /path/to/dir/containing/dib-mirror-*.repo
+  YUM: dnf
+  # Workaround for stack user home ownership bug
+  DIB_IMAGE_CACHE: "/tmp/yum"
+
+# StackHPC overcloud DIB image packages.
+stackhpc_overcloud_dib_packages:
+  - "ethtool"
+  - "git"
+  - "less"
+  - "logrotate"
+  - "net-tools"
+  - "nvme-cli"
+  - "pciutils"
+  - "python3"
+  - "smartmontools"
+  - "vim"
+  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
+  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
+  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
+  - "{% if os_distribution == 'rocky' %}cloud-utils-growpart{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}cloud-guest-utils{% endif %}"
+
+# StackHPC overcloud DIB image block device configuration.
+# This image layout conforms to the CIS partition benchmarks.
+# This configuration builds a UEFI-compatible image with 3 partitions.
+# * p0: EFI ESP bootloader
+# * p1: EFI BSP
+# * p2: LVM PV (rootpv)
+# The rootpv PV is in the rootvg VG, and has the following LVs:
+# * lv_root -> /
+# * lv_tmp -> /tmp
+# * lv_var -> /var
+# * lv_var_tmp -> /var/tmp
+# * lv_log -> /var/log
+# * lv_audit -> /var/log/audit
+# * lv_home -> /home
+stackhpc_overcloud_dib_block_device_config_uefi_lvm: |
+  - local_loop:
+      name: image0
+      size: 20GiB
+  - partitioning:
+      base: image0
+      label: gpt
+      partitions:
+        - name: ESP
+          type: 'EF00'
+          size: 500MiB
+          mkfs:
+            type: vfat
+            mount:
+              mount_point: /boot/efi
+              fstab:
+                options: "defaults"
+                fsck-passno: 2
+        - name: BSP
+          type: 'EF02'
+          size: 8MiB
+        - name: root
+          type: '8E00'
+          flags: [ boot ]
+          size: 100%
+  - lvm:
+      name: lvm
+      base: [ root ]
+      pvs:
+        - name: rootpv
+          base: root
+          options: [ "--force" ]
+      vgs:
+        - name: rootvg
+          base: [ "rootpv" ]
+          options: [ "--force" ]
+      lvs:
+        - name: lv_root
+          base: rootvg
+          size: 5G
+        - name: lv_tmp
+          base: rootvg
+          size: 1G
+        - name: lv_var
+          base: rootvg
+          size: 1G
+        - name: lv_var_tmp
+          base: rootvg
+          size: 1G
+        - name: lv_log
+          base: rootvg
+          size: 1G
+        - name: lv_audit
+          base: rootvg
+          size: 128M
+        - name: lv_home
+          base: rootvg
+          size: 128M
+  - mkfs:
+      name: fs_root
+      base: lv_root
+      type: ext4
+      label: "rootfs"
+      mount:
+        mount_point: /
+        fstab:
+          options: "defaults"
+          fsck-passno: 1
+  - mkfs:
+      name: fs_tmp
+      base: lv_tmp
+      type: ext4
+      label: "tmpfs"
+      mount:
+        mount_point: /tmp
+        fstab:
+          options: "rw,noexec,nosuid,nodev"
+          fsck-passno: 2
+  - mkfs:
+      name: fs_var
+      base: lv_var
+      type: ext4
+      label: "varfs"
+      mount:
+        mount_point: /var
+        fstab:
+          options: "defaults"
+          fsck-passno: 2
+  - mkfs:
+      name: fs_var_tmp
+      base: lv_var_tmp
+      type: ext4
+      label: "vartmpfs"
+      mount:
+        mount_point: /var/tmp
+        fstab:
+          options: "rw,noexec,nosuid,nodev"
+          fsck-passno: 2
+  - mkfs:
+      name: fs_log
+      base: lv_log
+      type: ext4
+      label: "logfs"
+      mount:
+        mount_point: /var/log
+        fstab:
+          options: "defaults"
+          fsck-passno: 2
+  - mkfs:
+      name: fs_audit
+      base: lv_audit
+      type: ext4
+      label: "auditfs"
+      mount:
+        mount_point: /var/log/audit
+        fstab:
+          options: "defaults"
+          fsck-passno: 2
+  - mkfs:
+      name: fs_home
+      base: lv_home
+      type: ext4
+      label: "homefs"
+      mount:
+        mount_point: /home
+        fstab:
+          options: "rw,nodev"
+          fsck-passno: 2
+
+# StackHPC overcloud DIB image Dracut module configuration.
+stackhpc_overcloud_dib_dracut_enabled_modules_default_config: |
+  - name: crypt
+    packages:
+      - cryptsetup
+  - name: lvm
+    packages:
+      - lvm2
+  - name: mdraid
+    packages:
+      - mdraid

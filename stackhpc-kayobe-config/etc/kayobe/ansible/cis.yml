@@ -1,0 +1,21 @@
+---
+
+- name: Security hardening
+  hosts: overcloud
+  become: true
+  tasks:
+    - name: Ensure the cron package is installed on ubuntu
+      package:
+        name: cron
+        state: present
+      when: ansible_facts.distribution == 'Ubuntu'
+
+    - include_role:
+        name: ansible-lockdown.rhel9_cis
+      when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9'
+      tags: always
+
+    - include_role:
+        name: ansible-lockdown.ubuntu22_cis
+      when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '22'
+      tags: always

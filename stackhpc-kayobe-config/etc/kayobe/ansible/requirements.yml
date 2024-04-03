@@ -1,0 +1,35 @@
+---
+collections:
+  - name: stackhpc.cephadm
+    version: 1.14.0
+  # NOTE: Pinning pulp.squeezer to 0.0.13 because 0.0.14+ depends on the
+  # pulp_glue Python library being installed.
+  - name: pulp.squeezer
+    version: 0.0.13
+  - name: stackhpc.pulp
+    version: 0.5.5
+  - name: stackhpc.hashicorp
+    version: 2.4.0
+  - name: stackhpc.kayobe_workflows
+    version: 1.0.3
+roles:
+  - src: stackhpc.vxlan
+  - name: ansible-lockdown.ubuntu22_cis
+    src: https://github.com/stackhpc/UBUNTU22-CIS
+    #FIXME: Waiting for https://github.com/ansible-lockdown/UBUNTU22-CIS/pull/174
+    # to be in a tagged release
+    version: bugfix/inject-facts
+  - name: ansible-lockdown.rhel9_cis
+    src: https://github.com/stackhpc/RHEL9-CIS
+    #FIXME: Waiting for https://github.com/ansible-lockdown/RHEL9-CIS/pull/115
+    # to be in a tagged release.
+    version: bugfix/inject-facts
+  - name: wazuh-ansible
+    src: https://github.com/stackhpc/wazuh-ansible
+    version: stackhpc
+  - name: geerlingguy.pip
+    version: 2.2.0
+  - name: monolithprojects.github_actions_runner
+    version: 1.18.5
+  - src: https://github.com/stackhpc/ansible-role-docker.git
+    name: geerlingguy.docker

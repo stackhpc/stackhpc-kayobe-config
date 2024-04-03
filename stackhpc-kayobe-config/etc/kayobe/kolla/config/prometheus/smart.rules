@@ -1,0 +1,32 @@
+{% raw %}
+
+groups:
+- name: Smart
+  rules:
+
+  - alert: DiskSmartStatusUnhealthy
+    expr: smartmon_device_smart_healthy < 1
+    for: 10m
+    labels:
+      severity: alert
+    annotations:
+      summary: "SMART monitor reports bad disk on (instance {{ $labels.instance }})"
+      description: "{{ $labels.instance }} is reporting unhealthy for the disk at {{ $labels.disk }}. Disk serial number is: {{ $labels.serial_number }}"
+
+  - alert: DWPDTooHigh
+    expr: (delta(nvme_data_units_written_total[30d])*512000 / nvme_physical_size_bytes) / 30 > 1
+    labels:
+      severity: alert
+    annotations:
+      summary: "High 30-Day Average DWPD for {{ $labels.instance }}"
+      description: "The 30-Day average for Disk Writes Per Day for disk {{ $labels.device }} on {{ $labels.instance }} exceeds 1 DWPD"
+
+  - alert: DWPDTooHighWarning
+    expr: (delta(nvme_data_units_written_total[7d])*512000 / nvme_physical_size_bytes) / 7 > 1
+    labels:
+      severity: warning
+    annotations:
+      summary: "High 7-Day Average DWPD for {{ $labels.instance }}"
+      description: "The 7-day average for Disk Writes Per Day for disk {{ $labels.device }} on {{ $labels.instance }} exceeds 1 DWPD"
+
+{% endraw %}

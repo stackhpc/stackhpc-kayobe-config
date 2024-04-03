@@ -1,0 +1,60 @@
+# yamllint disable-file
+---
+
+# kolla_base_distro must be set here to be resolvable on a per-host basis
+# This is necessary for os migrations where mixed clouds might be deployed
+kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}"
+
+# Use facts so this is determined correctly when the control host OS differs
+# from os_distribuition.
+kolla_base_distro_version: "{% raw %}{{ kolla_base_distro_version_default_map[kolla_base_distro] }}{% endraw %}"
+
+# Convenience variable for base distro and version string.
+kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
+
+# Dict of Kolla image tags to deploy for each service.
+# Each key is the tag variable prefix name, and the value is another dict,
+# where the key is the OS distro and the value is the tag to deploy.
+# NOTE: This is defined in etc/kayobe/kolla-image-tags.yml.
+kolla_image_tags:
+{{ kolla_image_tags | to_nice_yaml | indent(width=4, first=true) }}
+
+# Variables defining which tag to use for each container's image.
+{{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}
+
+#############################################################################
+# RabbitMQ
+
+om_enable_rabbitmq_high_availability: true
+
+#############################################################################
+# Monitoring and alerting related settings
+
+opensearch_heap_size: 8g
+prometheus_cmdline_extras: "--storage.tsdb.retention.time=30d"
+
+# Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
+prometheus_node_exporter_extra_volumes:
+  - "textfile:/var/lib/node_exporter/textfile_collector"
+prometheus_node_exporter_cmdline_extras: "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
+
+# Set Ceph manager exporter endpoints
+{% if groups['mgrs'] | length > 0 %}
+prometheus_ceph_mgr_exporter_endpoints:
+{% for host in groups['mgrs'] %}
+  - "{{ admin_oc_net_name | net_ip(host) }}:9283"
+{% endfor %}
+{% endif %}
+
+# Use inventory hostnames as labels
+prometheus_instance_label: "{% raw %}{{ ansible_facts.hostname }}{% endraw %}"
+
+# Make openstack-exporter use Nova API version 2.1 to keep metrics the same as
+# in Yoga. This is required to include a valid value for the flavor_id label on
+# openstack_nova_server_status metrics.
+prometheus_openstack_exporter_compute_api_version: "2.1"
+
+# Define the Sussex HPC custom Horizon theme
+horizon_custom_themes:
+  - name: sussex-theme
+    label: SussexHPC-Theme

@@ -1,0 +1,56 @@
+---
+# This workflow queries the Test Pulp server to check that all image tags
+# specified in kolla_image_tags are present.
+
+name: Check container image tags
+on:
+  workflow_call:
+    inputs:
+      kayobe_image:
+        description: Kayobe container image
+        type: string
+        required: true
+      if:
+        description: Whether to run the workflow (workaround for required status checks issue)
+        type: boolean
+        default: true
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  check-tags:
+    name: Check container image tags
+    if: ${{ inputs.if && ! cancelled() }}
+    runs-on: arc-skc-aio-runner
+    permissions: {}
+    env:
+      KAYOBE_ENVIRONMENT: ci-aio
+      KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+      KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+    steps:
+      - name: Install package dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git unzip nodejs
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
+      - name: Pull latest Kayobe image
+        run: |
+          docker image pull $KAYOBE_IMAGE
+
+      - name: Check container image tags
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/check-tags.yml'

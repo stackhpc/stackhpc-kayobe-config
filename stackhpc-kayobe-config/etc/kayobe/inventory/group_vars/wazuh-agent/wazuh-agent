@@ -1,0 +1,26 @@
+---
+# Wazuh-Agent role configuration
+# Reference: https://documentation.wazuh.com/4.3/deploying-with-ansible/reference.html#wazuh-agent
+# Defaults: https://github.com/wazuh/wazuh-ansible/blob/4.3/roles/wazuh/ansible-wazuh-agent/defaults/main.yml
+
+# Wazuh-Manager IP address
+# Convenience var not used by wazuh-agent role
+wazuh_manager_address: "{{ admin_oc_net_name | net_ip(groups['wazuh-manager'][0]) }}"
+
+# Wazuh-Manager API config
+wazuh_managers:
+  - address: "{{ wazuh_manager_address }}"
+    port: 1514
+    protocol: tcp
+    api_port: 55000
+
+# Wazuh-Agent authd config
+wazuh_agent_authd:
+  registration_address: "{{ wazuh_manager_address }}"
+  enable: true
+  port: 1515
+  ssl_agent_ca: null
+  ssl_auto_negotiate: 'no'
+
+# Wazuh-Agent authd password
+authd_pass: "{{ secrets_wazuh.authd_pass }}"

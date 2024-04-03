@@ -1,0 +1,18 @@
+---
+###############################################################################
+# VXLAN configuration.
+
+# These variables are used by stackhpc.vxlan to construct a VXLAN interface.
+# The physical device that the VXLAN is plugged into.
+vxlan_phys_dev: "{{ admin_oc_interface }}"
+
+# Destination port used by the VXLAN interface. Note: OpenStack uses 4789.
+vxlan_dstport: 4790
+
+# Virtual network identifier used by the VLXAN. This must be unique between multinode environments.
+vxlan_vni:
+
+# This is a dictionary of interfaces to be created by the stackhpc.vxlan role.
+vxlan_interfaces:
+  - device: "vxlan{{ vxlan_vni }}"
+    group: "{{ '239.0.0.0/8' | next_nth_usable(vxlan_vni) }}"

@@ -1,0 +1,57 @@
+---
+###############################################################################
+# Kolla configuration.
+
+# Docker namespace to use for Kolla images. Default is 'kolla'.
+kolla_docker_namespace: stackhpc-dev
+
+###############################################################################
+# StackHPC configuration.
+
+# Host and port of a package repository mirror.
+# Build and deploy the development Pulp service repositories.
+stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+
+# Build and deploy released Pulp repository versions.
+stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
+stackhpc_repo_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
+stackhpc_repo_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
+stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
+stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
+stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
+stackhpc_repo_docker_ce_ubuntu_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
+stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
+stackhpc_repo_centos_stream_9_openstack_antelope_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_antelope_version }}"
+stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_quincy_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_quincy_version }}"
+stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
+stackhpc_repo_rhel_9_treasuredata_4_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_4_version }}"
+stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
+stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
+stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_version }}"
+stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+stackhpc_repo_opensearch_dashboards_2_x_version: "{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+## Use derived vars from etc/kayobe/pulp.yml to switch between
+## minor Rocky versions using stackhpc_pulp_repo_rocky_x_minor_version
+stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
+stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
+stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
+stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+
+# Rocky-and-CI-specific Pulp urls
+stackhpc_include_os_minor_version_in_repo_url: true
+
+# Host and port of container registry.
+# Push built images to the development Pulp service registry.
+stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
+
+# Username and password of container registry.
+stackhpc_docker_registry_username: "stackhpc-kayobe-ci"
+stackhpc_docker_registry_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          33356166343730633865363431306535613736663764373034396132356131343066636530393534
+          3262646436663034633131316438633230383330633533350a386365313239303464383636376338
+          61656662333939333063343131633963636431663136643137636664633233633133396339613861
+          3038613063626138610a333566393937643630366564653163613364323965396130613433316537
+          39653335393831633362343934363866346262613166393561666336623062393935
