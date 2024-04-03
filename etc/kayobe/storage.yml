@@ -134,7 +134,7 @@
 # provision_oc_net_name }}).
 
 # Whether to install and enable firewalld.
-storage_firewalld_enabled: false
+storage_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
 storage_firewalld_zones: "{{ storage_firewalld_zones_default | union(storage_firewalld_zones_extra) | unique | select }}"
@@ -180,7 +180,7 @@ storage_firewalld_default:
         zone: "{{ storage_net_name | net_zone }}"
         network: "{{ storage_net_name }}"
         state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
-    enabled: "{{ stackhpc_enable_ceph | default(false) | bool }}" # Just a random guess
+    enabled: "{{ stackhpc_enable_ceph | default(false) | bool }}"
 
 ###############################################################################
 # Storage node swap configuration.
