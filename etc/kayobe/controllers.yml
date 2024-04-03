@@ -138,7 +138,7 @@
 # provision_oc_net_name }}).
 
 # Whether to install and enable firewalld.
-controller_firewalld_enabled: false
+controller_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
 controller_firewalld_zones: "{{ controller_firewalld_zones_default | union(controller_firewalld_zones_extra) | unique | select }}"
@@ -160,7 +160,7 @@ controller_firewalld_rules: "{{ controller_firewalld_rules_default | selectattr(
 controller_firewalld_rules_extra: []
 controller_firewalld_rules_default:
   # Common
-  - rules: 
+  - rules:
       - service: ssh
         zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
@@ -219,14 +219,14 @@ controller_firewalld_rules_default:
         zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
-    enabled: "{{ 'geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) | bool }}"
+    enabled: "{{ ('geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
   # VXLAN
   - rules:
       - port: 4789/udp
         zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
-    enabled: "{{ 'vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) | bool }}"
+    enabled: "{{ ('vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
   # Octavia
   - rules:
       - port: 5555/udp
