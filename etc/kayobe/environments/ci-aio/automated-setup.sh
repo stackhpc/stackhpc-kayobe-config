@@ -72,6 +72,10 @@ fi
 sudo ip l set dummy1 up
 sudo ip l set dummy1 master breth1
 
+if type apt; then
+    sudo cp /run/systemd/network/* /etc/systemd/network
+fi
+
 export KAYOBE_VAULT_PASSWORD=$(cat $BASE_PATH/vault-pw)
 pushd $BASE_PATH/src/kayobe-config
 source kayobe-env --environment ci-aio
@@ -83,10 +87,6 @@ kayobe playbook run etc/kayobe/ansible/growroot.yml etc/kayobe/ansible/purge-com
 kayobe overcloud host configure
 
 kayobe overcloud service deploy
-
-if type apt; then
-    sudo cp /run/systemd/network/* /etc/systemd/network
-fi
 
 export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
 export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
