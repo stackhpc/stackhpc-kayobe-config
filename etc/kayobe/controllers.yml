@@ -141,9 +141,18 @@
 controller_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-controller_firewalld_zones: "{{ controller_firewalld_zones_default | union(controller_firewalld_zones_extra) | unique | select }}"
+controller_firewalld_zones: "{{ controller_firewalld_zones_default | union(controller_firewalld_zones_extra) | unique }}"
+
+controller_firewalld_zones_default: |
+  {% set network_zones = [] %}
+  {% for network in network_interfaces %}
+  {% if network | net_zone is not none %}
+  {% set _ = network_zones.append({'zone': network | net_zone }) %}
+  {% endif %}
+  {% endfor %}
+  {{ network_zones }}
+
 controller_firewalld_zones_extra: []
-controller_firewalld_zones_default: "{% set network_zones = [] %}{% for network in network_interfaces %}{% set _ = network_zones.append({'zone': network | net_zone}) %}{% endfor %}{{ network_zones }}"
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
@@ -157,7 +166,7 @@ controller_firewalld_default_zone: trusted
 # - permanent: true
 # - state: enabled
 controller_firewalld_rules: "{{ controller_firewalld_rules_default | selectattr('enabled', 'true') | map(attribute='rules') | flatten | selectattr('network', 'in', network_interfaces) | selectattr('zone') | union(controller_firewalld_rules_extra) | unique | select }}"
-controller_firewalld_rules_extra: []
+
 controller_firewalld_rules_default:
   # Common
   - rules:
@@ -174,10 +183,6 @@ controller_firewalld_rules_default:
         network: "{{ provision_wl_net_name }}"
         state: enabled
       - service: tftp
-        zone: "{{ provision_wl_net_name | net_zone }}"
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-      - port: 8089/tcp
         zone: "{{ provision_wl_net_name | net_zone }}"
         network: "{{ provision_wl_net_name }}"
         state: enabled
@@ -219,14 +224,14 @@ controller_firewalld_rules_default:
         zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
-    enabled: "{{ ('geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
+    enabled: "{{ 'geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
   # VXLAN
   - rules:
       - port: 4789/udp
         zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
-    enabled: "{{ ('vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
+    enabled: "{{ 'vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
   # Octavia
   - rules:
       - port: 5555/udp
@@ -234,6 +239,15 @@ controller_firewalld_rules_default:
         network: "{{ octavia_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_octavia | bool }}"
+  # Overcloud Ironic
+  - rules:
+      - port: 8089/tcp
+        zone: "{{ provision_wl_net_name | net_zone }}"
+        network: "{{ provision_wl_net_name }}"
+        state: enabled
+    enabled: "{{ kolla_enable_octavia | bool }}"
+
+controller_firewalld_rules_extra: []
 
 ###############################################################################
 # Controller node swap configuration.
