@@ -162,6 +162,20 @@ environment. This can result in significant changes to the Kolla config. Take
 extra care when creating the Antelope branch of the kayobe-config and always
 check the config diff.
 
+Glance show_multiple_locations disabled
+---------------------------------------
+
+Kolla Ansible no longer sets ``show_multiple_locations = True`` in Glance by
+default when Glance's Ceph RBD backend is enabled. This was applied as a fix
+but operators must note that this, in turn, disables Cinder and Nova's
+optimisations. In particular, this can increase instance creation times due to
+a lack of copy-on-write.
+
+On the other hand, these optimisations might have been causing other trouble
+for operators. Please see `LP#1992153
+<https://bugs.launchpad.net/kolla-ansible/+bug/1992153>`__. Operators relying
+on this feature can set the flag themselves using service config overrides.
+
 Known issues
 ============
 
