@@ -103,8 +103,17 @@ monitoring_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
 monitoring_firewalld_zones: "{{ monitoring_firewalld_zones_default | union(monitoring_firewalld_zones_extra) | unique | select }}"
+
+monitoring_firewalld_zones_default: |
+  {% set network_zones = [] %}
+  {% for network in network_interfaces %}
+  {% if network | net_zone is not none %}
+  {% set _ = network_zones.append({'zone': network | net_zone }) %}
+  {% endif %}
+  {% endfor %}
+  {{ network_zones }}
+
 monitoring_firewalld_zones_extra: []
-monitoring_firewalld_zones_default: "{% set network_zones = [] %}{% for network in network_interfaces %}{% set _ = network_zones.append({'zone': network | net_zone}) %}{% endfor %}{{ network_zones }}"
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
@@ -118,7 +127,7 @@ monitoring_firewalld_default_zone: trusted
 # - permanent: true
 # - state: enabled
 monitoring_firewalld_rules: "{{ monitoring_firewalld_rules_default | selectattr('enabled', 'true') | map(attribute='rules') | flatten | selectattr('network', 'in', network_interfaces) | selectattr('zone') | union(monitoring_firewalld_rules_extra) | unique | select }}"
-monitoring_firewalld_extra: []
+
 monitoring_firewalld_default:
   - rules:
       - service: ssh
@@ -126,6 +135,8 @@ monitoring_firewalld_default:
         network: "{{ admin_oc_net_name }}"
         state: enabled
     enabled: true
+
+monitoring_firewalld_extra: []
 
 ###############################################################################
 # Monitoring node swap configuration.
