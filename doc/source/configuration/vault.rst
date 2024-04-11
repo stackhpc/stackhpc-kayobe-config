@@ -111,7 +111,7 @@ Setup HAProxy config for Vault
 
    .. code-block::
 
-      kayobe overcloud service deploy -kt haproxy
+      kayobe overcloud service deploy --skip-tags os_capacity -kt haproxy
 
 Setup Vault HA on the overcloud hosts
 -------------------------------------
