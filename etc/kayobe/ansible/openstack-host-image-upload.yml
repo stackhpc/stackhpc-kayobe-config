@@ -1,0 +1,54 @@
+---
+# This playbook is designed to be used by the overcloud-host-image-build.yml
+# GitHub workflow to upload newly-built images to a development cloud for
+# testing and use in CI.
+- name: Upload an OS image to Glance
+  hosts: seed
+  vars:
+    local_image_path: "/opt/kayobe/images/overcloud-{{ os_distribution }}-{{ os_release }}/overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
+    image_name: "overcloud-{{ os_distribution }}-{{ os_release }}"
+  tasks:
+    - block:
+        - name: Write out clouds.yaml
+          copy:
+            content: "{{ lookup('ansible.builtin.env', 'CLOUDS_YAML') }}"
+            dest: clouds.yaml
+            mode: 0600
+
+        - name: Write out secure.yaml
+          no_log: true
+          vars:
+            os_secrets:
+              clouds:
+                openstack:
+                  auth:
+                    application_credential_id: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_ID') }}"
+                    application_credential_secret: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_SECRET') }}"
+          copy:
+            content: "{{ os_secrets | to_nice_yaml }}"
+            dest: secure.yaml
+            mode: 0600
+
+        - name: Ensure dependencies are installed
+          pip:
+            name: openstacksdk
+
+        - name: Upload an image to Glance
+          openstack.cloud.image:
+            cloud: openstack
+            name: "{{ image_name }}"
+            container_format: bare
+            disk_format: qcow2
+            state: present
+            filename: "{{ local_image_path }}"
+
+      always:
+        - name: Remove clouds.yaml
+          file:
+            path: clouds.yaml
+            state: absent
+
+        - name: Remove secure.yaml
+          file:
+            path: secure.yaml
+            state: absent
