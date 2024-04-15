@@ -1,0 +1,25 @@
+metrics:
+  openstack_nova_server_status:
+    alt_name: instance
+    unit: instance
+    mutate: MAP
+    mutate_map:
+      0.0: 1.0  # ACTIVE
+      11.0: 1.0 # SHUTOFF
+      12.0: 1.0 # SUSPENDED
+      16.0: 1.0 # PAUSED
+    groupby:
+      - user_id
+      - tenant_id
+      - uuid
+    metadata:
+      - flavor_id
+      - name
+
+  # openstack_glance_image_bytes:
+  #   alt_name: image.size
+  #   factor: 1/1073741824 # image.size measurements are in B
+  #   unit: GiB
+  #   groupby:
+  #     - resource_id
+  #     - project_id
