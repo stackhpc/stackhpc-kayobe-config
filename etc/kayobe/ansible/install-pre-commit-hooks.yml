@@ -10,10 +10,11 @@
             name: pre-commit
             version: 3.5.0
             virtualenv: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}"
+          register: pip_install
 
         - name: Register pre-commit hooks with git
           ansible.builtin.command:
             cmd: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/bin/pre-commit install"
-            creates: "{{ lookup('ansible.builtin.env', 'KAYOBE_CONFIG_PATH') }}/../../.git/hooks/pre-commit"
           args:
             chdir: "{{ lookup('ansible.builtin.env', 'KAYOBE_CONFIG_PATH') }}"
+          when: pip_install is changed
