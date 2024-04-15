@@ -23,9 +23,18 @@ Currently the following hooks are provided:
 
 Installation of `pre-commit` hooks is handled via the `install-pre-commit-hooks` playbook
 found within the Ansible directory.
-Either use `kayobe playbook run` or add the playbook as a hook within Kayobe config such as
+Either run the playbook manually or add the playbook as a hook within Kayobe config such as
 within `control-host-bootstrap/post.d`.
 Once done you should find `pre-commit` is available within the `kayobe` virtualenv.
+
+To run the playbook using the following command
+
+- ``kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/install-pre-commit-hooks.yml``
+
+Whereas to run the playbook when control host bootstrap runs ensure it registered as symlink using the following command
+
+- ``mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/control-host-bootstrap/post.d``
+- ``ln -s ${KAYOBE_CONFIG_PATH}/ansible/install-pre-commit-hooks.yml ${KAYOBE_CONFIG_PATH}/hooks/control-host-bootstrap/post.d/install-pre-commit-hooks.yml``
 
 All that remains is the installation of the hooks themselves which can be accomplished either by
 running `pre-commit run` or using `git commit` when you have changes that need to be committed.
