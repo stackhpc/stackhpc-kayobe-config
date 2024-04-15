@@ -159,29 +159,15 @@ seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabl
 ###############################################################################
 # Seed node firewalld configuration.
 
-# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
-# provision_oc_net_name }}).
-
 # Whether to install and enable firewalld.
-seed_firewalld_enabled: true
+#seed_firewalld_enabled:
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-seed_firewalld_zones: "{{ seed_firewalld_zones_default | union(seed_firewalld_zones_extra) | unique | select }}"
-
-seed_firewalld_zones_default: |
-  {% set network_zones = [] %}
-  {% for network in network_interfaces %}
-  {% if network | net_zone is not none %}
-  {% set _ = network_zones.append({'zone': network | net_zone }) %}
-  {% endif %}
-  {% endfor %}
-  {{ network_zones }}
-
-seed_firewalld_zones_extra: []
+#seed_firewalld_zones:
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-seed_firewalld_default_zone: drop
+#seed_firewalld_default_zone:
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -189,80 +175,7 @@ seed_firewalld_default_zone: drop
 # - offline: true
 # - permanent: true
 # - state: enabled
-seed_firewalld_rules: "{{ seed_firewalld_rules_default | selectattr('enabled', 'true') | map(attribute='rules') | flatten | selectattr('network', 'in', network_interfaces) | selectattr('zone') | union(seed_firewalld_rules_extra) | unique | select }}"
-
-seed_firewalld_rules_default:
-  # Common
-  - rules:
-      - service: ssh
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: dhcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: tftp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: ntp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      # Disable default services in public zone
-      - service: dhcpv6-client
-        state: disabled
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-    enabled: true
-  - rules:
-      - service: ssh
-        state: disabled
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-    enabled: "{{ public_net_name | net_zone != provision_oc_net_name | net_zone}}"
-  # Pulp server
-  - rules:
-      - service: http
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      # nginx
-      - port: 8080/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-    enabled: "{{ seed_pulp_container_enabled | bool }}"
-  # Squid proxy
-  - rules:
-      - service: squid
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-    enabled: "{{ seed_squid_container_enabled | bool }}"
-  # Ironic
-  - rules:
-      # Ironic inspector API
-      - port: 5050/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      # Ironic API
-      - port: 6385/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-    enabled: "{{ kolla_enable_bifrost | bool }}"
-  # Redfish exporter
-  - rules:
-      - port: 9610/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-    enabled: true
-
-seed_firewalld_rules_extra: []
+#seed_firewalld_rules:
 
 ###############################################################################
 # Seed node swap configuration.

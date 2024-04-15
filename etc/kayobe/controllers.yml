@@ -134,30 +134,15 @@
 ###############################################################################
 # Controller node firewalld configuration.
 
-# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
-# provision_oc_net_name }}).
-
 # Whether to install and enable firewalld.
-controller_firewalld_enabled: true
+#controller_firewalld_enabled:
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-controller_firewalld_zones: "{{ controller_firewalld_zones_default | union(controller_firewalld_zones_extra) | unique }}"
-
-controller_firewalld_zones_default: |
-  {% set network_zones = [] %}
-  {% for network in network_interfaces %}
-  {% if network | net_zone is not none %}
-  {% set _ = network_zones.append({'zone': network | net_zone }) %}
-  {% endif %}
-  {% endfor %}
-  {{ network_zones }}
-
-controller_firewalld_zones_extra: []
+#controller_firewalld_zones:
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-# FIXME: Try setting to drop
-controller_firewalld_default_zone: trusted
+#controller_firewalld_default_zone:
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -165,89 +150,7 @@ controller_firewalld_default_zone: trusted
 # - offline: true
 # - permanent: true
 # - state: enabled
-controller_firewalld_rules: "{{ controller_firewalld_rules_default | selectattr('enabled', 'true') | map(attribute='rules') | flatten | selectattr('network', 'in', network_interfaces) | selectattr('zone') | union(controller_firewalld_rules_extra) | unique | select }}"
-
-controller_firewalld_rules_default:
-  # Common
-  - rules:
-      - service: ssh
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: dhcp
-        zone: "{{ provision_wl_net_name | net_zone }}"
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-      - service: ntp
-        zone: "{{ provision_wl_net_name | net_zone }}"
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-      - service: tftp
-        zone: "{{ provision_wl_net_name | net_zone }}"
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-      - service: cockpit
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: disabled
-      - service: dhcpv6-client
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: disabled
-      - service: ssh
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: disabled
-    enabled: true
-  # Designate
-  - rules:
-      - port: 53/tcp
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: enabled
-      - port: 53/udp
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: enabled
-      - port: 5354/tcp
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: enabled
-      - port: 5354/udp
-        zone: "{{ public_net_name | net_zone }}"
-        network: "{{ public_net_name }}"
-        state: enabled
-    enabled: "{{ kolla_enable_designate | bool }}"
-  # GENEVE
-  - rules:
-      - port: 6081/udp
-        zone: "{{ tunnel_net_name | net_zone }}"
-        network: "{{ tunnel_net_name }}"
-        state: enabled
-    enabled: "{{ 'geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
-  # VXLAN
-  - rules:
-      - port: 4789/udp
-        zone: "{{ tunnel_net_name | net_zone }}"
-        network: "{{ tunnel_net_name }}"
-        state: enabled
-    enabled: "{{ 'vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
-  # Octavia
-  - rules:
-      - port: 5555/udp
-        zone: "{{ octavia_net_name | net_zone }}"
-        network: "{{ octavia_net_name }}"
-        state: enabled
-    enabled: "{{ kolla_enable_octavia | bool }}"
-  # Overcloud Ironic
-  - rules:
-      - port: 8089/tcp
-        zone: "{{ provision_wl_net_name | net_zone }}"
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-    enabled: "{{ kolla_enable_octavia | bool }}"
-
-controller_firewalld_rules_extra: []
+#controller_firewalld_rules:
 
 ###############################################################################
 # Controller node swap configuration.
