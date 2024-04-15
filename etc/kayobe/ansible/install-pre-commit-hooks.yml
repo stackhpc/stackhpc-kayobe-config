@@ -2,13 +2,15 @@
 - name: Install pre-commit hooks
   hosts: localhost
   gather_facts: false
+  vars:
+    pre_commit_version: 3.5.0
   tasks:
     - name: Install pre-commit hooks
       block:
         - name: Install pre-commit hooks into kayobe virtual env
           ansible.builtin.pip:
             name: pre-commit
-            version: 3.5.0
+            version: "{{ pre_commit_version  }}"
             virtualenv: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}"
           register: pip_install
 
