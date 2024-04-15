@@ -28,8 +28,8 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
     
-    # Skip tests that check if public TLS is used
-    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-skip-public-tls
+    # Skip public TLS tests
+    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-skip-list
   fi
 
 fi
