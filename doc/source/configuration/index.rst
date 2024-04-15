@@ -21,3 +21,4 @@ the various features provided.
    ci-cd
    security-hardening
    cloudkitty
+   firewall
