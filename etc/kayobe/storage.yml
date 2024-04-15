@@ -130,30 +130,15 @@
 ###############################################################################
 # Storage node firewalld configuration.
 
-# FIXME: Replace concrete names (provision_oc) with abstract net names ({{
-# provision_oc_net_name }}).
-
 # Whether to install and enable firewalld.
-storage_firewalld_enabled: true
+#storage_firewalld_enabled:
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-storage_firewalld_zones: "{{ storage_firewalld_zones_default | union(storage_firewalld_zones_extra) | unique | select }}"
-
-storage_firewalld_zones_default: |
-  {% set network_zones = [] %}
-  {% for network in network_interfaces %}
-  {% if network | net_zone is not none %}
-  {% set _ = network_zones.append({'zone': network | net_zone }) %}
-  {% endif %}
-  {% endfor %}
-  {{ network_zones }}
-
-storage_firewalld_zones_extra: []
+#storage_firewalld_zones:
 
 # A firewalld zone to set as the default. Default is unset, in which case the
 # default zone will not be changed.
-# FIXME: Try setting to drop
-storage_firewalld_default_zone: trusted
+#storage_firewalld_default_zone:
 
 # A list of firewall rules to apply. Each item is a dict containing arguments
 # to pass to the firewalld module. Arguments are omitted if not provided, with
@@ -161,39 +146,7 @@ storage_firewalld_default_zone: trusted
 # - offline: true
 # - permanent: true
 # - state: enabled
-storage_firewalld_rules: "{{ storage_firewalld_rules_default | selectattr('enabled', 'true') | map(attribute='rules') | flatten | selectattr('network', 'in', network_interfaces) | selectattr('zone') | union(storage_firewalld_rules_extra) | unique | select }}"
-
-storage_firewalld_default:
-  # Common
-  - rules:
-      - service: ssh
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - port: 9283/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-    enabled: true
-  - rules:
-      - service: ssh
-        zone: "{{ storage_net_name | net_zone }}"
-        network: "{{ storage_net_name }}"
-        state: "{{ storage_net_name | net_zone != provision_oc_net_name | net_zone}}"
-    enabled: true
-  # Ceph
-  - rules:
-      - service: ceph
-        zone: "{{ storage_net_name | net_zone }}"
-        network: "{{ storage_net_name }}"
-        state: enabled
-      - service: ceph-mon
-        zone: "{{ storage_net_name | net_zone }}"
-        network: "{{ storage_net_name }}"
-        state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
-    enabled: "{{ stackhpc_enable_ceph | default(false) | bool }}"
-
-storage_firewalld_extra: []
+#storage_firewalld_rules:
 
 ###############################################################################
 # Storage node swap configuration.
