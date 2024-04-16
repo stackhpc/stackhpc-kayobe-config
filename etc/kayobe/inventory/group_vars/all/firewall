@@ -12,7 +12,17 @@ stackhpc_firewalld_zones: |
   {% endfor %}
   {{ network_zones }}
 
+# Rules are filtered to ensure that none are conflicting
 stackhpc_firewalld_rules: |
+  {% set stackhpc_firewalld_rules_filtered = [] %}
+  {% for rule in stackhpc_firewalld_rules_unfiltered %}
+  {% if rule | ansible.utils.remove_keys('state') not in stackhpc_firewalld_rules_filtered | map('ansible.utils.remove_keys', 'state') %}
+  {% set _ = stackhpc_firewalld_rules_filtered.append(rule) %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_firewalld_rules_filtered }}
+
+stackhpc_firewalld_rules_unfiltered: |
   {{  (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
       (stackhpc_compute_firewalld_rules if 'compute' in group_names else []) +
       (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
@@ -314,24 +324,89 @@ stackhpc_ansible_control_infra_vm_firewalld_rules_extra: []
 ###############################################################################
 # Seed firewalld rules
 
+stackhpc_seed_firewalld_rules: >-
+  {{ stackhpc_seed_firewalld_rules_default |
+    selectattr('enabled', 'true') |
+    map(attribute='rules') |
+    flatten |
+    selectattr('network', 'in', network_interfaces) |
+    selectattr('zone') |
+    union(stackhpc_seed_firewalld_rules_extra) |
+    unique |
+    select }}
 
-stackhpc_seed_firewalld_rules: []
-# stackhpc_seed_firewalld_rules: >-
-#   {{ stackhpc_seed_firewalld_rules_default |
-#     selectattr('enabled', 'true') |
-#     map(attribute='rules') |
-#     flatten |
-#     selectattr('network', 'in', network_interfaces) |
-#     selectattr('zone') |
-#     union(stackhpc_seed_firewalld_rules_extra) |
-#     unique |
-#     select }}
-
-# TODO: do
-stackhpc_seed_firewalld_rules_default: []
-  # pulp
-  # bifrost
-  # squid?
+stackhpc_seed_firewalld_rules_default:
+  # Common
+  - rules:
+      - service: ssh
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: dhcp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: tftp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: ntp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: ntp
+        zone: "{{ switch_mgmt_net_name | net_zone }}"
+        network: "{{ switch_mgmt_net_name }}"
+        state: enabled
+      # Disable default services in public zone
+      - service: dhcpv6-client
+        state: disabled
+        zone: "{{ public_net_name | net_zone }}"
+        network: "{{ public_net_name }}"
+      - service: ssh
+        state: disabled
+        zone: "{{ public_net_name | net_zone }}"
+        network: "{{ public_net_name }}"
+    enabled: true
+  # Pulp server
+  - rules:
+      - service: http
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      # nginx
+      - port: 8080/tcp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+    enabled: "{{ seed_pulp_container_enabled | bool }}"
+  # Squid proxy
+  - rules:
+      - service: squid
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+    enabled: "{{ seed_squid_container_enabled | bool }}"
+  # Ironic
+  - rules:
+      # Ironic inspector API
+      - port: 5050/tcp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      # Ironic API
+      - port: 6385/tcp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+    enabled: "{{ kolla_enable_bifrost | bool }}"
+  # Redfish exporter
+  - rules:
+      - port: 9610/tcp
+        zone: "{{ provision_oc_net_name | net_zone }}"
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+    enabled: true
 
 stackhpc_seed_firewalld_rules_extra: []
 
@@ -349,7 +424,6 @@ stackhpc_seed_hypervisor_firewalld_rules: >-
     unique |
     select }}
 
-# TODO: Check
 stackhpc_seed_hypervisor_firewalld_rules_default:
   - rules:
     - service: ssh
