@@ -96,6 +96,15 @@ groups:
       summary: Host clock not synchronising (instance {{ $labels.instance }})
       description: "Clock not synchronising. Ensure NTP is configured on this host."
 
+  - alert: HostNetworkBondDegraded
+    expr: (node_bonding_active - node_bonding_slaves) != 0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host network bond degraded (instance {{ $labels.instance }})
+      description: "Bond {{ $labels.master }} degraded on {{ $labels.instance }}"
+
   - alert: HostConntrackLimit
     expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
     for: 5m
