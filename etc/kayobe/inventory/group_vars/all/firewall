@@ -6,7 +6,7 @@
 stackhpc_firewalld_zones: |
   {% set network_zones = [] %}
   {% for network in network_interfaces %}
-  {% if network | net_zone is not none %}
+  {% if network | net_zone %}
   {% set _ = network_zones.append({'zone': network | net_zone }) %}
   {% endif %}
   {% endfor %}
@@ -18,14 +18,14 @@ stackhpc_firewalld_rules: |
       (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
       (stackhpc_monitoring_firewalld_rules if 'monitoring' in group_names else []) +
       (stackhpc_seed_firewalld_rules if 'seed' in group_names else []) +
-      (stackhpc_seed_hypervisor_firewalld_rules if 'seed_hypervisor' in group_names else []) +
-      (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh_manager' in group_names else []) +
-      (stackhpc_ansible_control_infra_vm_firewalld_rules if 'ansible_control' in group_names else []) }}
+      (stackhpc_seed_hypervisor_firewalld_rules if 'seed-hypervisor' in group_names else []) +
+      (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh-manager' in group_names else []) +
+      (stackhpc_ansible_control_infra_vm_firewalld_rules if 'ansible-control' in group_names else []) }}
 
 ###############################################################################
 # Controller firewalld rules
 
-stackhpc_controller_firewalld_rules: |
+stackhpc_controller_firewalld_rules: >-
   {{ stackhpc_controller_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -34,7 +34,7 @@ stackhpc_controller_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_controller_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_controller_firewalld_rules_default:
   # Common
@@ -123,7 +123,7 @@ stackhpc_controller_firewalld_rules_extra: []
 ###############################################################################
 # Compute firewalld rules
 
-stackhpc_compute_firewalld_rules: |
+stackhpc_compute_firewalld_rules: >-
   {{ stackhpc_compute_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -132,7 +132,7 @@ stackhpc_compute_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_compute_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_compute_firewalld_rules_default:
   # Common
@@ -170,7 +170,7 @@ stackhpc_compute_firewalld_rules_extra: []
 ###############################################################################
 # Storage firewalld rules
 
-stackhpc_storage_firewalld_rules: |
+stackhpc_storage_firewalld_rules: >-
   {{ stackhpc_storage_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -179,7 +179,7 @@ stackhpc_storage_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_storage_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_storage_firewalld_rules_default:
   # Common
@@ -214,7 +214,7 @@ stackhpc_storage_firewalld_extra: []
 ###############################################################################
 # Monitoring firewalld rules
 
-stackhpc_monitoring_firewalld_rules: |
+stackhpc_monitoring_firewalld_rules: >-
   {{ stackhpc_monitoring_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -223,7 +223,7 @@ stackhpc_monitoring_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_monitoring_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_monitoring_firewalld_rules_default:
   - rules:
@@ -238,7 +238,7 @@ stackhpc_monitoring_firewalld_rules_extra: []
 ###############################################################################
 # Infra VM firewalld rules (Wazuh Manager)
 
-stackhpc_wazuh_manager_infra_vm_firewalld_rules: |
+stackhpc_wazuh_manager_infra_vm_firewalld_rules: >-
   {{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -247,17 +247,13 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_wazuh_manager_infra_vm_firewalld_rules_default:
   - rules:
       - service: ssh
         zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: ssh
-        zone: "{{ switch_mgmt_net_name | net_zone }}"
-        network: "{{ switch_mgmt_net_name }}"
         state: enabled
       - port: 1514/tcp
         zone: "{{ provision_oc_net_name | net_zone }}"
@@ -294,7 +290,7 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra: []
 ###############################################################################
 # Infra VM firewalld rules (Ansible Control)
 
-stackhpc_ansible_control_infra_vm_firewalld_rules: |
+stackhpc_ansible_control_infra_vm_firewalld_rules: >-
   {{ stackhpc_ansible_control_infra_vm_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -303,17 +299,13 @@ stackhpc_ansible_control_infra_vm_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_ansible_control_infra_vm_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 stackhpc_ansible_control_infra_vm_firewalld_rules_default:
   - rules:
     - service: ssh
       zone: "{{ provision_oc_net_name | net_zone }}"
       network: "{{ provision_oc_net_name }}"
-      state: enabled
-    - service: ssh
-      zone: "{{ switch_mgmt_net_name | net_zone }}"
-      network: "{{ switch_mgmt_net_name }}"
       state: enabled
     enabled: true
 
@@ -324,7 +316,7 @@ stackhpc_ansible_control_infra_vm_firewalld_rules_extra: []
 
 
 stackhpc_seed_firewalld_rules: []
-# stackhpc_seed_firewalld_rules: |
+# stackhpc_seed_firewalld_rules: >-
 #   {{ stackhpc_seed_firewalld_rules_default |
 #     selectattr('enabled', 'true') |
 #     map(attribute='rules') |
@@ -333,7 +325,7 @@ stackhpc_seed_firewalld_rules: []
 #     selectattr('zone') |
 #     union(stackhpc_seed_firewalld_rules_extra) |
 #     unique |
-#     select}}
+#     select }}
 
 # TODO: do
 stackhpc_seed_firewalld_rules_default: []
@@ -346,7 +338,7 @@ stackhpc_seed_firewalld_rules_extra: []
 ###############################################################################
 # Seed Hypervisor firewalld rules
 
-stackhpc_seed_hypervisor_firewalld_rules: |
+stackhpc_seed_hypervisor_firewalld_rules: >-
   {{ stackhpc_seed_hypervisor_firewalld_rules_default |
     selectattr('enabled', 'true') |
     map(attribute='rules') |
@@ -355,7 +347,7 @@ stackhpc_seed_hypervisor_firewalld_rules: |
     selectattr('zone') |
     union(stackhpc_seed_hypervisor_firewalld_rules_extra) |
     unique |
-    select}}
+    select }}
 
 # TODO: Check
 stackhpc_seed_hypervisor_firewalld_rules_default:

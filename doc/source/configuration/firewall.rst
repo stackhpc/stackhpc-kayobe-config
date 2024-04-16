@@ -19,19 +19,23 @@ follows:
 .. code-block:: yaml
    :caption: ``etc/kayobe/controllers.yml``
 
-   controller_firewalld_zones: "{{ stackhpc_firewalld_zones }}"
+   controller_firewalld_enabled: true
    controller_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
+   controller_firewalld_zones: "{{ stackhpc_firewalld_zones }}"
+   # Predefined zones are listed here:
+   # https://firewalld.org/documentation/zone/predefined-zones.html
+   # Unset to leave the default zone unchanged
+   controller_firewalld_default_zone: drop
 
 This will configure the standard set of firewalld rules on controller hosts.
-Rule definitions are automatically added according to group membership.Rule
+Rule definitions are automatically added according to group membership. Rule
 sets exist for the following groups:
 
 * Controllers - ``stackhpc_controller_firewalld_rules``
 * Compute - ``stackhpc_compute_firewalld_rules``
 * Storage - ``stackhpc_storage_firewalld_rules``
 * Monitoring - ``stackhpc_monitoring_firewalld_rules``
-* Wazuh Manager Infrastructure VM - ``stackhpc_infra_vm_firewalld_rules``
-* Ansible Control host Infrastructure VM - ``stackhpc_infra_vm_firewalld_rules``
+* Wazuh Manager Infrastructure VM - ``stackhpc_wazuh_manager_infra_vm_firewalld_rules``
+* Ansible Control host Infrastructure VM - ``stackhpc_ansible_control_infra_vm_firewalld_rules``
 * Seed - ``stackhpc_seed_firewalld_rules``
 * Seed Hypervisor - ``stackhpc_seed_hypervisor_firewalld_rules``
-
