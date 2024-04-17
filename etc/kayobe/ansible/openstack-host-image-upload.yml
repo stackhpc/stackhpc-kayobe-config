@@ -31,7 +31,8 @@
 
         - name: Ensure dependencies are installed
           pip:
-            name: openstacksdk
+            name: python-openstackclient
+            virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
 
         - name: Upload an image to Glance
           openstack.cloud.image:
@@ -41,6 +42,33 @@
             disk_format: qcow2
             state: present
             filename: "{{ local_image_path }}"
+            # FIXME: Uncomment this when we have a newer openstack.cloud collection
+            #visibility: shared
+          register: image
+
+        # FIXME: Remove this when we have a newer openstack.cloud collection
+        - name: Make the image shared
+          command: openstack image set --shared {{ image.image.id }}
+
+        # Allow users in stackhpc-dev to use these images.
+        - name: Add image to stackhpc-dev project
+          command: openstack image add project {{ image.image.id }} stackhpc-dev
+
+        # FIXME: This needs to be done when authenticated in the stackhpc-dev
+        # project, but we don't have an app cred for this. It must be done
+        # manually for now.
+        # - name: Accept image membership in stackhpc-dev project
+        #   command: openstack image set {{ image.image.id }} --accept
+
+        - name: Display how to add the image to the stackhpc-dev project
+          debug:
+            msg: |-
+              The {{ image_name }} image has been shared with the stackhpc-dev
+              project but it must be accepted by a user authenticated in the
+              stackhpc-dev project before it can be used there. This can be
+              done using the following command:
+
+              openstack image add project {{ image.image.id }} stackhpc-dev
 
       always:
         - name: Remove clouds.yaml
