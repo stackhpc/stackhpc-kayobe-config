@@ -42,17 +42,6 @@ The configuration options can be found in
 .. literalinclude:: ../../../etc/kayobe/stackhpc-monitoring.yml
    :language: yaml
 
-In order to enable stock monitoring configuration within a particular
-environment, create the following symbolic links:
-
-.. code-block:: console
-
-    cd $KAYOBE_CONFIG_PATH
-    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-
-and commit them to the config repository.
-
 SMART Drive Monitoring
 ======================
 
