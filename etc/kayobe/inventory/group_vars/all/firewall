@@ -1,8 +1,16 @@
 ---
 #########################################
-# Stackhpc default firewall configuration
+# StackHPC default firewall configuration
 #########################################
+# This file contains the reference StackHPC firewalld rule implementation. It
+# is designed to cover as many services and use cases as possible, however may
+# not be compatible with all deployments. For more information, see the
+# firewall page in the configuration section of the SKC docs.
 
+# A templated list of firewalld zones, according to the host's network
+# interfaces.
+# This variable can be used to set any *_firewalld_zones kayobe variable e.g.
+# compute_firewalld_zones: "{{ stackhpc_firewalld_zones }}" in compute.yml
 stackhpc_firewalld_zones: |
   {% set network_zones = [] %}
   {% for network in network_interfaces %}
@@ -12,118 +20,112 @@ stackhpc_firewalld_zones: |
   {% endfor %}
   {{ network_zones }}
 
-# Rules are filtered to ensure that none are conflicting
+# A templated list of firewalld rules, according to the enabled services,
+# host's group membership, and host's network configuration.
+# This variable can be used to set any *_firewalld_rules kayobe variable e.g.
+# compute_firewalld_rules: "{{ stackhpc_firewalld_rules }}" in compute.yml
 stackhpc_firewalld_rules: |
-  {% set stackhpc_firewalld_rules_filtered = [] %}
-  {% for rule in stackhpc_firewalld_rules_unfiltered %}
-  {% if rule | ansible.utils.remove_keys('state') not in stackhpc_firewalld_rules_filtered | map('ansible.utils.remove_keys', 'state') %}
-  {% set _ = stackhpc_firewalld_rules_filtered.append(rule) %}
+  {% set stackhpc_firewalld_rules_verified = [] %}
+  {% for rule in stackhpc_firewalld_rules_unverified | unique %}
+  {% if rule | ansible.utils.remove_keys('state') in stackhpc_firewalld_rules_verified | map('ansible.utils.remove_keys', 'state') %}
+  {% set stackhpc_firewalld_rules_verified = 'Invalid configuration! Two matching firewalld rules exist with different states' + 1 %}
+  {% elif rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_firewalld_rules_verified.append(rule) %}
   {% endif %}
   {% endfor %}
-  {{ stackhpc_firewalld_rules_filtered }}
+  {{ stackhpc_firewalld_rules_verified }}
 
-stackhpc_firewalld_rules_unfiltered: |
-  {{  (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
-      (stackhpc_compute_firewalld_rules if 'compute' in group_names else []) +
-      (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
-      (stackhpc_monitoring_firewalld_rules if 'monitoring' in group_names else []) +
-      (stackhpc_seed_firewalld_rules if 'seed' in group_names else []) +
-      (stackhpc_seed_hypervisor_firewalld_rules if 'seed-hypervisor' in group_names else []) +
-      (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh-manager' in group_names else []) +
-      (stackhpc_ansible_control_infra_vm_firewalld_rules if 'ansible-control' in group_names else []) }}
+# Rules in this list may still contradict each other or reference non-existent
+# zones and interfaces
+stackhpc_firewalld_rules_unverified: |
+  {{ (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
+     (stackhpc_compute_firewalld_rules if 'compute' in group_names else []) +
+     (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
+     (stackhpc_monitoring_firewalld_rules if 'monitoring' in group_names else []) +
+     (stackhpc_seed_firewalld_rules if 'seed' in group_names else []) +
+     (stackhpc_seed_hypervisor_firewalld_rules if 'seed-hypervisor' in group_names else []) +
+     (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh-manager' in group_names else []) +
+     (stackhpc_ansible_control_infra_vm_firewalld_rules if 'ansible-control' in group_names else []) }}
 
 ###############################################################################
 # Controller firewalld rules
 
-stackhpc_controller_firewalld_rules: >-
-  {{ stackhpc_controller_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_controller_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_controller_firewalld_rules: "{{ stackhpc_controller_firewalld_rules_default + stackhpc_controller_firewalld_rules_extra }}"
 
-stackhpc_controller_firewalld_rules_default:
+stackhpc_controller_firewalld_rules_default: |
+  {% set stackhpc_controller_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_controller_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% set _ = stackhpc_controller_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_controller_firewalld_rules_formatted }}
+
+stackhpc_controller_firewalld_rules_template:
   # Common
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
       - service: dhcp
-        zone: "{{ provision_wl_net_name | net_zone }}"
         network: "{{ provision_wl_net_name }}"
         state: enabled
       - service: ntp
-        zone: "{{ provision_wl_net_name | net_zone }}"
         network: "{{ provision_wl_net_name }}"
         state: enabled
       - service: tftp
-        zone: "{{ provision_wl_net_name | net_zone }}"
         network: "{{ provision_wl_net_name }}"
         state: enabled
       - service: cockpit
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: disabled
       - service: dhcpv6-client
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: disabled
     enabled: true
   - rules:
       - service: ssh
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: disabled
     enabled: "{{ public_net_name | net_zone != provision_oc_net_name | net_zone }}"
   # Designate
   - rules:
       - port: 53/tcp
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: enabled
       - port: 53/udp
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: enabled
       - port: 5354/tcp
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: enabled
       - port: 5354/udp
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_designate | bool }}"
   # GENEVE
   - rules:
       - port: 6081/udp
-        zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
     enabled: "{{ 'geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
   # VXLAN
   - rules:
       - port: 4789/udp
-        zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
         state: enabled
     enabled: "{{ 'vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types) and 'network' in group_names }}"
   # Octavia
   - rules:
       - port: 5555/udp
-        zone: "{{ octavia_net_name | net_zone }}"
         network: "{{ octavia_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_octavia | bool }}"
   # Overcloud Ironic
   - rules:
       - port: 8089/tcp
-        zone: "{{ provision_wl_net_name | net_zone }}"
         network: "{{ provision_wl_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_octavia | bool }}"
@@ -133,48 +135,47 @@ stackhpc_controller_firewalld_rules_extra: []
 ###############################################################################
 # Compute firewalld rules
 
-stackhpc_compute_firewalld_rules: >-
-  {{ stackhpc_compute_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_compute_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_compute_firewalld_rules: "{{ stackhpc_compute_firewalld_rules_default + stackhpc_compute_firewalld_rules_extra }}"
 
-stackhpc_compute_firewalld_rules_default:
+stackhpc_compute_firewalld_rules_default: |
+  {% set stackhpc_compute_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_compute_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_compute_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_compute_firewalld_rules_formatted }}
+
+stackhpc_compute_firewalld_rules_template:
   # Common
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
       - service: dhcpv6-client
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: disabled
     enabled: true
   - rules:
       - service: ssh
-        state: disabled
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
+        state: disabled
     enabled: "{{ public_net_name | net_zone != provision_oc_net_name | net_zone }}"
   # GENEVE
   - rules:
       - port: 6081/udp
-        state: enabled
-        zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
+        state: enabled
     enabled: "{{ ('geneve' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
   # VXLAN
   - rules:
       - port: 4789/udp
-        state: enabled
-        zone: "{{ tunnel_net_name | net_zone }}"
         network: "{{ tunnel_net_name }}"
+        state: enabled
     enabled: "{{ ('vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
 
 stackhpc_compute_firewalld_rules_extra: []
@@ -182,43 +183,42 @@ stackhpc_compute_firewalld_rules_extra: []
 ###############################################################################
 # Storage firewalld rules
 
-stackhpc_storage_firewalld_rules: >-
-  {{ stackhpc_storage_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_storage_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_storage_firewalld_rules: "{{ stackhpc_storage_firewalld_rules_default + stackhpc_storage_firewalld_rules_extra }}"
 
-stackhpc_storage_firewalld_rules_default:
+stackhpc_storage_firewalld_rules_default: |
+  {% set stackhpc_storage_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_storage_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_storage_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_storage_firewalld_rules_formatted }}
+
+stackhpc_storage_firewalld_rules_template:
   # Common
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
       - port: 9283/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: true
   - rules:
       - service: ssh
-        zone: "{{ storage_net_name | net_zone }}"
         network: "{{ storage_net_name }}"
         state: disabled
     enabled: "{{ storage_net_name | net_zone != provision_oc_net_name | net_zone }}"
   # Ceph
   - rules:
       - service: ceph
-        zone: "{{ storage_net_name | net_zone }}"
         network: "{{ storage_net_name }}"
         state: enabled
       - service: ceph-mon
-        zone: "{{ storage_net_name | net_zone }}"
         network: "{{ storage_net_name }}"
         state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
     enabled: "{{ stackhpc_enable_ceph | default(false) | bool }}"
@@ -228,21 +228,24 @@ stackhpc_storage_firewalld_rules_extra: []
 ###############################################################################
 # Monitoring firewalld rules
 
-stackhpc_monitoring_firewalld_rules: >-
-  {{ stackhpc_monitoring_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_monitoring_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_monitoring_firewalld_rules: "{{ stackhpc_monitoring_firewalld_rules_default + stackhpc_monitoring_firewalld_rules_extra }}"
 
-stackhpc_monitoring_firewalld_rules_default:
+stackhpc_monitoring_firewalld_rules_default: |
+  {% set stackhpc_monitoring_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_monitoring_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_monitoring_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_monitoring_firewalld_rules_formatted }}
+
+stackhpc_monitoring_firewalld_rules_template:
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
     enabled: true
@@ -252,49 +255,45 @@ stackhpc_monitoring_firewalld_rules_extra: []
 ###############################################################################
 # Infra VM firewalld rules (Wazuh Manager)
 
-stackhpc_wazuh_manager_infra_vm_firewalld_rules: >-
-  {{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_wazuh_manager_infra_vm_firewalld_rules: "{{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_default + stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra }}"
 
-stackhpc_wazuh_manager_infra_vm_firewalld_rules_default:
+stackhpc_wazuh_manager_infra_vm_firewalld_rules_default: |
+  {% set stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_wazuh_manager_infra_vm_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted }}
+
+stackhpc_wazuh_manager_infra_vm_firewalld_rules_template:
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
       - port: 1514/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 1514/udp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 1515/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 443/tcp
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
         state: enabled
       - port: 9200/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 9300-9400/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 55000/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: true
@@ -304,21 +303,24 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra: []
 ###############################################################################
 # Infra VM firewalld rules (Ansible Control)
 
-stackhpc_ansible_control_infra_vm_firewalld_rules: >-
-  {{ stackhpc_ansible_control_infra_vm_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_ansible_control_infra_vm_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_ansible_control_infra_vm_firewalld_rules: "{{ stackhpc_ansible_control_infra_vm_firewalld_rules_default + stackhpc_ansible_control_infra_vm_firewalld_rules_extra }}"
 
-stackhpc_ansible_control_infra_vm_firewalld_rules_default:
+stackhpc_ansible_control_infra_vm_firewalld_rules_default: |
+  {% set stackhpc_ansible_control_infra_vm_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_ansible_control_infra_vm_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_ansible_control_infra_vm_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_ansible_control_infra_vm_firewalld_rules_formatted }}
+
+stackhpc_ansible_control_infra_vm_firewalld_rules_template:
   - rules:
     - service: ssh
-      zone: "{{ provision_oc_net_name | net_zone }}"
       network: "{{ provision_oc_net_name }}"
       state: enabled
     enabled: true
@@ -328,64 +330,59 @@ stackhpc_ansible_control_infra_vm_firewalld_rules_extra: []
 ###############################################################################
 # Seed firewalld rules
 
-stackhpc_seed_firewalld_rules: >-
-  {{ stackhpc_seed_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_seed_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_seed_firewalld_rules: "{{ stackhpc_seed_firewalld_rules_default + stackhpc_seed_firewalld_rules_extra }}"
 
-stackhpc_seed_firewalld_rules_default:
+stackhpc_seed_firewalld_rules_default: |
+  {% set stackhpc_seed_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_seed_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_seed_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_seed_firewalld_rules_formatted }}
+
+stackhpc_seed_firewalld_rules_template:
   # Common
   - rules:
       - service: ssh
-        zone: "{{ admin_oc_net_name | net_zone }}"
         network: "{{ admin_oc_net_name }}"
         state: enabled
       - service: dhcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - service: tftp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - service: ntp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       # Disable default services in public zone
       - service: dhcpv6-client
         state: disabled
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
     enabled: true
   - rules:
       - service: ssh
         state: disabled
-        zone: "{{ public_net_name | net_zone }}"
         network: "{{ public_net_name }}"
     enabled: "{{ public_net_name | net_zone != provision_oc_net_name | net_zone }}"
   # Pulp server
   - rules:
       - service: http
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       # nginx
       - port: 8080/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: "{{ seed_pulp_container_enabled | bool }}"
   # Squid proxy
   - rules:
       - service: squid
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: "{{ seed_squid_container_enabled | bool }}"
@@ -393,19 +390,16 @@ stackhpc_seed_firewalld_rules_default:
   - rules:
       # Ironic inspector API
       - port: 5050/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
       # Ironic API
       - port: 6385/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: true  #FIXME: Make rules conditional on Bifrost deployment
   # Redfish exporter
   - rules:
       - port: 9610/tcp
-        zone: "{{ provision_oc_net_name | net_zone }}"
         network: "{{ provision_oc_net_name }}"
         state: enabled
     enabled: true
@@ -415,21 +409,24 @@ stackhpc_seed_firewalld_rules_extra: []
 ###############################################################################
 # Seed Hypervisor firewalld rules
 
-stackhpc_seed_hypervisor_firewalld_rules: >-
-  {{ stackhpc_seed_hypervisor_firewalld_rules_default |
-    selectattr('enabled', 'true') |
-    map(attribute='rules') |
-    flatten |
-    selectattr('network', 'in', network_interfaces) |
-    selectattr('zone') |
-    union(stackhpc_seed_hypervisor_firewalld_rules_extra) |
-    unique |
-    select }}
+stackhpc_seed_hypervisor_firewalld_rules: "{{ stackhpc_seed_hypervisor_firewalld_rules_default + stackhpc_seed_hypervisor_firewalld_rules_extra }}"
 
-stackhpc_seed_hypervisor_firewalld_rules_default:
+stackhpc_seed_hypervisor_firewalld_rules_default: |
+  {% set stackhpc_seed_hypervisor_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_seed_hypervisor_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% if rule.network in network_interfaces and rule.network | net_zone is not none %}
+  {% set _ = stackhpc_seed_hypervisor_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_seed_hypervisor_firewalld_rules_formatted }}
+
+stackhpc_seed_hypervisor_firewalld_rules_template:
   - rules:
     - service: ssh
-      zone: "{{ admin_oc_net_name | net_zone }}"
       network: "{{ admin_oc_net_name }}"
       state: enabled
     enabled: true
