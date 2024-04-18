@@ -19,7 +19,7 @@ storage backend. Set the following in ``kolla.yml``:
   # Explicitly disable influxdb as we are using OpenSearch as the CloudKitty backend
   kolla_enable_influxdb: false
 
-Use Prometheus as the collector and fetcher backends, and Elasticsearch as the
+Set Prometheus as the backend for both the collector and fetcher, and Elasticsearch as the
 storage backend. Note that this is patched in our fork of CloudKitty to also
 work with OpenSearch. Proper support is still pending in Kolla-Ansible `here
 <https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. If you have
