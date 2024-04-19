@@ -39,3 +39,15 @@ sets exist for the following groups:
 * Ansible Control host Infrastructure VM - ``stackhpc_ansible_control_infra_vm_firewalld_rules``
 * Seed - ``stackhpc_seed_firewalld_rules``
 * Seed Hypervisor - ``stackhpc_seed_hypervisor_firewalld_rules``
+
+The ``kayobe configuration dump`` command can be used to view all the rules
+that will be applied to a host.
+
+.. code-block:: bash
+
+   kayobe configuration dump --var-name stackhpc_firewalld_rules --limit <host>
+
+If the command above prints a template, rather than a clean list of rules, the
+configuration is invalid. The kayobe configuration dump command can be used on
+other variables such as ``stackhpc_firewalld_rules_unverified`` or
+``stackhpc_*_firewalld_rules`` to debug the configuration.
