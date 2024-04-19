@@ -27,6 +27,12 @@ follows:
    # Unset to leave the default zone unchanged
    controller_firewalld_default_zone: drop
 
+.. code-block:: yaml
+   :caption: ``etc/kayobe/kolla/globals.yml``
+
+   # Open up ports in firewalld for services on the public API network.
+   enable_external_api_firewalld: true
+
 This will configure the standard set of firewalld rules on controller hosts.
 Rule definitions are automatically added according to group membership. Rule
 sets exist for the following groups:

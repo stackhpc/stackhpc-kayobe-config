@@ -38,17 +38,57 @@ stackhpc_firewalld_rules: |
 # Rules in this list may still contradict each other or reference non-existent
 # zones and interfaces
 stackhpc_firewalld_rules_unverified: |
-  {{ (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
+  {{ stackhpc_common_firewalld_rules +
+     (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
      (stackhpc_compute_firewalld_rules if 'compute' in group_names else []) +
      (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
      (stackhpc_monitoring_firewalld_rules if 'monitoring' in group_names else []) +
      (stackhpc_seed_firewalld_rules if 'seed' in group_names else []) +
      (stackhpc_seed_hypervisor_firewalld_rules if 'seed-hypervisor' in group_names else []) +
      (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh-manager' in group_names else []) +
-     (stackhpc_ansible_control_infra_vm_firewalld_rules if 'ansible-control' in group_names else []) }}
+     (stackhpc_ansible_control_infra_vm_firewalld_rules if inventory_hostname == 'localhost' else []) }}
 
 ###############################################################################
-# Controller firewalld rules
+# Common firewalld rules
+
+stackhpc_common_firewalld_rules: "{{ stackhpc_common_firewalld_rules_default + stackhpc_common_firewalld_rules_extra }}"
+
+stackhpc_common_firewalld_rules_default: |
+  {% set stackhpc_common_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_common_firewalld_rules_template %}
+  {% if ruleset.enabled %}
+  {% for rule in ruleset.rules %}
+  {% set _ = stackhpc_common_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ stackhpc_common_firewalld_rules_formatted }}
+
+stackhpc_common_firewalld_rules_template:
+  # Common
+  - rules:
+      - service: ssh
+        network: "{{ admin_oc_net_name }}"
+        state: enabled
+    enabled: true
+  - rules:
+      - service: cockpit
+        network: "{{ public_net_name }}"
+        state: disabled
+      - service: dhcpv6-client
+        network: "{{ public_net_name }}"
+        state: disabled
+    enabled: "{{ 'public' in stackhpc_firewalld_zones }}"
+  - rules:
+      - service: ssh
+        network: "{{ public_net_name }}"
+        state: disabled
+    enabled: "{{ 'public' in stackhpc_firewalld_zones && admin_oc_net_name | net_zone != 'public' }}"
+
+stackhpc_common_firewalld_rules_extra: []
+
+###############################################################################
+# Common firewalld rules
 
 stackhpc_controller_firewalld_rules: "{{ stackhpc_controller_firewalld_rules_default + stackhpc_controller_firewalld_rules_extra }}"
 
@@ -64,10 +104,18 @@ stackhpc_controller_firewalld_rules_default: |
   {{ stackhpc_controller_firewalld_rules_formatted }}
 
 stackhpc_controller_firewalld_rules_template:
-  # Common
+  # Overcloud Ironic
   - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
+      # Ironic inspector API
+      - port: 5050/tcp
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      # Ironic API
+      - port: 6385/tcp
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - port: 8089/tcp
+        network: "{{ provision_wl_net_name }}"
         state: enabled
       - service: dhcp
         network: "{{ provision_wl_net_name }}"
@@ -78,18 +126,7 @@ stackhpc_controller_firewalld_rules_template:
       - service: tftp
         network: "{{ provision_wl_net_name }}"
         state: enabled
-      - service: cockpit
-        network: "{{ public_net_name }}"
-        state: disabled
-      - service: dhcpv6-client
-        network: "{{ public_net_name }}"
-        state: disabled
-    enabled: true
-  - rules:
-      - service: ssh
-        network: "{{ public_net_name }}"
-        state: disabled
-    enabled: "{{ public_net_name | net_zone != admin_oc_net_name | net_zone }}"
+    enabled: "{{ kolla_enable_ironic }}"
   # Designate
   - rules:
       - port: 53/tcp
@@ -123,12 +160,6 @@ stackhpc_controller_firewalld_rules_template:
         network: "{{ octavia_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_octavia | bool }}"
-  # Overcloud Ironic
-  - rules:
-      - port: 8089/tcp
-        network: "{{ provision_wl_net_name }}"
-        state: enabled
-    enabled: "{{ kolla_enable_ironic | bool }}"
 
 stackhpc_controller_firewalld_rules_extra: []
 
@@ -151,20 +182,6 @@ stackhpc_compute_firewalld_rules_default: |
   {{ stackhpc_compute_firewalld_rules_formatted }}
 
 stackhpc_compute_firewalld_rules_template:
-  # Common
-  - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
-        state: enabled
-      - service: dhcpv6-client
-        network: "{{ public_net_name }}"
-        state: disabled
-    enabled: true
-  - rules:
-      - service: ssh
-        network: "{{ public_net_name }}"
-        state: disabled
-    enabled: "{{ public_net_name | net_zone != admin_oc_net_name | net_zone }}"
   # GENEVE
   - rules:
       - port: 6081/udp
@@ -199,12 +216,6 @@ stackhpc_storage_firewalld_rules_default: |
   {{ stackhpc_storage_firewalld_rules_formatted }}
 
 stackhpc_storage_firewalld_rules_template:
-  # Common
-  - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
-        state: enabled
-    enabled: true
   # Ceph Prometheus exporter
   - rules:
       - port: 9283/tcp
@@ -244,12 +255,7 @@ stackhpc_monitoring_firewalld_rules_default: |
   {% endfor %}
   {{ stackhpc_monitoring_firewalld_rules_formatted }}
 
-stackhpc_monitoring_firewalld_rules_template:
-  - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
-        state: enabled
-    enabled: true
+stackhpc_monitoring_firewalld_rules_template: []
 
 stackhpc_monitoring_firewalld_rules_extra: []
 
@@ -273,9 +279,6 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules_default: |
 
 stackhpc_wazuh_manager_infra_vm_firewalld_rules_template:
   - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
-        state: enabled
       - port: 1514/tcp
         network: "{{ provision_oc_net_name }}"
         state: enabled
@@ -319,12 +322,7 @@ stackhpc_ansible_control_infra_vm_firewalld_rules_default: |
   {% endfor %}
   {{ stackhpc_ansible_control_infra_vm_firewalld_rules_formatted }}
 
-stackhpc_ansible_control_infra_vm_firewalld_rules_template:
-  - rules:
-    - service: ssh
-      network: "{{ provision_oc_net_name }}"
-      state: enabled
-    enabled: true
+stackhpc_ansible_control_infra_vm_firewalld_rules_template: []
 
 stackhpc_ansible_control_infra_vm_firewalld_rules_extra: []
 
@@ -347,30 +345,6 @@ stackhpc_seed_firewalld_rules_default: |
   {{ stackhpc_seed_firewalld_rules_formatted }}
 
 stackhpc_seed_firewalld_rules_template:
-  # Common
-  - rules:
-      - service: ssh
-        network: "{{ admin_oc_net_name }}"
-        state: enabled
-      - service: dhcp
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: tftp
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      - service: ntp
-        network: "{{ provision_oc_net_name }}"
-        state: enabled
-      # Disable default services in public zone
-      - service: dhcpv6-client
-        state: disabled
-        network: "{{ public_net_name }}"
-    enabled: true
-  - rules:
-      - service: ssh
-        state: disabled
-        network: "{{ public_net_name }}"
-    enabled: "{{ public_net_name | net_zone != admin_oc_net_name | net_zone }}"
   # Pulp server
   - rules:
       - service: "{{ pulp_port }}/tcp"
@@ -397,13 +371,22 @@ stackhpc_seed_firewalld_rules_template:
       - port: 6385/tcp
         network: "{{ provision_oc_net_name }}"
         state: enabled
+      - service: dhcp
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: tftp
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
+      - service: ntp
+        network: "{{ provision_oc_net_name }}"
+        state: enabled
     enabled: true  #FIXME: Make rules conditional on Bifrost deployment
   # Redfish exporter
   - rules:
       - port: 9610/tcp
         network: "{{ provision_oc_net_name }}"
         state: enabled
-    enabled: true
+    enabled: "{{ stackhpc_enable_redfish_exporter }}"
 
 stackhpc_seed_firewalld_rules_extra: []
 
@@ -425,11 +408,6 @@ stackhpc_seed_hypervisor_firewalld_rules_default: |
   {% endfor %}
   {{ stackhpc_seed_hypervisor_firewalld_rules_formatted }}
 
-stackhpc_seed_hypervisor_firewalld_rules_template:
-  - rules:
-    - service: ssh
-      network: "{{ admin_oc_net_name }}"
-      state: enabled
-    enabled: true
+stackhpc_seed_hypervisor_firewalld_rules_template: []
 
 stackhpc_seed_hypervisor_firewalld_rules_extra: []
