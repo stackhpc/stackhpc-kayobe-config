@@ -22,18 +22,23 @@ storage backend. Set the following in ``kolla.yml``:
 Set Prometheus as the backend for both the collector and fetcher, and Elasticsearch as the
 storage backend. Note that this is patched in our fork of CloudKitty to also
 work with OpenSearch. Proper support is still pending in Kolla-Ansible `here
-<https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. If you have
-TLS enabled, you will also need to set the cafile for Prometheus and
-Elasticsearch. Set the following in ``kolla/globals.yml``, and make sure that
-``openstack_cacert`` is appropriately set as a Kayobe variable too. It defaults
-to ``openstack_cacert: "{{ lookup('env', 'OS_CACERT') }}"``, but you may prefer
-to set the path explicitly.
+<https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. Set the
+following in ``kolla/globals.yml``:
 
 .. code-block:: yaml
 
   cloudkitty_collector_backend: prometheus
   cloudkitty_fetcher_backend: prometheus
   cloudkitty_storage_backend: elasticsearch
+
+If you have TLS enabled, you will also need to set the cafile for Prometheus
+and Elasticsearch. Set the following in ``kolla/globals.yml``, and make sure
+that ``openstack_cacert`` is appropriately set as a Kayobe variable too. It
+defaults to ``openstack_cacert: "{{ lookup('env', 'OS_CACERT') }}"``, but you
+may prefer to set the path explicitly.
+
+.. code-block:: yaml
+
   cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
   cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
 
