@@ -5,21 +5,21 @@ CloudKitty
 Configuring in kayobe-config
 ============================
 
-By default, CloudKitty uses Gnocci and Ceilometer as the collector and fetcher
+By default, CloudKitty uses Gnocchi and Ceilometer as the collector and fetcher
 backends. Unless the system has a specific reason not to, we recommend instead
 using Prometheus as the backend for both. The following instructions explain
-how to do this
+how to do this.
 
 Enable CloudKitty and disable InfluxDB, as we are using OpenSearch as the
 storage backend. Set the following in ``kolla.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   kolla_enable_cloudkitty: true
   # Explicitly disable influxdb as we are using OpenSearch as the CloudKitty backend
   kolla_enable_influxdb: false
 
-Use Prometheus as the collector and fetcher backends, and Elasticsearch as the
+Set Prometheus as the backend for both the collector and fetcher, and Elasticsearch as the
 storage backend. Note that this is patched in our fork of CloudKitty to also
 work with OpenSearch. Proper support is still pending in Kolla-Ansible `here
 <https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. If you have
@@ -29,7 +29,7 @@ Elasticsearch. Set the following in ``kolla/globals.yml``, and make sure that
 to ``openstack_cacert: "{{ lookup('env', 'OS_CACERT') }}"``, but you may prefer
 to set the path explicitly.
 
-.. code-block:: console
+.. code-block:: yaml
 
   cloudkitty_collector_backend: prometheus
   cloudkitty_fetcher_backend: prometheus
@@ -43,7 +43,7 @@ within this timeframe. This means that even just one minute will be counted as
 an hour's usage. It is recommended to change this to a lower number, such as
 ten minutes. When using Prometheus as the collector, you need to change the
 scope_key to match the metrics provided by the Prometheus OpenStack Exporter.
-Set the following in ``cloudkitty.conf``:
+Set the following in ``kolla/config/cloudkitty.conf``:
 
 .. code-block:: console
 
@@ -51,11 +51,11 @@ Set the following in ``cloudkitty.conf``:
   scope_key = tenant_id
   period = 600
 
-You will need to configure which metrics CloudKitty should track. This example
-will track for flavors and volumes, set in
-``kolla/config/cloudkitty/metrics.yml``:
+You will need to configure which metrics CloudKitty should track. The following
+example, set in ``kolla/config/cloudkitty/metrics.yml``, will track for VM flavors and
+the total utilised volume.
 
-.. code-block:: console
+.. code-block:: yaml
 
   metrics:
     openstack_nova_server_status:
@@ -88,7 +88,7 @@ Post-configuration with openstack-config
 
 This is an example `openstack-config
 <https://github.com/stackhpc/openstack-config>`__ setup to create mappings for
-the metrics configured above. Note that the costs are scaled for the ten-minute
+the metrics configured above. Note that the costs are scaled for the ten minute
 collection period, e.g. a flavor with 1 VCPU will cost 1 unit per hour.
 
 .. code-block:: yaml
