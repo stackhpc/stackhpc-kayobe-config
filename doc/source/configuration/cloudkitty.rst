@@ -23,16 +23,19 @@ Use Prometheus as the collector and fetcher backends, and Elasticsearch as the
 storage backend. Note that this is patched in our fork of CloudKitty to also
 work with OpenSearch. Proper support is still pending in Kolla-Ansible `here
 <https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. If you have
-TLS enabled, you will also need to allow insecure connections for Prometheus
-and Elasticsearch. Set the following in ``kolla/globals.yml``:
+TLS enabled, you will also need to set the cafile for Prometheus and
+Elasticsearch. Set the following in ``kolla/globals.yml``, and make sure that
+``openstack_cacert`` is appropriately set as a Kayobe variable too. It defaults
+to ``openstack_cacert: "{{ lookup('env', 'OS_CACERT') }}"``, but you may prefer
+to set the path explicitly.
 
 .. code-block:: console
 
   cloudkitty_collector_backend: prometheus
   cloudkitty_fetcher_backend: prometheus
   cloudkitty_storage_backend: elasticsearch
-  cloudkitty_elasticsearch_insecure_connections: true
-  cloudkitty_prometheus_insecure_connections: true
+  cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
+  cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
 
 The default collection period is one hour, which is likely too long for your
 system. CloudKitty will charge for the entire period if any usage is seen
@@ -56,25 +59,25 @@ will track for flavors and volumes, set in
 
   metrics:
     openstack_nova_server_status:
-        alt_name: instance
-        groupby:
+      alt_name: instance
+      groupby:
         - uuid
         - user_id
         - tenant_id
-        metadata:
+      metadata:
         - flavor_id
         - name
-        mutate: MAP
-        mutate_map:
+      mutate: MAP
+      mutate_map:
         0.0: 1.0  # ACTIVE
         11.0: 1.0 # SHUTOFF
         12.0: 1.0 # SUSPENDED
         16.0: 1.0 # PAUSED
-        unit: instance
+      unit: instance
     openstack_cinder_limits_volume_used_gb:
-        alt_name: storage
-        unit: GiB
-        groupby:
+      alt_name: storage
+      unit: GiB
+      groupby:
         - tenant_id
 
 TODO: Should we explain how to handle OpenStack exporter metrics relabelling,
