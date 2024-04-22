@@ -108,32 +108,32 @@ collection period, e.g. a flavor with 1 VCPU will cost 1 unit per hour.
   # Map flavors based on VCPUs
   openstack_ratings_hashmap_field_mappings:
     - service: instance
-        name: flavor_id
-        mappings:
-        - value: '1' # tiny compute flavor (1 vcpu) with an OpenStack flavor ID of 1
-            cost: 0.1666666666666666
-            type: flat
-        - value: '2' # small compute flavor (2 vcpus) with an OpenStack flavor ID of 2
-            cost: 0.3333333333333333
-            type: flat
-        - value: '3' # medium compute flavor (3 vcpus) with an OpenStack flavor ID of 3
-            cost: 0.5
-            type: flat
-        - value: '4' # large compute flavor (4 vcpus) with an OpenStack flavor ID of 4
-            cost: 0.6666666666666666
-            type: flat
-        - value: '5' # xlarge compute flavor (8 vcpus) with an OpenStack flavor ID of 5
-            cost: 1.3333333333333333
-            type: flat
-        - value: '6' # tiny 2 compute flavor (2 vcpus) with an OpenStack flavor ID of 6
-            cost: 0.3333333333333333
-            type: flat
+      name: flavor_id
+      mappings:
+      - value: '1' # tiny compute flavor (1 vcpu) with an OpenStack flavor ID of 1
+        cost: 0.1666666666666666
+        type: flat
+      - value: '2' # small compute flavor (2 vcpus) with an OpenStack flavor ID of 2
+        cost: 0.3333333333333333
+        type: flat
+      - value: '3' # medium compute flavor (3 vcpus) with an OpenStack flavor ID of 3
+        cost: 0.5
+        type: flat
+      - value: '4' # large compute flavor (4 vcpus) with an OpenStack flavor ID of 4
+        cost: 0.6666666666666666
+        type: flat
+      - value: '5' # xlarge compute flavor (8 vcpus) with an OpenStack flavor ID of 5
+        cost: 1.3333333333333333
+        type: flat
+      - value: '6' # tiny 2 compute flavor (2 vcpus) with an OpenStack flavor ID of 6
+        cost: 0.3333333333333333
+        type: flat
 
   # Map volumes based on GB
   openstack_ratings_hashmap_service_mappings:
-  - service: storage
-    cost: 0.16666666666666666
-    type: flat
+    - service: storage
+      cost: 0.16666666666666666
+      type: flat
 
 See the `OpenStack CloudKitty Ratings role
 <https://github.com/stackhpc/ansible-collection-openstack/tree/main/roles/os_ratings>`__
