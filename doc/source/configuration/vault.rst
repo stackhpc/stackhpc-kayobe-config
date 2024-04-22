@@ -6,6 +6,18 @@ This document describes how to deploy Hashicorp Vault for
 internal PKI purposes using the
 `StackHPC Hashicorp collection <https://galaxy.ansible.com/stackhpc/hashicorp>`_
 
+Vault may be used as a Certificate Authority to generate certificates for:
+
+* OpenStack internal API
+* OpenStack backend APIs
+* RabbitMQ
+
+TLS support is described in the :kolla-ansible-doc:`Kolla Ansible documentation
+<admin/tls.html>` and the :kayobe-doc:`Kayobe documentation
+<configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`.
+
+Vault may also be used as the secret store for Barbican.
+
 Background
 ==========
 
