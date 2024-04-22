@@ -13,7 +13,7 @@ how to do this.
 Enable CloudKitty and disable InfluxDB, as we are using OpenSearch as the
 storage backend. Set the following in ``kolla.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   kolla_enable_cloudkitty: true
   # Explicitly disable influxdb as we are using OpenSearch as the CloudKitty backend
@@ -26,7 +26,7 @@ work with OpenSearch. Proper support is still pending in Kolla-Ansible `here
 TLS enabled, you will also need to allow insecure connections for Prometheus
 and Elasticsearch. Set the following in ``kolla/globals.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   cloudkitty_collector_backend: prometheus
   cloudkitty_fetcher_backend: prometheus
@@ -40,7 +40,7 @@ within this timeframe. This means that even just one minute will be counted as
 an hour's usage. It is recommended to change this to a lower number, such as
 ten minutes. When using Prometheus as the collector, you need to change the
 scope_key to match the metrics provided by the Prometheus OpenStack Exporter.
-Set the following in ``cloudkitty.conf``:
+Set the following in ``kolla/config/cloudkitty.conf``:
 
 .. code-block:: console
 
@@ -52,7 +52,7 @@ You will need to configure which metrics CloudKitty should track. This example
 will track for flavors and volumes, set in
 ``kolla/config/cloudkitty/metrics.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   metrics:
     openstack_nova_server_status:
@@ -85,7 +85,7 @@ Post-configuration with openstack-config
 
 This is an example `openstack-config
 <https://github.com/stackhpc/openstack-config>`__ setup to create mappings for
-the metrics configured above. Note that the costs are scaled for the ten-minute
+the metrics configured above. Note that the costs are scaled for the ten minute
 collection period, e.g. a flavor with 1 VCPU will cost 1 unit per hour.
 
 .. code-block:: yaml
