@@ -48,9 +48,9 @@ Set the following in ``kolla/config/cloudkitty.conf``:
   scope_key = tenant_id
   period = 600
 
-You will need to configure which metrics CloudKitty should track. This example
-will track for flavors and volumes, set in
-``kolla/config/cloudkitty/metrics.yml``:
+You will need to configure which metrics CloudKitty should track. The following
+example, set in ``kolla/config/cloudkitty/metrics.yml``, will track for VM flavors and
+the total utilised volume.
 
 .. code-block:: yaml
 
