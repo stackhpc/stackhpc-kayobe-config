@@ -42,13 +42,15 @@ may prefer to set the path explicitly.
   cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
   cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
 
-The default collection period is one hour, which is likely too long for your
-system. CloudKitty will charge for the entire period if any usage is seen
-within this timeframe. This means that even just one minute will be counted as
-an hour's usage. It is recommended to change this to a lower number, such as
-ten minutes. When using Prometheus as the collector, you need to change the
-scope_key to match the metrics provided by the Prometheus OpenStack Exporter.
-Set the following in ``kolla/config/cloudkitty.conf``:
+The default collection period is one hour, which is likely too long for most
+systems as CloudKitty charges by the **entire** collection period if any usage
+is seen within this timeframe. This is regardless of actual usage, meaning that
+even one minute will be charged as a full hour's usage. As a result, it is
+recommended to adjust the collection interval, ``period`` (in units of
+seconds), appropriately (e.g. ten minutes). Furthermore, when using Prometheus
+as the collector, you need to change the ``scope_key`` to match the metrics
+provided by the Prometheus OpenStack Exporter. Both of these can be achieved by
+setting the following in ``kolla/config/cloudkitty.conf``:
 
 .. code-block:: console
 
