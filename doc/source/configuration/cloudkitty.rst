@@ -89,8 +89,11 @@ the total utilised volume.
       groupby:
         - tenant_id
 
-TODO: Should we explain how to handle OpenStack exporter metrics relabelling,
-for the case where a system may have had Monasca deployed in the past?
+If your system had Monasca deployed in the past, you likely have some
+relabelled attributes in the Prometheus OpenStack exporter. To account for
+this, you should either remove the custom relabelling (in
+``kolla/config/prometheus.yml``) or change your ``metrics.yml`` to use the
+correct attributes.
 
 Post-configuration with openstack-config
 ========================================
