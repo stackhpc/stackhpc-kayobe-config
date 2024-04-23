@@ -28,7 +28,7 @@ stackhpc_firewalld_rules: |
   {% set stackhpc_firewalld_rules_verified = [] %}
   {% for rule in stackhpc_firewalld_rules_unverified | unique %}
   {% if rule | ansible.utils.remove_keys('state') in stackhpc_firewalld_rules_verified | map('ansible.utils.remove_keys', 'state') %}
-  {% set stackhpc_firewalld_rules_verified = 'Invalid configuration! Two matching firewalld rules exist with different states' + 1 %}
+  {% set stackhpc_firewalld_rules_verified = 'Invalid configuration! Two matching firewalld rules probably exist with different states' + 1 %}
   {% elif rule.network in network_interfaces and rule.network | net_zone is not none %}
   {% set _ = stackhpc_firewalld_rules_verified.append(rule) %}
   {% endif %}
@@ -78,17 +78,17 @@ stackhpc_common_firewalld_rules_template:
       - service: dhcpv6-client
         network: "{{ public_net_name }}"
         state: disabled
-    enabled: "{{ 'public' in stackhpc_firewalld_zones }}"
+    enabled: "{{ public_net_name | net_zone in stackhpc_firewalld_zones }}"
   - rules:
       - service: ssh
         network: "{{ public_net_name }}"
         state: disabled
-    enabled: "{{ 'public' in stackhpc_firewalld_zones && admin_oc_net_name | net_zone != 'public' }}"
+    enabled: "{{ public_net_name | net_zone in stackhpc_firewalld_zones and admin_oc_net_name | net_zone != public_net_name | net_zone }}"
 
 stackhpc_common_firewalld_rules_extra: []
 
 ###############################################################################
-# Common firewalld rules
+# Controller firewalld rules
 
 stackhpc_controller_firewalld_rules: "{{ stackhpc_controller_firewalld_rules_default + stackhpc_controller_firewalld_rules_extra }}"
 
@@ -142,6 +142,39 @@ stackhpc_controller_firewalld_rules_template:
         network: "{{ public_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_designate | bool }}"
+  # Vault & Consul
+  - rules:
+      - port: 8200/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8300/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8301/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8301/udp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8302/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8302/udp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8500/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8501/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8600/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 8600/udp
+        network: "{{ internal_net_name }}"
+        state: enabled
+    enabled: true # FIXME add condition
   # GENEVE
   - rules:
       - port: 6081/udp
@@ -386,7 +419,7 @@ stackhpc_seed_firewalld_rules_template:
       - port: 9610/tcp
         network: "{{ provision_oc_net_name }}"
         state: enabled
-    enabled: "{{ stackhpc_enable_redfish_exporter }}"
+    enabled: "{{ stackhpc_enable_redfish_exporter | default(false) }}"
 
 stackhpc_seed_firewalld_rules_extra: []
 
