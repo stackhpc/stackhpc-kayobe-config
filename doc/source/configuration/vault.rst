@@ -108,9 +108,10 @@ Setup HAProxy config for Vault
          option httpchk GET /v1/sys/health
          # https://www.vaultproject.io/api-docs/system/health
          # 200: initialized, unsealed, and active
+         # 429: backup
          # 501: not initialised (required for bootstrapping)
          # 503: sealed (required for bootstrapping)
-         http-check expect rstatus (200|501|503)
+         http-check expect rstatus (200|429)
 
       {% for host in groups['control'] %}
       {% set host_name = hostvars[host].ansible_facts.hostname %}
