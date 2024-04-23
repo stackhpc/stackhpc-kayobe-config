@@ -169,3 +169,38 @@ If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
 set correctly, double check you have entered the correct authentication
 information appropiate to your cloud and re-deploy.
+
+Friendly Network Names
+=======================
+For operators that prefer to see descriptive or friendly interface names the 
+following play can be run. This takes network names as defined in kayobe and 
+relabels the devices/interfaces in Prometheus to make use of these names.
+
+
+.. code-block:: console
+
+    kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
+    kayobe overcloud service reconfigure --kt prometheus
+
+This first generates a template based on the promtheus.yml.j2 
+``etc/kayobe/ansible/`` and which is further templated for use with
+kolla-ansible.
+
+
+This helps Prometheus provide insights that can be more easily understood by 
+those without an intimate understanding of a given site.Prometheus Node Exporter
+ and cAdvisor both provide network statistics using the
+interface/device names. This play causes Prometheus to relabel these fields to
+ human readable names based on the networks as defined in kayobe 
+ e.g. bond1.1838 may become storage_network.
+
+The default labels are preserved with the prefix ``original_``.
+For node_exporter, ``device`` is then used for network names, while 
+``original_device`` is used for the interface itself.
+For cAdvisor, ``interface`` is used for network names, and ``original_interface``
+is used to preserve the interface name.
+
+**Known-Limitations/Untested**
+The current implementation does not cover known edge cases:
+* Reusing the same network devices under a different network name.
+
