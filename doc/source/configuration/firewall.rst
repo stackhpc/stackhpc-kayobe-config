@@ -27,12 +27,6 @@ follows:
    # Unset to leave the default zone unchanged
    controller_firewalld_default_zone: drop
 
-.. code-block:: yaml
-   :caption: ``etc/kayobe/kolla/globals.yml``
-
-   # Open up ports in firewalld for services on the public API network.
-   enable_external_api_firewalld: true
-
 This will configure the standard set of firewalld rules on controller hosts.
 Rule definitions are automatically added according to group membership. Rule
 sets exist for the following groups:
@@ -57,3 +51,17 @@ If the command above prints a template, rather than a clean list of rules, the
 configuration is invalid. The kayobe configuration dump command can be used on
 other variables such as ``stackhpc_firewalld_rules_unverified`` or
 ``stackhpc_*_firewalld_rules`` to debug the configuration.
+
+Ensure Kolla Ansible opens up ports in firewalld for services on the public
+API network:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/kolla/globals.yml``
+
+   enable_external_api_firewalld: true
+   external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
+
+Ensure every network in ``networks.yml`` has a zone defined. The standard
+configuration is to set the internal network zone to ``trusted`` and every
+other zone to the name of the network. See
+``etc/kayobe/environments/ci-multinode/networks.yml`` for a practical example.
