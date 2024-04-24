@@ -7,6 +7,24 @@ seed_extra_network_interfaces:
   - "external_intranet"
 
 ###############################################################################
+# Seed node LVM configuration.
+
+# Whether a 'data' LVM volume group should exist on the seed. By default this
+# contains a 'docker-volumes' logical volume for Docker volume storage. It will
+# also be used for Docker container and image storage if
+# 'docker_storage_driver' is set to 'devicemapper'. Default is true if
+# 'docker_storage_driver' is set to 'devicemapper', or false otherwise.
+seed_lvm_group_data_enabled: true
+
+# List of disks for use by seed LVM data volume group. Default to an invalid
+# value to require configuration.
+seed_lvm_group_data_disks:
+ - /dev/vdb
+
+# Size of docker volumes LVM backing volume.
+seed_lvm_group_data_lv_docker_volumes_size: 100%VG
+
+###############################################################################
 # Seed node additional containers configuration
 
 # Seed container running a Squid caching proxy. This can be used to proxy
