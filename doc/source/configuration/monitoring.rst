@@ -188,7 +188,7 @@ kolla-ansible.
 
 
 This helps Prometheus provide insights that can be more easily understood by 
-those without an intimate understanding of a given site.Prometheus Node Exporter
+those without an intimate understanding of a given site. Prometheus Node Exporter
  and cAdvisor both provide network statistics using the
 interface/device names. This play causes Prometheus to relabel these fields to
  human readable names based on the networks as defined in kayobe 
