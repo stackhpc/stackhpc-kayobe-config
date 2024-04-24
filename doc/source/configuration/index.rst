@@ -20,3 +20,4 @@ the various features provided.
    magnum-capi
    ci-cd
    security-hardening
+   firewall
