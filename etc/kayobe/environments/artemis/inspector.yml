@@ -1,0 +1,40 @@
+---
+###############################################################################
+# Ironic inspector introspection rules configuration.
+
+# List of additional ironic inspector rules.
+inspector_rules_extra:
+  - "{{ inspector_rule_redfish_credentials }}"
+  - "{{ inspector_rule_redfish_address }}"
+
+# Ironic inspector rule to set Redfish credentials.
+inspector_rule_redfish_credentials:
+  description: "Set iDRAC driver_info if no credentials"
+  conditions:
+    - field: "node://driver_info.redfish_username"
+      op: "is-empty"
+  actions:
+    - action: "set-attribute"
+      path: "driver_info/redfish_username"
+      value: "{{ inspector_ipmi_username }}"
+    - action: "set-attribute"
+      path: "driver_info/redfish_password"
+      value: "{{ inspector_ipmi_password }}"
+    - action: "set-attribute"
+      path: "driver_info/redfish_verify_ca"
+      value: "False"
+
+# Ironic inspector rule to set Redfish address.
+inspector_rule_redfish_address:
+  description: "Set iDRAC redfish_address from bmc_address if not set"
+  conditions:
+    - field: "node://driver_info.redfish_address"
+      op: "is-empty"
+  actions:
+    - action: "set-attribute"
+      path: "driver_info/redfish_address"
+      value: "{data[inventory][bmc_address]}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
