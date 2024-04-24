@@ -178,9 +178,6 @@ the host using kayobe, here are some tips (note that depending on your setup thi
     provision_oc_net_ips:
       nesmetprd01: 10.10.224.5
 
-Note that in this example network name is ``undercloud`` to demonstrate that this network isn't "standard" kayobe network.
-
-
 Deploying Wazuh Manager services
 ================================
 
