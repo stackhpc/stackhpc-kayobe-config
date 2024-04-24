@@ -182,7 +182,7 @@ relabels the devices/interfaces in Prometheus to make use of these names.
     kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
     kayobe overcloud service reconfigure --kt prometheus
 
-This first generates a template based on the promtheus.yml.j2 
+This first generates a template based on the prometheus.yml.j2 
 ``etc/kayobe/ansible/`` and which is further templated for use with
 kolla-ansible.
 
