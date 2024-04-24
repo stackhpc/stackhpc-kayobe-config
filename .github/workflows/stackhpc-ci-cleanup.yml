@@ -55,3 +55,23 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Clean up host image builder instances over 5 hours old
+        run: |
+          result=0
+          changes_before=$(date -Imin -d -5hours)
+          for status in ACTIVE BUILD ERROR SHUTOFF; do
+              for instance in $(openstack server list --tags skc-host-image-build --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
+                  echo "Cleaning up $status instance $instance"
+                  openstack server show $instance
+                  if ! openstack server delete $instance; then
+                      echo "Failed to delete $status instance $instance"
+                      result=1
+                  fi
+              done
+          done
+          exit $result
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}

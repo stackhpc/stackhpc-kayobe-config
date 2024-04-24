@@ -1,4 +1,9 @@
 ---
+# Most development environments will use nested virtualisation, and we can't
+# guarantee that nested KVM support is available. Use QEMU as a lowest common
+# denominator.
+nova_compute_virt_type: qemu
+
 # Reduce the control plane's memory footprint by limiting the number of worker
 # processes to two per-service when running in a VM.
 openstack_service_workers: "{% raw %}{{ [ansible_facts.processor_vcpus, 2 if ansible_facts.virtualization_role == 'guest' else 5] | min }}{% endraw %}"
@@ -39,3 +44,7 @@ designate_ns_record:
 designate_backend: "bind9"
 designate_recursion: "yes"
 designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
+
+# Open up ports in firewalld for services on the public API network.
+enable_external_api_firewalld: true
+external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
