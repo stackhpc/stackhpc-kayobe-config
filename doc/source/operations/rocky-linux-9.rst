@@ -748,12 +748,13 @@ Full procedure
        sudo mkdir /var/lib/libvirt/images-backup
        sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images-backup
 
-9.  Delete the seed root volume (check the structure & naming
-    conventions first)
+9.  Delete the seed root volume and the configdrive (check the structure &
+    naming conventions first)
 
     .. code:: console
 
        sudo virsh vol-delete seed-root --pool default
+       sudo virsh vol-delete seed-configdrive --pool default
 
 10.  Reprovision the seed
 
