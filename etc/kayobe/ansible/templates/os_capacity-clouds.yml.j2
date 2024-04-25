@@ -1,10 +1,15 @@
 clouds:
   openstack:
     auth:
-      auth_url: "{{ secrets_os_exporter_auth_url }}"
-      application_credential_id: "{{ secrets_os_exporter_credential_id }}"
-      application_credential_secret: "{{ secrets_os_exporter_credential_secret }}"
-    region_name: "RegionOne"
+      auth_url: "{{ stackhpc_os_capacity_auth_url }}"
+      project_name: "{{ stackhpc_os_capacity_project_name }}"
+      domain_name: "{{ stackhpc_os_capacity_domain_name }}"
+      username: "{{ stackhpc_os_capacity_username }}"
+      password: "{{ stackhpc_os_capacity_password }}"
+    region_name: "{{ stackhpc_os_capacity_openstack_region_name }}"
     interface: "internal"
     identity_api_version: 3
-    auth_type: "v3applicationcredential"
+    auth_type: "password"
+{% if not stackhpc_os_capacity_openstack_verify | bool %}
+    verify: False
+{% endif %}

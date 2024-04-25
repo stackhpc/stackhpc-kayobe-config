@@ -14,7 +14,7 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 Prerequisites
 =============
 
-* a baremetal node with at least 64GB of RAM running CentOS Stream 8 (or Ubuntu)
+* a baremetal node with at least 64GB of RAM running Rocky Linux 9 or Ubuntu Jammy.
 
 * access to the test pulp server on SMS lab
 

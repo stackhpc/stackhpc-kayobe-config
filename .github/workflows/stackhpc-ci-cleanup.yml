@@ -1,0 +1,77 @@
+---
+name: Clean up stale CI resources
+on:
+  schedule:
+    # Every 2 hours at quarter past
+    - cron: '15 0/2 * * *'
+
+jobs:
+  ci-cleanup:
+    name: Clean up stale CI resources
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+
+      - name: Install OpenStack client
+        run: |
+          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
+
+      - name: Clean up aio instances over 3 hours old
+        run: |
+          result=0
+          changes_before=$(date -Imin -d -3hours)
+          for status in ACTIVE BUILD ERROR SHUTOFF; do
+              for instance in $(openstack server list --tags skc-ci-aio --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
+                  echo "Cleaning up $status instance $instance"
+                  openstack server show $instance
+                  if ! openstack server delete $instance; then
+                      echo "Failed to delete $status instance $instance"
+                      result=1
+                  fi
+              done
+          done
+          exit $result
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Clean up host image builder instances over 5 hours old
+        run: |
+          result=0
+          changes_before=$(date -Imin -d -5hours)
+          for status in ACTIVE BUILD ERROR SHUTOFF; do
+              for instance in $(openstack server list --tags skc-host-image-build --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
+                  echo "Cleaning up $status instance $instance"
+                  openstack server show $instance
+                  if ! openstack server delete $instance; then
+                      echo "Failed to delete $status instance $instance"
+                      result=1
+                  fi
+              done
+          done
+          exit $result
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
