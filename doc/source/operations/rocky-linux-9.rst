@@ -745,8 +745,8 @@ Full procedure
 
     .. code:: console
 
-       sudo mkdir /var/lib/libvirt/images/backup
-       sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images/backup
+       sudo mkdir /var/lib/libvirt/images-backup
+       sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images-backup
 
 9.  Delete the seed root volume (check the structure & naming
     conventions first)
