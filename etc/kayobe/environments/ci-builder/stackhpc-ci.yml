@@ -26,13 +26,7 @@ kolla_enable_octavia: true
 kolla_enable_opensearch: true
 kolla_enable_prometheus: true
 kolla_enable_redis: true
-
-###############################################################################
-# Network configuration.
-
-# Don't touch resolv.conf: use Neutron DNS for accessing Pulp server via
-# hostname.
-resolv_is_managed: false
+kolla_build_neutron_ovs: true
 
 ###############################################################################
 # StackHPC configuration.
@@ -41,8 +35,14 @@ resolv_is_managed: false
 # Build against the development Pulp service repositories.
 # Use Ark's package repositories to install packages.
 stackhpc_repo_mirror_url: "{{ stackhpc_repo_mirror_auth_proxy_url if stackhpc_repo_mirror_auth_proxy_enabled | bool else stackhpc_release_pulp_url }}"
-stackhpc_repo_mirror_username: "{{ stackhpc_docker_registry_username }}"
-stackhpc_repo_mirror_password: "{{ stackhpc_docker_registry_password }}"
+stackhpc_repo_mirror_username: "skc-ci-aio"
+stackhpc_repo_mirror_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  31386366383365666135336331663635396237623139306362633933636233613765663731666338
+  3633633736333936383439623066653663333964343234350a393137383537316164323837386437
+  36613139323161643766666565643739373037623363636234343965343436653261326238393566
+  3837336661653962340a316631366463623138623530373133336665376433633437306631383666
+  30333461333535363433363336663664316634343432633766346564323833346663
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"

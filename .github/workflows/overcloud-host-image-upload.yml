@@ -47,7 +47,7 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
-          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
       - name: Clone StackHPC Kayobe repository
         uses: actions/checkout@v4
@@ -80,7 +80,7 @@ jobs:
       - name: Install OpenStack client
         run: |
           source venvs/kayobe/bin/activate &&
-          pip install python-openstackclient -c https://opendev.org/openstack/requirements/raw/branch/stable/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
+          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
 
       - name: Output Rocky Linux 9 image tag
         id: rocky_9_image_tag

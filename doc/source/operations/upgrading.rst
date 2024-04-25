@@ -199,14 +199,14 @@ Known issues
 
 * Docker log-opts are currently not configured in Antelope. You will see these
   being removed when running a host configure in check+diff mode. See bug for
-  details (fix in progress):
+  details (fix released):
   https://bugs.launchpad.net/ansible-collection-kolla/+bug/2040105
 
 * /etc/hosts are not templated correctly when running a host configure with
   ``--limit``. To work around this, run your host configures with
   ``--skip-tags etc-hosts``. If you do need to change ``/etc/hosts``, for
   example with any newly-added hosts, run a full host configure afterward with
-  ``--tags etc-hosts``. See bug for details (fix in progress):
+  ``--tags etc-hosts``. See bug for details (fix released):
   https://bugs.launchpad.net/kayobe/+bug/2051714
 
 Security baseline
@@ -948,7 +948,7 @@ least start with a small number of hosts.:
 
 .. code-block:: console
 
-   kayobe overcloud host configure --limit <host> --kolla-limit <host>
+   kayobe overcloud host configure --limit <host>
 
 Alternatively, to apply the configuration to all hosts:
 

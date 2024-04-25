@@ -42,17 +42,6 @@ The configuration options can be found in
 .. literalinclude:: ../../../etc/kayobe/stackhpc-monitoring.yml
    :language: yaml
 
-In order to enable stock monitoring configuration within a particular
-environment, create the following symbolic links:
-
-.. code-block:: console
-
-    cd $KAYOBE_CONFIG_PATH
-    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-
-and commit them to the config repository.
-
 SMART Drive Monitoring
 ======================
 
@@ -140,33 +129,41 @@ enable the ceph mgr exporter.
 OpenStack Capacity
 ==================
 
-OpenStack Capacity allows you to see how much space you have avaliable
-in your cloud. StackHPC Kayobe Config includes this exporter by default
-and it's necessary that some variables are set to allow deployment.
+OpenStack Capacity allows you to see how much space you have available
+in your cloud. StackHPC Kayobe Config will deploy OpenStack Capacity
+by default on a service deploy, this can be disabled by setting
+``stackhpc_enable_os_capacity`` to false.
 
-To successfully deploy OpenStack Capacity, you are required to specify
-the OpenStack application credentials in ``kayobe/secrets.yml`` as:
+OpenStack Capacity is deployed automatically using a service deploy hook
+with the generated kolla-ansible admin credentials, you can override these
+by setting the authentication url, username, password, project name and
+project domain name in ``stackhpc-monitoring.yml``:
 
 .. code-block:: yaml
 
-    secrets_os_exporter_auth_url: <some_auth_url>
-    secrets_os_exporter_credential_id: <some_credential_id>
-    secrets_os_exporter_credential_secret: <some_credential_secret>
+    stackhpc_os_capacity_auth_url: <keystone_auth_url>
+    stackhpc_os_capacity_username: <openstack_username>
+    stackhpc_os_capacity_password: <openstack_password_encrypted_with_vault>
+    stackhpc_os_capacity_project_name: <openstack_project_name>
+    stackhpc_os_capacity_domain_name: <openstack_project_domain_name>
+    stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
 
-After defining your credentials, You may deploy OpenStack Capacity
-using the ``ansible/deploy-os-capacity-exporter.yml`` Ansible playbook
+Additionally, you should ensure these credentials have the correct permissions
+for the exporter. If you are deploying in a cloud with internal TLS, you may be required
+to disable certificate verification for the OpenStack Capacity exporter
+if your certificate is not signed by a trusted CA.
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_verify: false
+
+If you've modified your credentials, you will need to re-deploy OpenStack Capacity
+using the ``deploy-os-capacity-exporter.yml`` Ansible playbook
 via Kayobe.
 
 .. code-block:: console
 
-    kayobe playbook run ansible/deploy-os-capacity-exporter.yml
-
-It is required that you re-configure the Prometheus, Grafana and HAProxy
-services following deployment, to do this run the following Kayobe command.
-
-.. code-block:: console
-
-    kayobe overcloud service reconfigure -kt grafana,prometheus,haproxy
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
 
 If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been

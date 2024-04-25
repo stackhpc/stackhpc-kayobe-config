@@ -96,6 +96,30 @@ groups:
       summary: Host clock not synchronising (instance {{ $labels.instance }})
       description: "Clock not synchronising. Ensure NTP is configured on this host."
 
+  - alert: HostNetworkBondDegraded
+    expr: (node_bonding_active - node_bonding_slaves) != 0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host network bond degraded (instance {{ $labels.instance }})
+      description: "Bond {{ $labels.master }} degraded on {{ $labels.instance }}"
+{% endraw %}
+
+{% if alertmanager_warn_network_bond_single_link | bool %}
+{% raw %}
+  - alert: HostNetworkBondSingleLink
+    expr: node_bonding_slaves == 1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host network bond with a single link (instance {{ $labels.instance }})
+      description: "Bond {{ $labels.master }} configured with a single link on {{ $labels.instance }}"
+{% endraw %}
+{% endif %}
+
+{% raw %}
   - alert: HostConntrackLimit
     expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
     for: 5m
@@ -104,4 +128,24 @@ groups:
     annotations:
       summary: Host conntrack limit (instance {{ $labels.instance }})
       description: "The number of conntrack is approaching limit"
+
+  - alert: NodeRAIDDegraded
+    expr: |
+      node_md_disks_required{job="node",device!=""} - ignoring (state) (node_md_disks{state="active",job="node",device!=""}) > 0
+    for: "15m"
+    labels:
+      severity: critical
+    annotations:
+      description: "RAID array '{{ $labels.device }}' at {{ $labels.instance }} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically."
+      summary: "RAID Array is degraded."
+
+  - alert: NodeRAIDDiskFailure
+    expr: |
+      node_md_disks{state="failed",job="node",device!=""} > 0
+    labels:
+      severity: warning
+    annotations:
+      description: "At least one device in RAID array at {{ $labels.instance }} failed. Array '{{ $labels.device }}' needs attention and possibly a disk swap."
+      summary: "Failed device in RAID array."
+
 {% endraw %}

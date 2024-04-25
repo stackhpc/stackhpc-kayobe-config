@@ -6,6 +6,18 @@ This document describes how to deploy Hashicorp Vault for
 internal PKI purposes using the
 `StackHPC Hashicorp collection <https://galaxy.ansible.com/stackhpc/hashicorp>`_
 
+Vault may be used as a Certificate Authority to generate certificates for:
+
+* OpenStack internal API
+* OpenStack backend APIs
+* RabbitMQ
+
+TLS support is described in the :kolla-ansible-doc:`Kolla Ansible documentation
+<admin/tls.html>` and the :kayobe-doc:`Kayobe documentation
+<configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`.
+
+Vault may also be used as the secret store for Barbican.
+
 Background
 ==========
 
@@ -111,7 +123,7 @@ Setup HAProxy config for Vault
 
    .. code-block::
 
-      kayobe overcloud service deploy -kt haproxy
+      kayobe overcloud service deploy --skip-tags os_capacity -kt haproxy
 
 Setup Vault HA on the overcloud hosts
 -------------------------------------
@@ -296,7 +308,9 @@ Configure Barbican
       [vault_plugin]
       vault_url = https://{{ kolla_internal_vip_address }}:8200
       use_ssl = True
-      ssl_ca_crt_file = {% raw %}{{ openstack_cacert }}{% endraw %}
+      {% raw %}
+      ssl_ca_crt_file = {{ openstack_cacert }}
+      {% endraw %}
       approle_role_id = {{ secrets_barbican_approle_role_id }}
       approle_secret_id = {{ secrets_barbican_approle_secret_id }}
       kv_mountpoint = barbican
