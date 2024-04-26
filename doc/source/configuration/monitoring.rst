@@ -141,36 +141,26 @@ OpenStack Capacity
 ==================
 
 OpenStack Capacity allows you to see how much space you have available
-in your cloud. StackHPC Kayobe Config includes a playbook for manual
-deployment, and it's necessary that some variables are set before
-running this playbook.
+in your cloud. StackHPC Kayobe Config will deploy OpenStack Capacity
+by default on a service deploy, this can be disabled by setting
+``stackhpc_enable_os_capacity`` to false.
 
-To successfully deploy OpenStack Capacity, you are required to specify
-the OpenStack application credentials in ``kayobe/secrets.yml`` as:
-
-.. code-block:: yaml
-
-    secrets_os_capacity_credential_id: <some_credential_id>
-    secrets_os_capacity_credential_secret: <some_credential_secret>
-
-The Keystone authentication URL and OpenStack region can be changed
-from their defaults in ``stackhpc-monitoring.yml`` should you need to
-set a different OpenStack region for your cloud. The authentication
-URL is set to use ``kolla_internal_fqdn`` by default:
+OpenStack Capacity is deployed automatically using a service deploy hook
+with the generated kolla-ansible admin credentials, you can override these
+by setting the authentication url, username, password, project name and
+project domain name in ``stackhpc-monitoring.yml``:
 
 .. code-block:: yaml
 
-    stackhpc_os_capacity_auth_url: <some_authentication_url>
-    stackhpc_os_capacity_openstack_region_name: <some_openstack_region>
+    stackhpc_os_capacity_auth_url: <keystone_auth_url>
+    stackhpc_os_capacity_username: <openstack_username>
+    stackhpc_os_capacity_password: <openstack_password_encrypted_with_vault>
+    stackhpc_os_capacity_project_name: <openstack_project_name>
+    stackhpc_os_capacity_domain_name: <openstack_project_domain_name>
+    stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
 
-Additionally, you are required to enable a conditional flag to allow
-HAProxy and Prometheus configuration to be templated during deployment.
-
-.. code-block:: yaml
-
-    stackhpc_enable_os_capacity: true
-
-If you are deploying in a cloud with internal TLS, you may be required
+Additionally, you should ensure these credentials have the correct permissions
+for the exporter. If you are deploying in a cloud with internal TLS, you may be required
 to disable certificate verification for the OpenStack Capacity exporter
 if your certificate is not signed by a trusted CA.
 
@@ -178,22 +168,50 @@ if your certificate is not signed by a trusted CA.
 
     stackhpc_os_capacity_openstack_verify: false
 
-After defining your credentials, you may deploy OpenStack Capacity
-using the ``ansible/deploy-os-capacity-exporter.yml`` Ansible playbook
+If you've modified your credentials, you will need to re-deploy OpenStack Capacity
+using the ``deploy-os-capacity-exporter.yml`` Ansible playbook
 via Kayobe.
 
 .. code-block:: console
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
 
-It is required that you re-configure the Prometheus, Grafana and HAProxy
-services following deployment, to do this run the following Kayobe command.
-
-.. code-block:: console
-
-    kayobe overcloud service reconfigure -kt grafana,prometheus,loadbalancer
-
 If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
 set correctly, double check you have entered the correct authentication
 information appropiate to your cloud and re-deploy.
+
+Redfish exporter
+================
+
+Redfish exporter will query the overcloud BMCs via their redfish interfaces
+to produce various metrics relating to the hardware, and system health.
+
+To configure the exporter, adjust the variables in
+``$KAYOBE_CONFIG_PATH/stackhpc-monitoring.yml`` to use appropriate values:
+
+.. code-block:: yaml
+
+    # Whether the redfish exporter is enabled.
+    stackhpc_enable_redfish_exporter: true
+
+    # Redfish exporter credentials
+    redfish_exporter_default_username: "{{ ipmi_username }}"
+    redfish_exporter_default_password: "{{ ipmi_password }}"
+
+    # The address of the BMC that is queried by redfish exporter for metrics.
+    redfish_exporter_target_address: "{{ ipmi_address }}"
+
+Deploy the exporter on the seed:
+
+.. code-block:: console
+
+    kayobe seed service deploy -t seed-deploy-containers -kt none
+
+It is required that you re-configure the Prometheus, Grafana
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus
+

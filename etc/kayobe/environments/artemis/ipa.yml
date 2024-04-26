@@ -1,0 +1,31 @@
+---
+# Ironic Python Agent (IPA) configuration.
+
+###############################################################################
+# Ironic Python Agent (IPA) image build configuration.
+
+# Whether to build IPA images from source.
+ipa_build_images: true
+
+# List of additional Diskimage Builder (DIB) elements to use when building IPA
+# images. Default is none.
+ipa_build_dib_elements_extra:
+  - extra-hardware
+
+# Dictionary of additional environment variables to provide to Diskimage
+# Builder (DIB) during IPA image build.
+ipa_build_dib_env_extra:
+  DIB_IPA_HARDWARE_PACKAGE: "git+https://github.com/redhat-cip/hardware@0.31.0"
+
+###############################################################################
+# Ironic Python Agent (IPA) deployment configuration.
+
+# List of additional inspection collectors to run.
+ipa_collectors_extra:
+  - "dmi-decode"
+  - "extra-hardware"
+  - "numa-topology"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes
