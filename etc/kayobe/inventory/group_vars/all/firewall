@@ -158,9 +158,9 @@ stackhpc_controller_firewalld_rules_template:
   # Octavia
   - rules:
       - port: 5555/udp
-        network: "{{ octavia_net_name | default(public_net_name) }}"
+        network: "{{ octavia_net_name | default() }}"
         state: enabled
-    enabled: "{{ kolla_enable_octavia | bool }}"
+    enabled: "{{ kolla_enable_octavia | bool and octavia_net_name | bool }}"
 
 stackhpc_controller_firewalld_rules_extra: []
 
