@@ -54,7 +54,7 @@
       vars:
         ec2: "{{ credential.stdout | from_json | first }}"
         host: "{{ endpoint.stdout | from_json | first }}"
-        radosgw_server: "{{ host.URL | regex_replace('(https?://)([0-9.]+):([0-9]+)/.*', '\\1\\2:\\3') }}"
+        radosgw_server: "{{ host.URL | regex_replace('(https?://)([^:/]+):([0-9]+)/.*', '\\1\\2:\\3') }}" # Drop Swift api address
       become: true
 
     - name: Get target ip addresses
