@@ -18,51 +18,72 @@ stackhpc_firewalld_zones: |
   {% set _ = network_zones.append({'zone': network | net_zone }) %}
   {% endif %}
   {% endfor %}
-  {{ network_zones | unique }}
+  {{ network_zones | unique | list }}
 
 # A templated list of firewalld rules, according to the enabled services,
 # host's group membership, and host's network configuration.
 # This variable can be used to set any *_firewalld_rules kayobe variable e.g.
 # compute_firewalld_rules: "{{ stackhpc_firewalld_rules }}" in compute.yml
 stackhpc_firewalld_rules: |
-  {% set stackhpc_firewalld_rules_verified = [] %}
-  {% for rule in stackhpc_firewalld_rules_unverified | unique %}
-  {% if rule | ansible.utils.remove_keys('state') in stackhpc_firewalld_rules_verified | map('ansible.utils.remove_keys', 'state') %}
-  {% set stackhpc_firewalld_rules_verified = 'Invalid configuration! Two matching firewalld rules probably exist with different states' + 1 %}
+  {% set stackhpc_firewalld_rules_verified = stackhpc_firewalld_rules_extra %}
+  {% for rule in stackhpc_firewalld_rules_default | unique %}
+  {% if rule | ansible.utils.remove_keys('state') not in stackhpc_firewalld_rules_verified | map('ansible.utils.remove_keys', 'state') | default([]) %}
+  {% if rule.network is not defined %}
+  {% set _ = stackhpc_firewalld_rules_verified.append(rule) %}
   {% elif rule.network in network_interfaces and rule.network | net_zone %}
   {% set _ = stackhpc_firewalld_rules_verified.append(rule) %}
   {% endif %}
+  {% endif %}
   {% endfor %}
-  {{ stackhpc_firewalld_rules_verified }}
+  {{ stackhpc_firewalld_rules_verified | list }}
 
-# Rules in this list may still contradict each other or reference non-existent
-# zones and interfaces
-stackhpc_firewalld_rules_unverified: |
-  {{ stackhpc_common_firewalld_rules +
-     (stackhpc_controller_firewalld_rules if 'controllers' in group_names else []) +
-     (stackhpc_compute_firewalld_rules if 'compute' in group_names else []) +
-     (stackhpc_storage_firewalld_rules if 'storage' in group_names else []) +
-     (stackhpc_monitoring_firewalld_rules if 'monitoring' in group_names else []) +
-     (stackhpc_seed_firewalld_rules if 'seed' in group_names else []) +
-     (stackhpc_seed_hypervisor_firewalld_rules if 'seed-hypervisor' in group_names else []) +
-     (stackhpc_wazuh_manager_infra_vm_firewalld_rules if 'wazuh-manager' in group_names else []) +
-     (stackhpc_ansible_control_infra_vm_firewalld_rules if inventory_hostname == 'localhost' else []) }}
-
-###############################################################################
-# Common firewalld rules
-
-stackhpc_common_firewalld_rules: "{{ stackhpc_common_firewalld_rules_default + stackhpc_common_firewalld_rules_extra }}"
-
-stackhpc_common_firewalld_rules_default: |
-  {% set stackhpc_common_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_common_firewalld_rules_template %}
+# A single list of default firewall rules, combining the enabled rules from
+# stackhpc_firewalld_rules_template. This variable is designed to fail to
+# template if any conflicting rules are found.
+stackhpc_firewalld_rules_default: |
+  {% set stackhpc_firewalld_rules_formatted = [] %}
+  {% for ruleset in stackhpc_firewalld_rules_template %}
   {% if ruleset.enabled | bool %}
   {% for rule in ruleset.rules %}
-  {% set _ = stackhpc_common_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
+  {% if rule.zone is not defined %}
+  {% set rule = rule | combine({'zone': rule.network | net_zone }) %}
+  {% endif %}
+  {% if rule | ansible.utils.remove_keys('state') in stackhpc_firewalld_rules_formatted | map('ansible.utils.remove_keys', 'state') %}
+  {% set stackhpc_firewalld_rules_formatted = 'Invalid configuration! Two matching firewalld rules probably exist with different states' + 1 %}
+  {% elif rule.network is not defined %}
+  {% set _ = stackhpc_firewalld_rules_formatted.append(rule) %}
+  {% elif rule.network in network_interfaces and rule.network | net_zone %}
+  {% set _ = stackhpc_firewalld_rules_formatted.append(rule) %}
+  {% endif %}
   {% endfor %}
   {% endif %}
   {% endfor %}
-  {{ stackhpc_common_firewalld_rules_formatted }}
+  {{ stackhpc_firewalld_rules_formatted }}
+
+stackhpc_firewalld_rules_template: |
+  {{ stackhpc_common_firewalld_rules_template +
+     (stackhpc_controller_firewalld_rules_template if 'controllers' in group_names else []) +
+     (stackhpc_compute_firewalld_rules_template if 'compute' in group_names else []) +
+     (stackhpc_storage_firewalld_rules_template if 'storage' in group_names else []) +
+     (stackhpc_monitoring_firewalld_rules_template if 'monitoring' in group_names else []) +
+     (stackhpc_seed_firewalld_rules_template if 'seed' in group_names else []) +
+     (stackhpc_seed_hypervisor_firewalld_rules_template if 'seed-hypervisor' in group_names else []) +
+     (stackhpc_wazuh_manager_infra_vm_firewalld_rules_template if 'wazuh-manager' in group_names else []) +
+     (stackhpc_ansible_control_infra_vm_firewalld_rules_template if inventory_hostname == 'localhost' else []) }}
+
+###############################################################################
+# Extra firewalld rules
+
+# Extra firewalld rules. Each item is a dict containing arguments to pass to
+# the firewalld module.
+# These rules have higher precidence than the
+# default rules and are not validated before being applied. Use with caution.
+# NOTE: The format of this variable is NOT the same as the
+# stackhpc_*_firewalld_rules_template variables found elsewhere in this file.
+stackhpc_firewalld_rules_extra: []
+
+###############################################################################
+# Common firewalld rules
 
 stackhpc_common_firewalld_rules_template:
   # Common
@@ -71,38 +92,21 @@ stackhpc_common_firewalld_rules_template:
         network: "{{ admin_oc_net_name }}"
         state: enabled
     enabled: true
-  # Cockpit and dhcpv6-client are enabled by default in firewalld
+  # Cockpit, dhcpv6-client, and SSH are enabled by default in firewalld
   - rules:
       - service: cockpit
-        network: "{{ public_net_name }}"
+        zone: public
         state: disabled
       - service: dhcpv6-client
-        network: "{{ public_net_name }}"
+        zone: public
         state: disabled
-    enabled: "{{ {'zone': public_net_name | net_zone} in firewalld_zones }}"
-  - rules:
       - service: ssh
-        network: "{{ public_net_name }}"
+        zone: public
         state: disabled
-    enabled: "{{ {'zone': 'public' | net_zone} in firewalld_zones and admin_oc_net_name | net_zone != public_net_name | net_zone }}"
-
-stackhpc_common_firewalld_rules_extra: []
+    enabled: "{{ admin_oc_net_name | net_zone != 'public' }}"
 
 ###############################################################################
 # Controller firewalld rules
-
-stackhpc_controller_firewalld_rules: "{{ stackhpc_controller_firewalld_rules_default + stackhpc_controller_firewalld_rules_extra }}"
-
-stackhpc_controller_firewalld_rules_default: |
-  {% set stackhpc_controller_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_controller_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% set _ = stackhpc_controller_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_controller_firewalld_rules_formatted }}
 
 stackhpc_controller_firewalld_rules_template:
   # Overcloud Ironic
@@ -160,27 +164,10 @@ stackhpc_controller_firewalld_rules_template:
       - port: 5555/udp
         network: "{{ octavia_net_name | default() }}"
         state: enabled
-    enabled: "{{ kolla_enable_octavia | bool and octavia_net_name | bool }}"
-
-stackhpc_controller_firewalld_rules_extra: []
+    enabled: "{{ kolla_enable_octavia | bool and octavia_net_name is not none }}"
 
 ###############################################################################
 # Compute firewalld rules
-
-stackhpc_compute_firewalld_rules: "{{ stackhpc_compute_firewalld_rules_default + stackhpc_compute_firewalld_rules_extra }}"
-
-stackhpc_compute_firewalld_rules_default: |
-  {% set stackhpc_compute_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_compute_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_compute_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_compute_firewalld_rules_formatted }}
 
 stackhpc_compute_firewalld_rules_template:
   # GENEVE
@@ -196,25 +183,8 @@ stackhpc_compute_firewalld_rules_template:
         state: enabled
     enabled: "{{ ('vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
 
-stackhpc_compute_firewalld_rules_extra: []
-
 ###############################################################################
 # Storage firewalld rules
-
-stackhpc_storage_firewalld_rules: "{{ stackhpc_storage_firewalld_rules_default + stackhpc_storage_firewalld_rules_extra }}"
-
-stackhpc_storage_firewalld_rules_default: |
-  {% set stackhpc_storage_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_storage_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_storage_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_storage_firewalld_rules_formatted }}
 
 stackhpc_storage_firewalld_rules_template:
   # Ceph Prometheus exporter
@@ -222,7 +192,7 @@ stackhpc_storage_firewalld_rules_template:
       - port: 9283/tcp
         network: "{{ provision_oc_net_name }}"
         state: enabled
-    enabled: "{{ kolla_enable_prometheus_ceph_mgr_exporter | bool | default(false) and 'mgrs' in group_names }}"
+    enabled: "{{ kolla_enable_prometheus_ceph_mgr_exporter | default(false) | bool and 'mgrs' in group_names }}"
   # Ceph
   - rules:
       - service: ceph
@@ -236,47 +206,13 @@ stackhpc_storage_firewalld_rules_template:
         state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
     enabled: "{{ 'ceph' in group_names }}"
 
-stackhpc_storage_firewalld_rules_extra: []
-
 ###############################################################################
 # Monitoring firewalld rules
 
-stackhpc_monitoring_firewalld_rules: "{{ stackhpc_monitoring_firewalld_rules_default + stackhpc_monitoring_firewalld_rules_extra }}"
-
-stackhpc_monitoring_firewalld_rules_default: |
-  {% set stackhpc_monitoring_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_monitoring_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_monitoring_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_monitoring_firewalld_rules_formatted }}
-
 stackhpc_monitoring_firewalld_rules_template: []
-
-stackhpc_monitoring_firewalld_rules_extra: []
 
 ###############################################################################
 # Infra VM firewalld rules (Wazuh Manager)
-
-stackhpc_wazuh_manager_infra_vm_firewalld_rules: "{{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_default + stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra }}"
-
-stackhpc_wazuh_manager_infra_vm_firewalld_rules_default: |
-  {% set stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_wazuh_manager_infra_vm_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_wazuh_manager_infra_vm_firewalld_rules_formatted }}
 
 stackhpc_wazuh_manager_infra_vm_firewalld_rules_template:
   - rules:
@@ -303,47 +239,13 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules_template:
         state: enabled
     enabled: true
 
-stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra: []
-
 ###############################################################################
 # Infra VM firewalld rules (Ansible Control)
 
-stackhpc_ansible_control_infra_vm_firewalld_rules: "{{ stackhpc_ansible_control_infra_vm_firewalld_rules_default + stackhpc_ansible_control_infra_vm_firewalld_rules_extra }}"
-
-stackhpc_ansible_control_infra_vm_firewalld_rules_default: |
-  {% set stackhpc_ansible_control_infra_vm_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_ansible_control_infra_vm_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_ansible_control_infra_vm_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_ansible_control_infra_vm_firewalld_rules_formatted }}
-
 stackhpc_ansible_control_infra_vm_firewalld_rules_template: []
-
-stackhpc_ansible_control_infra_vm_firewalld_rules_extra: []
 
 ###############################################################################
 # Seed firewalld rules
-
-stackhpc_seed_firewalld_rules: "{{ stackhpc_seed_firewalld_rules_default + stackhpc_seed_firewalld_rules_extra }}"
-
-stackhpc_seed_firewalld_rules_default: |
-  {% set stackhpc_seed_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_seed_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_seed_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_seed_firewalld_rules_formatted }}
 
 stackhpc_seed_firewalld_rules_template:
   # Pulp server
@@ -390,26 +292,7 @@ stackhpc_seed_firewalld_rules_template:
     enabled: "{{ stackhpc_enable_redfish_exporter | default(false) }}"
   # TODO: Rules if SNAT enabled on seed
 
-stackhpc_seed_firewalld_rules_extra: []
-
 ###############################################################################
 # Seed Hypervisor firewalld rules
 
-stackhpc_seed_hypervisor_firewalld_rules: "{{ stackhpc_seed_hypervisor_firewalld_rules_default + stackhpc_seed_hypervisor_firewalld_rules_extra }}"
-
-stackhpc_seed_hypervisor_firewalld_rules_default: |
-  {% set stackhpc_seed_hypervisor_firewalld_rules_formatted = [] %}
-  {% for ruleset in stackhpc_seed_hypervisor_firewalld_rules_template %}
-  {% if ruleset.enabled | bool %}
-  {% for rule in ruleset.rules %}
-  {% if rule.network in network_interfaces and rule.network | net_zone %}
-  {% set _ = stackhpc_seed_hypervisor_firewalld_rules_formatted.append(rule | combine({'zone': rule.network | net_zone })) %}
-  {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% endfor %}
-  {{ stackhpc_seed_hypervisor_firewalld_rules_formatted }}
-
 stackhpc_seed_hypervisor_firewalld_rules_template: []
-
-stackhpc_seed_hypervisor_firewalld_rules_extra: []

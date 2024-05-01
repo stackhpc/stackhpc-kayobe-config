@@ -230,22 +230,11 @@ Seed Hypervisor firewalld Configuration
 Custom rules
 ------------
 
-Custom firewalld rules can be added for any of the following groups using their
-corresponding variables:
+Custom firewalld rules can be added to ``stackhpc_firewalld_rules_extra``
 
-* All hosts - ``stackhpc_common_firewalld_rules_extra``
-* Controllers - ``stackhpc_controller_firewalld_rules_extra``
-* Compute - ``stackhpc_compute_firewalld_rules_extra``
-* Storage - ``stackhpc_storage_firewalld_rules_extra``
-* Monitoring - ``stackhpc_monitoring_firewalld_rules_extra``
-* Wazuh Manager Infrastructure VM - ``stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra``
-* Ansible Control host Infrastructure VM - ``stackhpc_ansible_control_infra_vm_firewalld_rules_extra``
-* Seed - ``stackhpc_seed_firewalld_rules_extra``
-* Seed Hypervisor - ``stackhpc_seed_hypervisor_firewalld_rules_extra``
-
-Each variable is a list of firewall rules to apply. Each item is a dict
-containing arguments to pass to the firewalld module. The variables can be
-defined as group vars, host vars, or in the extra vars files.
+The variable is a list of firewall rules to apply. Each item is a dict
+containing arguments to pass to the firewalld module. The variable can be
+defined as a group var or host var in the kayobe inventory.
 
 The example below would enable SSH on the ``provision_oc`` network, and disable
 UDP port 1000 on the ``admin_oc`` network for the Wazuh manager Infrastructure
@@ -254,7 +243,7 @@ VM:
 .. code-block:: yaml
    :caption: ``etc/kayobe/inventory/group_vars/wazuh_manager/firewall``
 
-   stackhpc_wazuh_manager_infra_vm_firewalld_rules_extra:
+   stackhpc_firewalld_rules_extra:
      -  service: ssh
         network: "{{ provision_oc_net_name }}"
         zone: "{{ provision_oc_net_name | net_zone }}"
@@ -264,11 +253,10 @@ VM:
         zone: "{{ admin_oc_net_name | net_zone }}"
         state: disabled
 
-Beware that if any rules are found that directly conflict (a service or port is
-both enabled and disabled) the configuration will fail. There is currently no
-way to override rules in the standard configuration, other than to find the
-rule and delete it manually. If you find a standard rule that does not work for
-your deployment, please consider merging your changes back in to upstream SKC.
+Extra rules have higher precedence than the default rules, but are not
+validated before being applied. Use with caution. If you need to add a custom
+rule, consider adding it to the default rule list with an appropriate boolean
+condition, and where possible merge your changes back into upstream SKC.
 
 Validation
 ----------
@@ -282,9 +270,9 @@ that will be applied to a host.
 
 If the command above prints a template, rather than a clean list of rules, the
 configuration is invalid. The kayobe configuration dump command can be used on
-other variables such as ``stackhpc_firewalld_rules_unverified`` or
-``stackhpc_*_firewalld_rules`` to debug the configuration. See the `How it
-works`_ section for more details.
+other variables such as ``stackhpc_firewalld_rules_default`` or
+``stackhpc_*_firewalld_rules_template`` to debug the configuration. See the
+`How it works`_ section for more details.
 
 Kolla-Ansible configuration
 ---------------------------
@@ -342,20 +330,17 @@ rules. The rules can then be enabled and disabled in sets, based on properties
 of the cloud. For example, if ``kolla_enable_designate`` is true, a set of
 rules will be enabled in ``stackhpc_controller_firewalld_rules_template``.
 
-The rules are then formatted into a single list of the enabled default rules
-for a group e.g. ``stackhpc_controller_firewalld_rules_default`` for
-controllers. It is worth noting that the rules are also manipulated to reduce
+The templates are combined into a single list,
+``stackhpc_firewalld_rules_template``. Templates are selected according to the
+host's group membership, as well as a set of common rules, which is enabled for
+all hosts.
+
+The rules are then formatted into a single list of the enabled default rules:
+``stackhpc_firewalld_rules_default``. The Rules are manipulated to reduce
 duplication. When no zone is specified in a rule template, it is inferred from
-the network.
+the network. They are also validated. Conflicting rules will result in an
+error. Non-applicable rules are dropped.
 
 The default rules are combined with any extra rules defined for the deployment.
-For controllers, these are ``stackhpc_controller_firewalld_rules_extra``. The
-complete set of controller firewalld rules is
-``stackhpc_controller_firewalld_rules``.
-
-Each group-specific list of rules is combined into
-``stackhpc_firewalld_rules_unverified`` based on the host's group membership,
-as well as a set of common rules, which is enabled for all hosts.
-
-``stackhpc_firewalld_rules`` is the final list of rules that have been verified
-for correctness.
+The complete set of controller firewalld rules is
+``stackhpc_firewalld_rules``.
