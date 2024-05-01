@@ -10,7 +10,16 @@ kolla_docker_namespace: stackhpc-dev
 
 # Host and port of a package repository mirror.
 # Build and deploy the development Pulp service repositories.
-stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+# Use Ark's package repositories to install packages.
+stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
+stackhpc_repo_mirror_username: "skc-ci-aio"
+stackhpc_repo_mirror_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  36373536303261313239613761653261663437356566343865383563346334396136653666383765
+  6634396534653865633936653038383132396532386665370a366562383166353966663838316266
+  65333133636330623936623438666632316238376264313234346333346461623765633163353635
+  6565326136313564320a303231383438333062643533333335663034613439393665656162626137
+  65356232656164663831316530333136336362393636656566353635306565626636
 
 # Build and deploy released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
@@ -46,12 +55,5 @@ stackhpc_include_os_minor_version_in_repo_url: true
 # Push built images to the development Pulp service registry.
 stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
 
-# Username and password of container registry.
-stackhpc_docker_registry_username: "stackhpc-kayobe-ci"
-stackhpc_docker_registry_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          33356166343730633865363431306535613736663764373034396132356131343066636530393534
-          3262646436663034633131316438633230383330633533350a386365313239303464383636376338
-          61656662333939333063343131633963636431663136643137636664633233633133396339613861
-          3038613063626138610a333566393937643630366564653163613364323965396130613433316537
-          39653335393831633362343934363866346262613166393561666336623062393935
+stackhpc_docker_registry_username: "{{ stackhpc_repo_mirror_username }}"
+stackhpc_docker_registry_password: "{{ stackhpc_repo_mirror_password }}"
