@@ -15,14 +15,17 @@ The firewall configuration is provided in
 Enabling StackHPC firewalld rules
 =================================
 
-The standardised firewalld configuration is not used by default and must be
-actively opted into. This can be done as follows:
+The standardised firewalld configuration is not enabled by default and must be
+actively opted into. To do so, make the following changes in
+``etc/kayobe/<group>.yml`` (or
+``etc/kayobe/environments/<enviroment>/<group>.yml`` if environments are being
+used).
 
 Controller firewalld Configuration
 ----------------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/controllers.yml``
+   :caption: ``controllers.yml``
 
    ###############################################################################
    # Controller node firewalld configuration.
@@ -51,7 +54,7 @@ Compute firewalld Configuration
 -------------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/compute.yml``
+   :caption: ``compute.yml``
 
    ###############################################################################
    # Compute node firewalld configuration.
@@ -80,7 +83,7 @@ Storage firewalld Configuration
 -------------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/storage.yml``
+   :caption: ``storage.yml``
 
    ###############################################################################
    # storage node firewalld configuration.
@@ -109,7 +112,7 @@ Monitoring firewalld Configuration
 ----------------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/monitoring.yml``
+   :caption: ``monitoring.yml``
 
    ###############################################################################
    # monitoring node firewalld configuration.
@@ -141,7 +144,7 @@ The standard firewalld configuration has rules for wazuh-manager and Ansible
 control host Infrastructure VMs.
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/infra-vms.yml``
+   :caption: ``infra-vms.yml``
 
    ###############################################################################
    # Infrastructure VM node firewalld configuration
@@ -170,7 +173,7 @@ Seed firewalld Configuration
 ----------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/seed.yml``
+   :caption: ``seed.yml``
 
    ###############################################################################
    # seed node firewalld configuration.
@@ -199,7 +202,7 @@ Seed Hypervisor firewalld Configuration
 ---------------------------------------
 
 .. code-block:: yaml
-   :caption: ``etc/kayobe/seed_hypervisor.yml``
+   :caption: ``seed_hypervisor.yml``
 
    ###############################################################################
    # seed_hypervisor node firewalld configuration.
@@ -230,6 +233,7 @@ Custom rules
 Custom firewalld rules can be added for any of the following groups using their
 corresponding variables:
 
+* All hosts - ``stackhpc_common_firewalld_rules_extra``
 * Controllers - ``stackhpc_controller_firewalld_rules_extra``
 * Compute - ``stackhpc_compute_firewalld_rules_extra``
 * Storage - ``stackhpc_storage_firewalld_rules_extra``
@@ -240,7 +244,8 @@ corresponding variables:
 * Seed Hypervisor - ``stackhpc_seed_hypervisor_firewalld_rules_extra``
 
 Each variable is a list of firewall rules to apply. Each item is a dict
-containing arguments to pass to the firewalld module.
+containing arguments to pass to the firewalld module. The variables can be
+defined as group vars, host vars, or in the extra vars files.
 
 The example below would enable SSH on the ``provision_oc`` network, and disable
 UDP port 1000 on the ``admin_oc`` network for the Wazuh manager Infrastructure
@@ -265,8 +270,8 @@ way to override rules in the standard configuration, other than to find the
 rule and delete it manually. If you find a standard rule that does not work for
 your deployment, please consider merging your changes back in to upstream SKC.
 
-Applying changes
-----------------
+Validation
+----------
 
 The ``kayobe configuration dump`` command can be used to view all the rules
 that will be applied to a host.
@@ -280,6 +285,9 @@ configuration is invalid. The kayobe configuration dump command can be used on
 other variables such as ``stackhpc_firewalld_rules_unverified`` or
 ``stackhpc_*_firewalld_rules`` to debug the configuration. See the `How it
 works`_ section for more details.
+
+Kolla-Ansible configuration
+---------------------------
 
 Ensure Kolla Ansible opens up ports in firewalld for services on the public
 API network:
@@ -295,7 +303,10 @@ configuration is to set the internal network zone to ``trusted`` and every
 other zone to the name of the network. See
 ``etc/kayobe/environments/ci-multinode/networks.yml`` for a practical example.
 
-Apply the changes:
+Applying changes
+----------------
+
+Use the ``kayobe * host configure`` commands to apply the changes:
 
 .. code-block:: bash
 
