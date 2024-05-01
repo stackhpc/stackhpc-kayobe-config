@@ -1,0 +1,88 @@
+---
+- name: Deploy RADOS gateway usage exporter
+  hosts: monitoring
+  gather_facts: false
+  vars:
+    venv: "{{ virtualenv_path }}/openstack"
+  tasks:
+    - name: Check ec2 credential for admin
+      command: >
+        {{ venv }}/bin/openstack
+        ec2 credentials list --user admin
+        --format json
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: localhost
+      register: credential_check
+
+    - name: Create ec2 credential if there's none
+      command: >
+        {{ venv }}/bin/openstack
+        ec2 credentials create --user admin
+        --format json
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: localhost
+      when: "{{ credential_check.stdout == [] }}"
+
+    - name: Query ec2 credential for admin
+      command: >
+        {{ venv }}/bin/openstack
+        ec2 credentials list --user admin
+        --format json
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: localhost
+      register: credential
+
+    - name: Get object storage endpoint
+      command: >
+        {{ venv }}/bin/openstack
+        endpoint list --service object-store --interface internal
+        --format json
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: localhost
+      register: endpoint
+
+    - name: Ensure radosgw_usage_exporter container is running
+      community.docker.docker_container:
+        name: radosgw_usage_exporter
+        image: ghcr.io/stackhpc/radosgw_usage_exporter:0.1.0
+        network_mode: host
+        env:
+          RADOSGW_SERVER: "{{ radosgw_server }}"
+          ADMIN_ENTRY: admin
+          ACCESS_KEY: "{{ ec2.Access }}"
+          SECRET_KEY: "{{ ec2.Secret }}"
+      vars:
+        ec2: "{{ credential.stdout | from_json | first }}"
+        host: "{{ endpoint.stdout | from_json | first }}"
+        radosgw_server: "{{ host.URL | regex_replace('(https?://)([0-9.]+):([0-9]+)/.*', '\\1\\2:\\3') }}"
+      become: true
+
+    - name: Get target ip addresses
+      set_fact:
+        prometheus_targets: "{{ prometheus_targets | default([]) +[( internal_net_name | net_ip( item ) + ':9242' )] }}"
+      loop: "{{ groups['monitoring'] }}"
+
+    - name: Ensure radosgw_usage_exporter is targeted by prometheus-server
+      blockinfile:
+        path: /etc/kolla/prometheus-server/prometheus.yml
+        block: |
+          - honor_labels: true
+            job_name: ceph_radosgw_usage_exporter
+            scrape_interval: 15s
+            static_configs:
+            - targets:
+            {% for item in prometheus_targets %}
+              - {{ item }}
+            {% endfor %}
+          metric_relabel_configs:
+            - source_labels: [owner,user]
+              target_label: tenant_id
+              separator: ""
+              regex: (.+)
+              replacement: ${1}
+      become: true
+
+    - name: Restart prometheus-server
+      ansible.builtin.command:
+        cmd: systemctl restart kolla-prometheus_server-container
+      become: true
