@@ -1,0 +1,59 @@
+---
+###############################################################################
+# Network interface definitions for the controllers group.
+
+external_net_names:
+  - provision_oc
+  - external_intranet
+
+mgmt_oc_interface: "{{ undef(hint='Name of bridge interface for 1G BMC network interface') }}"
+mgmt_oc_bridge_ports:
+  - "{{ undef(hint='Name of 1G BMC network interface') }}"
+
+provision_oc_interface: "{{ undef(hint='Name of bridge interface for 10G LAN-on-motherboard interface') }}"
+provision_oc_bridge_ports:
+  - "{{ undef(hint='Name of 10G LAN-on-motherboard interface') }}"
+
+bond0_interface: "bond0"
+bond0_bond_slaves:
+  - "{{ undef(hint='Name of first 100G High-Speed Network interface') }}"
+  - "{{ undef(hint='Name of second 100G High-Speed Network interface') }}"
+bond0_bond_miimon: 100
+bond0_bond_mode: "802.3ad"
+bond0_bond_lacp_rate: "fast"
+bond0_bond_xmit_hash_policy: "layer3+4"
+bond0_mtu: 9000
+
+internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
+
+storage_interface: "{{ bond0_interface }}.{{ storage_vlan }}"
+
+external_intranet_interface: "br{{ bond0_interface }}"
+external_intranet_bridge_ports:
+  - "{{ bond0_interface }}"
+
+tunnel_interface: "{{ bond0_interface }}.{{ tunnel_interface }}"
+
+# Use policy-based routing on the admin API network for ironic. This ensures
+# that during provisioning and cleaning, nodes accessing the admin API network
+# can be routed to without routing asymmetrically which would cause packets to be
+# dropped by the kernel.
+network_route_tables:
+  - name: admin-api
+    id: 1
+
+# Ubuntu:
+internal_net_rules:
+  - from: "{{ internal_net_name | net_cidr }}"
+    table: admin-api
+
+# IP routes for the admin-api routing table.
+internal_net_routes:
+  - cidr: "{{ provision_wl_net_name | net_cidr }}"
+    gateway: "{{ internal_net_provision_wl_gateway }}"
+    table: admin-api
+  - cidr: "{{ cleaning_net_name | net_cidr }}"
+    gateway: "{{ internal_net_cleaning_gateway }}"
+    table: admin-api
+  - cidr: "{{ internal_net_name | net_cidr }}"
+    table: admin-api
