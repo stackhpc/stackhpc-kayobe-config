@@ -254,6 +254,33 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
+Configure Wazuh Dashboard's Server Host 
+---------------------------------------
+
+By default, the Dashboard will be assigned the ``0.0.0.0`` server host address, meaning it will likely inheret the server host IP address from the last network interface to be added to ``infra-vm`` within ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/network-interfaces.yml``. Due to this uncertainty, as well as the different networks likely having different firewall rulesets which may interfere with the Wazuh Dashboard service, it is best practice to manually set the dashboard's server host.
+
+In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ <network-name-prefix>_net_name | net_ip }}"
+
+Where ``<network-name-prefix>`` refers to the unique name attached to the front of the various network roles, often defined as a list of ``net_name``s at the top of the Kayobe network configuration file, ``$KAYOBE_CONFIG_PATH/environments/<env_name>/networks.yml``. For example, to assign the Wazuh dashboard the server host attatched to the ``external_intranet`` network, one may find within ``networks.yml`` that ``public_net_name: external_intranet`` is set, resulting in the following Wazuh dashboard configuration:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ public_net_name | net_ip }}"
+
+If this is being added post deployment the user will be required to re-run the ``wazuh-manager.yml`` ansible playbook via the following command:
+
+.. code-block:: yaml
+   :caption: Deploy or re-run the ``wazuh-manager.yml`` ansible playbook to apply changes made to the configuration.
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+
+More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section<Deploy>`.
 
 TLS (optional)
 --------------
