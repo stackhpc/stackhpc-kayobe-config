@@ -280,7 +280,7 @@ If this is being added post deployment the user will be required to re-run the `
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
 
-More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section<Deploy>`.
+More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section <Deploy>`.
 
 TLS (optional)
 --------------
@@ -344,6 +344,8 @@ Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
 the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
 include this in your deployment, simply copy it to
 ``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
+
+.. _Deploy:
 
 Deploy
 ------
