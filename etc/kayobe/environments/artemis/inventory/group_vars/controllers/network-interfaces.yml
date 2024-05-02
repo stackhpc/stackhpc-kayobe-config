@@ -6,13 +6,12 @@ external_net_names:
   - provision_oc
   - external_intranet
 
-mgmt_oc_interface: "{{ undef(hint='Name of bridge interface for 1G BMC network interface') }}"
-mgmt_oc_bridge_ports:
-  - "{{ undef(hint='Name of 1G BMC network interface') }}"
-
 provision_oc_interface: "{{ undef(hint='Name of bridge interface for 10G LAN-on-motherboard interface') }}"
 provision_oc_bridge_ports:
   - "{{ undef(hint='Name of 10G LAN-on-motherboard interface') }}"
+
+mgmt_wl_interface: "{{ provision_oc_interface }}.{{ mgmt_wl_vlan }}"
+provision_wl_interface: "{{ provision_oc_interface }}.{{ provision_wl_vlan }}"
 
 bond0_interface: "bond0"
 bond0_bond_slaves:
@@ -28,9 +27,11 @@ internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
 
 storage_interface: "{{ bond0_interface }}.{{ storage_vlan }}"
 
-external_intranet_interface: "br{{ bond0_interface }}"
-external_intranet_bridge_ports:
+brbond0_interface: "br{{ bond0_interface }}"
+brbond0_bridge_ports:
   - "{{ bond0_interface }}"
+
+external_intranet_interface: "{{ brbond0_interface }}.{{ external_intranet_untagged_vlan }}"
 
 tunnel_interface: "{{ bond0_interface }}.{{ tunnel_interface }}"
 
@@ -43,17 +44,15 @@ network_route_tables:
     id: 1
 
 # Ubuntu:
-internal_net_rules:
+internal_rules:
   - from: "{{ internal_net_name | net_cidr }}"
     table: admin-api
 
 # IP routes for the admin-api routing table.
-internal_net_routes:
+internal_routes:
   - cidr: "{{ provision_wl_net_name | net_cidr }}"
-    gateway: "{{ internal_net_provision_wl_gateway }}"
+    gateway: "{{ internal_provision_wl_gateway }}"
     table: admin-api
-  - cidr: "{{ cleaning_net_name | net_cidr }}"
-    gateway: "{{ internal_net_cleaning_gateway }}"
-    table: admin-api
+
   - cidr: "{{ internal_net_name | net_cidr }}"
     table: admin-api

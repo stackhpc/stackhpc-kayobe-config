@@ -1,5 +1,25 @@
 ---
 ###############################################################################
+# Ironic inspector processing configuration.
+
+# List of of additional inspector processing plugins.
+inspector_processing_hooks_extra:
+  # Adds switch system name to ironic port local_link_connection.
+  - system_name_llc
+  # Assigns physical_network to ironic port based on switch system name.
+  - system_name_physnet
+
+# Which MAC addresses to add as ports during introspection. One of 'all',
+# 'active' or 'pxe'.
+inspector_add_ports: active
+
+# Which ports to keep after introspection. One of 'all', 'present', or 'added'.
+inspector_keep_ports: added
+
+# The Ironic driver with which to register newly discovered nodes.
+inspector_discovery_enroll_node_driver: idrac
+
+###############################################################################
 # Ironic inspector introspection rules configuration.
 
 # List of additional ironic inspector rules.
@@ -34,6 +54,14 @@ inspector_rule_redfish_address:
     - action: "set-attribute"
       path: "driver_info/redfish_address"
       value: "{data[inventory][bmc_address]}"
+
+###############################################################################
+# Inspection store configuration.
+# The inspection store provides a Swift-like service for storing inspection
+# data which may be useful in environments without Swift.
+
+# Whether the inspection data store is enabled.
+inspector_store_enabled: false
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
