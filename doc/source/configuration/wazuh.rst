@@ -275,7 +275,7 @@ Where ``<network-name-prefix>`` refers to the unique name attached to the front 
 
 If this is being added post deployment the user will be required to re-run the ``wazuh-manager.yml`` ansible playbook via the following command:
 
-.. code-block:: yaml
+.. code-block:: bash
    :caption: Deploy or re-run the ``wazuh-manager.yml`` ansible playbook to apply changes made to the configuration.
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
