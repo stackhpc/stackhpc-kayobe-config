@@ -8,7 +8,9 @@ Configuring in kayobe-config
 By default, CloudKitty uses Gnocchi and Ceilometer as the collector and fetcher
 backends. Unless the system has a specific reason not to, we recommend instead
 using Prometheus as the backend for both. The following instructions explain
-how to do this.
+how to do this. Also, see the `Kolla Ansible docs on CloudKitty
+<https://docs.openstack.org/kolla-ansible/latest/reference/rating/cloudkitty-guide.html>`__
+for more details.
 
 Enable CloudKitty and disable InfluxDB, as we are using OpenSearch as the
 storage backend. Set the following in ``kolla.yml``:
@@ -34,15 +36,14 @@ following in ``kolla/globals.yml``:
   cloudkitty_storage_backend: elasticsearch
 
 If you have TLS enabled, you will also need to set the cafile for Prometheus
-and Elasticsearch. Set the following in ``kolla/globals.yml``, and make sure
-that ``openstack_cacert`` is appropriately set as a Kayobe variable too. It
-defaults to ``openstack_cacert: "{{ lookup('env', 'OS_CACERT') }}"``, but you
-may prefer to set the path explicitly.
+and Elasticsearch. Set the following in ``kolla/globals.yml``.
 
 .. code-block:: yaml
 
+  {% raw %}
   cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
   cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
+  {% endraw %}
 
 The default collection period is one hour, which is likely too long for most
 systems as CloudKitty charges by the **entire** collection period if any usage
