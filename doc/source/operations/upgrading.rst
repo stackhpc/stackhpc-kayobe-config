@@ -127,6 +127,20 @@ Some things to watch out for:
      mysql -u root -p  keystone
      # Enter the database password when prompted.
      SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
+
+ If you have trusts that need updating, you can add the required role to the trust with the following SQL command:
+
+ .. code-block:: sql
+
+      UPDATE trust_role
+      SET role_id = '<MEMBER-ROLE-ID>'
+      WHERE role_id = '<OLD-ROLE-ID>'
+      AND NOT EXISTS (
+         SELECT 1
+         FROM trust_role
+         WHERE trust_id = trust_role.trust_id
+            AND role_id = '<MEMBER-ROLE-ID>'
+      );
 * Policies may require the ``reader`` role rather than the non-standardised
   ``observer`` role. The following error was observed in Horizon: ``Policy doesn’t allow os_compute_api:os-simple-tenant-usage:show to be performed``,
   when the user only had the observer role in the project. It is best to keep the observer role until all projects have the ``enforce_new_defaults``
