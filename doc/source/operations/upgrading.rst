@@ -141,6 +141,7 @@ Some things to watch out for:
          WHERE trust_id = trust_role.trust_id
             AND role_id = '<MEMBER-ROLE-ID>'
       );
+
 * Policies may require the ``reader`` role rather than the non-standardised
   ``observer`` role. The following error was observed in Horizon: ``Policy doesn’t allow os_compute_api:os-simple-tenant-usage:show to be performed``,
   when the user only had the observer role in the project. It is best to keep the observer role until all projects have the ``enforce_new_defaults``
