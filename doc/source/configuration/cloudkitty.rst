@@ -38,7 +38,7 @@ following in ``kolla/globals.yml``:
 If you have TLS enabled, you will also need to set the cafile for Prometheus
 and Elasticsearch. Set the following in ``kolla/globals.yml``.
 
-.. code-block:: yaml
+.. code-block::
 
   {% raw %}
   cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
