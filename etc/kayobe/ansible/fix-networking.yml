@@ -10,11 +10,16 @@
     # Work around no known_hosts entry on first boot.
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
   tasks:
-    - name: Ensure `hosts` file contains pulp entries
+    - name: Ensure hosts are reachable
+      ansible.builtin.wait_for_connection:
+
+    - name: Ensure `hosts` file contains pulp and API entries
       blockinfile:
         path: /etc/hosts
-        marker: "# {mark} Kayobe Pulp entries"
+        marker: "# {mark} Kayobe entries"
         block: |
           10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
           10.205.3.187 pulp-server pulp-server.internal.sms-cloud
+          192.168.37.2 internal.infra.mos.{{ root_domain }}
+          192.168.39.2 public.infra.mos.{{ root_domain }}
       become: true
