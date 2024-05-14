@@ -266,7 +266,7 @@ In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/
 
     dashboard_server_host: "{{ <network-name-prefix>_net_name | net_ip }}"
 
-Where ``<network-name-prefix>`` refers to the unique name attached to the front of the various network roles, often defined as a list of ``net_name``s at the top of the Kayobe network configuration file, ``$KAYOBE_CONFIG_PATH/environments/<env_name>/networks.yml``. For example, to assign the Wazuh dashboard the server host attatched to the ``external_intranet`` network, one may find within ``networks.yml`` that ``public_net_name: external_intranet`` is set, resulting in the following Wazuh dashboard configuration:
+For example:
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
