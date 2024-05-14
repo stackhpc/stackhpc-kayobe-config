@@ -257,7 +257,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 Configure Wazuh Dashboard's Server Host 
 ---------------------------------------
 
-By default, the Dashboard will be hosted on a random IP. It is best practice to manually set the dashboard's server host.
+It is best practice to manually set the dashboard's server host.
 
 In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
 
