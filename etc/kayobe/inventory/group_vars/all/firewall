@@ -48,17 +48,19 @@ stackhpc_firewalld_rules_default: |
   {% if rule.zone is not defined %}
   {% set rule = rule | combine({'zone': rule.network | net_zone }) %}
   {% endif %}
+  {% if rule not in stackhpc_firewalld_rules_formatted %}
   {% if rule | ansible.utils.remove_keys('state') in stackhpc_firewalld_rules_formatted | map('ansible.utils.remove_keys', 'state') %}
-  {% set stackhpc_firewalld_rules_formatted = 'Invalid configuration! Two matching firewalld rules probably exist with different states' + 1 %}
+  {% set _ = stackhpc_firewalld_rules_formatted.append({'state':'failure'}) %}
   {% elif rule.network is not defined %}
   {% set _ = stackhpc_firewalld_rules_formatted.append(rule) %}
   {% elif rule.network in network_interfaces and rule.network | net_zone %}
   {% set _ = stackhpc_firewalld_rules_formatted.append(rule) %}
   {% endif %}
+  {% endif %}
   {% endfor %}
   {% endif %}
   {% endfor %}
-  {{ stackhpc_firewalld_rules_formatted }}
+  {{ undef(hint='ERROR: Conflicting firewall rules found') if ({'state':'failure'} in stackhpc_firewalld_rules_formatted) else stackhpc_firewalld_rules_formatted }}
 
 stackhpc_firewalld_rules_template: |
   {{ stackhpc_common_firewalld_rules_template +
@@ -70,6 +72,23 @@ stackhpc_firewalld_rules_template: |
      (stackhpc_seed_hypervisor_firewalld_rules_template if 'seed-hypervisor' in group_names else []) +
      (stackhpc_wazuh_manager_infra_vm_firewalld_rules_template if 'wazuh-manager' in group_names else []) +
      (stackhpc_ansible_control_infra_vm_firewalld_rules_template if inventory_hostname == 'localhost' else []) }}
+
+###############################################################################
+# Debug Vars
+
+# This variable is not applied anywhere. It exists for debugging purpouses
+# only. Print it with:
+# kayobe configuration dump --var-name stackhpc_firewalld_rules_debug
+stackhpc_firewalld_rules_debug: |
+    {% set stackhpc_firewalld_services_debug = [] %}
+    {% for rule in stackhpc_firewalld_rules %}
+    {% if rule.service is defined %}
+    {% set _ = stackhpc_firewalld_services_debug.append(rule.service + ' ' + rule.state + ' ' + rule.zone | default()) %}
+    {% else %}
+    {% set _ = stackhpc_firewalld_services_debug.append(rule.port + ' ' + rule.state + ' ' + rule.zone | default()) %}
+    {% endif %}
+    {% endfor %}
+    {{ stackhpc_firewalld_services_debug | list }}
 
 ###############################################################################
 # Extra firewalld rules

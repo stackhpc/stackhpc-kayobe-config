@@ -253,26 +253,10 @@ VM:
         zone: "{{ admin_oc_net_name | net_zone }}"
         state: disabled
 
-Extra rules have higher precedence than the default rules, but are not
+Extra rules have higher precedence than the default rules but are not
 validated before being applied. Use with caution. If you need to add a custom
 rule, consider adding it to the default rule list with an appropriate boolean
 condition, and where possible merge your changes back into upstream SKC.
-
-Validation
-----------
-
-The ``kayobe configuration dump`` command can be used to view all the rules
-that will be applied to a host.
-
-.. code-block:: bash
-
-   kayobe configuration dump --var-name stackhpc_firewalld_rules --limit <host>
-
-If the command above prints a template, rather than a clean list of rules, the
-configuration is invalid. The kayobe configuration dump command can be used on
-other variables such as ``stackhpc_firewalld_rules_default`` or
-``stackhpc_*_firewalld_rules_template`` to debug the configuration. See the
-`How it works`_ section for more details.
 
 Kolla-Ansible configuration
 ---------------------------
@@ -291,10 +275,65 @@ configuration is to set the internal network zone to ``trusted`` and every
 other zone to the name of the network. See
 ``etc/kayobe/environments/ci-multinode/networks.yml`` for a practical example.
 
+Validation
+----------
+
+The ``kayobe configuration dump`` command can be used to view all the rules
+that will be applied to a host.
+
+.. code-block:: bash
+
+   kayobe configuration dump --var-name stackhpc_firewalld_rules --limit <host>
+
+A shorter version, ``stackhpc_firewalld_rules_debug`` prints the rules in a
+simplified format:
+
+.. code-block:: bash
+
+   kayobe configuration dump --var-name stackhpc_firewalld_rules_debug --limit <host>
+
+If the commands above print a template, rather than a list of rules, the
+configuration may be invalid. The ``kayobe configuration dump`` command can be
+used on other variables such as ``stackhpc_firewalld_rules_default`` or
+``stackhpc_*_firewalld_rules_template`` to debug the configuration. See the
+`How it works`_ section for more details.
+
+It can be useful to print the active ports on each type of host, to create
+rules for running services. The internal network is currently left open. The
+below command will print all other open ports:
+
+.. code-block:: bash
+
+   ss -lntpu | grep --invert-match '<internal net ip>'
+
+It is strongly recommended that you dry-run the changes using ``--diff`` and
+``--check`` before applying to a production system:
+
+.. code-block:: bash
+   :caption: ``Overcloud diff example``
+
+   kayobe overcloud host configure -t firewall --diff --check
+
 Applying changes
 ----------------
 
-Use the ``kayobe * host configure`` commands to apply the changes:
+Before applying these changes, you should be completely sure you are not going
+to lock yourself out of any hosts. If you are deploying these changes to a test
+environment, it might be appropriate to set a password on the stack user so
+that you can access the host through a BMC or horizon console.
+
+The following Kayobe command can be used to set a password on all overcloud
+hosts:
+
+.. code-block:: bash
+
+   kayobe overcloud host command run --command "echo 'stack:super-secret-password' | sudo chpasswd" --show-output
+
+Changes should be applied to controllers one at a time to ensure connectivity
+is not lost.
+
+Once you are sure you know what you are doing, use the ``kayobe * host
+configure`` commands to apply the firewall changes:
 
 .. code-block:: bash
 
@@ -304,7 +343,13 @@ Use the ``kayobe * host configure`` commands to apply the changes:
    kayobe seed host configure -t network,firewall
    # For Infrastructure VM hosts
    kayobe infra vm host configure -t network,firewall
-   # For Overcloud hosts
+   # For the First Controller
+   kayobe overcloud host configure -t network,firewall -l controllers[0]
+   # For the Second Controller
+   kayobe overcloud host configure -t network,firewall -l controllers[1]
+   # For the Third Controller
+   kayobe overcloud host configure -t network,firewall -l controllers[2]
+   # For the rest of the Overcloud hosts
    kayobe overcloud host configure -t network,firewall
 
 How it works
