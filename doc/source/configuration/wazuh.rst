@@ -257,7 +257,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 Configure Wazuh Dashboard's Server Host 
 ---------------------------------------
 
-It is best practice to manually set the dashboard's server host.
+It is common to want to configure the Wazuh dashboard to serve on a different network than the overcloud provisioning network used for Wazuh's internal communication.
 
 In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
 
