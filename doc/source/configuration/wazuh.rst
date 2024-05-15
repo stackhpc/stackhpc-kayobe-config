@@ -254,7 +254,7 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
-Configure Wazuh Dashboard's Server Host 
+Configure Wazuh Dashboard's Server Host
 ---------------------------------------
 
 It is common to want to configure the Wazuh dashboard to serve on a different network than the overcloud provisioning network used for Wazuh's internal communication.
