@@ -1,0 +1,97 @@
+---
+- name: Gather unique NVMe disk models and generate a prepopulated variable template
+  hosts: overcloud
+  gather_facts: no
+  tasks:
+    - name: Get NVMe device information
+      command: "nvme list -o json"
+      register: nvme_list
+      changed_when: false
+      become: true
+
+    - name: Parse NVMe device model names
+      set_fact:
+        nvme_models: "{{ nvme_models | default([]) + [item.ModelNumber] }}"
+      loop: "{{ nvme_list.stdout | from_json | json_query('Devices[].{ModelNumber: ModelNumber}') }}"
+      changed_when: false
+
+    - name: Set gathered NVMe models as host facts
+      set_fact:
+        unique_nvme_models: "{{ nvme_models | unique }}"
+      run_once: true
+
+- name: Update stackhpc-monitoring.yml with DWPD ratings
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Aggregate unique NVMe models from all hosts
+      set_fact:
+        all_nvme_models: "{{ all_nvme_models | default([]) | union(hostvars[item].unique_nvme_models | default([])) }}"
+      with_items: "{{ groups['overcloud'] }}"
+      run_once: true
+
+    - name: Ensure unique NVMe models
+      set_fact:
+        all_nvme_models: "{{ all_nvme_models | unique }}"
+      run_once: true
+
+    - name: Create a dictionary for quick lookup of DWPD ratings
+      set_fact:
+        dwpd_lookup: "{{ stackhpc_dwpd_ratings | items2dict(key_name='model_name', value_name='rated_dwpd') }}"
+      when: stackhpc_dwpd_ratings is defined and stackhpc_dwpd_ratings | length > 0
+      run_once: true
+
+    - name: Generate new DWPD ratings section
+      set_fact:
+        new_dwpd_section: |
+          stackhpc_dwpd_ratings:
+          {% for model in all_nvme_models %}
+            - model_name: "{{ model }}"
+              rated_dwpd: "{{ dwpd_lookup[model] if model in dwpd_lookup else '#FILL ME IN' }}"
+          {% endfor %}
+      run_once: true
+
+    - name: Read the current stackhpc-monitoring.yml file
+      slurp:
+        src: "{{ playbook_dir }}/../stackhpc-monitoring.yml"
+      register: monitoring_file_content
+
+    - name: Ensure markers exist in the file
+      set_fact:
+        markers_exist: "{{ ('# BEGIN DWPD Ratings' in old_content) and ('# END DWPD Ratings' in old_content) }}"
+      vars:
+        old_content: "{{ monitoring_file_content.content | b64decode }}"
+      run_once: true
+
+    - name: Fail if markers do not exist
+      fail:
+        msg: "The stackhpc-monitoring.yml file does not contain the required markers: # BEGIN DWPD Ratings and # END DWPD Ratings"
+      when: not markers_exist
+      run_once: true
+
+    - name: Update the content with new DWPD ratings section
+      set_fact:
+        updated_monitoring_content: |
+          {% set old_content = monitoring_file_content.content | b64decode %}
+          {% set before_section = old_content.split('# BEGIN DWPD Ratings')[0] %}
+          {% set after_section = old_content.split('# END DWPD Ratings')[1] %}
+          {{ before_section }}# BEGIN DWPD Ratings
+          {{ new_dwpd_section }}
+          # END DWPD Ratings{{ after_section }}
+      when: markers_exist
+      run_once: true
+
+    - name: Write the updated content back to stackhpc-monitoring.yml
+      copy:
+        content: "{{ updated_monitoring_content }}"
+        dest: "{{ playbook_dir }}/../stackhpc-monitoring.yml"
+        backup: yes
+      when: markers_exist
+      run_once: true
+
+    - name: Print new DWPD ratings section
+      debug:
+        msg:
+          - "{{ new_dwpd_section }}"
+          - "PLEASE UPDATE stackhpc-monitoring.yml IF NEEDED AND REMEMBER TO COMMIT THE FILE TO GIT"
+      run_once: true
