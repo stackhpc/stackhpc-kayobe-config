@@ -7,6 +7,7 @@ KAYOBE_BRANCH=stackhpc/2023.1
 KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
 KAYOBE_AIO_LVM=true
 KAYOBE_CONFIG_EDIT_PAUSE=false
+AIO_RUN_TEMPEST=false
 
 if [[ ! -f $BASE_PATH/vault-pw ]]; then
     echo "Vault password file not found at $BASE_PATH/vault-pw"
@@ -95,7 +96,22 @@ kayobe overcloud host configure
 
 kayobe overcloud service deploy
 
-export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
-export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
-pushd $BASE_PATH/src/kayobe
-./dev/overcloud-test-vm.sh
+if $AIO_RUN_TEMPEST; then
+    pushd $BASE_PATH/src/kayobe-config
+    git submodule init
+    git submodule update
+    sudo DOCKER_BUILDKIT=1 docker build --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest --network host .
+    export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
+    mkdir -p tempest-artifacts
+    sudo -E docker run --name kayobe-automation --detach -it --rm --network host \
+    -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+    -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest \
+    /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+    sleep 300
+    sudo docker logs -f tempest
+else
+    export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
+    export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
+    pushd $BASE_PATH/src/kayobe
+    ./dev/overcloud-test-vm.sh
+fi

@@ -43,14 +43,21 @@ Run the setup script:
    ./automated-setup.sh
 
 The script will pull the current version of Kayobe and this repository, and
-then run the manual setup steps below. The script can be easily edited to use a
-different branch of Kayobe or this repository. The script will assume that your
-image is LVM-based and will expand the volume sizes to allow ansible
-dependencies to install correctly. If it is not, set ``KAYOBE_AIO_LVM`` to
-false.
+then run the manual setup steps below. The script can be easily edited with the
+following options:
 
-The deployment can be paused after cloning your Kayobe configuration to allow
-for custom edits, by setting ``KAYOBE_CONFIG_EDIT_PAUSE`` to ``true``.
+* ``BASE_PATH`` (default: ``~``) - Directory to deploy from. The directory must
+  exist before running the script.
+* ``KAYOBE_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of Kayobe
+  source code to use.
+* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of
+  ``stackhpc-kayobe-config`` to use.
+* ``KAYOBE_AIO_LVM`` (default: ``true``) - Whether the image uses LVM.
+* ``KAYOBE_CONFIG_EDIT_PAUSE`` (default: ``false``) - Option to pause
+  deployment after cloning the kayobe-config branch, so the environment can be
+  customised before continuing.
+* ``AIO_RUN_TEMPEST`` (default: ``false``) - Whether to run Tempest Refstack
+  after deployment instead of the default VM smoke test.
 
 Manual Setup
 ============
