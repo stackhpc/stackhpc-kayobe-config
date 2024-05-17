@@ -10,11 +10,6 @@ automates the manual setup steps below, and is recommended for most users.
 The manual setup steps are provided for reference, and for users who wish to
 make changes to the setup process.
 
-.. warning::
-
-    This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
-
 Prerequisites
 =============
 
@@ -48,10 +43,14 @@ Run the setup script:
    ./automated-setup.sh
 
 The script will pull the current version of Kayobe and this repository, and
-then run the manual setup steps below. The script can be easily edited to use
-a different branch of Kayobe or this repository. The script will automatically
-determine whether your image is LVM based, if so, it will expand the volume sizes
-to allow ansible dependencies to install correctly.
+then run the manual setup steps below. The script can be easily edited to use a
+different branch of Kayobe or this repository. The script will assume that your
+image is LVM-based and will expand the volume sizes to allow ansible
+dependencies to install correctly. If it is not, set ``KAYOBE_AIO_LVM`` to
+false.
+
+The deployment can be paused after cloning your Kayobe configuration to allow
+for custom edits, by setting ``KAYOBE_CONFIG_EDIT_PAUSE`` to ``true``.
 
 Manual Setup
 ============
