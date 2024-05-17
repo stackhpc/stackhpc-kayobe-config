@@ -65,18 +65,30 @@
               --timeout {{ sot_timeout }}
               -vv
           environment:
+            GRAFANA_URL: "{{ sot_grafana_url }}"
+            GRAFANA_USERNAME: "{{ sot_grafana_username }}"
+            GRAFANA_PASSWORD: "{{ sot_grafana_password }}"
             OPENSEARCH_HOSTS: "{{ sot_opensearch_hosts }}"
             OPENSEARCH_PORT: "{{ sot_opensearch_port }}"
             OPENSEARCH_TLS: "{{ sot_opensearch_tls }}"
+            OPENSEARCH_DASHBOARDS_URL: "{{ sot_opensearch_dashboards_url }}"
+            OPENSEARCH_DASHBOARDS_USERNAME: "{{ sot_opensearch_dashboards_username }}"
+            OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sot_opensearch_dashboards_password }}"
             PROMETHEUS_URL: "{{ sot_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sot_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sot_prometheus_password }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
+            sot_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
+            sot_grafana_username: "grafana_local_admin"
+            sot_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
             sot_opensearch_hosts: "{{ kolla_internal_fqdn }}"
             sot_opensearch_port: 9200
             sot_opensearch_tls: false
+            sot_opensearch_dashboards_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:5601"
+            sot_opensearch_dashboards_username: "opensearch"
+            sot_opensearch_dashboards_password: "{{ kolla_passwords.opensearch_dashboards_password }}"
             sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
             sot_prometheus_username: "admin"
             sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
