@@ -6,6 +6,7 @@ BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/2023.1
 KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
 KAYOBE_AIO_LVM=true
+KAYOBE_CONFIG_EDIT_PAUSE=false
 
 if [[ ! -f $BASE_PATH/vault-pw ]]; then
     echo "Vault password file not found at $BASE_PATH/vault-pw"
@@ -39,6 +40,12 @@ pushd src
 [[ -d kayobe ]] || git clone https://github.com/stackhpc/kayobe.git -b $KAYOBE_BRANCH
 [[ -d kayobe-config ]] || git clone https://github.com/stackhpc/stackhpc-kayobe-config kayobe-config -b $KAYOBE_CONFIG_BRANCH
 popd
+
+if $KAYOBE_CONFIG_EDIT_PAUSE; then
+   echo "Deployment is paused, edit configuration in another terminal"
+   echo "Press enter to continue"
+   read -s
+fi
 
 if ! sudo vgdisplay | grep -q lvm2; then
    rm $BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/inventory/group_vars/controllers/lvm.yml
