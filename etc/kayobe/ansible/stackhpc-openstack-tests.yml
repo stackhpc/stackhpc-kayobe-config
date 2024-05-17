@@ -65,6 +65,8 @@
               --timeout {{ sot_timeout }}
               -vv
           environment:
+            DOCKER_VERSION_MIN: "{{ sot_docker_version_min }}"
+            DOCKER_VERSION_MAX: "{{ sot_docker_version_max }}"
             GRAFANA_URL: "{{ sot_grafana_url }}"
             GRAFANA_USERNAME: "{{ sot_grafana_username }}"
             GRAFANA_PASSWORD: "{{ sot_grafana_password }}"
@@ -77,9 +79,14 @@
             PROMETHEUS_URL: "{{ sot_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sot_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sot_prometheus_password }}"
+            SELINUX_STATE: "{{ sot_selinux_state }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
+            # Inclusive min
+            sot_docker_version_min: "24.0.0"
+            # Exclusive max
+            sot_docker_version_max: "27.0.0"
             sot_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
             sot_grafana_username: "grafana_local_admin"
             sot_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
@@ -92,6 +99,7 @@
             sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
             sot_prometheus_username: "admin"
             sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+            sot_selinux_state: "{{ selinux_state }}"
       always:
         - name: Fetch results
           ansible.builtin.fetch:
