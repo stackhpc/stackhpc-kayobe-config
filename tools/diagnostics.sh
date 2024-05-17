@@ -1,53 +1,34 @@
 #!/bin/bash
 
-# NOTE(mgoddard): This has been adapted from tests/get_logs.sh in Kolla
-# Ansible.
+# NOTE(mgoddard): This has been adapted from
+# roles/kayobe-diagnostics/files/get_logs.sh in Kayobe.
 
 # Environment variables:
 # $LOG_DIR is the directory to copy logs to.
-# $CONFIG_DIR is the directory to copy configuration from.
-# $PREVIOUS_CONFIG_DIR is the directory to copy previous configuration, prior
-# to an upgrade, from.
 
+# TODO: Make this script more robust and use set -e.
 set +o errexit
+set -u
 
 copy_logs() {
-    cp -rnL /var/lib/docker/volumes/kolla_logs/_data/* ${LOG_DIR}/kolla/
-    if [[ -d ${CONFIG_DIR} ]]; then
-        cp -rnL ${CONFIG_DIR}/etc/kayobe/* ${LOG_DIR}/kayobe_configs
-        cp -rnL ${CONFIG_DIR}/etc/kolla/* ${LOG_DIR}/kolla_configs
-        cp -rnL /etc/kolla/* ${LOG_DIR}/kolla_node_configs
-        # Don't save the IPA images.
-        rm ${LOG_DIR}/kayobe_configs/kolla/config/ironic/ironic-agent.{kernel,initramfs}
-        rm ${LOG_DIR}/kolla_configs/config/ironic/ironic-agent.{kernel,initramfs}
-        rm ${LOG_DIR}/kolla_node_configs/ironic-http/ironic-agent.{kernel,initramfs}
-        rm ${LOG_DIR}/kolla_node_configs/ironic-tftp/ironic-agent.{kernel,initramfs}
-    fi
-    if [[ -n ${PREVIOUS_CONFIG_DIR} ]] && [[ -d ${PREVIOUS_CONFIG_DIR} ]]; then
-        mkdir -p ${LOG_DIR}/previous_{kayobe,kolla}_configs
-        cp -rnL ${PREVIOUS_CONFIG_DIR}/etc/kayobe/* ${LOG_DIR}/previous_kayobe_configs
-        cp -rnL ${PREVIOUS_CONFIG_DIR}/etc/kolla/* ${LOG_DIR}/previous_kolla_configs
-        # NOTE: we can't save node configs in /etc/kolla for the pervious
-        # release since they'll have been overwritten at this point.
-        # Don't save the IPA images.
-        rm ${LOG_DIR}/previous_kayobe_configs/kolla/config/ironic/ironic-agent.{kernel,initramfs}
-        rm ${LOG_DIR}/previous_kolla_configs/config/ironic/ironic-agent.{kernel,initramfs}
-    fi
+    mkdir -p ${LOG_DIR}/{docker_logs,kolla_node_configs,system_logs}
+
+    cp -rnL /etc/kolla/* ${LOG_DIR}/kolla_node_configs
+    # Don't save the IPA images.
+    rm ${LOG_DIR}/kolla_node_configs/ironic-http/ironic-agent.{kernel,initramfs}
+    rm ${LOG_DIR}/kolla_node_configs/ironic-tftp/ironic-agent.{kernel,initramfs}
 
     if [[ -d /opt/kayobe/etc/kolla ]]; then
+	mkdir -p ${LOG_DIR}/kolla_build_configs
         cp -rnL /opt/kayobe/etc/kolla/* ${LOG_DIR}/kolla_build_configs/
     fi
 
     cp -rvnL /var/log/* ${LOG_DIR}/system_logs/
 
-    if [[ -x "$(command -v journalctl)" ]]; then
-        journalctl --no-pager > ${LOG_DIR}/system_logs/syslog.txt
-        journalctl --no-pager -u docker.service > ${LOG_DIR}/system_logs/docker.log
-        journalctl --no-pager -u vbmcd.service > ${LOG_DIR}/system_logs/vbmcd.log
-        journalctl --no-pager -u NetworkManager.service > ${LOG_DIR}/system_logs/NetworkManager.log
-    else
-        cp /var/log/upstart/docker.log ${LOG_DIR}/system_logs/docker.log
-    fi
+    journalctl --no-pager > ${LOG_DIR}/system_logs/syslog.log
+    journalctl --no-pager -u docker.service > ${LOG_DIR}/system_logs/docker.log
+    journalctl --no-pager -u vbmcd.service > ${LOG_DIR}/system_logs/vbmcd.log
+    journalctl --no-pager -u NetworkManager.service > ${LOG_DIR}/system_logs/NetworkManager.log
 
     if [[ -d /etc/sysconfig/network-scripts/ ]]; then
         cp -r /etc/sysconfig/network-scripts/ ${LOG_DIR}/system_logs/
@@ -81,6 +62,9 @@ copy_logs() {
     ip route > ${LOG_DIR}/system_logs/ip-route.txt
     ip route show table all > ${LOG_DIR}/system_logs/ip-route-all-tables.txt
     ip rule list > ${LOG_DIR}/system_logs/ip-rule-list.txt
+    pvs > ${LOG_DIR}/system_logs/pvs.txt
+    vgs > ${LOG_DIR}/system_logs/vgs.txt
+    lvs > ${LOG_DIR}/system_logs/lvs.txt
 
     iptables-save > ${LOG_DIR}/system_logs/iptables.txt
 
@@ -106,42 +90,35 @@ copy_logs() {
 
     # Bifrost: grab config files and logs from the container.
     if [[ $(docker ps -q -f name=bifrost_deploy) ]]; then
+	mkdir -p ${LOG_DIR}/bifrost
         for service in dnsmasq ironic-api ironic-conductor ironic-inspector mariadb nginx rabbitmq-server; do
-            mkdir -p ${LOG_DIR}/kolla/$service
+            mkdir -p ${LOG_DIR}/bifrost/$service
             docker exec bifrost_deploy \
-                systemctl status $service -l -n 10000 > ${LOG_DIR}/kolla/$service/${service}-systemd-status.txt
+                systemctl status $service -l -n 10000 > ${LOG_DIR}/bifrost/$service/${service}-systemd-status.txt
             docker exec bifrost_deploy \
-                journalctl -u $service --no-pager > ${LOG_DIR}/kolla/$service/${service}-journal.txt
+                journalctl -u $service --no-pager > ${LOG_DIR}/bifrost/$service/${service}-journal.txt
         done
         docker exec -it bifrost_deploy \
-            journalctl --no-pager > ${LOG_DIR}/kolla/bifrost-journal.log
+            journalctl --no-pager > ${LOG_DIR}/bifrost/bifrost-journal.log
         for d in dnsmasq.conf ironic ironic-inspector nginx/nginx.conf; do
             docker cp bifrost_deploy:/etc/$d ${LOG_DIR}/kolla_node_configs/bifrost/
         done
-        docker cp bifrost_deploy:/var/log/mariadb/mariadb.log ${LOG_DIR}/kolla/mariadb/
+        docker cp bifrost_deploy:/var/log/mariadb/mariadb.log ${LOG_DIR}/bifrost/mariadb/
     fi
 
     # IPA build logs
     if [[ -f /opt/kayobe/images/ipa/ipa.stderr ]] || [[ -f /opt/kayobe/images/ipa/ipa.stdout ]]; then
-        mkdir -p ${LOG_DIR}/kayobe
-        cp /opt/kayobe/images/ipa/ipa.stderr /opt/kayobe/images/ipa/ipa.stdout ${LOG_DIR}/kayobe/
+        mkdir -p ${LOG_DIR}/ipa
+        cp /opt/kayobe/images/ipa/ipa.stderr /opt/kayobe/images/ipa/ipa.stdout ${LOG_DIR}/ipa/
     fi
 
     # Overcloud host image build logs
     if [[ -f /opt/kayobe/images/deployment_image/deployment_image.stderr ]] || [[ -f /opt/kayobe/images/deployment_image/deployment_image.stdout ]]; then
-        mkdir -p ${LOG_DIR}/kayobe
-        cp /opt/kayobe/images/deployment_image/deployment_image.stderr /opt/kayobe/images/deployment_image/deployment_image.stdout ${LOG_DIR}/kayobe/
+        mkdir -p ${LOG_DIR}/deployment_image
+        cp /opt/kayobe/images/deployment_image/deployment_image.stderr /opt/kayobe/images/deployment_image/deployment_image.stdout ${LOG_DIR}/deployment_image/
     fi
 
-    # Rename files to .txt; this is so that when displayed via
-    # logs.openstack.org clicking results in the browser shows the
-    # files, rather than trying to send it to another app or make you
-    # download it, etc.
-    for f in $(find ${LOG_DIR}/{system_logs,kolla,docker_logs} -name "*.log"); do
-        mv $f ${f/.log/.txt}
-    done
-
-    chmod -R 777 ${LOG_DIR}
+    chown -R stack: ${LOG_DIR}
 }
 
 copy_logs
