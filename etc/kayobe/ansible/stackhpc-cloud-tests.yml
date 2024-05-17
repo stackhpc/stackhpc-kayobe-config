@@ -71,6 +71,8 @@
               -rfEx
               -vv
           environment:
+            DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
+            DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
             GRAFANA_URL: "{{ sct_grafana_url }}"
             GRAFANA_USERNAME: "{{ sct_grafana_username }}"
             GRAFANA_PASSWORD: "{{ sct_grafana_password }}"
@@ -83,9 +85,14 @@
             PROMETHEUS_URL: "{{ sct_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
+            SELINUX_STATE: "{{ sct_selinux_state }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
+            # Inclusive min
+            sct_docker_version_min: "24.0.0"
+            # Exclusive max
+            sct_docker_version_max: "27.0.0"
             sct_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
             sct_grafana_username: "grafana_local_admin"
             sct_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
@@ -98,6 +105,7 @@
             sct_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
             sct_prometheus_username: admin
             sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+            sct_selinux_state: "{{ selinux_state }}"
       always:
         - name: Fetch results
           ansible.builtin.fetch:
