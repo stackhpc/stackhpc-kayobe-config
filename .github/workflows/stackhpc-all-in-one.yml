@@ -496,16 +496,20 @@ jobs:
             sct-results/
         if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
-      - name: Fail if any Tempest tests failed
+      - name: Fail if any tests failed
         run: |
-          test $(wc -l < tempest-artifacts/failed-tests) -lt 1
-
-      - name: Fail if any StackHPC Cloud tests failed
-        run: |
-          echo "Some StackHPC Cloud tests failed."
-          echo "See HTML results artifact (sct-results) for details."
-          exit 1
-        if: steps.stackhpc-cloud-tests.outcome == 'failure'
+          rc=0
+          if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
+            echo "Some Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          if [[ $(wc -l < sct-results/failed-tests) -ne 0 ]]; then
+            echo "Some StackHPC OpenStack tests failed."
+            echo "See HTML results artifact (sct-results) for details."
+            rc=1
+          fi
+          exit $rc
 
       - name: Destroy
         run: terraform destroy -auto-approve

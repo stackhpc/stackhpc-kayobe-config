@@ -1,38 +1,40 @@
 ---
-- name: Run StackHPC Cloud tests
+# This playbook executes tests from the StackHPC OpenStack Tests repository.
+# https://github.com/stackhpc/stackhpc-openstack-tests
+
+- name: Run StackHPC OpenStack tests
   hosts: tempest_runner:overcloud
   tags:
-    - stackhpc-cloud-tests
+    - stackhpc-openstack-tests
   vars:
-    sct_venv: "{{ virtualenv_path }}/sct-venv"
-    sct_repo: https://github.com/stackhpc/stackhpc-cloud-tests
-    sct_version: main
-    sct_timeout: 30
-    results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
+    sot_venv: "{{ virtualenv_path }}/sot-venv"
+    sot_repo: "https://github.com/stackhpc/stackhpc-openstack-tests"
+    sot_version: "v0.0.1"
+    sot_timeout: 30
+    results_path_local: "{{ lookup('env', 'HOME') }}/sot-results"
   tasks:
-    - name: Stackhpc Cloud tests
-      block:
-        - name: Assert that there is only one host in the tempest_runner group
-          assert:
-            that: groups.get('tempest_runner', []) | length == 1
-            fail_msg: The tempest_runner group should contain exactly one host
+    - name: Assert that there is only one host in the tempest_runner group
+      assert:
+        that: groups.get('tempest_runner', []) | length == 1
+        fail_msg: The tempest_runner group should contain exactly one host
 
+    - block:
         - name: Create a temporary directory for tests repo
           ansible.builtin.tempfile:
             state: directory
-            suffix: sct-repo
+            suffix: sot-repo
           register: repo_tmpdir
 
         - name: Create a temporary directory for results
           ansible.builtin.tempfile:
             state: directory
-            suffix: sct-results
+            suffix: sot-results
           register: results_tmpdir
 
-        - name: Clone the StackHPC Cloud tests repository
+        - name: Clone the StackHPC OpenStack tests repository
           ansible.builtin.git:
-            repo: "{{ sct_repo }}"
-            version: "{{ sct_version }}"
+            repo: "{{ sot_repo }}"
+            version: "{{ sot_version }}"
             dest: "{{ repo_tmpdir.path }}"
             depth: 1
             single_branch: true
@@ -41,24 +43,20 @@
           ansible.builtin.pip:
             name: "{{ item.name }}"
             state: latest
-            virtualenv: "{{ sct_venv }}"
-            virtualenv_command: python3 -m venv
+            virtualenv: "{{ sot_venv }}"
+            virtualenv_command: "python3 -m venv"
           with_items:
             - { name: pip }
             - { name: setuptools }
 
-        - name: Ensure required individual Python packages are installed
+        - name: Ensure required Python packages are installed
           ansible.builtin.pip:
             name:
               - "{{ repo_tmpdir.path }}"
+              - "-r{{ repo_tmpdir.path }}/requirements.txt"
               - pytest-html
               - pytest-timeout
-            virtualenv: "{{ sct_venv }}"
-
-        - name: Ensure Python requirements file packages are installed
-          ansible.builtin.pip:
-            requirements: "{{ repo_tmpdir.path }}/requirements.txt"
-            virtualenv: "{{ sct_venv }}"
+            virtualenv: "{{ sot_venv }}"
 
         - name: Include Kolla Ansible passwords
           ansible.builtin.include_vars:
@@ -67,44 +65,43 @@
 
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
-        - name: Run StackHPC Cloud monitoring tests
+        - name: Run StackHPC OpenStack monitoring tests
           ansible.builtin.command:
             cmd: >
-              {{ sct_venv }}/bin/py.test
+              {{ sot_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/monitoring.html
               --self-contained-html
-              --pyargs stackhpc_cloud_tests.monitoring
-              --timeout {{ sct_timeout }}
-              -rfEx
+              --pyargs stackhpc_openstack_tests.monitoring
+              --timeout {{ sot_timeout }}
               -vv
           environment:
-            GRAFANA_URL: "{{ sct_grafana_url }}"
-            GRAFANA_USERNAME: "{{ sct_grafana_username }}"
-            GRAFANA_PASSWORD: "{{ sct_grafana_password }}"
-            OPENSEARCH_HOSTS: "{{ sct_opensearch_hosts }}"
-            OPENSEARCH_PORT: "{{ sct_opensearch_port }}"
-            OPENSEARCH_TLS: "{{ sct_opensearch_tls }}"
-            OPENSEARCH_DASHBOARDS_URL: "{{ sct_opensearch_dashboards_url }}"
-            OPENSEARCH_DASHBOARDS_USERNAME: "{{ sct_opensearch_dashboards_username }}"
-            OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sct_opensearch_dashboards_password }}"
-            PROMETHEUS_URL: "{{ sct_prometheus_url }}"
-            PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
-            PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
+            GRAFANA_URL: "{{ sot_grafana_url }}"
+            GRAFANA_USERNAME: "{{ sot_grafana_username }}"
+            GRAFANA_PASSWORD: "{{ sot_grafana_password }}"
+            OPENSEARCH_HOSTS: "{{ sot_opensearch_hosts }}"
+            OPENSEARCH_PORT: "{{ sot_opensearch_port }}"
+            OPENSEARCH_TLS: "{{ sot_opensearch_tls }}"
+            OPENSEARCH_DASHBOARDS_URL: "{{ sot_opensearch_dashboards_url }}"
+            OPENSEARCH_DASHBOARDS_USERNAME: "{{ sot_opensearch_dashboards_username }}"
+            OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sot_opensearch_dashboards_password }}"
+            PROMETHEUS_URL: "{{ sot_prometheus_url }}"
+            PROMETHEUS_USERNAME: "{{ sot_prometheus_username }}"
+            PROMETHEUS_PASSWORD: "{{ sot_prometheus_password }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
-            sct_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
-            sct_grafana_username: "grafana_local_admin"
-            sct_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
-            sct_opensearch_hosts: "{{ kolla_internal_fqdn }}"
-            sct_opensearch_port: 9200
-            sct_opensearch_tls: false
-            sct_opensearch_dashboards_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:5601"
-            sct_opensearch_dashboards_username: "opensearch"
-            sct_opensearch_dashboards_password: "{{ kolla_passwords.opensearch_dashboards_password }}"
-            sct_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
-            sct_prometheus_username: admin
-            sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+            sot_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
+            sot_grafana_username: "grafana_local_admin"
+            sot_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
+            sot_opensearch_hosts: "{{ kolla_internal_fqdn }}"
+            sot_opensearch_port: 9200
+            sot_opensearch_tls: false
+            sot_opensearch_dashboards_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:5601"
+            sot_opensearch_dashboards_username: "opensearch"
+            sot_opensearch_dashboards_password: "{{ kolla_passwords.opensearch_dashboards_password }}"
+            sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
+            sot_prometheus_username: "admin"
+            sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
           failed_when: monitoring_results.rc not in [0, 1]
           register: monitoring_results
           when: "'tempest_runner' in group_names"
@@ -114,25 +111,25 @@
         # remote test execution? That would place all results in a single file
         # and allow us to execute all tests from a single host.
         # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
-        - name: Run StackHPC Cloud host tests
+        - name: Run StackHPC OpenStack host tests
           ansible.builtin.command:
             cmd: >
-              {{ sct_venv }}/bin/py.test
+              {{ sot_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
               --self-contained-html
-              --pyargs stackhpc_cloud_tests.host
-              --timeout {{ sct_timeout }}
+              --pyargs stackhpc_openstack_tests.host
+              --timeout {{ sot_timeout }}
               -vv
           environment:
-            DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
-            DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
-            SELINUX_STATE: "{{ sct_selinux_state }}"
+            DOCKER_VERSION_MIN: "{{ sot_docker_version_min }}"
+            DOCKER_VERSION_MAX: "{{ sot_docker_version_max }}"
+            SELINUX_STATE: "{{ sot_selinux_state }}"
           vars:
             # Inclusive min
-            sct_docker_version_min: "24.0.0"
+            sot_docker_version_min: "24.0.0"
             # Exclusive max
-            sct_docker_version_max: "27.0.0"
-            sct_selinux_state: "{{ selinux_state }}"
+            sot_docker_version_max: "27.0.0"
+            sot_selinux_state: "{{ selinux_state }}"
           failed_when: host_results.rc not in [0, 1]
           register: host_results
           when: "'overcloud' in group_names"
@@ -146,6 +143,7 @@
             recursive: true
             # For jump host
             use_ssh_args: true
+
         - name: Write a file containing failed test runs
           ansible.builtin.copy:
             content: |-
