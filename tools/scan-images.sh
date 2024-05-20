@@ -79,7 +79,7 @@ for image in $images; do
             | @csv' image-scan-output/${filename}.json >> image-scan-output/${filename}.summary.csv
 
     grep "CRITICAL" image-scan-output/${filename}.summary.csv
-    rc = $?
+    rc=$?
     if [ $rc -eq 0 ]; then
       # If the image contains critical vulnerabilities, add the image to critical list
       echo "${image}" >> image-scan-output/critical-images.txt
