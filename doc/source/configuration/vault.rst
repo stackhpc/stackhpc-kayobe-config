@@ -233,6 +233,7 @@ Enable the required TLS variables in kayobe and kolla
       kolla_enable_tls_external: yes
 
    See :ref:`tempest-cacert` for information on adding CA certificates to the trust store when running Tempest.
+   See :ref:`os-capacity-cacert` for information on adding CA certificates to the trust store when deploying the OpenStack Capacity exporter.
 
 2. Set the following in kayobe-config/etc/kayobe/kolla.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla.yml
 
