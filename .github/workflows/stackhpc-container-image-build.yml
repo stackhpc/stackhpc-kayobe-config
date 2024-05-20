@@ -288,11 +288,11 @@ jobs:
         if: ${{ !cancelled() }}
 
       - name: Fail when images failed scanning
-        run: if [ $(wc -l < image-build-logs/dirty-images.txt) -gt 0 ]; then cat image-build-logs/dirty-images.txt && exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
         if: ${{ !inputs.push-dirty && !cancelled() }}
 
       - name: Fail when critical vulnerabilities are found
-        run: if [ $(wc -l < image-build-logs/critical-images.txt) -gt 0 ]; then cat image-build-logs/critical-images.txt && exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
         if: ${{ !cancelled() }}
 
       # NOTE(mgoddard): Trigger another CI workflow in the
