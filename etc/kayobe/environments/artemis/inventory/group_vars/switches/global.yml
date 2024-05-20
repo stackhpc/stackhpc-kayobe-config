@@ -1,0 +1,21 @@
+---
+nvue_switch_config: "{{ nvue_switch_config_system + nvue_switch_config_service + nvue_switch_config_bridge }}"
+
+nvue_switch_config_system: |
+  set system hostname {{ inventory_hostname }}
+  set system timezone {{ cumulus_timezone }}
+
+nvue_switch_config_service: |
+  unset service ntp
+  {% for ntp_server in nvue_switch_config_ntp_servers %}
+  set service ntp mgmt server {{ ntp_server }}
+  {% endfor %}
+
+nvue_switch_config_ntp_servers:
+  - "{{ provision_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+
+nvue_switch_config_bridge: |
+  unset bridge domain br_default
+  {% for vlan in nvue_switch_config_vlans | default([]) %}
+  set bridge domain br_default vlan {{ vlan | net_vlan }}
+  {% endfor %}
