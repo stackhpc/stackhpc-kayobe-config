@@ -1,0 +1,53 @@
+---
+switch_interface_config_up: |
+  - link state up
+
+switch_interface_config_down: |
+  - link state down
+
+switch_interface_config_mlag_member: |
+  - bond member {mlag_member}
+  - bond mlag id {mlag_id}
+
+switch_interface_config_bridge_domain: |
+  # Add to the default bridge domain.
+  - bridge domain br_default
+
+switch_interface_config_stp_edge: |
+  # Equivalent to "port fast" STP mode.
+  - bridge domain br_default stp admin-edge on
+  - bridge domain br_default stp bpdu-guard on
+
+switch_interface_config_vlans: |
+  bridge domain br_default vlan 1,2
+  bridge domain br_default untagged none
+
+switch_interface_config_access: |
+  bridge domain br_default access 1
+
+switch_interface_config_ip: |
+  ip address 1.2.3.4/24
+
+# Apply to a vlan interface:
+switch_interface_config_vrr: |
+  ip vrr address 1.2.3.4/24
+  ip vrr state up
+
+switch_interface_config_vrf: |
+  interface vlan 42 ip vrf baremetal-provisioning
+
+# TODO
+# - Ironic VRF
+# - VLAN names?
+# - Provider VLANs
+# - Uplinks
+# - Peerlinks
+# - LACP
+# - Flow control
+# - LLDP (enabled by default)
+# - Trunk/access port
+# - BM discovery
+# - User account?
+# - Link state up/down
+# - Storm control?
+# - VRR?
