@@ -1,0 +1,30 @@
+---
+- name: Gather facts about Cumulus NVUE switches
+  hosts: switches
+  gather_facts: false
+  vars:
+    switch_config_output_path: "{{ kayobe_config_path }}/../../switch-facts"
+  tasks:
+    - name: Fetch config
+      nvidia.nvue.api:
+        operation: get
+      when: switch_type == 'nvue'
+      register: config_result
+
+    - name: Set a fact about the current date time
+      set_fact:
+        datetime: "{{ lookup('pipe', 'date --iso-8601=minutes') }}"
+      run_once: true
+
+    - name: Create a directory for running config
+      file:
+        path: "{{ switch_config_output_path }}/{{ datetime }}"
+        state: directory
+      delegate_to: localhost
+      run_once: true
+
+    - name: Write running config to a local file
+      copy:
+        content: "{{ config_result.message | to_nice_yaml(indent=2) }}"
+        dest: "{{ switch_config_output_path }}/{{ datetime }}/{{ inventory_hostname }}.yml"
+      delegate_to: localhost
