@@ -227,12 +227,29 @@ Seed Hypervisor firewalld Configuration
    # - state: enabled
    seed_hypervisor_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
 
+Kolla-Ansible configuration
+---------------------------
+
+Ensure Kolla Ansible opens up ports in firewalld for services on the public
+API network:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/kolla/globals.yml``
+
+   enable_external_api_firewalld: true
+   external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
+
+Ensure every network in ``networks.yml`` has a zone defined. The standard
+configuration is to set the internal network zone to ``trusted`` and every
+other zone to the name of the network. See
+``etc/kayobe/environments/ci-multinode/networks.yml`` for a practical example.
+
 Custom rules
 ------------
 
 Custom firewalld rules can be added to ``stackhpc_firewalld_rules_extra``
 
-The variable is a list of firewall rules to apply. Each item is a dict
+The variable is a list of firewall rules to apply. Each item is a dictionary
 containing arguments to pass to the firewalld module. The variable can be
 defined as a group var or host var in the kayobe inventory.
 
@@ -314,13 +331,20 @@ It is strongly recommended that you dry-run the changes using ``--diff`` and
 
    kayobe overcloud host configure -t firewall --diff --check
 
+Baseline checks
+^^^^^^^^^^^^^^^
+
+Before applying, it is a good idea to take note of any actively firing alerts
+and run Tempest to gather a baseline. See the :doc:`Tempest
+</operations/tempest>` page for more details.
+
 Applying changes
 ----------------
 
 Before applying these changes, you should be completely sure you are not going
 to lock yourself out of any hosts. If you are deploying these changes to a test
-environment, it might be appropriate to set a password on the stack user so
-that you can access the host through a BMC or horizon console.
+environment, consider setting a password on the stack user so that you can
+access the host through a BMC or other virtual console.
 
 The following Kayobe command can be used to set a password on all overcloud
 hosts:
@@ -328,6 +352,15 @@ hosts:
 .. code-block:: bash
 
    kayobe overcloud host command run --command "echo 'stack:super-secret-password' | sudo chpasswd" --show-output
+
+Alternatively, create a cron job to stop the firewall after some time. If the
+firewall rules block connectivity, you will still be able to get in after the
+job triggers. If the host is still accessible, remove the job. The following
+cron job will stop the firewall service every 10 minutes.
+
+.. code-block::
+
+   */10 * * * * sudo systemctl stop firewalld
 
 Changes should be applied to controllers one at a time to ensure connectivity
 is not lost.
@@ -351,6 +384,22 @@ configure`` commands to apply the firewall changes:
    kayobe overcloud host configure -t network,firewall -l controllers[2]
    # For the rest of the Overcloud hosts
    kayobe overcloud host configure -t network,firewall
+
+Debugging
+---------
+
+To test the changes, first check for any firing alerts, then try simple smoke
+tests (create a VM, list OpenStack endpoints etc.), then run Tempest.
+
+If the firewall configuration is causing errors, it is often useful to log
+blocked packets.
+
+.. code-block:: bash
+
+   sudo sed -i s/LogDenied=off/LogDenied=all/g /etc/firewalld/firewalld.conf
+   sudo systemctl restart firewalld
+
+Dropped packets will be logged to ``dmesg``.
 
 How it works
 ============
