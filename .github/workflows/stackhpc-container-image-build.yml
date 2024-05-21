@@ -287,6 +287,9 @@ jobs:
         run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
         if: ${{ !cancelled() }}
 
+      # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
+      # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
+      # decided to fail the job on detecting high CVEs as well.
       # - name: Fail when images failed scanning
       #   run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
       #   if: ${{ !inputs.push-dirty && !cancelled() }}
