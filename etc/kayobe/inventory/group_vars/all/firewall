@@ -184,6 +184,12 @@ stackhpc_controller_firewalld_rules_template:
         network: "{{ octavia_net_name | default() }}"
         state: enabled
     enabled: "{{ kolla_enable_octavia | bool and octavia_net_name is not none }}"
+  # DHCP, Was required to create VMs at a customer site, need to work out condition
+  - rules:
+    - port: 67/udp
+      network: "{{ provision_oc_net_name }}"
+      state: enabled
+    enabled: true
 
 ###############################################################################
 # Compute firewalld rules
