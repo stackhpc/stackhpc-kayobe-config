@@ -1,0 +1,153 @@
+---
+switch_interface_config:
+  # OOB management is not connected.
+  eth0:
+    description: "Management"
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  # In-band management over VLAN 3000.
+  vlan3000:
+    config:
+      - type svi
+      - vlan 3000
+      - ip address {{ ansible_host }}/{{ oob_oc_net_name | net_prefix }}
+  swp1:
+    description: artemis-hv-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp2:
+    description: artemis-cp-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp3:
+    description: artemis-gpu-07
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp4:
+    description: artemis-hv-01-idrac
+    config: "{{ switch_interface_config_overcloud_idrac | from_yaml }}"
+  swp5:
+    description: artemis-cp-01-idrac
+    config: "{{ switch_interface_config_overcloud_idrac | from_yaml }}"
+  swp6:
+    description: artemis-gpu-07-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp7:
+    description: artemis-cp-03
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp8:
+    description: artemis-gpu-06
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp9:
+    description: artemis-gpu-05
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp10:
+    description: artemis-gpu-04
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp11:
+    description: artemis-cp-03-idrac
+    config: "{{ switch_interface_config_overcloud_idrac | from_yaml }}"
+  swp12:
+    description: artemis-gpu-06-drac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp13:
+    description: artemis-gpu-05-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp14:
+    description: artemis-gpu-04-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp15:
+    description: artemis-cp-02
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp16:
+    description: artemis-gpu-03
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp17:
+    description: artemis-gpu-02
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp18:
+    description: artemis-gpu-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp19:
+    description: artemis-cp-02-idrac
+    config: "{{ switch_interface_config_overcloud_idrac | from_yaml }}"
+  swp20:
+    description: artemis-gpu-03-drac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp21:
+    description: artemis-gpu-02-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp22:
+    description: artemis-gpu-01-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp23:
+    description: ceres
+    config: "{{ switch_interface_config_seed_hypervisor | from_yaml }}"
+  # swp24 not in use
+  swp25:
+    description: artemis-gpu-08-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp26:
+    description: artemis-gpu-08
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp27:
+    description: artemis-gpu-09-idrac
+    config: "{{ switch_interface_config_baremetal_idrac | from_yaml }}"
+  swp28:
+    description: artemis-gpu-09
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+  swp46:
+    description: artemis-hsn-01-mgmt
+    config: "{{ switch_interface_config_switch_mgmt | from_yaml }}"
+  swp47:
+    description: artemis-hsn-02-mgmt
+    config: "{{ switch_interface_config_switch_mgmt | from_yaml }}"
+  swp48:
+    description: artemis-ctl-01-mgmt
+    config: "{{ switch_interface_config_switch_mgmt | from_yaml }}"
+  swp49:
+    description: artemis-ctl-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  swp50:
+    description: artemis-ctl-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  bond0:
+    description: artemis-ctl-01
+    config: "{{ switch_interface_config_ctl_trunk | from_yaml }}"
+
+switch_interface_config_disabled: |
+  {{ switch_interface_config_down }}
+
+switch_interface_config_overcloud_idrac: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {{ switch_interface_config_stp_edge }}
+  - bridge domain br_default access {{ mgmt_oc_untagged_vlan }}
+
+switch_interface_config_baremetal_idrac: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {{ switch_interface_config_stp_edge }}
+  - bridge domain br_default access {{ mgmt_wl_vlan }}
+
+switch_interface_config_seed_hypervisor: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {{ switch_interface_config_stp_edge }}
+  - bridge domain br_default access {{ mgmt_oc_untagged_vlan }}
+
+switch_interface_config_switch_mgmt: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {{ switch_interface_config_stp_edge }}
+  - bridge domain br_default access {{ mgmt_oc_untagged_vlan }}
+
+switch_interface_config_bond_member: |
+  {{ switch_interface_config_up }}
+
+switch_interface_config_ctl_trunk: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {% if switch_ctl_trunk_vlans %}
+  - bridge domain br_default vlan {{ switch_ctl_trunk_vlans | select | unique | join(',') }}
+  {% endif %}
+  - bridge domain br_default untagged none
+  - bond member swp49,swp50
+
+switch_ctl_trunk_vlans: []
