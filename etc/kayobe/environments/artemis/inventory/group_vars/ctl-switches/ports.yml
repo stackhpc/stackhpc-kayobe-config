@@ -40,6 +40,46 @@ switch_interface_config:
   swp12:
     description: ceres
     config: "{{ switch_interface_config_seed_hypervisor | from_yaml }}"
+  swp49:
+    config:
+      - link breakout 2x
+  swp49s0:
+    # FIXME: P2P sheet says hsn-01, but LLDP says hsn-02.
+    description: artemis-hsn-02
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  swp49s1:
+    description: artemis-mgmt-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  # NOTE: missing cable
+  swp50:
+    config:
+      - link breakout 2x
+  swp50s0:
+    description: artemis-hsn-02
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  swp50s1:
+    description: artemis-mgmt-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  # NOTE: missing cable
+  swp51:
+    config:
+      - link breakout 2x
+  swp51s0:
+    description: artemis-hsn-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  swp51s1:
+    description: artemis-hsn-02
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  bond0:
+    description: artemis-hsn-01-02
+    config: "{{ switch_interface_config_hsn_trunk | from_yaml }}"
+  bond1:
+    description: artemis-mgmt-01
+    config: "{{ switch_interface_config_mgmt_trunk | from_yaml }}"
 
 switch_interface_config_overcloud: |
   {{ switch_interface_config_up }}
@@ -64,3 +104,28 @@ switch_interface_config_seed_hypervisor: |
   {{ switch_interface_config_bridge_domain }}
   {{ switch_interface_config_stp_edge }}
   - bridge domain br_default access {{ provision_oc_untagged_vlan }}
+
+switch_interface_config_bond_member: |
+  {{ switch_interface_config_up }}
+
+switch_interface_config_hsn_trunk: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {% if switch_hsn_trunk_vlans %}
+  - bridge domain br_default vlan {{ switch_hsn_trunk_vlans | select | unique | join(',') }}
+  {% endif %}
+  - bridge domain br_default untagged none
+  - bond member swp49s0,swp50s0,swp51s0,swp51s1
+
+switch_interface_config_mgmt_trunk: |
+  {{ switch_interface_config_up }}
+  {{ switch_interface_config_bridge_domain }}
+  {% if switch_mgmt_trunk_vlans %}
+  - bridge domain br_default vlan {{ switch_mgmt_trunk_vlans | select | unique | join(',') }}
+  {% endif %}
+  - bridge domain br_default untagged none
+  - bond member swp49s1,swp50s1
+
+switch_hsn_trunk_vlans: []
+
+switch_mgmt_trunk_vlans: []
