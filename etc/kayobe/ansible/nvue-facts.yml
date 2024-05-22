@@ -3,11 +3,12 @@
   hosts: switches
   gather_facts: false
   vars:
-    switch_config_output_path: "{{ kayobe_config_path }}/../../switch-facts"
+    switch_config_output_path: "{{ kayobe_config_path }}/../../switch-config"
   tasks:
     - name: Fetch config
-      nvidia.nvue.api:
-        operation: get
+      nvidia.nvue.command:
+        commands:
+          - config show -o commands
       when: switch_type == 'nvue'
       register: config_result
 
@@ -25,6 +26,6 @@
 
     - name: Write running config to a local file
       copy:
-        content: "{{ config_result.message | to_nice_yaml(indent=2) }}"
+        content: "{{ config_result.message.splitlines() | to_nice_yaml(indent=2) }}"
         dest: "{{ switch_config_output_path }}/{{ datetime }}/{{ inventory_hostname }}.yml"
       delegate_to: localhost
