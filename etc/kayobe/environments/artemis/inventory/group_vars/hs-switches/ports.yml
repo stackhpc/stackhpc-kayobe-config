@@ -4,17 +4,33 @@ switch_interface_config:
     description: "Management"
     config:
       - ip address {{ ansible_host }}/{{ oob_oc_net_name | net_prefix }}
+  # TODO: Add IPs and VRR(?) config.
+  vlan3002:
+    description: internal
+    config:
+      - type svi
+      - vlan 3002
+      - ip vrf baremetal-provisioning
+  # TODO: Add IPs and VRR(?) config.
+  vlan3007:
+    description: provision_wl
+    config:
+      - type svi
+      - vlan 3007
+      - ip vrf baremetal-provisioning
   swp1:
     config:
       - link breakout 2x
   swp1s0:
     description: artemis-hv-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond1s0:
     description: artemis-hv-01
     config: >-
       {{ switch_interface_config_hypervisor.format(mlag_member='swp1s0', mlag_id=10) | from_yaml }}
   swp1s1:
     description: artemis-cp-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond1s1:
     description: artemis-cp-01
     config: >-
@@ -24,6 +40,7 @@ switch_interface_config:
       - link breakout 2x
   swp2s0:
     description: artemis-gpu-07
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond2s0:
     description: artemis-gpu-07
     config: >-
@@ -34,12 +51,14 @@ switch_interface_config:
       - link breakout 2x
   swp3s0:
     description: artemis-cp-03
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond3s0:
     description: artemis-cp-03
     config: >-
       {{ switch_interface_config_controller.format(mlag_member='swp3s0', mlag_id=30) | from_yaml }}
   swp3s1:
     description: artemis-gpu-06
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond3s1:
     description: artemis-gpu-06
     config: >-
@@ -49,12 +68,14 @@ switch_interface_config:
       - link breakout 2x
   swp4s0:
     description: artemis-gpu-05
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond4s0:
     description: artemis-gpu-05
     config: >-
       {{ switch_interface_config_baremetal.format(mlag_member='swp4s0', mlag_id=40) | from_yaml }}
   swp4s1:
     description: artemis-gpu-04
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond4s1:
     description: artemis-gpu-04
     config: >-
@@ -64,12 +85,14 @@ switch_interface_config:
       - link breakout 2x
   swp5s0:
     description: artemis-cp-02
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond5s0:
     description: artemis-cp-02
     config: >-
       {{ switch_interface_config_controller.format(mlag_member='swp5s0', mlag_id=50) | from_yaml }}
   swp5s1:
     description: artemis-gpu-03
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond5s1:
     description: artemis-gpu-03
     config: >-
@@ -79,27 +102,42 @@ switch_interface_config:
       - link breakout 2x
   swp6s0:
     description: artemis-gpu-02
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond6s0:
     description: artemis-gpu-02
     config: >-
       {{ switch_interface_config_baremetal.format(mlag_member='swp6s0', mlag_id=60) | from_yaml }}
   swp6s1:
     description: artemis-gpu-01
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond6s1:
     description: artemis-gpu-01
     config: >-
       {{ switch_interface_config_baremetal.format(mlag_member='swp6s1', mlag_id=61) | from_yaml }}
+  # NOTE: missing cable
+  swp29:
+    description: artemis-ctl-01
+    config: "{{ switch_interface_config_disabled | from_yaml }}"
+    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
   swp30:
     description: artemis-ctl-01
-    config: "{{ switch_interface_config_ctl_trunk | from_yaml }}"
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   swp31:
-    description: "Peer member"
+    description: peer-member
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   swp32:
-    description: "Peer member"
+    description: peer-member
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
+  bond0:
+    description: artemis-ctl-01
+    config: "{{ switch_interface_config_ctl_trunk | from_yaml }}"
   peerlink:
-    description: "Peer link"
+    description: peerlink
     config:
       - bond member swp31-32
+
+switch_interface_config_bond_member: |
+  {{ switch_interface_config_up }}
 
 switch_interface_config_controller: |
   {{ switch_interface_config_up }}
@@ -133,7 +171,9 @@ switch_interface_config_baremetal: |
 switch_interface_config_ctl_trunk: |
   {{ switch_interface_config_up }}
   {{ switch_interface_config_bridge_domain }}
+  {% if switch_ctl_trunk_vlans %}
   - bridge domain br_default vlan {{ switch_ctl_trunk_vlans | select | unique | join(',') }}
+  {% endif %}
   - bridge domain br_default untagged none
 
 switch_controller_vlans:
@@ -145,13 +185,13 @@ switch_controller_vlans:
   - "{{ storage_net_name | net_vlan }}"
   - "{{ storage_mgmt_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
+  - "{{ switch_config_provider_vlans.start }}-{{ switch_config_provider_vlans.end }}"
 
 switch_hypervisor_vlans:
   - "{{ internal_net_name | net_vlan }}"
   - "{{ public_net_name | net_vlan }}"
   - "{{ storage_net_name | net_vlan }}"
   - "{{ tunnel_net_name | net_vlan }}"
-  - "{{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}"
+  - "{{ switch_config_provider_vlans.start }}-{{ switch_config_provider_vlans.end }}"
 
 switch_ctl_trunk_vlans: []

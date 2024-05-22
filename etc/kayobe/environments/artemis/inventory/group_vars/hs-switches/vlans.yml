@@ -1,8 +1,15 @@
 ---
 switch_config_vlans:
+  - "mgmt_wl"
+  - "provision_wl"
   - "internal"
   - "storage"
   - "storage_mgmt"
   - "tunnel"
   - "external_intranet_untagged"
   - "octavia_net"
+
+# Range of provider VLANs for physnet1.
+switch_config_provider_vlans:
+  start: "{{ kolla_neutron_ml2_network_vlan_ranges[0].range.split(':')[0] | int }}"
+  end: "{{ kolla_neutron_ml2_network_vlan_ranges[0].range.split(':')[1] | int }}"

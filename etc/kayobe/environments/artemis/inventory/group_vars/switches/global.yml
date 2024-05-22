@@ -28,28 +28,12 @@ switch_config_ntp_servers:
 
 switch_config_bridge: |
   - unset bridge domain br_default
-  {% for vlan in switch_config_vlans | default([]) %}
-  - set bridge domain br_default vlan {{ vlan | net_vlan }}
-  {% endfor %}
-  {% if 'hs-switches' in group_names %}
-  - set bridge domain br_default vlan {{ provider_vlans_physnet1.start }}-{{ provider_vlans_physnet1.end }}
+  {% if switch_config_vlans | default([]) %}
+  - set bridge domain br_default vlan {{ switch_config_vlans | default([]) | map('net_vlan') | join(',') }}
+  {% endif %}
+  {% if switch_config_provider_vlans is defined %}
+  - set bridge domain br_default vlan {{ switch_config_provider_vlans.start }}-{{ switch_config_provider_vlans.end }}
   {% endif %}
   {% if switch_config_stp_mode == 'pvrst' %}
   - set bridge domain br_default stp mode pvrst
   {% endif %}
-
-switch_config_mlag:
-  # FIXME: MAC (same across both)
-  # OR system global anycast-mac 44:38:39:BE:EF:AA ?
-  - set mlag mac-address 00:11:22:33:44:55
-  # FIXME: IP (per switch) (optional VRF)
-  - set mlag backup 1.2.3.4 vrf mgmt
-  - set mlag peer-ip linklocal
-
-switch_config_vrf:
-  - set vrf baremetal-provisioning table auto
-
-# Range of provider VLANs for physnet1.
-provider_vlans_physnet1:
-  start: "{{ kolla_neutron_ml2_network_vlan_ranges[0].range.split(':')[0] | int }}"
-  end: "{{ kolla_neutron_ml2_network_vlan_ranges[0].range.split(':')[1] | int }}"
