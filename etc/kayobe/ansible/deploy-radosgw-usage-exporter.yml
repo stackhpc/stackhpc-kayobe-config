@@ -5,14 +5,30 @@
   vars:
     venv: "{{ virtualenv_path }}/openstack"
   tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        virtualenv_command: "/usr/bin/python3 -m venv"
+        name:
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      when: stackhpc_enable_radosgw_usage_exporter
+
     - name: Check ec2 credential for admin
       command: >
         {{ venv }}/bin/openstack
         ec2 credentials list --user admin
         --format json
       environment: "{{ openstack_auth_env }}"
-      delegate_to: localhost
       register: credential_check
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
       run_once: true
       when: stackhpc_enable_radosgw_usage_exporter
 
@@ -22,7 +38,9 @@
         ec2 credentials create --user admin
         --format json
       environment: "{{ openstack_auth_env }}"
-      delegate_to: localhost
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
       run_once: true
       when:
         - stackhpc_enable_radosgw_usage_exporter
@@ -34,7 +52,9 @@
         ec2 credentials list --user admin
         --format json
       environment: "{{ openstack_auth_env }}"
-      delegate_to: localhost
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
       register: credential
       run_once: true
       when: stackhpc_enable_radosgw_usage_exporter
@@ -45,7 +65,9 @@
         endpoint list --service object-store --interface internal
         --format json
       environment: "{{ openstack_auth_env }}"
-      delegate_to: localhost
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
       register: endpoint
       run_once: true
       when: stackhpc_enable_radosgw_usage_exporter
