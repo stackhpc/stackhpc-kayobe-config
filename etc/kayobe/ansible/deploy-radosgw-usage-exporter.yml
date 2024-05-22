@@ -14,6 +14,7 @@
       delegate_to: localhost
       register: credential_check
       run_once: true
+      when: stackhpc_enable_radosgw_usage_exporter
 
     - name: Create ec2 credential if there's none
       command: >
@@ -23,7 +24,9 @@
       environment: "{{ openstack_auth_env }}"
       delegate_to: localhost
       run_once: true
-      when: "{{ credential_check.stdout == [] }}"
+      when:
+        - "{{ credential_check.stdout == [] }}"
+        - stackhpc_enable_radosgw_usage_exporter
 
     - name: Query ec2 credential for admin
       command: >
@@ -34,6 +37,7 @@
       delegate_to: localhost
       register: credential
       run_once: true
+      when: stackhpc_enable_radosgw_usage_exporter
 
     - name: Get object storage endpoint
       command: >
@@ -44,6 +48,7 @@
       delegate_to: localhost
       register: endpoint
       run_once: true
+      when: stackhpc_enable_radosgw_usage_exporter
 
     - name: Ensure radosgw_usage_exporter container is running
       community.docker.docker_container:
@@ -60,33 +65,4 @@
         host: "{{ endpoint.stdout | from_json | first }}"
         radosgw_server: "{{ host.URL | regex_replace('(https?://)([^:/]+):([0-9]+)/.*', '\\1\\2:\\3') }}" # Drop Swift api address
       become: true
-
-    - name: Get Prometheus target ip addresses of RADOS gateway usage exporters
-      set_fact:
-        prometheus_targets: "{{ prometheus_targets | default([]) +[( internal_net_name | net_ip( item ) + ':9242' )] }}"
-      loop: "{{ groups['monitoring'] }}"
-      run_once: true
-
-    - name: Print config to append on prometheus.yml
-      debug:
-        msg: |
-          Add Prometheus target for RADOS gateway usage exporter below at prometheus.yml then reconfigure prometheus_server.
-          You can find a template to prometheus.yml at ``ansible/roles/prometheus/templates/prometheus.yml.j2`` under kolla-ansible directory.
-          Make sure to use {% raw %} and {% endraw %} tags appropriately on prometheus.yml if you're overriding it for the first time.
-
-          - job_name: ceph_radosgw_usage_exporter
-            honor_labels: true
-            scrape_interval: 15s
-            static_configs:
-            - targets:
-            {% for item in prometheus_targets %}
-              - {{ item }}
-            {% endfor %}
-          metric_relabel_configs:
-            - source_labels: [owner,user]
-              target_label: tenant_id
-              separator: ""
-              regex: (.+)
-              replacement: ${1}
-      run_once: true
-
+      when: stackhpc_enable_radosgw_usage_exporter
