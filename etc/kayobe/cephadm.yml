@@ -1,4 +1,10 @@
 ---
+cephadm_radosgw_services:
+  - id: myrgw
+    count_per_host: 1
+    spec:
+      rgw_frontend_port: 8100
+
 ###############################################################################
 # Cephadm deployment configuration.
 
@@ -93,7 +99,27 @@ cephadm_commands_pre_default: []
 cephadm_commands_pre_extra: []
 
 cephadm_commands_post_default: "{{ ['mgr module enable prometheus'] if kolla_enable_prometheus_ceph_mgr_exporter | default(False) | bool else [] }}"
-cephadm_commands_post_extra: []
+cephadm_commands_post_extra:
+  # Ceph RADOS gateway
+  - "config set client.rgw rgw_content_length_compat true"
+  - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
+  - "config set client.rgw rgw_enforce_swift_acls true"
+  - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, Member, _member_, admin'"
+  - "config set client.rgw rgw_keystone_admin_domain Default"
+  - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_project service"
+  - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
+  - "config set client.rgw rgw_keystone_api_version '3'"
+  - "config set client.rgw rgw_keystone_token_cache_size '10000'"
+  - "config set client.rgw rgw_keystone_url https://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_verify_ssl false"
+  - "config set client.rgw rgw_max_attr_name_len '1000'"
+  - "config set client.rgw rgw_max_attr_size '1000'"
+  - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
+  - "config set client.rgw rgw_s3_auth_use_keystone true"
+  - "config set client.rgw rgw_swift_account_in_url true"
+  - "config set client.rgw rgw_swift_versioning_enabled true"
 
 ###############################################################################
 # Kolla Ceph auto-configuration.
