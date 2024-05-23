@@ -90,3 +90,40 @@
         radosgw_server: "{{ host.URL | regex_replace('(https?://)([^:/]+):([0-9]+)/.*', '\\1\\2:\\3') }}" # Drop Swift api address
       become: true
       when: stackhpc_enable_radosgw_usage_exporter
+
+    - name: Create radosgw-usage-exporter directory
+      ansible.builtin.file:
+        path: /opt/kayobe/radosgw-usage-exporter/
+        state: directory
+      when:
+        - stackhpc_enable_radosgw_usage_exporter
+        - stackhpc_radosgw_usage_exporter_cacert | length > 0
+
+    - name: Copy CA certificate to RADOS gateway usage exporter nodes
+      ansible.builtin.copy:
+        src: "{{ stackhpc_radosgw_usage_exporter_cacert }}"
+        dest: "/opt/kayobe/radosgw-usage-exporter/{{ stackhpc_radosgw_usage_exporter_cacert | basename }}"
+      register: copy_to_node_result
+      when:
+        - stackhpc_enable_radosgw_usage_exporter
+        - stackhpc_radosgw_usage_exporter_cacert | length > 0
+
+    - name: Copy CA certificate to RADOS gateway usage exporter container
+      community.docker.docker_container_copy_into:
+        container: radosgw_usage_exporter
+        path: "{{ copy_to_node_result.dest }}"
+        container_path: "/usr/local/share/ca-certificates/{{ copy_to_node_result.dest | basename }}"
+      become: true
+      when:
+        - stackhpc_enable_radosgw_usage_exporter
+        - stackhpc_radosgw_usage_exporter_cacert | length > 0
+
+    - name: Update CA certificate of RADOS gateway usage exporter container
+      community.docker.docker_container_exec:
+        container: radosgw_usage_exporter
+        command: update-ca-certificates
+        user: root
+      become: true
+      when:
+        - stackhpc_enable_radosgw_usage_exporter
+        - stackhpc_radosgw_usage_exporter_cacert | length > 0
