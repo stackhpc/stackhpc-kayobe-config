@@ -20,6 +20,28 @@
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
       when: stackhpc_enable_radosgw_usage_exporter
 
+    - name: Read admin-openrc credential file
+      ansible.builtin.command:
+        cmd: "cat {{ lookup('ansible.builtin.env', 'KOLLA_CONFIG_PATH') }}/admin-openrc.sh"
+      delegate_to: localhost
+      register: credential
+      when: stackhpc_enable_radosgw_usage_exporter
+      changed_when: false
+
+    - name: Set facts for admin credentials
+      ansible.builtin.set_fact:
+        openstack_auth_env:
+          OS_PROJECT_DOMAIN_NAME: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_USER_DOMAIN_NAME: "{{ credential.stdout_lines | select('match', '.*OS_USER_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_PROJECT_NAME: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_USERNAME: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_PASSWORD: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_AUTH_URL: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_INTERFACE: "{{ credential.stdout_lines | select('match', '.*OS_INTERFACE*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_IDENTITY_API_VERSION: "{{ credential.stdout_lines | select('match', '.*OS_IDENTITY_API_VERSION*.') | first | split('=') | last | replace(\"'\",'') }}"
+          OS_CACERT: "{{ '/etc/ssl/certs/ca-certificates.crt' if os_distribution == 'ubuntu' else '/etc/pki/tls/certs/ca-bundle.crt' }}"
+      when: stackhpc_enable_radosgw_usage_exporter
+
     - name: Check ec2 credential for admin
       command: >
         {{ venv }}/bin/openstack
