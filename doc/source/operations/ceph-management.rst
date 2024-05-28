@@ -1,13 +1,16 @@
-==========================
-Managing Ceph with Cephadm
-==========================
+===========================
+Managing and Operating Ceph
+===========================
+
+Working with Cephadm
+====================
 
 cephadm configuration location
-==============================
+------------------------------
 
 In kayobe-config repository, under ``etc/kayobe/cephadm.yml`` (or in a specific
 Kayobe environment when using multiple environment, e.g.
-``etc/kayobe/environments/production/cephadm.yml``)
+``etc/kayobe/environments/<Environment Name>/cephadm.yml``)
 
 StackHPC's cephadm Ansible collection relies on multiple inventory groups:
 
@@ -19,7 +22,7 @@ StackHPC's cephadm Ansible collection relies on multiple inventory groups:
 Those groups are usually defined in ``etc/kayobe/inventory/groups``.
 
 Running cephadm playbooks
-=========================
+-------------------------
 
 In kayobe-config repository, under ``etc/kayobe/ansible`` there is a set of
 cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
@@ -36,7 +39,7 @@ cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
 - ``cephadm-pools.yml`` - defines Ceph pools\
 
 Running Ceph commands
-=====================
+---------------------
 
 Ceph commands are usually run inside a ``cephadm shell`` utility container:
 
@@ -47,12 +50,12 @@ Ceph commands are usually run inside a ``cephadm shell`` utility container:
 
 Operating a cluster requires a keyring with an admin access to be available for Ceph
 commands. Cephadm will copy such keyring to the nodes carrying
-`_admin <https://docs.ceph.com/en/quincy/cephadm/host-management/#special-host-labels>`__
+`_admin <https://docs.ceph.com/en/latest/cephadm/host-management/#special-host-labels>`__
 label - present on MON servers by default when using
 `StackHPC Cephadm collection <https://github.com/stackhpc/ansible-collection-cephadm>`__.
 
 Adding a new storage node
-=========================
+-------------------------
 
 Add a node to a respective group (e.g. osds) and run ``cephadm-deploy.yml``
 playbook.
@@ -62,7 +65,7 @@ playbook.
    ``-e cephadm_bootstrap=True`` on playbook run.
 
 Removing a storage node
-=======================
+-----------------------
 
 First drain the node
 
@@ -85,7 +88,7 @@ Additional options/commands may be found in
 `Host management <https://docs.ceph.com/en/latest/cephadm/host-management/>`_
 
 Replacing a Failed Ceph Drive
-=============================
+-----------------------------
 
 Once an OSD has been identified as having a hardware failure,
 the affected drive will need to be replaced.
@@ -121,3 +124,156 @@ If this is not your desired action plan - it's best to modify the drivegroup
 spec before (``cephadm_osd_spec`` variable in ``etc/kayobe/cephadm.yml``).
 Either set ``unmanaged: true`` to stop cephadm from picking up new disks or
 modify it in some way that it no longer matches the drives you want to remove.
+
+
+Operations
+==========
+
+Replacing drive
+---------------
+
+See upstream documentation:
+https://docs.ceph.com/en/latest/cephadm/services/osd/#replacing-an-osd
+
+In case where disk holding DB and/or WAL fails, it is necessary to recreate
+(using replacement procedure above) all OSDs that are associated with this
+disk - usually NVMe drive. The following single command is sufficient to
+identify which OSDs are tied to which physical disks:
+
+.. code-block:: console
+
+   ceph# ceph device ls
+
+Host maintenance
+----------------
+
+https://docs.ceph.com/en/latest/cephadm/host-management/#maintenance-mode
+
+Upgrading
+---------
+
+https://docs.ceph.com/en/latest/cephadm/upgrade/
+
+
+Troubleshooting
+===============
+
+Investigating a Failed Ceph Drive
+---------------------------------
+
+A failing drive in a Ceph cluster will cause OSD daemon to crash.
+In this case Ceph will go into `HEALTH_WARN` state.
+Ceph can report details about failed OSDs by running:
+
+.. code-block:: console
+
+   ceph# ceph health detail
+
+.. note ::
+
+   Remember to run ceph/rbd commands from within ``cephadm shell``
+   (preferred method) or after installing Ceph client. Details in the
+   official `documentation <https://docs.ceph.com/en/latest/cephadm/install/#enable-ceph-cli>`__.
+   It is also required that the host where commands are executed has admin
+   Ceph keyring present - easiest to achieve by applying
+   `_admin <https://docs.ceph.com/en/latest/cephadm/host-management/#special-host-labels>`__
+   label (Ceph MON servers have it by default when using
+   `StackHPC Cephadm collection <https://github.com/stackhpc/ansible-collection-cephadm>`__).
+
+A failed OSD will also be reported as down by running:
+
+.. code-block:: console
+
+   ceph# ceph osd tree
+
+Note the ID of the failed OSD.
+
+The failed disk is usually logged by the Linux kernel too:
+
+.. code-block:: console
+
+   storage-0# dmesg -T
+
+Cross-reference the hardware device and OSD ID to ensure they match.
+(Using `pvs` and `lvs` may help make this connection).
+
+Inspecting a Ceph Block Device for a VM
+---------------------------------------
+
+To find out what block devices are attached to a VM, go to the hypervisor that
+it is running on (an admin-level user can see this from ``openstack server
+show``).
+
+On this hypervisor, enter the libvirt container:
+
+.. code-block:: console
+   :substitutions:
+
+   |hypervisor_hostname|# docker exec -it nova_libvirt /bin/bash
+
+Find the VM name using libvirt:
+
+.. code-block:: console
+   :substitutions:
+
+   (nova-libvirt)[root@|hypervisor_hostname| /]# virsh list
+    Id    Name                State
+   ------------------------------------
+    1     instance-00000001   running
+
+Now inspect the properties of the VM using ``virsh dumpxml``:
+
+.. code-block:: console
+   :substitutions:
+
+   (nova-libvirt)[root@|hypervisor_hostname| /]# virsh dumpxml instance-00000001 | grep rbd
+         <source protocol='rbd' name='|nova_rbd_pool|/51206278-e797-4153-b720-8255381228da_disk'>
+
+On a Ceph node, the RBD pool can be inspected and the volume extracted as a RAW
+block image:
+
+.. code-block:: console
+   :substitutions:
+
+   ceph# rbd ls |nova_rbd_pool|
+   ceph# rbd export |nova_rbd_pool|/51206278-e797-4153-b720-8255381228da_disk blob.raw
+
+The raw block device (blob.raw above) can be mounted using the loopback device.
+
+Inspecting a QCOW Image using LibGuestFS
+----------------------------------------
+
+The virtual machine's root image can be inspected by installing
+libguestfs-tools and using the guestfish command:
+
+.. code-block:: console
+
+   ceph# export LIBGUESTFS_BACKEND=direct
+   ceph# guestfish -a blob.qcow
+   ><fs> run
+    100% [XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX] 00:00
+   ><fs> list-filesystems
+   /dev/sda1: ext4
+   ><fs> mount /dev/sda1 /
+   ><fs> ls /
+   bin
+   boot
+   dev
+   etc
+   home
+   lib
+   lib64
+   lost+found
+   media
+   mnt
+   opt
+   proc
+   root
+   run
+   sbin
+   srv
+   sys
+   tmp
+   usr
+   var
+   ><fs> quit
