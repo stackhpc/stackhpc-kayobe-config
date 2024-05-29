@@ -23,7 +23,6 @@ kolla_enable_tls_backend: "yes"
 # If using RabbitMQ TLS:
 rabbitmq_enable_tls: "yes"
 
-###############################################################################
 # External API configuration.
 
 # Expose all external API services on a single port.
@@ -51,6 +50,11 @@ prometheus_alertmanager_external_fqdn: "prometheus-alertmanager.{{ base_external
 prometheus_external_fqdn: "prometheus.{{ base_external_fqdn }}"
 {% endraw %}
 
-#Open up Kolla Ansible ports in firewalld for services on the public API network.
 enable_external_api_firewalld: true
 external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
+
+# List of name server records, one for each controller
+designate_ns_record:
+  - "ns0.hrc.susx.ac.uk"
+  - "ns1.hrc.susx.ac.uk"
+  - "ns2.hrc.susx.ac.uk"
