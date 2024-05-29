@@ -123,11 +123,13 @@ switch_interface_config_baremetal_idrac: |
   {{ switch_interface_config_stp_edge }}
   - bridge domain br_default access {{ mgmt_wl_vlan }}
 
+# NOTE(mnasiadka): provision_oc should be on ctl-switch, but port is down, cable/SFP needs to be diagnosed
 switch_interface_config_seed_hypervisor: |
   {{ switch_interface_config_up }}
   {{ switch_interface_config_bridge_domain }}
   {{ switch_interface_config_stp_edge }}
-  - bridge domain br_default access {{ mgmt_oc_untagged_vlan }}
+  - bridge domain br_default vlan {{ mgmt_oc_untagged_vlan }},{{ provision_oc_untagged_vlan }}
+  - bridge domain br_default untagged {{ mgmt_oc_untagged_vlan }}
 
 switch_interface_config_switch_mgmt: |
   {{ switch_interface_config_up }}
@@ -147,4 +149,5 @@ switch_interface_config_ctl_trunk: |
   - bridge domain br_default untagged none
   - bond member swp49,swp50
 
-switch_ctl_trunk_vlans: []
+switch_ctl_trunk_vlans:
+  - "{{ provision_oc_untagged_vlan }}"
