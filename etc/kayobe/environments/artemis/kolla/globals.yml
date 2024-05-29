@@ -8,10 +8,6 @@ cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
 cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
 {% endraw %}
 
-#Open up Kolla Ansible ports in firewalld for services on the public API network.
-enable_external_api_firewalld: true
-external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
-
 ###############################################################################
 
 # Internal TLS configuration
@@ -27,8 +23,35 @@ kolla_enable_tls_backend: "yes"
 # If using RabbitMQ TLS:
 rabbitmq_enable_tls: "yes"
 
-###############################################################################
-# Designate - instance external DNS (bind9 backed is in use)
+# External API configuration.
+
+# Expose all external API services on a single port.
+{% raw %}
+haproxy_single_external_frontend: true
+kolla_external_fqdn: "{{ undef('Using HAProxy single external frontend - kolla_external_fqdn should not be required') }}"
+base_external_fqdn: "artemis.sussex.ac.uk"
+barbican_external_fqdn: "barbican.{{ base_external_fqdn }}"
+cinder_external_fqdn: "cinder.{{ base_external_fqdn }}"
+cloudkitty_external_fqdn: "cloudkitty.{{ base_external_fqdn }}"
+designate_external_fqdn: "designate.{{ base_external_fqdn }}"
+glance_external_fqdn: "glance.{{ base_external_fqdn }}"
+grafana_external_fqdn: "grafana.{{ base_external_fqdn }}"
+horizon_external_fqdn: "dashboard.{{ base_external_fqdn }}"
+ironic_external_fqdn: "ironic.{{ base_external_fqdn }}"
+ironic_inspector_external_fqdn: "ironic-inspector.{{ base_external_fqdn }}"
+keystone_external_fqdn: "keystone.{{ base_external_fqdn }}"
+manila_external_fqdn: "manila.{{ base_external_fqdn }}"
+neutron_external_fqdn: "neutron.{{ base_external_fqdn }}"
+nova_external_fqdn: "nova.{{ base_external_fqdn }}"
+octavia_external_fqdn: "octavia.{{ base_external_fqdn }}"
+opensearch_dashboards_external_fqdn: "opensearch-dashboards.{{ base_external_fqdn }}"
+placement_external_fqdn: "placement.{{ base_external_fqdn }}"
+prometheus_alertmanager_external_fqdn: "prometheus-alertmanager.{{ base_external_fqdn }}"
+prometheus_external_fqdn: "prometheus.{{ base_external_fqdn }}"
+{% endraw %}
+
+enable_external_api_firewalld: true
+external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 
 # List of name server records, one for each controller
 designate_ns_record:
