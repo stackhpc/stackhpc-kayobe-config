@@ -45,8 +45,8 @@ Ceph commands are usually run inside a ``cephadm shell`` utility container:
 
 .. code-block:: console
 
-   # From the node that runs Ceph
-   ceph# sudo cephadm shell
+   # From storage host
+   sudo cephadm shell
 
 Operating a cluster requires a keyring with an admin access to be available for Ceph
 commands. Cephadm will copy such keyring to the nodes carrying
@@ -71,15 +71,17 @@ First drain the node
 
 .. code-block:: console
 
-   ceph# cephadm shell
-   ceph# ceph orch host drain <host>
+   # From storage host
+   sudo cephadm shell
+   ceph orch host drain <host>
 
 Once all daemons are removed - you can remove the host:
 
 .. code-block:: console
 
-   ceph# cephadm shell
-   ceph# ceph orch host rm <host>
+   # From storage host
+   sudo cephadm shell
+   ceph orch host rm <host>
 
 And then remove the host from inventory (usually in
 ``etc/kayobe/inventory/overcloud``)
@@ -98,8 +100,9 @@ movement:
 
 .. code-block:: console
 
-   ceph# cephadm shell
-   ceph# ceph osd set noout
+   # From storage host
+   sudo cephadm shell
+   ceph osd set noout
 
 Reboot the node and replace the drive
 
@@ -107,15 +110,17 @@ Unset noout after the node is back online
 
 .. code-block:: console
 
-   ceph# cephadm shell
-   ceph# ceph osd unset noout
+   # From storage host
+   sudo cephadm shell
+   ceph osd unset noout
 
 Remove the OSD using Ceph orchestrator command:
 
 .. code-block:: console
 
-   ceph# cephadm shell
-   ceph# ceph orch osd rm <ID> --replace
+   # From storage host
+   sudo cephadm shell
+   ceph orch osd rm <ID> --replace
 
 After removing OSDs, if the drives the OSDs were deployed on once again become
 available, cephadm may automatically try to deploy more OSDs on these drives if
@@ -142,7 +147,7 @@ identify which OSDs are tied to which physical disks:
 
 .. code-block:: console
 
-   ceph# ceph device ls
+   ceph device ls
 
 Host maintenance
 ----------------
@@ -167,7 +172,7 @@ Ceph can report details about failed OSDs by running:
 
 .. code-block:: console
 
-   ceph# ceph health detail
+   ceph health detail
 
 .. note ::
 
@@ -184,7 +189,7 @@ A failed OSD will also be reported as down by running:
 
 .. code-block:: console
 
-   ceph# ceph osd tree
+   ceph osd tree
 
 Note the ID of the failed OSD.
 
@@ -192,7 +197,8 @@ The failed disk is usually logged by the Linux kernel too:
 
 .. code-block:: console
 
-   storage-0# dmesg -T
+   # From storage host
+   dmesg -T
 
 Cross-reference the hardware device and OSD ID to ensure they match.
 (Using `pvs` and `lvs` may help make this connection).
@@ -207,16 +213,15 @@ show``).
 On this hypervisor, enter the libvirt container:
 
 .. code-block:: console
-   :substitutions:
 
-   |hypervisor_hostname|# docker exec -it nova_libvirt /bin/bash
+   # From hypervisor host
+   docker exec -it nova_libvirt /bin/bash
 
 Find the VM name using libvirt:
 
 .. code-block:: console
-   :substitutions:
 
-   (nova-libvirt)[root@|hypervisor_hostname| /]# virsh list
+   (nova-libvirt)[root@compute-01 /]# virsh list
     Id    Name                State
    ------------------------------------
     1     instance-00000001   running
@@ -224,19 +229,19 @@ Find the VM name using libvirt:
 Now inspect the properties of the VM using ``virsh dumpxml``:
 
 .. code-block:: console
-   :substitutions:
 
-   (nova-libvirt)[root@|hypervisor_hostname| /]# virsh dumpxml instance-00000001 | grep rbd
-         <source protocol='rbd' name='|nova_rbd_pool|/51206278-e797-4153-b720-8255381228da_disk'>
+   (nova-libvirt)[root@compute-01 /]# virsh dumpxml instance-00000001 | grep rbd
+         <source protocol='rbd' name='<nova rbd pool>/51206278-e797-4153-b720-8255381228da_disk'>
 
 On a Ceph node, the RBD pool can be inspected and the volume extracted as a RAW
 block image:
 
 .. code-block:: console
-   :substitutions:
 
-   ceph# rbd ls |nova_rbd_pool|
-   ceph# rbd export |nova_rbd_pool|/51206278-e797-4153-b720-8255381228da_disk blob.raw
+   # From storage host
+   sudo cephadm shell
+   rbd ls <nova rbd pool>
+   rbd export <nova rbd pool>/51206278-e797-4153-b720-8255381228da_disk blob.raw
 
 The raw block device (blob.raw above) can be mounted using the loopback device.
 
@@ -248,8 +253,9 @@ libguestfs-tools and using the guestfish command:
 
 .. code-block:: console
 
-   ceph# export LIBGUESTFS_BACKEND=direct
-   ceph# guestfish -a blob.qcow
+   # From storage host
+   export LIBGUESTFS_BACKEND=direct
+   guestfish -a blob.qcow
    ><fs> run
     100% [XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX] 00:00
    ><fs> list-filesystems

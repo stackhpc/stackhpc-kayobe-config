@@ -181,7 +181,7 @@ The command below extracts a list of port UUID, node UUID and switch port inform
 
 .. code-block:: bash
 
-   admin# openstack baremetal port list --field uuid --field node_uuid --field local_link_connection --format value
+    openstack baremetal port list --field uuid --field node_uuid --field local_link_connection --format value
 
 NGS will manage VLAN membership for ports when the ``local_link_connection`` fields match one of the switches in ``ml2_conf.ini``.
 The rest of the switch configuration is static.

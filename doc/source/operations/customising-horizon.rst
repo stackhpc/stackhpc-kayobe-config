@@ -1,8 +1,6 @@
-.. include:: vars.rst
-
-====================================
+===================
 Customising Horizon
-====================================
+===================
 
 Horizon is the most frequent site-specific container customisation required:
 other customisations tend to be common across deployments, but personalisation
@@ -55,7 +53,6 @@ Building a custom container image for Horizon can be done by modifying
 ``kolla.yml`` to fetch the custom theme and include it in the image:
 
 .. code-block:: yaml
-   :substitutions:
 
    kolla_sources:
      horizon-additions-theme-<custom theme name>:
