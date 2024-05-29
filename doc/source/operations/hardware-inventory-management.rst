@@ -172,6 +172,11 @@ Unset maintenance mode on a node in Bifrost
 Detect hardware differences with ADVise
 =======================================
 
+Hardware information captured during the Ironic introspection process can be
+analysed to detect hardware differences, such as mismatches in firmware
+versions or missing storage devices. The `ADVise <https://github.com/stackhpc/ADVise>`__
+tool can be used for this purpose.
+
 Extract Bifrost introspection data
 ----------------------------------
 
@@ -202,11 +207,6 @@ into ``${KAYOBE_CONFIG_PATH}/overcloud-introspection-data``:
 
 Using ADVise
 ------------
-
-Hardware information captured during the Ironic introspection process can be
-analysed to detect hardware differences, such as mismatches in firmware
-versions or missing storage devices. The `ADVise <https://github.com/stackhpc/ADVise>`__
-tool can be used for this purpose.
 
 The Ansible playbook ``advise-run.yml`` can be found at ``${KAYOBE_CONFIG_PATH}/ansible/advise-run.yml``.
 
