@@ -3,7 +3,7 @@ OpenStack Reconfiguration
 =========================
 
 Disabling a Service
--------------------
+===================
 
 Ansible is oriented towards adding or reconfiguring services, but removing a
 service is handled less well, because of Ansible's imperative style.
@@ -36,7 +36,7 @@ Some services may store data in a dedicated Docker volume, which can be removed
 with ``docker volume rm``.
 
 Installing TLS Certificates
----------------------------
+===========================
 
 To configure TLS for the first time, we write the contents of a PEM
 file to the ``secrets.yml`` file as ``secrets_kolla_external_tls_cert``.
@@ -69,7 +69,7 @@ be updated in Keystone:
    kayobe# kayobe overcloud service reconfigure
 
 Alternative Configuration
-+++++++++++++++++++++++++
+-------------------------
 
 As an alternative to writing the certificates as a variable to
 ``secrets.yml``, it is also possible to write the same data to a file,
@@ -88,7 +88,6 @@ Check the expiry date on an installed TLS certificate from a host that can
 reach the OpenStack APIs:
 
 .. code-block:: console
-   :substitutions:
 
    openstack# openssl s_client -connect <Public endpoint FQDN>:443 2> /dev/null | openssl x509 -noout -dates
 
@@ -106,7 +105,7 @@ above.  Run the following command:
 .. _taking-a-hypervisor-out-of-service:
 
 Taking a Hypervisor out of Service
-----------------------------------
+==================================
 
 To take a hypervisor out of Nova scheduling:
 
@@ -141,7 +140,7 @@ And then to enable a hypervisor again:
           <Hypervisor name> nova-compute
 
 Managing Space in the Docker Registry
--------------------------------------
+=====================================
 
 If the Docker registry becomes full, this can prevent container updates and
 (depending on the storage configuration of the seed host) could lead to other

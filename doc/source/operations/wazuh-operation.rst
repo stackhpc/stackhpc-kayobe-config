@@ -14,7 +14,7 @@ Ansible playbooks <https://github.com/wazuh/wazuh-ansible>`_.  These
 can be integrated into ``kayobe-config`` as a custom playbook.
 
 Configuring Wazuh Manager
--------------------------
+=========================
 
 Wazuh Manager is configured by editing the ``wazuh-manager.yml``
 groups vars file found at

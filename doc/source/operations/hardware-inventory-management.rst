@@ -5,7 +5,7 @@ Hardware Inventory Management
 At its lowest level, hardware inventory is managed in the Bifrost service.
 
 Reconfiguring Control Plane Hardware
-------------------------------------
+====================================
 
 If a server's hardware or firmware configuration is changed, it should be
 re-inspected in Bifrost before it is redeployed into service. A single server
@@ -112,10 +112,10 @@ hypervisor. They should all show the status ACTIVE. This can be verified with:
    admin# openstack server show <instance uuid>
 
 Troubleshooting
-+++++++++++++++
+===============
 
 Servers that have been shut down
-********************************
+--------------------------------
 
 If there are any instances that are SHUTOFF they won’t be migrated, but you can
 use ``openstack server migrate`` for them once the live migration is finished.
@@ -131,7 +131,7 @@ For more details see:
 http://www.danplanet.com/blog/2016/03/03/evacuate-in-nova-one-command-to-confuse-us-all/
 
 Flavors have changed
-********************
+--------------------
 
 If the size of the flavors has changed, some instances will also fail to
 migrate as the process needs manual confirmation. You can do this with:
@@ -150,7 +150,7 @@ RESIZE`` as shown in this snippet of ``openstack server show <instance-uuid>``:
 .. _set-bifrost-maintenance-mode:
 
 Set maintenance mode on a node in Bifrost
-+++++++++++++++++++++++++++++++++++++++++
+-----------------------------------------
 
 .. code-block:: console
 
@@ -161,7 +161,7 @@ Set maintenance mode on a node in Bifrost
 .. _unset-bifrost-maintenance-mode:
 
 Unset maintenance mode on a node in Bifrost
-+++++++++++++++++++++++++++++++++++++++++++
+-------------------------------------------
 
 .. code-block:: console
 

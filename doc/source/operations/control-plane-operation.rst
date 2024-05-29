@@ -55,7 +55,7 @@ Configuring Prometheus Alerts
 -----------------------------
 
 Alerts are defined in code and stored in Kayobe configuration. See ``*.rules``
-files in ``${KAYOBE_CONFIG_PATH}/kolla/config/prometheus`` as a model to add
+files in ``$KAYOBE_CONFIG_PATH/kolla/config/prometheus`` as a model to add
 custom rules.
 
 Silencing Prometheus Alerts
@@ -88,7 +88,7 @@ Generating Alerts from Metrics
 ++++++++++++++++++++++++++++++
 
 Alerts are defined in code and stored in Kayobe configuration. See ``*.rules``
-files in ``${KAYOBE_CONFIG_PATH}/kolla/config/prometheus`` as a model to add
+files in ``$KAYOBE_CONFIG_PATH/kolla/config/prometheus`` as a model to add
 custom rules.
 
 Control Plane Shutdown Procedure
@@ -124,7 +124,7 @@ The password can be found using:
 
 .. code-block:: console
 
-   kayobe# ansible-vault view ${KAYOBE_CONFIG_PATH}/kolla/passwords.yml \
+   kayobe# ansible-vault view $KAYOBE_CONFIG_PATH/kolla/passwords.yml \
            --vault-password-file <Vault password file path> | grep ^database
 
 Checking RabbitMQ
@@ -135,6 +135,7 @@ RabbitMQ health is determined using the command ``rabbitmqctl cluster_status``:
 .. code-block:: console
 
    [stack@controller0 ~]$ docker exec rabbitmq rabbitmqctl cluster_status
+
    Cluster status of node rabbit@controller0 ...
    [{nodes,[{disc,['rabbit@controller0','rabbit@controller1',
                    'rabbit@controller2']}]},
@@ -180,20 +181,18 @@ If you are shutting down a single hypervisor, to avoid down time to tenants it
 is advisable to migrate all of the instances to another machine. See
 :ref:`evacuating-all-instances`.
 
-.. ifconfig:: deployment['ceph_managed']
+Ceph
+----
 
-   Ceph
-   ----
-
-   The following guide provides a good overview:
-   https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/8/html/director_installation_and_usage/sect-rebooting-ceph
+The following guide provides a good overview:
+https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/8/html/director_installation_and_usage/sect-rebooting-ceph
 
 Shutting down the seed VM
 -------------------------
 
 .. code-block:: console
 
-   kayobe# virsh shutdown <Seed node>
+   kayobe# virsh shutdown <Seed hostname>
 
 .. _full-shutdown:
 
@@ -262,7 +261,7 @@ hypervisor is powered on. If it does not, it can be started with:
 
 .. code-block:: console
 
-   kayobe# virsh start seed-0
+   kayobe# virsh start <Seed hostname>
 
 Full power on
 -------------
@@ -340,13 +339,14 @@ To see the list of hypervisor names:
 
 .. code-block:: console
 
-   admin# openstack hypervisor list
+   # From host that can reach Openstack
+   openstack hypervisor list
 
 To boot an instance on a specific hypervisor
 
 .. code-block:: console
 
-   admin# openstack server create --flavor <Flavour name>--network <Network name> --key-name <key> --image <Image name> --availability-zone nova::<Hypervisor name> <VM name>
+   openstack server create --flavor <Flavour name>--network <Network name> --key-name <key> --image <Image name> --availability-zone nova::<Hypervisor name> <VM name>
 
 Cleanup Procedures
 ==================
@@ -360,22 +360,23 @@ perform the following cleanup procedure regularly:
 
 .. code-block:: console
 
-   admin# for user in $(openstack user list --domain magnum -f value -c Name | grep -v magnum_trustee_domain_admin); do
-            if openstack coe cluster list -c uuid -f value | grep -q $(echo $user | sed 's/_[0-9a-f]*$//'); then
-              echo "$user still in use, not deleting"
-            else
-              openstack user delete --domain magnum $user
-            fi
-          done
+   for user in $(openstack user list --domain magnum -f value -c Name | grep -v magnum_trustee_domain_admin); do
+      if openstack coe cluster list -c uuid -f value | grep -q $(echo $user | sed 's/_[0-9a-f]*$//'); then
+         echo "$user still in use, not deleting"
+      else
+         openstack user delete --domain magnum $user
+      fi
+      done
 
 OpenSearch indexes retention
 =============================
 
 To alter default rotation values for OpenSearch, edit
 
-``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``:
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml``:
 
 .. code-block:: console
+
    # Duration after which index is closed (default 30)
    opensearch_soft_retention_period_days: 90
    # Duration after which index is deleted (default 60)
@@ -384,8 +385,8 @@ To alter default rotation values for OpenSearch, edit
 Reconfigure Opensearch with new values:
 
 .. code-block:: console
-   kayobe overcloud service reconfigure --kolla-tags opensearch
+
+   kayobe# kayobe overcloud service reconfigure --kolla-tags opensearch
 
 For more information see the `upstream documentation
-
 <https://docs.openstack.org/kolla-ansible/latest/reference/logging-and-monitoring/central-logging-guide.html#applying-log-retention-policies>`__.
