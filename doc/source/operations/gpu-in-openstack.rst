@@ -1,5 +1,3 @@
-.. include:: vars.rst
-
 =============================
 Support for GPUs in OpenStack
 =============================
