@@ -99,13 +99,11 @@ Static physical network configuration is managed via Kayobe.
 
     .. code-block:: shell
 
-    The interface is then partially configured:
+      The interface is then partially configured:
 
     .. code-block:: shell
 
-    For :ref:`ironic-node-discovery` to work, you need to manually switch the port to the provisioning network:
-
-    .. code-block:: shell
+      For :ref:`ironic-node-discovery` to work, you need to manually switch the port to the provisioning network:
 
     **NOTE**: You only need to do this if Ironic isn't aware of the node.
 
