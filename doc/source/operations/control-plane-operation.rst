@@ -84,13 +84,6 @@ the monitoring service rather than the host being monitored).
    `known issue <https://github.com/prometheus/alertmanager/issues/1377>`__
    when running several Alertmanager instances behind HAProxy.
 
-Generating Alerts from Metrics
-++++++++++++++++++++++++++++++
-
-Alerts are defined in code and stored in Kayobe configuration. See ``*.rules``
-files in ``$KAYOBE_CONFIG_PATH/kolla/config/prometheus`` as a model to add
-custom rules.
-
 Control Plane Shutdown Procedure
 ================================
 
