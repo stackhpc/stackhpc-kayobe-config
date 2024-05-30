@@ -228,6 +228,8 @@ The playbook has the following optional parameters:
 - output_dir: path to where results should be saved. Default: ``"{{ lookup('env', 'PWD') }}/review"``
 - advise-pattern: regular expression to specify what introspection data should be analysed. Default: ``".*.eval"``
 
+You can override them by provide new values with ``-e <variable>=<value>``
+
 Example command to run the tool on data about the compute nodes in a system, where compute nodes are named cpt01, cpt02, cpt03…:
 
 .. code-block:: console
@@ -244,10 +246,30 @@ Using the results
 The ADVise tool will output a selection of results found under output_dir/results these include:
 
 - ``.html`` files to display network visualisations of any hardware differences.
-- The folder ``Paired_Comparisons`` which contains information on the shared and differing fields found between the systems. This is a reflection of the network visualisation webpage, with more detail as to what the differences are.
+- The folder ``Paired_Comparisons`` which contains information on the shared and differing fields found between the systems.
+  This is a reflection of the network visualisation webpage, with more detail as to what the differences are.
 - ``_summary``, a listing of how the systems can be grouped into sets of identical hardware.
 - ``_performance``, the results of analysing the benchmarking data gathered.
-- ``_perf_summary``, a subset of the performance metrics, just showing any potentially anomalous data such as where variance is too high, or individual nodes have been found to over/underperform.
+- ``_perf_summary``, a subset of the performance metrics, just showing any potentially anomalous data such as where variance
+  is too high, or individual nodes have been found to over/underperform.
 
-To get visuallised result, It is recommanded to copy instrospection data and review directories to your
-local machine then run ADVise playbook locally with the data.
+The ADVise tool will also launch an interactive Dash webpage, which displays the network visualisations,
+tables with information on the differing hardware attributes, the performance metrics as a range of box-plots,
+and specifies which individual nodes may be anomalous via box-plot outliers. This can be accessed at ``localhost:8050``.
+To close this service, simply ``Ctrl+C`` in the terminal where you ran the playbook.
+
+To get visuallised result, It is recommanded to copy instrospection data to your local machine then run ADVise playbook locally.
+
+Recommanded Workflow
+--------------------
+
+1. Run the playbook as outlined above.
+2. Open the Dash webpage at ``localhost:8050``.
+3. Review the hardware differences. Note that hovering over a group will display the nodes it contains.
+4. Identify any unexpected differences in the systems. If multiple differing fields exist they will be graphed separately.
+   As an example, here we expected all compute nodes to be identical.
+5. Use the dropdown menu beneath each graph to show a table of the differences found between two sets of groups.
+   If required, information on shared fields can be found under ``output_dir/results/Paired_Comparisons``.
+6. Scroll down the webpage to the performance review. Identify if any of the discovered performance results could be
+   indicative of a larger issue.
+7. Examine the ``_performance`` and ``_perf_summary`` files if you require any more information.
