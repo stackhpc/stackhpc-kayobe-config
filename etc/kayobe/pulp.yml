@@ -821,14 +821,22 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+# List of extra container image repositories.
+stackhpc_pulp_repository_container_repos_extra: []
+
+# List of extra container image distributions.
+stackhpc_pulp_distribution_container_extra: []
+
 # List of container image repositories.
 stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
-      stackhpc_pulp_repository_container_repos_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
-      stackhpc_pulp_distribution_container_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_extra) | selectattr('required') }}

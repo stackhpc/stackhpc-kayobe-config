@@ -153,6 +153,33 @@ By default, HashiCorp images (Consul and Vault) are not synced from Docker Hub
 to the local Pulp. To sync these images, set ``stackhpc_sync_hashicorp_images``
 to ``true``.
 
+Custom container images
+-----------------------
+
+A custom list of container images can be synced to the local Pulp using the
+``stackhpc_pulp_repository_container_repos_extra`` and
+``stackhpc_pulp_distribution_container_extra`` variables.
+
+.. code-block:: yaml
+
+   # List of extra container image repositories.
+   stackhpc_pulp_repository_container_repos_extra:
+     - name: "certbot/certbot"
+       url: "https://registry-1.docker.io"
+       policy: on_demand
+       proxy_url: "{{ pulp_proxy_url }}"
+       state: present
+       include_tags: "nightly"
+       required: True
+
+   # List of extra container image distributions.
+   stackhpc_pulp_distribution_container_extra:
+     - name: certbot
+       repository: certbot/certbot
+       base_path: certbot/certbot
+       state: present
+       required: True
+
 Usage
 =====
 
