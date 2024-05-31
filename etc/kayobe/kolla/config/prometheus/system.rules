@@ -24,6 +24,24 @@ groups:
       summary: "Prometheus exporter at {{ $labels.instance }} reports low memory"
       description: "Available memory is {{ $value }} GiB."
 
+  - alert: LowSwapSpace
+    expr: (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_warning_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Swap space at {{ $labels.instance }} reports low memory"
+      description: "Available swap space is {{ $value | humanizePercentage }}. Running out of swap space causes OOM Kills."
+
+  - alert: LowSwapSpace
+    expr: (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_critical_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Swap space at {{ $labels.instance }} reports low memory"
+      description: "Available swap space is {{ $value | humanizePercentage }}. Running out of swap space causes OOM Kills."
+
   - alert: HostOomKillDetected
     expr: increase(node_vmstat_oom_kill[5m]) > 0
     for: 5m
