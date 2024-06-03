@@ -1,0 +1,17 @@
+---
+switch_config_nested:
+  - "{{ switch_config_system | from_yaml }}"
+  - "{{ switch_config_service | from_yaml }}"
+  - "{{ switch_config_bridge | from_yaml }}"
+  - "{{ switch_config_mlag | from_yaml }}"
+  - "{{ switch_config_vrf | from_yaml }}"
+
+switch_config_mlag: |
+  # NVIDIA provides a reserved range of MAC addresses for MLAG (between 44:38:39:ff:00:00 and 44:38:39:ff:ff:ff).
+  - set mlag mac-address 44:38:39:ff:00:00
+  # Use management IP of the other switch.
+  - set mlag backup {{ hostvars[groups['hs-switches'] | reject('equalto', inventory_hostname) | first].ansible_host }} vrf mgmt
+  - set mlag peer-ip linklocal
+
+switch_config_vrf: |
+  - set vrf baremetal-provisioning table auto

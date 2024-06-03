@@ -1,0 +1,39 @@
+---
+switch_config: "{{ switch_config_nested | flatten }}"
+
+# Override this for each switch group.
+switch_config_nested: []
+
+# Management switch doesn't seem to support PVRST, possibly due to Cumulus 5.2?
+# Use RSTP for now, consider switching to pvrst later.
+switch_config_stp_mode: rstp
+
+switch_config_system: |
+  - set system hostname {{ inventory_hostname }}
+  - set system timezone {{ timezone }}
+  {% if switch_config_stp_mode == 'pvrst' %}
+  # Required for PVRST
+  - set system control-plane policer rpvst rate 7200
+  - set system control-plane policer rpvst burst 7200
+  {% endif %}
+
+switch_config_service: |
+  - unset service ntp
+  {% for ntp_server in switch_config_ntp_servers %}
+  - set service ntp mgmt server {{ ntp_server }} iburst on
+  {% endfor %}
+
+switch_config_ntp_servers:
+  - "{{ provision_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+
+switch_config_bridge: |
+  - unset bridge domain br_default
+  {% if switch_config_vlans | default([]) %}
+  - set bridge domain br_default vlan {{ switch_config_vlans | default([]) | map('net_vlan') | join(',') }}
+  {% endif %}
+  {% if switch_config_provider_vlans is defined %}
+  - set bridge domain br_default vlan {{ switch_config_provider_vlans.start }}-{{ switch_config_provider_vlans.end }}
+  {% endif %}
+  {% if switch_config_stp_mode == 'pvrst' %}
+  - set bridge domain br_default stp mode pvrst
+  {% endif %}
