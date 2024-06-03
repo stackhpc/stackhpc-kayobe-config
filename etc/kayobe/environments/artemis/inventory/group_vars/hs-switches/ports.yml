@@ -114,11 +114,9 @@ switch_interface_config:
     description: artemis-gpu-01
     config: >-
       {{ switch_interface_config_baremetal.format(mlag_member='swp6s1', mlag_id=61) | from_yaml }}
-  # NOTE: missing cable
   swp29:
     description: artemis-ctl-01
-    config: "{{ switch_interface_config_disabled | from_yaml }}"
-    #config: "{{ switch_interface_config_bond_member | from_yaml }}"
+    config: "{{ switch_interface_config_bond_member | from_yaml }}"
   swp30:
     description: artemis-ctl-01
     config: "{{ switch_interface_config_bond_member | from_yaml }}"
@@ -130,7 +128,7 @@ switch_interface_config:
     config: "{{ switch_interface_config_bond_member | from_yaml }}"
   bond0:
     description: artemis-ctl-01
-    config: "{{ switch_interface_config_ctl_trunk | from_yaml }}"
+    config: "{{ switch_interface_config_ctl_trunk.format(mlag_member='swp29-30', mlag_id=290) | from_yaml | from_yaml }}"
   peerlink:
     description: peerlink
     config:
@@ -171,6 +169,7 @@ switch_interface_config_baremetal: |
 switch_interface_config_ctl_trunk: |
   {{ switch_interface_config_up }}
   {{ switch_interface_config_bridge_domain }}
+  {{ switch_interface_config_mlag_member }}
   {% if switch_ctl_trunk_vlans %}
   - bridge domain br_default vlan {{ switch_ctl_trunk_vlans | select | unique | join(',') }}
   {% endif %}
