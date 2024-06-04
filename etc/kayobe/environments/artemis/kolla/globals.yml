@@ -58,3 +58,16 @@ designate_ns_record:
   - "ns0.hrc.susx.ac.uk"
   - "ns1.hrc.susx.ac.uk"
   - "ns2.hrc.susx.ac.uk"
+
+# NOTE: We are increasing the HAProxy timeouts to 5 minutes due to the neutron
+# generic switch driver, which synchronously applies switch configuration for
+# each ironic port during node provisioning and tear down.
+# The specific API calls that require this long timeout are:
+# - Creation and deletion of VLAN networks.
+# - Creation or update of ports, adding binding information.
+# - Update of ports, removing binding information.
+# - Deletion of ports.
+haproxy_client_timeout: 5m30
+haproxy_server_timeout: 5m30
+neutron_tls_proxy_client_timeout: 5m30
+neutron_tls_proxy_server_timeout: 5m30
