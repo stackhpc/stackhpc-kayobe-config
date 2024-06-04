@@ -1,5 +1,14 @@
 ---
 ###############################################################################
+# Controller network interface configuration.
+
+# List of extra networks to which controller nodes are attached.
+controller_extra_network_interfaces:
+  - bond0
+  - brbond0
+  - octavia_net
+
+###############################################################################
 # Controller node LVM configuration.
 
 # List of controller volume groups. See mrlesmithjr.manage_lvm role for
@@ -7,6 +16,18 @@
 controller_lvm_groups:
   - "{{ stackhpc_lvm_group_rootvg }}"
   - "{{ stackhpc_lvm_group_dockervg }}"
+
+###############################################################################
+# Controller node software RAID configuration.
+
+# List of software RAID arrays. See mrlesmithjr.mdadm role for format.
+controller_mdadm_arrays:
+  - name: md0
+    devices:
+      - "/dev/disk/by-path/pci-0000:46:00.0-nvme-1"
+      - "/dev/disk/by-path/pci-0000:47:00.0-nvme-1"
+    level: '1'
+    state: present
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

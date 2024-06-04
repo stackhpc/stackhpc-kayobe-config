@@ -1,0 +1,62 @@
+---
+###############################################################################
+# Network interface definitions for the controllers group.
+
+external_net_names:
+  - provision_oc
+  - external_intranet
+  - storage_mgmt
+
+provision_oc_interface: "brens3f0np0"
+provision_oc_bridge_ports:
+  - "ens3f0np0"
+
+mgmt_wl_interface: "{{ provision_oc_interface }}.{{ mgmt_wl_vlan }}"
+provision_wl_interface: "{{ provision_oc_interface }}.{{ provision_wl_vlan }}"
+
+bond0_interface: "bond0"
+bond0_bond_slaves:
+  - ens5f0np0
+  - ens5f1np1
+bond0_bond_miimon: 100
+bond0_bond_mode: "802.3ad"
+bond0_bond_lacp_rate: "fast"
+bond0_bond_xmit_hash_policy: "layer3+4"
+bond0_mtu: 9000
+
+internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
+
+storage_interface: "{{ bond0_interface }}.{{ storage_vlan }}"
+storage_mgmt_interface: "{{ bond0_interface }}.{{ storage_mgmt_vlan }}"
+
+octavia_net_interface: "{{ brbond0_interface }}.{{ octavia_net_vlan }}"
+
+brbond0_interface: "br{{ bond0_interface }}"
+brbond0_bridge_ports:
+  - "{{ bond0_interface }}"
+
+external_intranet_interface: "{{ brbond0_interface }}.{{ external_intranet_untagged_vlan }}"
+
+tunnel_interface: "{{ bond0_interface }}.{{ tunnel_interface }}"
+
+# Use policy-based routing on the admin API network for ironic. This ensures
+# that during provisioning and cleaning, nodes accessing the admin API network
+# can be routed to without routing asymmetrically which would cause packets to be
+# dropped by the kernel.
+network_route_tables:
+  - name: admin-api
+    id: 1
+
+# Ubuntu:
+internal_rules:
+  - from: "{{ internal_net_name | net_cidr }}"
+    table: admin-api
+
+# IP routes for the admin-api routing table.
+internal_routes:
+  - cidr: "{{ provision_wl_net_name | net_cidr }}"
+    gateway: "{{ internal_provision_wl_gateway }}"
+    table: admin-api
+
+  - cidr: "{{ internal_net_name | net_cidr }}"
+    table: admin-api

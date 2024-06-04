@@ -5,7 +5,7 @@
 # Network role to network mappings.
 
 # Name of the network used for admin access to the overcloud
-admin_oc_net_name: external_admin
+#admin_oc_net_name:
 
 # Name of the network used by the seed to manage the bare metal overcloud
 # hosts via their out-of-band management controllers.
@@ -59,6 +59,9 @@ inspection_net_name: provision_wl
 # hosts
 cleaning_net_name: provision_wl
 
+# Name of the network used for octavia.
+octavia_net_name: octavia_net
+
 ###############################################################################
 # Network definitions.
 
@@ -89,10 +92,10 @@ mgmt_oc_zone: mgmt_oc
 
 # Provision overcloud network IP information.
 provision_oc_cidr: 10.171.0.0/16
-provision_oc_allocation_pool_start: 10.171.0.1
-provision_oc_allocation_pool_end: 10.171.0.1
-provision_oc_inspection_allocation_pool_start: 10.171.0.1
-provision_oc_inspection_allocation_pool_end: 10.171.0.1
+provision_oc_allocation_pool_start: 10.171.0.101
+provision_oc_allocation_pool_end: 10.171.0.200
+provision_oc_inspection_allocation_pool_start: 10.171.0.10
+provision_oc_inspection_allocation_pool_end: 10.171.0.100
 provision_oc_untagged_vlan: 3001
 provision_oc_zone: provision_oc
 
@@ -150,11 +153,15 @@ provision_wl_mtu: 1500
 provision_wl_vlan: 3007
 provision_wl_zone: provision_wl
 
+# Next hop on the internal API network to access Ironic provisioning network.
+internal_provision_wl_gateway: 0.0.0.0
+
 # External Admin network IP information.
 external_admin_cidr: 139.184.82.0/24
 external_admin_allocation_pool_start: 139.184.82.1
 external_admin_allocation_pool_end: 139.184.82.1
 external_admin_vlan: 82
+external_admin_gateway: 139.184.82.1
 external_admin_zone: external_admin
 
 # Public network IP information.
@@ -168,7 +175,7 @@ external_intranet_zone: external_intranet
 # Octavia network IP information.
 octavia_net_cidr: 10.178.0.0/16
 octavia_net_allocation_pool_start: 10.178.0.1
-octavia_net_allocation_pool_end: 10.178.0.1
+octavia_net_allocation_pool_end: 10.178.0.200
 octavia_net_vlan: 3008
 octavia_net_zone: octavia
 
