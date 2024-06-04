@@ -5,18 +5,19 @@
 external_net_names:
   - provision_oc
   - external_intranet
+  - storage_mgmt
 
-provision_oc_interface: "{{ undef(hint='Name of bridge interface for 10G LAN-on-motherboard interface') }}"
+provision_oc_interface: "brens3f0np0"
 provision_oc_bridge_ports:
-  - "{{ undef(hint='Name of 10G LAN-on-motherboard interface') }}"
+  - "ens3f0np0"
 
 mgmt_wl_interface: "{{ provision_oc_interface }}.{{ mgmt_wl_vlan }}"
 provision_wl_interface: "{{ provision_oc_interface }}.{{ provision_wl_vlan }}"
 
 bond0_interface: "bond0"
 bond0_bond_slaves:
-  - "{{ undef(hint='Name of first 100G High-Speed Network interface') }}"
-  - "{{ undef(hint='Name of second 100G High-Speed Network interface') }}"
+  - ens5f0np0
+  - ens5f1np1
 bond0_bond_miimon: 100
 bond0_bond_mode: "802.3ad"
 bond0_bond_lacp_rate: "fast"
@@ -26,6 +27,7 @@ bond0_mtu: 9000
 internal_interface: "{{ bond0_interface }}.{{ internal_vlan }}"
 
 storage_interface: "{{ bond0_interface }}.{{ storage_vlan }}"
+storage_mgmt_interface: "{{ bond0_interface }}.{{ storage_mgmt_vlan }}"
 
 octavia_net_interface: "{{ brbond0_interface }}.{{ octavia_net_vlan }}"
 
