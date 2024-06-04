@@ -1,0 +1,22 @@
+---
+switch_interface_config_up: |
+  - link state up
+
+switch_interface_config_down: |
+  - link state down
+
+switch_interface_config_mlag_member: |
+  - bond member {mlag_member}
+  - bond mlag id {mlag_id}
+
+switch_interface_config_bridge_domain: |
+  # Add to the default bridge domain.
+  - bridge domain br_default
+
+switch_interface_config_stp_edge: |
+  # Equivalent to "port fast" STP mode.
+  - bridge domain br_default stp admin-edge on
+  - bridge domain br_default stp bpdu-guard on
+
+switch_interface_config_disabled: |
+  {{ switch_interface_config_down }}
