@@ -106,25 +106,27 @@ seed_hypervisor_lvm_group_data_lv_libvirt_storage_size: 50%VG
 #seed_hypervisor_users:
 
 ###############################################################################
-# Seed hypervisor node firewalld configuration.
+# seed_hypervisor node firewalld configuration.
 
 # Whether to install and enable firewalld.
-#seed_hypervisor_firewalld_enabled:
+seed_hypervisor_firewalld_enabled: true
 
 # A list of zones to create. Each item is a dict containing a 'zone' item.
-#seed_hypervisor_firewalld_zones:
+seed_hypervisor_firewalld_zones: "{{ stackhpc_firewalld_zones }}"
 
-# A firewalld zone to set as the default. Default is unset, in which case the
-# default zone will not be changed.
-#seed_hypervisor_firewalld_default_zone:
+# A firewalld zone to set as the default. Default is unset, in which case
+# the default zone will not be changed.
+# Predefined zones are listed here:
+# https://firewalld.org/documentation/zone/predefined-zones.html
+seed_hypervisor_firewalld_default_zone: trusted
 
-# A list of firewall rules to apply. Each item is a dict containing arguments
-# to pass to the firewalld module. Arguments are omitted if not provided, with
-# the following exceptions:
+# A list of firewall rules to apply. Each item is a dict containing
+# arguments to pass to the firewalld module. Arguments are omitted if not
+# provided, with the following exceptions:
 # - offline: true
 # - permanent: true
 # - state: enabled
-#seed_hypervisor_firewalld_rules:
+seed_hypervisor_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
 
 ###############################################################################
 # Seed Hypervisor node swap configuration.
