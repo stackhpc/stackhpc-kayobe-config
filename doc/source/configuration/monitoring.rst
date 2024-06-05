@@ -42,17 +42,6 @@ The configuration options can be found in
 .. literalinclude:: ../../../etc/kayobe/stackhpc-monitoring.yml
    :language: yaml
 
-In order to enable stock monitoring configuration within a particular
-environment, create the following symbolic links:
-
-.. code-block:: console
-
-    cd $KAYOBE_CONFIG_PATH
-    ln -s ../../../../kolla/config/grafana/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-    ln -s ../../../../kolla/config/prometheus/ environments/$KAYOBE_ENVIRONMENT/kolla/config/
-
-and commit them to the config repository.
-
 SMART Drive Monitoring
 ======================
 
@@ -181,6 +170,72 @@ alerts after deployment it's likely the os_exporter secrets have not been
 set correctly, double check you have entered the correct authentication
 information appropiate to your cloud and re-deploy.
 
+Friendly Network Names
+=======================
+For operators that prefer to see descriptive or friendly interface names the
+following play can be run. This takes network names as defined in kayobe and
+relabels the devices/interfaces in Prometheus to make use of these names.
+
+**Check considerations and known limitations to see if this is suitable in any
+given environment before applying.**
+
+This reuses existing fields to provide good compatibility with existing
+dashboards and alerts.
+
+To enable the change:
+
+.. code-block:: console
+
+    kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
+    kayobe overcloud service reconfigure --kt prometheus
+
+This first generates a template based on the prometheus.yml.j2
+``etc/kayobe/ansible/`` and which is further templated for use with
+kolla-ansible.
+This is then rolled out via service reconfigure.
+
+
+This helps Prometheus provide insights that can be more easily understood by
+those without an intimate understanding of a given site. Prometheus Node
+Exporter and cAdvisor both provide network statistics using the
+interface/device names. This play causes Prometheus to relabel these fields to
+human readable names based on the networks as defined in kayobe
+e.g. bond1.1838 may become storage_network.
+
+The default labels are preserved with the prefix ``original_``.
+
+* For node_exporter, ``device`` is then used for network names, while
+  ``original_device`` is used for the interface itself.
+* For cAdvisor, ``interface`` is used for network names, and
+  ``original_interface`` is used to preserve the interface name.
+
+:Known-Limitations/Considerations/Requirements:
+
+Before enabling this feature, the implications must be discussed with the
+customer. The following are key considerations for that conversation:
+
+* Only network names defined within kayobe are within scope.
+* Tenant network interfaces, including SR-IOV are not considered or modified.
+* Only the interface directly attributed to a network will be relabelled.
+  This may be a bond, a vlan tagged sub-interface, or both.
+  The parent bond, or bond members are not relabelled unless they are
+  captured within a distinct defined network.
+* Modified entries will be within existing labels. This may be breaking for
+  anything that expects the original structure, including custom dashboards,
+  alerting, billing, etc.
+* After applying, there will be inconsistency in the time-series db for the
+  duration of the retention period i.e until previously ingested entries
+  expire.
+  The metrics gathered prior to applying these modifications will be unaltered,
+  with all new metrics using the new structure.
+* The interface names and their purpose must be consistent and unique within
+  the environment. i.e if eth0 is defined as admin_interface on one node, no
+  other node can include a different network definition using eth0.
+  This does not apply in the case when both devices are bond members.
+  e.g. bond0 on a controller has eth0 and eth1 as members. bond1 on a compute
+  uses eth0 and eth1 as members. This is not problematic as it is only
+  the bond itself that is relabelled.
+
 Redfish exporter
 ================
 
@@ -214,4 +269,3 @@ services following deployment, to do this run the following Kayobe command.
 .. code-block:: console
 
     kayobe overcloud service reconfigure -kt grafana,prometheus
-

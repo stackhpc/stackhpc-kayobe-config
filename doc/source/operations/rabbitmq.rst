@@ -73,7 +73,7 @@ If you are running Wallaby or Xena, synchronise the Pulp containers.
 
 .. code-block:: console
 
-  kayobe playbook run etc/kayobe/ansible/pulp-container-sync.yml etc/kayobe/ansible/pulp-container-publish.yml -e stackhpc_pulp_images_kolla_filter=rabbitmq
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml -e stackhpc_pulp_images_kolla_filter=rabbitmq
 
 Ensure that Kolla Ansible is up to date.
 

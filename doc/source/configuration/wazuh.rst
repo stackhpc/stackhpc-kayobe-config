@@ -25,43 +25,44 @@ Provision using infra-vms
 
 Provisioning an infra VM for Wazuh Manager.
 
-From Xena, Kayobe supports :kayobe-doc:`provisioning infra VMs <deployment.html#infrastructure-vms>`. The StackHPC fork of Kayobe has backported this to Wallaby.
+Kayobe supports :kayobe-doc:`provisioning infra VMs <deployment.html#infrastructure-vms>`.
 The following configuration may be used as a guide. Config for infra VMs is documented :kayobe-doc:`here <configuration/reference/infra-vms>`.
 
+Add a Wazuh Manager host to the ``wazuh-manager`` group in ``etc/kayobe/inventory/hosts``.
 
-Set the python interpreter in
-``etc/kayobe/inventory/group_vars/infra-vms/ansible-python-interpreter``:
+.. code-block:: ini
 
+   [wazuh-manager]
+   os-wazuh
 
-.. code-block:: console
+Add the ``wazuh-manager`` group to the ``infra-vms`` group in ``etc/kayobe/inventory/groups``.
 
-  ---
-  # Use a virtual environment for remote operations.
-  ansible_python_interpreter: "{{ virtualenv_path }}/kayobe/bin/python"
+.. code-block:: ini
 
+   [wazuh-manager]
+
+   [infra-vms:children]
+   wazuh-manager
 
 Define VM sizing in ``etc/kayobe/inventory/group_vars/wazuh-manager/infra-vms``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   ---
   # Memory in MB.
   infra_vm_memory_mb: 16384
 
-
   # Number of vCPUs.
   infra_vm_vcpus: 8
 
-
   # Capacity of the infra VM data volume.
   infra_vm_data_capacity: "200G"
-
 
 Optional: define LVM volumes in ``etc/kayobe/inventory/group_vars/wazuh-manager/lvm``.
 ``/var/ossec`` often requires greater storage space, and ``/var/lib/wazuh-indexer``
 may be beneficial too.
 
-.. code-block:: console
+.. code-block:: yaml
 
   # List of infra VM volume groups. See mrlesmithjr.manage-lvm role for
   # format.
@@ -83,7 +84,7 @@ Define network interfaces ``etc/kayobe/inventory/group_vars/wazuh-manager/networ
 
 (The following is an example - the names will depend on your particular network configuration.)
 
-.. code-block:: console
+.. code-block:: yaml
 
   ---
   # Overcloud provisioning network IP information.
@@ -94,7 +95,7 @@ The Wazuh manager may need to be exposed externally, in which case it may requir
 This can be done as follows in ``etc/kayobe/inventory/group_vars/wazuh-manager/network-interfaces``,
 with the network defined in ``networks.yml`` as usual.
 
-.. code-block:: console
+.. code-block:: yaml
 
   infra_vm_extra_network_interfaces:
     - "extra_net"
@@ -162,23 +163,20 @@ the host using kayobe, here are some tips (note that depending on your setup thi
 
 ``networks.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
-    undercloud_admin_net_cidr: 10.10.224.0/24
-    undercloud_admin_net_allocation_pool_start: 10.10.224.3
-    undercloud_admin_net_allocation_pool_end: 10.10.224.200
-    undercloud_admin_net_gateway: 10.10.224.254
+    provision_oc_net_cidr: 10.10.224.0/24
+    provision_oc_net_allocation_pool_start: 10.10.224.3
+    provision_oc_net_allocation_pool_end: 10.10.224.200
+    provision_oc_net_gateway: 10.10.224.254
 
 
 ``network-allocation.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
-    undercloud_admin_net_ips:
+    provision_oc_net_ips:
       nesmetprd01: 10.10.224.5
-
-Note that in this example network name is ``undercloud`` to demonstrate that this network isn't "standard" kayobe network.
-
 
 Deploying Wazuh Manager services
 ================================
@@ -188,7 +186,7 @@ Setup
 
 To install a specific version modify the wazuh-ansible entry in ``etc/kayobe/ansible/requirements.yml``:
 
-.. code-block:: console
+.. code-block:: yaml
 
   roles:
     - name: wazuh-ansible
@@ -254,6 +252,33 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
+Configure Wazuh Dashboard's Server Host
+---------------------------------------
+
+It is common to want to configure the Wazuh dashboard to serve on a different network than the overcloud provisioning network used for Wazuh's internal communication.
+
+In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ <network-name-prefix>_net_name | net_ip }}"
+
+For example:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ public_net_name | net_ip }}"
+
+If this is being added post deployment the user will be required to re-run the ``wazuh-manager.yml`` ansible playbook via the following command:
+
+.. code-block:: bash
+   :caption: Deploy or re-run the ``wazuh-manager.yml`` ansible playbook to apply changes made to the configuration.
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+
+More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section <Deploy>`.
 
 TLS (optional)
 --------------
@@ -317,6 +342,8 @@ Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
 the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
 include this in your deployment, simply copy it to
 ``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
+
+.. _Deploy:
 
 Deploy
 ------
