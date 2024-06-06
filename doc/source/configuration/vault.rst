@@ -351,7 +351,7 @@ Configure Barbican
       enabled_secretstore_plugins=vault_plugin
 
       [vault_plugin]
-      vault_url = https://{{ kolla_internal_vip_address }}:8200
+      vault_url = https://{{ kolla_internal_fqdn }}:8200
       use_ssl = True
       {% raw %}
       ssl_ca_crt_file = {{ openstack_cacert }}
