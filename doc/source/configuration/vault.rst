@@ -239,6 +239,7 @@ Enable the required TLS variables in kayobe and kolla
 
       # Whether TLS is enabled for the external API endpoints. Default is 'no'.
       kolla_enable_tls_external: yes
+      kolla_public_openrc_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
 
    See :ref:`tempest-cacert` for information on adding CA certificates to the trust store when running Tempest.
 
@@ -248,6 +249,7 @@ Enable the required TLS variables in kayobe and kolla
 
       # Whether TLS is enabled for the internal API endpoints. Default is 'no'.
       kolla_enable_tls_internal: yes
+      kolla_admin_openrc_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
 
 3. Set the following in etc/kayobe/kolla/globals.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
 
