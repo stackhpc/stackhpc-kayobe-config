@@ -84,47 +84,6 @@ Setup Vault on the seed node
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/seed-vault-keys.json
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.key
 
-Setup HAProxy config for Vault
-------------------------------
-
-1. Create the HAProxy config to reverse proxy the Vault HA container
-
-   Set the vault_front to the external VIP address or internal VIP address depending on the installation. Set the vault_back to the IPs of the control nodes.
-
-   Set the following in etc/kayobe/kolla/config/haproxy/services.d/vault.cfg or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/haproxy/services.d/vault.cfg
-
-   .. code-block::
-
-      # Delete "verify none" if not using self-signed/unknown issuer
-      {% raw %}
-      frontend vault_front
-         mode tcp
-         option tcplog
-         bind {{ kolla_internal_vip_address }}:8200
-         default_backend vault_back
-
-      backend vault_back
-         mode tcp
-         option httpchk GET /v1/sys/health
-         # https://www.vaultproject.io/api-docs/system/health
-         # 200: initialized, unsealed, and active
-         # 501: not initialised (required for bootstrapping)
-         # 503: sealed (required for bootstrapping)
-         http-check expect rstatus (200|501|503)
-
-      {% for host in groups['control'] %}
-      {% set host_name = hostvars[host].ansible_facts.hostname %}
-      {% set host_ip = 'api' | kolla_address(host) %}
-         server {{ host_name }} {{ host_ip }}:8200 check check-ssl verify none inter 2000 rise 2 fall 5
-      {% endfor %}
-      {% endraw %}
-
-2. Deploy HAProxy with the new Vault service configuration:
-
-   .. code-block::
-
-      kayobe overcloud service deploy --skip-tags os_capacity -kt haproxy
-
 Setup Vault HA on the overcloud hosts
 -------------------------------------
 
@@ -215,6 +174,56 @@ Create the backend TLS and RabbitMQ TLS certificates
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/<controller>-key.pem
 
+.. _vault-haproxy:
+
+HAProxy integration
+===================
+
+It is possible to expose the overcloud Vault service via the Kolla Ansible HAProxy load balancer.
+This provides a single highly available API endpoint, as well as monitoring of the Vault backends when combined with Prometheus.
+HAProxy integration is no longer required for generating OpenStack control plane certificates, making it possible to deploy Vault and generate certificates before any containers have been deployed by Kolla Ansible.
+
+1. Create the HAProxy config to reverse proxy the Vault HA container
+
+   Set the vault_front to the external VIP address or internal VIP address depending on the installation. Set the vault_back to the IPs of the control nodes.
+
+   Set the following in etc/kayobe/kolla/config/haproxy/services.d/vault.cfg or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config/haproxy/services.d/vault.cfg
+
+   .. code-block::
+
+      # Delete "verify none" if not using self-signed/unknown issuer
+      {% raw %}
+      frontend vault_front
+         mode tcp
+         option tcplog
+         bind {{ kolla_internal_vip_address }}:8200
+         default_backend vault_back
+
+      backend vault_back
+         mode tcp
+         option httpchk GET /v1/sys/health
+         # https://www.vaultproject.io/api-docs/system/health
+         # 200: initialized, unsealed, and active
+         # 501: not initialised (required for bootstrapping)
+         # 503: sealed (required for bootstrapping)
+         http-check expect rstatus (200|501|503)
+
+      {% for host in groups['control'] %}
+      {% set host_name = hostvars[host].ansible_facts.hostname %}
+      {% set host_ip = 'api' | kolla_address(host) %}
+         server {{ host_name }} {{ host_ip }}:8200 check check-ssl verify none inter 2000 rise 2 fall 5
+      {% endfor %}
+      {% endraw %}
+
+2. If HAProxy has not yet been deployed, continue to :ref:`certificates deployment <vault-certificates>`.
+   If HAProxy has been deployed, it may be redeployed with the new Vault service configuration:
+
+   .. code-block::
+
+      kayobe overcloud service deploy -kt haproxy
+
+.. _vault-certificates:
+
 Certificates deployment
 =======================
 
@@ -288,6 +297,8 @@ Enable the required TLS variables in kayobe and kolla
 
 Barbican integration
 ====================
+
+Barbican integration depends on :ref:`HAProxy integration <vault-haproxy>`.
 
 Enable Barbican in kayobe
 -------------------------
