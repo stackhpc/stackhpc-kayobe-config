@@ -265,6 +265,24 @@ post-deployment configuration is applied. Commands in the
 ``cephadm_commands_post`` list are executed after the rest of the Ceph
 post-deployment configuration is applied.
 
+Messenger v2 encryption in transit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Messenger v2 is the default on-wire protocol since the Nautilus release. It
+supports `encryption of data in transit
+<https://docs.ceph.com/en/quincy/rados/configuration/msgr2/#connection-mode-configuration-options>`_,
+but this is not used by default. It may be enabled as follows:
+
+.. code:: yaml
+
+   # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
+   # for format.
+   cephadm_commands_pre:
+    # Enable messenger v2 encryption in transit.
+    - "config set global ms_cluster_mode secure"
+    - "config set global ms_service_mode secure"
+    - "config set global ms_client_mode secure"
+
 Manila & CephFS
 ~~~~~~~~~~~~~~~
 
