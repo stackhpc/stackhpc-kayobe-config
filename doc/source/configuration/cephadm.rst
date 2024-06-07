@@ -107,7 +107,7 @@ OSD specification
 ~~~~~~~~~~~~~~~~~
 
 The following example is a basic OSD spec that adds OSDs for all
-available disks:
+available disks with encryption at rest:
 
 .. code:: yaml
 
@@ -118,6 +118,7 @@ available disks:
        host_pattern: "*"
      data_devices:
        all: true
+     encrypted: true
 
 More information about OSD service placement is available
 `here <https://docs.ceph.com/en/quincy/cephadm/services/osd/#advanced-osd-service-specifications>`__.
