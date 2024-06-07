@@ -1,9 +1,9 @@
-================
-Cephadm & Kayobe
-================
+====
+Ceph
+====
 
 This section describes how to use the Cephadm integration included in StackHPC
-Kayobe configuration since Xena to deploy Ceph.
+Kayobe configuration to deploy Ceph.
 
 The Cephadm integration takes the form of custom playbooks that wrap
 around the Ansible `stackhpc.cephadm collection
@@ -19,10 +19,10 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/pacific/cephadm/index.html
--  https://docs.ceph.com/en/pacific/
 -  https://docs.ceph.com/en/quincy/cephadm/index.html
 -  https://docs.ceph.com/en/quincy/
+-  https://docs.ceph.com/en/reef/cephadm/index.html
+-  https://docs.ceph.com/en/reef/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration
@@ -120,7 +120,7 @@ available disks:
        all: true
 
 More information about OSD service placement is available
-`here <https://docs.ceph.com/en/pacific/cephadm/services/osd/#advanced-osd-service-specifications>`__.
+`here <https://docs.ceph.com/en/quincy/cephadm/services/osd/#advanced-osd-service-specifications>`__.
 
 Container image
 ~~~~~~~~~~~~~~~
