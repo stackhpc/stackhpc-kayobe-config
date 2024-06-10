@@ -348,14 +348,22 @@ hosts:
 
    kayobe overcloud host command run --command "echo 'stack:super-secret-password' | sudo chpasswd" --show-output
 
-Alternatively, create a cron job to stop the firewall after some time. If the
-firewall rules block connectivity, you will still be able to get in after the
-job triggers. If the host is still accessible, remove the job. The following
-cron job will stop the firewall service every 10 minutes.
+The ``firewalld-watchdog.yml`` playbook can be used to set up a timer that
+disables the firewalld service after a period of time (default 600s). It should
+be used as follows:
 
-.. code-block::
+.. code-block:: bash
 
-   */10 * * * * sudo systemctl stop firewalld
+   # Enable the watchdog BEFORE applying the firewall configuration
+   kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts>
+
+   # Disable the watchdog after applying the firewall configuration
+   kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts> -e firewalld_watchdog_state=absent
+
+If the firewall rules block connectivity, the second playbook run (disabling
+the watchdog) will fail. You will still be able to get in after the watchdog
+triggers. Remember to disable the watchdog when you are finished, otherwise the
+firewall will be disabled!
 
 Changes should be applied to controllers one at a time to ensure connectivity
 is not lost.
