@@ -66,7 +66,7 @@ stackhpc_firewalld_rules_template: |
   {{ stackhpc_common_firewalld_rules_template +
      (stackhpc_controller_firewalld_rules_template if 'controllers' in group_names else []) +
      (stackhpc_compute_firewalld_rules_template if 'compute' in group_names else []) +
-     (stackhpc_storage_firewalld_rules_template if 'storage' in group_names else []) +
+     (stackhpc_ceph_firewalld_rules_template if 'ceph' in group_names else []) +
      (stackhpc_monitoring_firewalld_rules_template if 'monitoring' in group_names else []) +
      (stackhpc_seed_firewalld_rules_template if 'seed' in group_names else []) +
      (stackhpc_seed_hypervisor_firewalld_rules_template if 'seed-hypervisor' in group_names else []) +
@@ -209,9 +209,9 @@ stackhpc_compute_firewalld_rules_template:
     enabled: "{{ ('vxlan' in (kolla_neutron_ml2_type_drivers + kolla_neutron_ml2_tenant_network_types)) | bool }}"
 
 ###############################################################################
-# Storage firewalld rules
+# Ceph firewalld rules
 
-stackhpc_storage_firewalld_rules_template:
+stackhpc_ceph_firewalld_rules_template:
   # Ceph Prometheus exporter
   - rules:
       - port: 9283/tcp
@@ -251,7 +251,7 @@ stackhpc_wazuh_manager_infra_vm_firewalld_rules_template:
         network: "{{ provision_oc_net_name }}"
         state: enabled
       - port: 443/tcp
-        network: "{{ public_net_name }}"
+        network: "{{ wazuh_dashboard_net_name | default(provision_oc_net_name) }}"
         state: enabled
       - port: 9200/tcp
         network: "{{ provision_oc_net_name }}"

@@ -239,6 +239,9 @@ API network:
    enable_external_api_firewalld: true
    external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 
+Network configuration
+---------------------
+
 Ensure every network in ``networks.yml`` has a zone defined. The standard
 configuration is to set the internal network zone to ``trusted`` and every
 other zone to the name of the network. See
@@ -253,8 +256,19 @@ The variable is a list of firewall rules to apply. Each item is a dictionary
 containing arguments to pass to the firewalld module. The variable can be
 defined as a group var or host var in the kayobe inventory.
 
-The example below would enable SSH on the ``provision_oc`` network, and disable
-UDP port 1000 on the ``admin_oc`` network for the Wazuh manager Infrastructure
+The structure of custom rules is different from the default rules. Custom rules
+use the firewalld Ansible module format. Arguments are omitted if not provided,
+with the following exceptions:
+
+* ``offline: true``
+* ``permanent: true``
+* ``state: enabled``
+
+The main differences are that the ``zone`` argument is mandatory, and the
+``network`` argument is not.
+
+The example below would enable SSH in the ``provision_oc`` zone, and disable
+UDP port 1000 in the ``admin_oc`` zone for the Wazuh manager Infrastructure
 VM:
 
 .. code-block:: yaml
@@ -262,11 +276,9 @@ VM:
 
    stackhpc_firewalld_rules_extra:
      -  service: ssh
-        network: "{{ provision_oc_net_name }}"
         zone: "{{ provision_oc_net_name | net_zone }}"
         state: enabled
      -  port: 1000/udp
-        network: "{{ admin_oc_net_name }}"
         zone: "{{ admin_oc_net_name | net_zone }}"
         state: disabled
 
@@ -274,23 +286,6 @@ Extra rules have higher precedence than the default rules but are not
 validated before being applied. Use with caution. If you need to add a custom
 rule, consider adding it to the default rule list with an appropriate boolean
 condition, and where possible merge your changes back into upstream SKC.
-
-Kolla-Ansible configuration
----------------------------
-
-Ensure Kolla Ansible opens up ports in firewalld for services on the public
-API network:
-
-.. code-block:: yaml
-   :caption: ``etc/kayobe/kolla/globals.yml``
-
-   enable_external_api_firewalld: true
-   external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
-
-Ensure every network in ``networks.yml`` has a zone defined. The standard
-configuration is to set the internal network zone to ``trusted`` and every
-other zone to the name of the network. See
-``etc/kayobe/environments/ci-multinode/networks.yml`` for a practical example.
 
 Validation
 ----------
