@@ -196,6 +196,8 @@ Enable the required TLS variables in kayobe and kolla
       # Whether TLS is enabled for the internal API endpoints. Default is 'no'.
       kolla_enable_tls_internal: yes
 
+   See :ref:`os-capacity` for information on adding CA certificates to the trust store when deploying the OpenStack Capacity exporter.
+
 2. Set the following in etc/kayobe/kolla/globals.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
 
    .. code-block::

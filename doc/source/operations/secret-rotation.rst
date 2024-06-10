@@ -46,7 +46,7 @@ process easier.
 
    This was previously mitigated with a change to the StackHPC fork of
    Kolla-Ansible, which has since been reverted due to an unforeseen issue. See
-   `here <https://github.com/stackhpc/kolla-ansible/pull/503>` for more
+   `here <https://github.com/stackhpc/kolla-ansible/pull/503>`__ for more
    details.
 
 #. A change to Nova, to automate :ref:`this<nova-change>` step to change the
