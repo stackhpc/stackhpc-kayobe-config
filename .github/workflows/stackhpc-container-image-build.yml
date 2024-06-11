@@ -39,7 +39,7 @@ on:
         required: false
         default: true
       push-dirty:
-        description: Push scanned images that have vulnerabilities?
+        description: Push scanned images that have critical vulnerabilities?
         type: boolean
         required: false
         default: false
@@ -239,9 +239,16 @@ jobs:
         run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
         if: inputs.push
 
+      # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
+      # This should be reverted when it's decided to filter high level CVEs as well.
       - name: Append dirty images to push list
         run: |
           cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push }}
+
+      - name: Append images with critical vulnerabilities to push list
+        run: |
+          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
         if: ${{ inputs.push && inputs.push-dirty }}
 
       - name: Push images

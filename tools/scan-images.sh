@@ -51,8 +51,6 @@ for image in $images; do
     # Add the image to the clean list
     echo "${image}" >> image-scan-output/clean-images.txt
   else
-    # Add the image to the dirty list
-    echo "${image}" >> image-scan-output/dirty-images.txt
 
     # Write a header for the summary CSV
     echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}.summary.csv
@@ -81,6 +79,9 @@ for image in $images; do
     if [ $(grep "CRITICAL" image-scan-output/${filename}.summary.csv -c) -gt 0 ]; then
       # If the image contains critical vulnerabilities, add the image to critical list
       echo "${image}" >> image-scan-output/critical-images.txt
+    else
+      # Otherwise, add the image to the dirty list
+      echo "${image}" >> image-scan-output/dirty-images.txt
     fi
   fi
 done
