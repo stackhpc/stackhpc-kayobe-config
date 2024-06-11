@@ -126,6 +126,8 @@ depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
 
+.. _os-capacity:
+
 OpenStack Capacity
 ==================
 
@@ -149,9 +151,19 @@ project domain name in ``stackhpc-monitoring.yml``:
     stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
 
 Additionally, you should ensure these credentials have the correct permissions
-for the exporter. If you are deploying in a cloud with internal TLS, you may be required
-to disable certificate verification for the OpenStack Capacity exporter
-if your certificate is not signed by a trusted CA.
+for the exporter.
+
+If you are deploying in a cloud with internal TLS, you may be required
+to provide a CA certificate for the OpenStack Capacity exporter if your
+certificate is not signed by a trusted CA. For example, to use a CA certificate
+named ``vault.crt`` that is also added to the Kolla containers:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
+Alternatively, to disable certificate verification for the OpenStack Capacity
+exporter:
 
 .. code-block:: yaml
 
