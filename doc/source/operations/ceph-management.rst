@@ -89,11 +89,60 @@ And then remove the host from inventory (usually in
 Additional options/commands may be found in
 `Host management <https://docs.ceph.com/en/latest/cephadm/host-management/>`_
 
-Replacing a Failed Ceph Drive
------------------------------
+Replacing failing drive
+-----------------------
 
-Once an OSD has been identified as having a hardware failure,
-the affected drive will need to be replaced.
+A failing drive in a Ceph cluster will cause OSD daemon to crash.
+In this case Ceph will go into `HEALTH_WARN` state.
+Ceph can report details about failed OSDs by running:
+
+.. code-block:: console
+   # From storage host
+   sudo cephadm shell
+   ceph health detail
+
+.. note ::
+
+   Remember to run ceph/rbd commands from within ``cephadm shell``
+   (preferred method) or after installing Ceph client. Details in the
+   official `documentation <https://docs.ceph.com/en/latest/cephadm/install/#enable-ceph-cli>`__.
+   It is also required that the host where commands are executed has admin
+   Ceph keyring present - easiest to achieve by applying
+   `_admin <https://docs.ceph.com/en/latest/cephadm/host-management/#special-host-labels>`__
+   label (Ceph MON servers have it by default when using
+   `StackHPC Cephadm collection <https://github.com/stackhpc/ansible-collection-cephadm>`__).
+
+A failed OSD will also be reported as down by running:
+
+.. code-block:: console
+
+   ceph osd tree
+
+Note the ID of the failed OSD.
+
+The failed disk is usually logged by the Linux kernel too:
+
+.. code-block:: console
+
+   # From storage host
+   dmesg -T
+
+Cross-reference the hardware device and OSD ID to ensure they match.
+(Using `pvs` and `lvs` may help make this connection).
+
+See upstream documentation:
+https://docs.ceph.com/en/latest/cephadm/services/osd/#replacing-an-osd
+
+In case where disk holding DB and/or WAL fails, it is necessary to recreate
+all OSDs that are associated with this disk - usually NVMe drive. The
+following single command is sufficient to identify which OSDs are tied to
+which physical disks:
+
+.. code-block:: console
+
+   ceph device ls
+
+Once OSDs on failed disks are identified, follow procedure below.
 
 If rebooting a Ceph node, first set ``noout`` to prevent excess data
 movement:
@@ -130,25 +179,6 @@ spec before (``cephadm_osd_spec`` variable in ``etc/kayobe/cephadm.yml``).
 Either set ``unmanaged: true`` to stop cephadm from picking up new disks or
 modify it in some way that it no longer matches the drives you want to remove.
 
-
-Operations
-==========
-
-Replacing drive
----------------
-
-See upstream documentation:
-https://docs.ceph.com/en/latest/cephadm/services/osd/#replacing-an-osd
-
-In case where disk holding DB and/or WAL fails, it is necessary to recreate
-(using replacement procedure above) all OSDs that are associated with this
-disk - usually NVMe drive. The following single command is sufficient to
-identify which OSDs are tied to which physical disks:
-
-.. code-block:: console
-
-   ceph device ls
-
 Host maintenance
 ----------------
 
@@ -162,46 +192,6 @@ https://docs.ceph.com/en/latest/cephadm/upgrade/
 
 Troubleshooting
 ===============
-
-Investigating a Failed Ceph Drive
----------------------------------
-
-A failing drive in a Ceph cluster will cause OSD daemon to crash.
-In this case Ceph will go into `HEALTH_WARN` state.
-Ceph can report details about failed OSDs by running:
-
-.. code-block:: console
-
-   ceph health detail
-
-.. note ::
-
-   Remember to run ceph/rbd commands from within ``cephadm shell``
-   (preferred method) or after installing Ceph client. Details in the
-   official `documentation <https://docs.ceph.com/en/latest/cephadm/install/#enable-ceph-cli>`__.
-   It is also required that the host where commands are executed has admin
-   Ceph keyring present - easiest to achieve by applying
-   `_admin <https://docs.ceph.com/en/latest/cephadm/host-management/#special-host-labels>`__
-   label (Ceph MON servers have it by default when using
-   `StackHPC Cephadm collection <https://github.com/stackhpc/ansible-collection-cephadm>`__).
-
-A failed OSD will also be reported as down by running:
-
-.. code-block:: console
-
-   ceph osd tree
-
-Note the ID of the failed OSD.
-
-The failed disk is usually logged by the Linux kernel too:
-
-.. code-block:: console
-
-   # From storage host
-   dmesg -T
-
-Cross-reference the hardware device and OSD ID to ensure they match.
-(Using `pvs` and `lvs` may help make this connection).
 
 Inspecting a Ceph Block Device for a VM
 ---------------------------------------
