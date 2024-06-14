@@ -5,6 +5,9 @@ Managing and Operating Ceph
 Working with Cephadm
 ====================
 
+This documentation provides guide for Ceph operations. For deploying Ceph,
+please refer to :ref:`cephadm-kayobe` documentation.
+
 cephadm configuration location
 ------------------------------
 

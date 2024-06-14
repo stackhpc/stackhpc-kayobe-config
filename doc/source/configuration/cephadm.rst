@@ -1,6 +1,8 @@
-====
-Ceph
-====
+.. _cephadm-kayobe:
+
+================
+Cephadm & Kayobe
+================
 
 This section describes how to use the Cephadm integration included in StackHPC
 Kayobe configuration to deploy Ceph.
