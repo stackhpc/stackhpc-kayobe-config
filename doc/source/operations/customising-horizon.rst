@@ -54,6 +54,7 @@ Create a directory and transfer custom theme files to it ``$KAYOBE_CONFIG_PATH/k
 Define the custom theme in ``etc/kayobe/kolla/globals.yml``
 
 .. code-block:: yaml
+
    horizon_custom_themes:
       - name: <custom theme name>
         label: <custom theme label> # This will be the visible name to users
