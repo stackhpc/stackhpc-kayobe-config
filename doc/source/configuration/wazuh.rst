@@ -2,13 +2,20 @@
 Wazuh
 =====
 
+`Wazuh <https://wazuh.com>`_ is a security monitoring platform.
+It monitors for:
+
+* Security-related system events.
+* Known vulnerabilities (CVEs) in versions of installed software.
+* Misconfigurations in system security.
+
 The short version
 =================
 
 #. Create an infrastructure VM for the Wazuh manager, and add it to the wazuh-manager group
 #. Configure the infrastructure VM with kayobe: ``kayobe infra vm host configure``
 #. Edit your config under
-   ``etc/kayobe/inventory/group_vars/wazuh-manager/wazuh-manager``, in
+   ``$KAYOBE_CONFIG_PATHinventory/group_vars/wazuh-manager/wazuh-manager``, in
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
 #. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
@@ -233,9 +240,12 @@ You may need to modify some of the variables, including:
     - etc/kayobe/wazuh-manager.yml
     - etc/kayobe/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
+You'll need to run ``wazuh-manager.yml`` playbook again to apply customisation.
+
 Secrets
 -------
 
+Wazuh requires that secrets or passwords are set for itself and the services with which it communiticates.
 Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
 vault file which will be placed in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
@@ -249,6 +259,10 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
+
+.. note:: Use ``ansible-vault`` to view the secrets:
+
+  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-secrets.yml``
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
@@ -389,6 +403,25 @@ You may need to modify some variables, including:
 Deploy the Wazuh agents:
 
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
+
+The Wazuh Agent is deployed to all hosts in the ``wazuh-agent``
+inventory group, comprising the ``seed`` group
+plus the ``overcloud`` group (containing all hosts in the
+OpenStack control plane).
+
+.. code-block:: ini
+
+    [wazuh-agent:children]
+    seed
+    overcloud
+
+The hosts running Wazuh Agent should automatically be registered
+and visible within the Wazuh Manager dashboard.
+
+.. note:: It is good practice to use a `Kayobe deploy hook
+  <https://docs.openstack.org/kayobe/latest/custom-ansible-playbooks.html#hooks>`_
+  to automate deployment and configuration of the Wazuh Agent
+  following a run of ``kayobe overcloud host configure``.
 
 Verification
 ------------
