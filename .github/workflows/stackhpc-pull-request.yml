@@ -76,34 +76,6 @@ jobs:
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  all-in-one-centos-ovs:
-    name: aio (CentOS OVS)
-    needs:
-      - check-changes
-      - build-kayobe-image
-    uses: ./.github/workflows/stackhpc-all-in-one.yml
-    with:
-      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-      neutron_plugin: ovs
-      OS_CLOUD: openstack
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
-    secrets: inherit
-    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
-
-  all-in-one-centos-ovn:
-    name: aio (CentOS OVN)
-    needs:
-      - check-changes
-      - build-kayobe-image
-    uses: ./.github/workflows/stackhpc-all-in-one.yml
-    with:
-      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-      neutron_plugin: ovn
-      OS_CLOUD: openstack
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
-    secrets: inherit
-    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
-
   all-in-one-rocky-8-ovs:
     name: aio (Rocky OVS)
     needs:
