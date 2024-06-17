@@ -294,27 +294,61 @@ node is powered back on.
 Software Updates
 ================
 
-Update Packages on Control Plane
---------------------------------
+Update Host Packages on Control Plane
+-------------------------------------
 
-OS packages can be updated with:
+The host packages and Kolla container images are distributed from `StackHPC Release Train
+<https://stackhpc.github.io/stackhpc-release-train/>`__ to ensure tested and reliable
+software releases are provided.
+
+Syncing new StackHPC Release Train contents to local Pulp server is needed before updating
+host packages and/or Kolla services.
+
+To sync host packages:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud host package update --limit <Hypervisor node> --packages '*'
-   kayobe# kayobe overcloud seed package update --packages '*'
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+
+If the system is production environment and want to use packages tested in test/staging
+environment, you can promote them by:
+
+.. code-block:: console
+
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+
+To sync container images:
+
+.. code-block:: console
+
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+
+Once sync with StackHPC Release Train is done, new contents will be accessible from local
+Pulp server.
+
+Host packages can be updated with:
+
+.. code-block:: console
+
+   kayobe# kayobe overcloud host package update --limit <node> --packages '*'
+   kayobe# kayobe seed host package update --packages '*'
 
 See https://docs.openstack.org/kayobe/latest/administration/overcloud.html#updating-packages
 
-Minor Upgrades to OpenStack Services
-------------------------------------
+Upgrading OpenStack Services
+----------------------------
 
-* Pull latest changes from upstream stable branch to your own ``kolla`` fork (if applicable)
-* Update ``kolla_openstack_release`` in ``etc/kayobe/kolla.yml`` (unless using default)
-* Update tags for the images in ``etc/kayobe/kolla/globals.yml`` to use the new value of ``kolla_openstack_release``
-* Rebuild container images
-* Pull container images to overcloud hosts
-* Run kayobe overcloud service upgrade
+* Update tags for the images in ``etc/kayobe/kolla-image-tags.yml`` to use the new value of ``kolla_openstack_release``
+* Pull container images to overcloud hosts with ``kayobe overcloud container image pull``
+* Run ``kayobe overcloud service upgrade``
+
+You can update the subset of containers or hosts by
+
+.. code-block:: console
+
+   kayobe# kayobe overcloud service upgrade --kolla-tags <service> --limit <hostname> --kolla-limit <hostname>
 
 For more information, see: https://docs.openstack.org/kayobe/latest/upgrading.html
 
@@ -339,7 +373,7 @@ To boot an instance on a specific hypervisor
 
 .. code-block:: console
 
-   openstack server create --flavor <Flavour name>--network <Network name> --key-name <key> --image <Image name> --availability-zone nova::<Hypervisor name> <VM name>
+   openstack server create --flavor <flavour name>--network <network name> --key-name <key> --image <Image name> --os-compute-api-version 2.74 --host <hypervisor hostname> <vm name>
 
 Cleanup Procedures
 ==================
