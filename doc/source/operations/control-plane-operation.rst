@@ -294,8 +294,8 @@ node is powered back on.
 Software Updates
 ================
 
-Update Host Packages on Control Plane
--------------------------------------
+Sync local Pulp server with StackHPC Release Train
+--------------------------------------------------
 
 The host packages and Kolla container images are distributed from `StackHPC Release Train
 <https://stackhpc.github.io/stackhpc-release-train/>`__ to ensure tested and reliable
@@ -325,8 +325,13 @@ To sync container images:
    kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
    kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
 
+For more information about StackHPC Release Train, see :ref:`stackhpc-release-train` documentation.
+
 Once sync with StackHPC Release Train is done, new contents will be accessible from local
 Pulp server.
+
+Update Host Packages on Control Plane
+-------------------------------------
 
 Host packages can be updated with:
 
@@ -340,7 +345,7 @@ See https://docs.openstack.org/kayobe/latest/administration/overcloud.html#updat
 Upgrading OpenStack Services
 ----------------------------
 
-* Update tags for the images in ``etc/kayobe/kolla-image-tags.yml`` to use the new value of ``kolla_openstack_release``
+* Update tags for the images in ``etc/kayobe/kolla-image-tags.yml``
 * Pull container images to overcloud hosts with ``kayobe overcloud container image pull``
 * Run ``kayobe overcloud service upgrade``
 
