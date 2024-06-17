@@ -972,6 +972,13 @@ scope of the upgrade:
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
 
+Updating the Octavia Amphora Image
+----------------------------------
+
+If using Octavia with the Amphora driver, you may want to `build a new amphora
+image
+<https://docs.openstack.org/octavia/latest/admin/guides/operator-maintenance.html#rotating-the-amphora-images>`__.
+
 Testing
 -------
 
