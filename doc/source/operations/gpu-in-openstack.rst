@@ -971,9 +971,9 @@ Once this code has taken effect (after a reboot), the VFIO kernel drivers should
 
    # lspci -nnk -s 3d:00.0
    3d:00.0 VGA compatible controller [0300]: NVIDIA Corporation GM107GL [Tesla M10] [10de:13bd] (rev a2)
-	 Subsystem: NVIDIA Corporation Tesla M10 [10de:1160]
-	 Kernel driver in use: vfio-pci
-	 Kernel modules: nouveau
+   Subsystem: NVIDIA Corporation Tesla M10 [10de:1160]
+   Kernel driver in use: vfio-pci
+   Kernel modules: nouveau
 
 IOMMU should be enabled at kernel level as well - we can verify that on the compute host:
 

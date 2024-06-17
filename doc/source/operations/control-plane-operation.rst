@@ -71,10 +71,10 @@ hypervisor will produce several alerts:
 * ``PrometheusTargetMissing`` from several Prometheus exporters
 
 Rather than silencing each alert one by one for a specific host, a silence can
-apply to multiple alerts using a reduced list of labels. :ref:`Log into
-Alertmanager <prometheus-alertmanager>`, click on the ``Silence`` button next
-to an alert and adjust the matcher list to keep only ``instance=<hostname>``
-label.  Then, create another silence to match ``hostname=<hostname>`` (this is
+apply to multiple alerts using a reduced list of labels. Log into Alertmanager,
+click on the ``Silence`` button next to an alert and adjust the matcher list
+to keep only ``instance=<hostname>`` label.
+Then, create another silence to match ``hostname=<hostname>`` (this is
 required because, for the OpenStack exporter, the instance is the host running
 the monitoring service rather than the host being monitored).
 

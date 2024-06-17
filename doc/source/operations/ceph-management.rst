@@ -100,6 +100,7 @@ In this case Ceph will go into `HEALTH_WARN` state.
 Ceph can report details about failed OSDs by running:
 
 .. code-block:: console
+
    # From storage host
    sudo cephadm shell
    ceph health detail

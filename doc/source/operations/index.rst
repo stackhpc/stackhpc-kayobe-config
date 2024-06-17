@@ -9,7 +9,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
 
    ceph-management
    control-plane-operation
-   customsing-horizon
+   customising-horizon
    gpu-in-openstack
    hardware-inventory-management
    hotfix-playbook
