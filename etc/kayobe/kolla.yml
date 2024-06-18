@@ -147,6 +147,12 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
+  neutron-server-plugin-networking-mlnx:
+    type: git
+    location: https://opendev.org/x/networking-mlnx
+    # FIXME(wszumski): Last stable release is stable/yoga
+    #reference: stable/{{ openstack_release }}
+    reference: master
   octavia-api-plugin-ovn-octavia-provider:
     type: git
     location: https://github.com/stackhpc/ovn-octavia-provider.git
@@ -155,6 +161,12 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/ovn-octavia-provider.git
     reference: stackhpc/{{ openstack_release }}
+  nova-compute-plugin-networking-mlnx:
+    type: git
+    location: https://opendev.org/x/networking-mlnx
+    # FIXME(wszumski): Last stable release is stable/yoga
+    #reference: stable/{{ openstack_release }}
+    reference: master
 
 ###############################################################################
 # Kolla image build configuration.
@@ -347,6 +359,12 @@ kolla_build_blocks:
     {% set magnum_capi_packages = ['magnum-capi-helm==1.0.0'] %}
     RUN {{ macros.install_pip(magnum_capi_packages | customizable("pip_packages")) }}
     {% endraw %}
+  nova_compute_header:
+    # See: https://review.opendev.org/c/openstack/kolla/+/878663/1/docker/neutron/neutron-mlnx-agent/Dockerfile.j2
+    RUN sed -e "s/^pyzmq===20.0.0/pyzmq==21.*/g" -i /requirements/upper-constraints.txt
+  neutron_server_header:
+    # See: https://review.opendev.org/c/openstack/kolla/+/878663/1/docker/neutron/neutron-mlnx-agent/Dockerfile.j2
+    RUN sed -e "s/^pyzmq===20.0.0/pyzmq==21.*/g" -i /requirements/upper-constraints.txt
   prometheus_alertmanager_repository_version: | # 2023.1 kolla has 0.24.0
     {% raw %}
     ARG prometheus_alertmanager_version=0.26.0
@@ -439,6 +457,12 @@ kolla_build_customizations_common:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
+  neutron_server_packages_append:
+    - python3-libvirt
+    - python3-ethtool
+  nova_compute_packages_append:
+    - python3-libvirt
+    - python3-ethtool
 
 kolla_build_customizations_rocky:
   ovn_base_packages_override:
