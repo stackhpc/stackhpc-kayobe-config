@@ -54,4 +54,5 @@ host configure, simply set this flag to ``true``:
     stackhpc_enable_cis_benchmark_hardening: true
 
 Alternatively, this can be toggled on a per-environment basis by
-setting it in an environment specific config file.
+setting it in an environment specific config file, or even on
+targeted hosts by using group or host vars.
