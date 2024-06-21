@@ -40,3 +40,18 @@ whether or not workloads or API requests are affected by any configuration chang
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
 
+Enabling the host configure hook
+--------------------------------
+
+A hook is pre-installed but its execution is guarded by the
+``stackhpc_enable_cis_benchmark_hardening`` configuration option.
+If you want the hardening playbooks to run automatically, as part of
+host configure, simply set this flag to ``true``:
+
+.. code-block:: yaml
+  :caption: $KAYOBE_CONFIG_PATH/stackhpc.yml
+
+    stackhpc_enable_cis_benchmark_hardening: true
+
+Alternatively, this can be toggled on a per-environment basis by
+setting it in an environment specific config file.
