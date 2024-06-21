@@ -1,0 +1,39 @@
+- name: Prometheus friendly network names
+  hosts: overcloud
+  gather_facts: no
+  tasks:
+    - name: Gather network maps from each host with unique identifiers
+      set_fact:
+        host_network_maps: >-
+          {%- set if_list = [] -%}
+          {%- for i in network_interfaces -%}
+            {%- set device_name = hostvars[inventory_hostname][i ~ '_interface'] -%}
+            {%- set friendly_name = i -%}
+            {%- set unique_id = device_name ~ '_' ~ friendly_name -%}
+            {%- set _ = if_list.append({
+              'unique_id': unique_id,
+              'device_name': device_name,
+              'friendly_name': friendly_name
+            }) -%}
+          {%- endfor -%}
+          {{ if_list }}
+
+    - name: Aggregate network maps from all hosts
+      set_fact:
+        prometheus_network_maps_aggregated: "{{ groups['overcloud'] | map('extract', hostvars, 'host_network_maps') | flatten }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Deduplicate the aggregated list based on unique IDs
+      set_fact:
+        prometheus_network_maps_blob: "{{ prometheus_network_maps_aggregated | unique(attribute='unique_id') }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Apply template with deduplicated network maps
+      ansible.builtin.template:
+        src: prometheus.yml.j2
+        dest: "{{ kayobe_env_config_path }}/kolla/config/prometheus/prometheus.yml"
+      become: true
+      run_once: true
+      delegate_to: localhost
