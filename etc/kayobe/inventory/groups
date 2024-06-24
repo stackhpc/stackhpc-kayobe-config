@@ -54,8 +54,11 @@ controllers
 [storage]
 # Empty group to provide declaration of storage group.
 
-[compute]
-# Empty group to provide declaration of compute group.
+[compute-vgpu]
+# Empty group to provide declaration of compute-vgpu group.
+
+[compute:children]
+compute-vgpu
 
 [overcloud:children]
 controllers
@@ -63,6 +66,14 @@ network
 monitoring
 storage
 compute
+
+###############################################################################
+# Feature control groups
+[vgpu:children]
+compute-vgpu
+
+[iommu:children]
+vgpu
 
 ###############################################################################
 # Service groups.
