@@ -161,7 +161,7 @@ Common issues for all host types
    <https://bugs.launchpad.net/ubuntu/+source/neutron/+bug/1995735>`__ and
    `LP#2042954 <https://bugs.launchpad.net/kolla/+bug/2042954>`__ for
    details.  A `fix <https://review.opendev.org/c/openstack/kolla/+/913584>`__
-   is in progress.
+   is now available but new images have not yet been built.
 
 Controllers
 ===========
