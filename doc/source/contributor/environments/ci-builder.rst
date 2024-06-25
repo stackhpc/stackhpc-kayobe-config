@@ -123,6 +123,13 @@ Pulp proxy that injects an HTTP basic auth header into requests that it
 proxies. Because this proxy bypasses Pulp's authentication, it must not be
 exposed to any untrusted environment.
 
+Ensure that ``localhost`` is resolvable if Docker bridge networking is
+disabled. This may be achieved by adding the following to ``/etc/hosts``:
+
+.. parsed-literal::
+
+   127.0.0.1 localhost
+
 To deploy the proxy:
 
 .. parsed-literal::

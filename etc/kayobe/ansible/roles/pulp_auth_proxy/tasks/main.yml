@@ -1,4 +1,24 @@
 ---
+- when: pulp_auth_proxy_network_mode is none
+  block:
+    - name: Check if Docker bridge network exists
+      community.docker.docker_host_info:
+        networks: true
+      register: docker_host_info
+
+    - name: Set a fact about the network mode
+      ansible.builtin.set_fact:
+        pulp_auth_proxy_network_mode: "{{ 'host' if docker_host_info.networks | selectattr('Driver', 'equalto', 'bridge') | list | length == 0 else 'bridge' }}"
+
+- name: Assert that localhost is resolvable when using host networking
+  assert:
+    that:
+      - "'localhost' is ansible.utils.resolvable"
+    fail_msg: >-
+      localhost must be resolvable when using Docker host networking with this container.
+      Consider adding '127.0.0.1 localhost' to /etc/hosts.
+  when: pulp_auth_proxy_network_mode == 'host'
+
 - name: "Ensure {{ pulp_auth_proxy_conf_path }} exists"
   ansible.builtin.file:
     path: "{{ pulp_auth_proxy_conf_path }}"
@@ -18,6 +38,7 @@
   community.docker.docker_container:
     name: pulp_proxy
     image: nginx:stable-alpine
+    network_mode: "{{ pulp_auth_proxy_network_mode }}"
     ports:
       - "{{ pulp_auth_proxy_listen_ip }}:{{ pulp_auth_proxy_listen_port }}:80"
     restart_policy: "no"
