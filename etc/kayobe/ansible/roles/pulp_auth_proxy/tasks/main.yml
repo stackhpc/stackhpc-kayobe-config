@@ -45,3 +45,11 @@
     restart: "{{ pulp_proxy_conf is changed }}"
     volumes:
       - "{{ pulp_auth_proxy_conf_path }}/pulp_proxy.conf:/etc/nginx/conf.d/default.conf:ro"
+
+- name: Wait for pulp_proxy container to become accessible
+  ansible.builtin.uri:
+    url: http://localhost/pulp/api/v3/status/
+  register: uri_result
+  until: uri_result is success
+  retries: 30
+  delay: 2
