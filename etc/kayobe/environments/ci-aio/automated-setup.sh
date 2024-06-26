@@ -24,10 +24,6 @@ elif $KAYOBE_AIO_LVM; then
    exit 1
 fi
 
-cat << EOF | sudo tee -a /etc/hosts
-10.205.3.187 pulp-server pulp-server.internal.sms-cloud
-EOF
-
 if type dnf; then
     sudo dnf -y install git
 else
