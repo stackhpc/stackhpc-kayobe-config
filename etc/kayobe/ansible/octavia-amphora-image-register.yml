@@ -21,7 +21,7 @@
           - openstacksdk
           - python-openstackclient
         state: latest
-        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        extra_args: "{% if openstacksdk_upper_constraints_file %}-c {{ openstacksdk_upper_constraints_file }}{% endif %}"
 
     - name: Query Octavia Amphora image
       vars:
@@ -40,7 +40,14 @@
         checksum_algorithm: md5
       changed_when: false
       register: image_checksum
-      when: image_info.openstack_image
+      when: image_info.image
+
+    - name: Assert that Amphora image exists
+      assert:
+        that: image_checksum.stat.exists
+        fail_msg: |
+          The amphora image: {{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2
+          does not exist. Did you build the image?
 
     - name: Ensure Octavia Amphora image is renamed
       vars:
@@ -49,8 +56,8 @@
         cmd: >-
           {{ venv }}/bin/openstack image set amphora-x64-haproxy --name amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}
       when:
-        - image_info.openstack_image
-        - image_info.openstack_image.checksum != image_checksum.stat.checksum
+        - image_info.image
+        - image_info.image.checksum != image_checksum.stat.checksum
       changed_when: true
       environment: "{{ openstack_auth_env }}"
 
