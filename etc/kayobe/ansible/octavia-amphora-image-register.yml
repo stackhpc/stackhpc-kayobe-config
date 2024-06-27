@@ -13,6 +13,20 @@
         lookup('env', 'OS_USERNAME') != 'octavia' or
         lookup('env', 'OS_PROJECT_NAME') != 'service'
 
+    - name: Get image checksum
+      stat:
+        path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
+        checksum_algorithm: md5
+      changed_when: false
+      register: image_checksum
+
+    - name: Assert that Amphora image exists
+      assert:
+        that: image_checksum.stat.exists
+        fail_msg: |
+          The amphora image: {{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2
+          does not exist. Did you build the image?
+
     - name: Set up openstack virtualenv
       pip:
         virtualenv: "{{ venv }}"
@@ -33,21 +47,6 @@
         interface: "{{ openstack_interface }}"
         image: amphora-x64-haproxy
       register: image_info
-
-    - name: Get image checksum
-      stat:
-        path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
-        checksum_algorithm: md5
-      changed_when: false
-      register: image_checksum
-      when: image_info.image
-
-    - name: Assert that Amphora image exists
-      assert:
-        that: image_checksum.stat.exists
-        fail_msg: |
-          The amphora image: {{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2
-          does not exist. Did you build the image?
 
     - name: Ensure Octavia Amphora image is renamed
       vars:
