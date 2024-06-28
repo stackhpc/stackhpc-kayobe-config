@@ -121,6 +121,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
     reference: stackhpc/{{ openstack_release }}
+  horizon:
+    type: git
+    location: https://github.com/stackhpc/horizon.git
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -332,7 +336,7 @@ kolla_build_blocks:
   magnum_base_footer: |
     RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
     {% raw %}
-    {% set magnum_capi_packages = ['git+https://github.com/stackhpc/magnum-capi-helm.git@v0.13.0'] %}
+    {% set magnum_capi_packages = ['magnum-capi-helm==1.0.0'] %}
     RUN {{ macros.install_pip(magnum_capi_packages | customizable("pip_packages")) }}
     {% endraw %}
   prometheus_alertmanager_repository_version: | # 2023.1 kolla has 0.24.0
@@ -415,7 +419,6 @@ kolla_build_blocks:
     ARG prometheus_version=2.51.1
     ARG prometheus_url=https://github.com/prometheus/prometheus/releases/download/v${prometheus_version}/prometheus-${prometheus_version}.linux-{{debian_arch}}.tar.gz
     {% endraw %}
-
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:

@@ -3,7 +3,7 @@
   hosts: controllers
   run_once: true
   vars:
-    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
+    vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
     # NOTE: Using the same CA as internal TLS.
     vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
@@ -23,6 +23,8 @@
         extra_params:
           ip_sans: "{{ kolla_external_vip_address }}"
       register: external_cert
+      environment:
+        https_proxy: ''
 
     - name: Ensure certificates directory exists
       file:

@@ -136,6 +136,10 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
 
+      - name: Install yq
+        run: |
+          curl -sL https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz | tar xz && sudo mv yq_linux_amd64 /usr/bin/yq
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -149,7 +153,7 @@ jobs:
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          sudo pip install docker
+          sudo pip install docker 'requests<2.32.0'
       
       - name: Get Kolla tag
         id: write-kolla-tag
@@ -253,7 +257,7 @@ jobs:
               if docker push $image; then
                 echo "Pushed $image"
                 break
-              elif $i == 5; then
+              elif [ $i -eq 5 ] ; then
                 echo "Failed to push $image"
                 echo $image >> image-build-logs/push-failed-images.txt
               else

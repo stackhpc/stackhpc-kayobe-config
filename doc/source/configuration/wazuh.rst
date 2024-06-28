@@ -252,6 +252,33 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
   ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
+Configure Wazuh Dashboard's Server Host
+---------------------------------------
+
+It is common to want to configure the Wazuh dashboard to serve on a different network than the overcloud provisioning network used for Wazuh's internal communication.
+
+In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ <network-name-prefix>_net_name | net_ip }}"
+
+For example:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+
+    dashboard_server_host: "{{ public_net_name | net_ip }}"
+
+If this is being added post deployment the user will be required to re-run the ``wazuh-manager.yml`` ansible playbook via the following command:
+
+.. code-block:: bash
+   :caption: Deploy or re-run the ``wazuh-manager.yml`` ansible playbook to apply changes made to the configuration.
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+
+More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section <Deploy>`.
 
 TLS (optional)
 --------------
@@ -315,6 +342,8 @@ Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
 the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
 include this in your deployment, simply copy it to
 ``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
+
+.. _Deploy:
 
 Deploy
 ------
