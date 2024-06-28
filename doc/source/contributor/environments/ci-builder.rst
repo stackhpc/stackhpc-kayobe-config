@@ -3,25 +3,32 @@ ci-builder
 ==========
 
 The ``ci-builder`` Kayobe environment is used to build Kolla container images.
-Images are built using package repositories in the StackHPC development Pulp
-service, and pushed there once built.
+Images are built using package repositories in the StackHPC Ark Pulp service,
+and pushed there once built.
 
-.. warning::
-
-    This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
-
+In general it is preferable to use the `container image build CI workflow
+<https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/stackhpc-container-image-build.yml>`_
+to build container images, but this manual approach may be useful in some
+cases.
 
 Prerequisites
 =============
 
 * a Rocky Linux 9 or Ubuntu Jammy 22.04 host
-* access to the Test Pulp server on SMS lab
 
 Setup
 =====
 
-Access the host via SSH.
+Access the host via SSH. You may wish to start a ``tmux`` session.
+
+If using an LVM-based image, extend the ``lv_home`` and ``lv_tmp`` logical
+volumes.
+
+.. parsed-literal::
+
+   sudo pvresize $(sudo pvs --noheadings | head -n 1 | awk '{print $1}')
+   sudo lvextend -L 4G /dev/rootvg/lv_home -r
+   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r
 
 Install package dependencies.
 
@@ -29,14 +36,14 @@ On Rocky Linux:
 
 .. parsed-literal::
 
-   sudo dnf install -y python3-virtualenv
+   sudo dnf install -y git
 
 On Ubuntu:
 
 .. parsed-literal::
 
    sudo apt update
-   sudo apt install -y python3-virtualenv
+   sudo apt install -y gcc git libffi-dev python3-dev python-is-python3 python3-venv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
@@ -56,7 +63,7 @@ Create a virtual environment and install Kayobe:
    cd
    mkdir -p venvs
    pushd venvs
-   virtualenv kayobe
+   python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
    pip install ../src/kayobe
@@ -72,6 +79,12 @@ Add initial network configuration:
    sudo ip l add dummy1 type dummy
    sudo ip l set dummy1 up
    sudo ip l set dummy1 master breth1
+
+On Ubuntu systems, persist the running network configuration.
+
+.. parsed-literal::
+
+   sudo cp /run/systemd/network/* /etc/systemd/network
 
 Installation
 ============
@@ -94,6 +107,21 @@ Ansible control host.
 
 Deployment
 ==========
+
+If using an LVM-based image, uncomment the ``seed_lvm_groups`` variable in
+``etc/kayobe/environments/ci-builder/seed.yml``.
+
+If using an LVM-based image, grow the root volume group.
+
+.. parsed-literal::
+
+   kayobe playbook run etc/kayobe/ansible/growroot.yml -e growroot_group=seed
+
+On Ubuntu systems, purge the command-not-found package.
+
+.. parsed-literal::
+
+   kayobe playbook run etc/kayobe/ansible/purge-command-not-found.yml
 
 Next, configure the host OS & services.
 
@@ -142,8 +170,17 @@ At this point you are ready to build and push some container images.
 If using an :ref:`authenticating Pulp proxy <authenticating-pulp-proxy>`,
 append ``-e stackhpc_repo_mirror_auth_proxy_enabled=true`` to these commands.
 
-The container images are tagged as |current_release|-<datetime>.
+The container images are tagged as |current_release|-<distribution>-<datetime>.
+Check ``tag`` in ``/opt/kayobe/etc/kolla/kolla-build.conf`` or run ``docker
+image ls`` to see the tag of the new images.
+
+To build images for a different base distribution, set ``-e
+kolla_base_distro=<distro>``.
+
+To build images using a specific tag, set ``-e kolla_tag=<tag>``.
+
+Using the new images
+====================
 
 To use the new images, edit
-``~/src/kayobe-config/etc/kayobe/kolla.yml`` to set the above
-tag as the value of the ``kolla_openstack_release`` variable.
+``~/src/kayobe-config/etc/kayobe/kolla-image-tags.yml`` to reference the tag.
