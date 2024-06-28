@@ -11,6 +11,7 @@ the various features provided.
    walled-garden
    release-train
    host-images
+   ironic
    lvm
    swap
    cephadm
