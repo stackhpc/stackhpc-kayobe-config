@@ -35,8 +35,24 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-TODO
-----
+Heat disabled by default
+------------------------
+
+The Heat OpenStack service is no longer enabled by default.
+
+This behavior can be overridden manually:
+
+.. code-block:: yaml
+   :caption: ``kolla.yml``
+
+   kolla_enable_heat: true
+
+Wherever possible, Magnum deployments should be migrated to the CAPI Helm
+driver. Instructions for enabling the driver can be found `here
+<../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
+using Heat, and disable the service.
+
+TODO: guide for disabling Heat
 
 Known issues
 ============
