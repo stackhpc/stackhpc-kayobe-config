@@ -1,6 +1,6 @@
 ====================================
-2023.1 Antelope Series Release Notes
+2024.1 Antelope Series Release Notes
 ====================================
 
 .. release-notes::
-   :branch: stackhpc/2023.1
+   :branch: stackhpc/2024.1
