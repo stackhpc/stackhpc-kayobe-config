@@ -363,8 +363,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>`_ content should
+be synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 .. _sync-rt-package-repos:
