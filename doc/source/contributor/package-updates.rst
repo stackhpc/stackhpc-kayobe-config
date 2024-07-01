@@ -152,7 +152,7 @@ Upgrading OpenStack to the next release in a multinode environment
 .. warning::
 
     This guide was written for the Wallaby release and has not been validated
-    for Antelope. Proceed with caution.
+    for Caracal. Proceed with caution.
 
 As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 

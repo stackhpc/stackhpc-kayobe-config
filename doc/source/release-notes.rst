@@ -1,5 +1,5 @@
 ====================================
-2024.1 Antelope Series Release Notes
+2024.1 Caracal Series Release Notes
 ====================================
 
 .. release-notes::
