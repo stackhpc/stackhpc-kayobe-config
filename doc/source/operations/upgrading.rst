@@ -54,6 +54,34 @@ using Heat, and disable the service.
 
 TODO: guide for disabling Heat
 
+Grafana Volume
+--------------
+The Grafana container volume is no longer used. If you wish to automatically
+remove the old volume, set ``grafana_remove_old_volume`` to ``true`` in
+``kolla/globals.yml``. Note that doing this will lose any plugins installed via
+the CLI directly and not through Kolla. If you have previously installed
+Grafana plugins via the Grafana UI or CLI, you must change to installing them
+at image build time. The Grafana volume, which contains existing custom
+plugins, will be automatically removed in the next release.
+
+Prometheus HAproxy Exporter
+---------------------------
+Due to the change from using the ``prometheus-haproxy-exporter`` to using the
+native support for Prometheus which is now built into HAProxy, metric names may
+have been replaced and/or removed, and in some cases the metric names may have
+remained the same but the labels may have changed. Alerts and dashboards may
+also need to be updated to use the new metrics. Please review any configuration
+that references the old metrics as this is not a backwards compatible change.
+
+Horizon configuration
+---------------------
+The Horizon role has been reworked to the preferred ``local_settings.d``
+configuration model. Files ``local_settings`` and ``custom_local_settings``
+have been renamed to ``_9998-kolla-settings.py`` and
+``_9999-custom-settings.py`` respectively. Users who use Horizon's custom
+configuration must change the names of those files in
+``etc/kolla/config/horizon`` as well.
+
 Known issues
 ============
 
