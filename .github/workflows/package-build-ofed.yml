@@ -1,0 +1,206 @@
+---
+name: Build OFED packages
+on:
+  workflow_dispatch:
+    inputs:
+      rocky9:
+        description: Build Rocky Linux 9
+        type: boolean
+        default: true
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+      CLOUDS_YAML:
+        required: true
+      OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+
+env:
+  ANSIBLE_FORCE_COLOR: True
+  KAYOBE_ENVIRONMENT: ci-builder
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+jobs:
+  overcloud-ofed-packages:
+    name: Build OFED packages
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: arc-skc-host-image-builder-runner
+    permissions: {}
+    steps:
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v4
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          path: src/kayobe
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install ../src/kayobe
+
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_public_key = "id_rsa.pub"
+          ssh_username = "rocky"
+          aio_vm_name = "skc-host-image-builder"
+          aio_vm_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+          aio_vm_flavor = "en1.medium"
+          aio_vm_network = "stackhpc-ci"
+          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_interface = "eth0"
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: "openstack"
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: "openstack"
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-network-allocation.yml
+          ---
+          aio_ips:
+            builder: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write Terraform network interface config
+        run: |
+          mkdir -p src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed
+          rm -f src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          admin_interface: "{{ access_interface.value }}"
+          aio_interface: "{{ access_interface.value }}"
+          EOF
+
+      - name: Manage SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/authorized_keys
+          cat src/kayobe-config/terraform/aio/id_rsa.pub >> ~/.ssh/authorized_keys
+          cp src/kayobe-config/terraform/aio/id_rsa* ~/.ssh/
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host (Builder VM)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure -e seed_bootstrap_user=rocky --skip-tags network
+
+      - name: Run growroot playbook
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+
+      - name: Run OFED builder playbook
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/build-ofed.yml
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+
+      - name: Run OFED publish playbook
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: always()
