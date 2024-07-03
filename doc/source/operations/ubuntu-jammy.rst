@@ -154,6 +154,14 @@ Common issues for all host types
 -  Timeouts can become an issue with some hardware. The host will reboot once
    or twice depending on whether it needs to apply package updates. Edit the
    timeouts in the upgrade playbook (``ubuntu-upgrade.yml``) where required.
+-  On systems using OVN networking, the Yoga Kolla Neutron container images
+   include ``pyroute2`` 0.6.6. On Ubuntu Jammy systems this results in the
+   Neutron OVN metadata agent failing to provision the datapath correctly. See
+   `LP#1995735
+   <https://bugs.launchpad.net/ubuntu/+source/neutron/+bug/1995735>`__ and
+   `LP#2042954 <https://bugs.launchpad.net/kolla/+bug/2042954>`__ for
+   details.  A `fix <https://review.opendev.org/c/openstack/kolla/+/913584>`__
+   is now available but new images have not yet been built.
 
 Controllers
 ===========
