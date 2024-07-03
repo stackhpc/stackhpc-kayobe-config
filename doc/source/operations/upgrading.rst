@@ -151,6 +151,15 @@ Some things to watch out for:
 
      openstack role assignment list --effective --role observer -f value -c User -c Project | while read line; do echo $line | xargs bash -c 'openstack role add --user $1 --project $2 reader' _; done
 
+Keystone endpoints
+------------------
+
+Keystone's long `deprecated <https://docs.openstack.org/releasenotes/kolla-ansible/zed.html#deprecation-notes>`__
+admin endpoint is now forcefully removed in 2023.1. Any service that had relied
+on it will cease to work following the upgrade. Keystone endpoints configured
+outside of Kolla (a good example being Ceph RGW integration) must be updated
+to use an internal endpoint, ideally prior to the upgrade.
+
 OVN enabled by default
 ----------------------
 
