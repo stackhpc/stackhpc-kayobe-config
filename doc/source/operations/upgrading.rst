@@ -458,8 +458,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>`_ content should
+be synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 .. _sync-rt-package-repos:
@@ -1066,6 +1066,12 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+Updating the Octavia Amphora Image
+----------------------------------
+
+If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+image <Amphora image>`.
 
 Testing
 -------
