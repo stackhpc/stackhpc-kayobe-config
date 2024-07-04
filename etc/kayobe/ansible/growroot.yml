@@ -75,7 +75,7 @@
           vars:
             pv: "{{ pvs.stdout | from_json }}"
             disk_tmp: "{{ pv.report[0].pv[0].pv_name[:-1] }}"
-            disk: "{{ disk_tmp[:-1] if disk_tmp[-1] == 'p' and disk_tmp[:9] == '/dev/nvme' else disk_tmp }}"
+            disk: "{{ disk_tmp[:-1] if disk_tmp[-1] == 'p' and (disk_tmp[:9] == '/dev/nvme' or disk_tmp[:9] == '/dev/md12') else disk_tmp }}"
             part_num: "{{ pv.report[0].pv[0].pv_name[-1] }}"
           become: true
           failed_when: "growpart.rc != 0 and 'NOCHANGE' not in growpart.stdout"
