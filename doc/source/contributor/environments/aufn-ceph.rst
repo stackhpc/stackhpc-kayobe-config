@@ -9,7 +9,7 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
+    Caracal. Proceed with caution.
 
 Prerequisites
 =============

@@ -5,7 +5,7 @@ Multinode Test Environment
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
+    Caracal. Proceed with caution.
 
 
 Set up hosts

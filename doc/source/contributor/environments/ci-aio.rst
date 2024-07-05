@@ -13,7 +13,7 @@ make changes to the setup process.
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
+    Caracal. Proceed with caution.
 
 Prerequisites
 =============
@@ -30,7 +30,7 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2023.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2024.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 

@@ -10,8 +10,8 @@
 set -eu
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/2023.1
-KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
+KAYOBE_BRANCH=stackhpc/2024.1
+KAYOBE_CONFIG_BRANCH=stackhpc/2024.1
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
