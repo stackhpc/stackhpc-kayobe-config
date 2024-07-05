@@ -116,6 +116,14 @@ dnf_custom_repos_rocky_9:
     gpgcheck: yes
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  security-common:
+    baseurl: "{{ stackhpc_repo_rocky_9_sig_security_common_url }}"
+    description: "Rocky Linux $releasever - SIG Security Common"
+    file: Rocky-SIG-Security-Common
+    gpgkey: "{{ rocky_9_sig_security_gpg_key }}"
+    gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
@@ -127,6 +135,7 @@ dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
 dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
 
 rocky_9_gpg_key: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
+rocky_9_sig_security_gpg_key: "https://dl.rockylinux.org/pub/sig/9/security/x86_64/security-common/RPM-GPG-KEY-Rocky-SIG-Security"
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'false'.
