@@ -1,9 +1,9 @@
-================
-Cephadm & Kayobe
-================
+====
+Ceph
+====
 
 This section describes how to use the Cephadm integration included in StackHPC
-Kayobe configuration since Xena to deploy Ceph.
+Kayobe configuration to deploy Ceph.
 
 The Cephadm integration takes the form of custom playbooks that wrap
 around the Ansible `stackhpc.cephadm collection
@@ -19,10 +19,10 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/pacific/cephadm/index.html
--  https://docs.ceph.com/en/pacific/
 -  https://docs.ceph.com/en/quincy/cephadm/index.html
 -  https://docs.ceph.com/en/quincy/
+-  https://docs.ceph.com/en/reef/cephadm/index.html
+-  https://docs.ceph.com/en/reef/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration
@@ -107,7 +107,7 @@ OSD specification
 ~~~~~~~~~~~~~~~~~
 
 The following example is a basic OSD spec that adds OSDs for all
-available disks:
+available disks with encryption at rest:
 
 .. code:: yaml
 
@@ -118,9 +118,10 @@ available disks:
        host_pattern: "*"
      data_devices:
        all: true
+     encrypted: true
 
 More information about OSD service placement is available
-`here <https://docs.ceph.com/en/pacific/cephadm/services/osd/#advanced-osd-service-specifications>`__.
+`here <https://docs.ceph.com/en/quincy/cephadm/services/osd/#advanced-osd-service-specifications>`__.
 
 Container image
 ~~~~~~~~~~~~~~~
@@ -263,6 +264,24 @@ Both variables have the same format, however commands in the
 post-deployment configuration is applied. Commands in the
 ``cephadm_commands_post`` list are executed after the rest of the Ceph
 post-deployment configuration is applied.
+
+Messenger v2 encryption in transit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Messenger v2 is the default on-wire protocol since the Nautilus release. It
+supports `encryption of data in transit
+<https://docs.ceph.com/en/quincy/rados/configuration/msgr2/#connection-mode-configuration-options>`_,
+but this is not used by default. It may be enabled as follows:
+
+.. code:: yaml
+
+   # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
+   # for format.
+   cephadm_commands_pre:
+    # Enable messenger v2 encryption in transit.
+    - "config set global ms_cluster_mode secure"
+    - "config set global ms_service_mode secure"
+    - "config set global ms_client_mode secure"
 
 Manila & CephFS
 ~~~~~~~~~~~~~~~

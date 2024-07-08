@@ -1,0 +1,164 @@
+---
+########################################
+# Prometheus Blackbox monitoring options
+########################################
+
+# prometheus_blackbox_exporter_endpoints_kayobe is another set of default
+# endpoints that are templated by Kayobe rather than Kolla Ansible. See
+# kolla/globals.yml for more details.
+prometheus_blackbox_exporter_endpoints: >-
+  {{ (prometheus_blackbox_exporter_endpoints_kayobe | default([]) +
+  prometheus_blackbox_exporter_endpoints_default) |
+  selectattr('enabled', 'true') |
+  map(attribute='endpoints') | flatten |
+  union(prometheus_blackbox_exporter_endpoints_custom) |
+  unique | select | list }}
+
+# A list of custom prometheus Blackbox exporter endpoints. Each element should
+# have the following format:
+#  - name:module:endpoint
+# for example
+#  - stackhpc:http_2xx:https://stackhpc.com:443
+prometheus_blackbox_exporter_endpoints_custom: []
+
+prometheus_blackbox_exporter_endpoints_default:
+  # OpenStack endpoints
+  - endpoints:
+      - "barbican:os_endpoint:{{ barbican_public_endpoint }}"
+      - "{{ ('barbican_internal:os_endpoint:' + barbican_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_barbican | bool }}"
+  - endpoints:
+      - "blazar:os_endpoint:{{ blazar_public_base_endpoint }}"
+      - "{{ ('blazar_internal:os_endpoint:' + blazar_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_blazar | bool }}"
+  - endpoints:
+      - "ceph_rgw:http_2xx:{{ ceph_rgw_public_base_endpoint }}"
+      - "{{ ('ceph_rgw_internal:http_2xx:' + ceph_rgw_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_ceph_rgw | bool }}"
+  - endpoints:
+      - "cinder:os_endpoint:{{ cinder_public_base_endpoint }}"
+      - "{{ ('cinder_internal:os_endpoint:' + cinder_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_cinder | bool }}"
+  - endpoints:
+      - "cloudkitty:os_endpoint:{{ cloudkitty_public_endpoint }}"
+      - "{{ ('cloudkitty_internal:os_endpoint:' + cloudkitty_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_cloudkitty | bool }}"
+  - endpoints:
+      - "designate:os_endpoint:{{ designate_public_endpoint }}"
+      - "{{ ('designate_internal:os_endpoint:' + designate_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_designate | bool }}"
+  - endpoints:
+      - "glance:os_endpoint:{{ glance_public_endpoint }}"
+      - "{{ ('glance_internal:os_endpoint:' + glance_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_glance | bool }}"
+  - endpoints:
+      - "gnocchi:os_endpoint:{{ gnocchi_public_endpoint }}"
+      - "{{ ('gnocchi_internal:os_endpoint:' + gnocchi_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_gnocchi | bool }}"
+  - endpoints:
+      - "heat:os_endpoint:{{ heat_public_base_endpoint }}"
+      - "{{ ('heat_internal:os_endpoint:' + heat_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+      - "heat_cfn:os_endpoint:{{ heat_cfn_public_base_endpoint }}"
+      - "{{ ('heat_cfn_internal:os_endpoint:' + heat_cfn_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_heat | bool }}"
+  - endpoints:
+      - "horizon:http_2xx:{{ horizon_public_endpoint }}"
+      - "{{ ('horizon_internal:http_2xx:' + horizon_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_horizon | bool }}"
+  - endpoints:
+      - "ironic:os_endpoint:{{ ironic_public_endpoint }}"
+      - "{{ ('ironic_internal:os_endpoint:' + ironic_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+      - "ironic_inspector:os_endpoint:{{ ironic_inspector_public_endpoint }}"
+      - "{{ ('ironic_inspector_internal:os_endpoint:' + ironic_inspector_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_ironic | bool }}"
+  - endpoints:
+      - "keystone:os_endpoint:{{ keystone_public_url }}"
+      - "{{ ('keystone_internal:os_endpoint:' + keystone_internal_url) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_keystone | bool }}"
+  - endpoints:
+      - "magnum:os_endpoint:{{ magnum_public_base_endpoint }}"
+      - "{{ ('magnum_internal:os_endpoint:' + magnum_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_magnum | bool }}"
+  - endpoints:
+      - "manila:os_endpoint:{{ manila_public_base_endpoint }}"
+      - "{{ ('manila_internal:os_endpoint:' + manila_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_manila | bool }}"
+  - endpoints:
+      - "neutron:os_endpoint:{{ neutron_public_endpoint }}"
+      - "{{ ('neutron_internal:os_endpoint:' + neutron_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_neutron | bool }}"
+  - endpoints:
+      - "nova:os_endpoint:{{ nova_public_base_endpoint }}"
+      - "{{ ('nova_internal:os_endpoint:' + nova_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_nova | bool }}"
+  - endpoints:
+      - "octavia:os_endpoint:{{ octavia_public_endpoint }}"
+      - "{{ ('octavia_internal:os_endpoint:' + octavia_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_octavia | bool }}"
+  - endpoints:
+      - "placement:os_endpoint:{{ placement_public_endpoint }}"
+      - "{{ ('placement_internal:os_endpoint:' + placement_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_placement | bool }}"
+  - endpoints:
+      - "swift:os_endpoint:{{ swift_public_base_endpoint }}"
+      - "{{ ('swift_internal:os_endpoint:' + swift_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_swift | bool }}"
+  # Additional service endpoints
+  - endpoints: "{% set etcd_endpoints = [] %}{% for host in groups.get('etcd', []) %}{{ etcd_endpoints.append('etcd_' + host + ':http_2xx:' + hostvars[host]['etcd_protocol'] + '://' + ('api' | kolla_address(host) | put_address_in_context('url')) + ':' + hostvars[host]['etcd_client_port'] + '/metrics')}}{% endfor %}{{ etcd_endpoints }}"
+    enabled: "{{ enable_etcd | bool }}"
+  - endpoints:
+      - "grafana:http_2xx:{{ grafana_public_endpoint }}"
+      - "{{ ('grafana_internal:http_2xx:' + grafana_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
+    enabled: "{{ enable_grafana | bool }}"
+  - endpoints:
+      - "opensearch:http_2xx:{{ opensearch_internal_endpoint }}"
+    enabled: "{{ enable_opensearch | bool }}"
+  - endpoints:
+    - "opensearch_dashboards_external:http_2xx_opensearch_dashboards:{{ opensearch_dashboards_external_endpoint }}/api/status"
+    enabled: "{{ enable_opensearch_dashboards_external | bool }}"
+  - endpoints:
+      - "opensearch_dashboards:http_2xx_opensearch_dashboards:{{ opensearch_dashboards_internal_endpoint }}/api/status"
+    enabled: "{{ enable_opensearch_dashboards | bool }}"
+  - endpoints:
+      - "prometheus:http_2xx_prometheus:{{ prometheus_public_endpoint if enable_prometheus_server_external else prometheus_internal_endpoint }}/-/healthy"
+    enabled: "{{ enable_prometheus | bool }}"
+  - endpoints:
+      - "prometheus_alertmanager:http_2xx_alertmanager:{{ prometheus_alertmanager_public_endpoint if enable_prometheus_alertmanager_external else prometheus_alertmanager_internal_endpoint }}"
+    enabled: "{{ enable_prometheus_alertmanager | bool }}"
+  - endpoints: "{% set rabbitmq_endpoints = [] %}{% for host in groups.get('rabbitmq', []) %}{{ rabbitmq_endpoints.append('rabbitmq_' + host + (':tls_connect:' if rabbitmq_enable_tls else ':tcp_connect:') + ('api' | kolla_address(host) | put_address_in_context('url')) + ':' + hostvars[host]['rabbitmq_port'] ) }}{% endfor %}{{ rabbitmq_endpoints }}"
+    enabled: "{{ enable_rabbitmq | bool }}"
+  - endpoints: "{% set redis_endpoints = [] %}{% for host in groups.get('redis', []) %}{{ redis_endpoints.append('redis_' + host + ':tcp_connect:' + ('api' | kolla_address(host) | put_address_in_context('url')) + ':' + hostvars[host]['redis_port']) }}{% endfor %}{{ redis_endpoints }}"
+    enabled: "{{ enable_redis | bool }}"
+
+# Ensure service endpoints are defined
+blazar_internal_base_endpoint: "{{ blazar_internal_fqdn | kolla_url(internal_protocol, blazar_api_port) }}"
+blazar_public_base_endpoint: "{{ blazar_external_fqdn | kolla_url(public_protocol, blazar_api_public_port) }}"
+ceph_rgw_internal_base_endpoint: "{{ ceph_rgw_internal_fqdn | kolla_url(internal_protocol, ceph_rgw_port) }}"
+ceph_rgw_public_base_endpoint: "{{ ceph_rgw_external_fqdn | kolla_url(public_protocol, ceph_rgw_public_port) }}"
+cinder_internal_base_endpoint: "{{ cinder_internal_fqdn | kolla_url(internal_protocol, cinder_api_port) }}"
+cinder_public_base_endpoint: "{{ cinder_external_fqdn | kolla_url(public_protocol, cinder_api_public_port) }}"
+cloudkitty_internal_endpoint: "{{ cloudkitty_internal_fqdn | kolla_url(internal_protocol, cloudkitty_api_port) }}"
+cloudkitty_public_endpoint: "{{ cloudkitty_external_fqdn | kolla_url(public_protocol, cloudkitty_api_public_port) }}"
+gnocchi_internal_endpoint: "{{ gnocchi_internal_fqdn | kolla_url(internal_protocol, gnocchi_api_port) }}"
+gnocchi_public_endpoint: "{{ gnocchi_external_fqdn | kolla_url(public_protocol, gnocchi_api_public_port) }}"
+heat_internal_base_endpoint: "{{ heat_internal_fqdn | kolla_url(internal_protocol, heat_api_port) }}"
+heat_public_base_endpoint: "{{ heat_external_fqdn | kolla_url(public_protocol, heat_api_public_port) }}"
+heat_cfn_internal_base_endpoint: "{{ heat_cfn_internal_fqdn | kolla_url(internal_protocol, heat_api_cfn_port) }}"
+heat_cfn_public_base_endpoint: "{{ heat_cfn_external_fqdn | kolla_url(public_protocol, heat_api_cfn_public_port) }}"
+ironic_inspector_internal_endpoint: "{{ ironic_inspector_internal_fqdn | kolla_url(internal_protocol, ironic_inspector_port) }}"
+ironic_inspector_public_endpoint: "{{ ironic_inspector_external_fqdn | kolla_url(public_protocol, ironic_inspector_public_port) }}"
+magnum_internal_base_endpoint: "{{ magnum_internal_fqdn | kolla_url(internal_protocol, magnum_api_port) }}"
+magnum_public_base_endpoint: "{{ magnum_external_fqdn | kolla_url(public_protocol, magnum_api_public_port) }}"
+manila_internal_base_endpoint: "{{ manila_internal_fqdn | kolla_url(internal_protocol, manila_api_port) }}"
+manila_public_base_endpoint: "{{ manila_external_fqdn | kolla_url(public_protocol, manila_api_public_port) }}"
+nova_internal_base_endpoint: "{{ nova_internal_fqdn | kolla_url(internal_protocol, nova_api_port) }}"
+nova_public_base_endpoint: "{{ nova_external_fqdn | kolla_url(public_protocol, nova_api_public_port) }}"
+placement_internal_endpoint: "{{ placement_internal_fqdn | kolla_url(internal_protocol, placement_api_port) }}"
+placement_public_endpoint: "{{ placement_external_fqdn | kolla_url(public_protocol, placement_api_public_port) }}"
+swift_public_base_endpoint: "{{ swift_external_fqdn | kolla_url(public_protocol, swift_proxy_server_port) }}"
+opensearch_dashboards_internal_endpoint: "{{ opensearch_dashboards_internal_fqdn | default(kolla_internal_fqdn) | kolla_url(internal_protocol, opensearch_dashboards_port) }}"
+opensearch_dashboards_external_endpoint: "{{ opensearch_dashboards_external_fqdn | default(kolla_external_fqdn) | kolla_url(public_protocol, opensearch_dashboards_port_external) }}"
+prometheus_internal_endpoint: "{{ prometheus_internal_fqdn | kolla_url(internal_protocol, prometheus_port) }}"
+prometheus_public_endpoint: "{{ prometheus_external_fqdn | kolla_url(public_protocol, prometheus_public_port) }}"
+prometheus_alertmanager_internal_endpoint: "{{ prometheus_alertmanager_internal_fqdn | kolla_url(internal_protocol, prometheus_alertmanager_port) }}"
+prometheus_alertmanager_public_endpoint: "{{ prometheus_alertmanager_external_fqdn | kolla_url(public_protocol, prometheus_alertmanager_public_port) }}"

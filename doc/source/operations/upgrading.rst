@@ -151,6 +151,15 @@ Some things to watch out for:
 
      openstack role assignment list --effective --role observer -f value -c User -c Project | while read line; do echo $line | xargs bash -c 'openstack role add --user $1 --project $2 reader' _; done
 
+Keystone endpoints
+------------------
+
+Keystone's long `deprecated <https://docs.openstack.org/releasenotes/kolla-ansible/zed.html#deprecation-notes>`__
+admin endpoint is now forcefully removed in 2023.1. Any service that had relied
+on it will cease to work following the upgrade. Keystone endpoints configured
+outside of Kolla (a good example being Ceph RGW integration) must be updated
+to use an internal endpoint, ideally prior to the upgrade.
+
 OVN enabled by default
 ----------------------
 
@@ -449,8 +458,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>`_ content should
+be synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 .. _sync-rt-package-repos:
@@ -1057,6 +1066,12 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+Updating the Octavia Amphora Image
+----------------------------------
+
+If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+image <Amphora image>`.
 
 Testing
 -------
