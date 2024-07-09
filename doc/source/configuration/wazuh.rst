@@ -15,7 +15,7 @@ The short version
 #. Create an infrastructure VM for the Wazuh manager, and add it to the wazuh-manager group
 #. Configure the infrastructure VM with kayobe: ``kayobe infra vm host configure``
 #. Edit your config under
-   ``$KAYOBE_CONFIG_PATHinventory/group_vars/wazuh-manager/wazuh-manager``, in
+   ``$KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-manager``, in
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
 #. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
