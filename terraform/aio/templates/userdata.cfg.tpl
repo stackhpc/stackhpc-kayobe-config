@@ -10,6 +10,9 @@ runcmd:
 # This means only the instance needs to be cleaned up if the destroy fails.
 ssh_authorized_keys:
   - ${ssh_public_key}
+%{ if debug_ssh_key != "" }
+  - ${debug_ssh_key}
+%{ endif }
 
 write_files:
   # WORKAROUND: https://bugs.launchpad.net/kolla-ansible/+bug/1995409

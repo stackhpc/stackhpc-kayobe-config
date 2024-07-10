@@ -1,0 +1,40 @@
+---
+
+
+name: Debug AIO
+on:
+  workflow_dispatch:
+    inputs:
+      debug_ssh_key:
+        description: 'A key used to login to the AIO for debugging'
+        required: true
+        type: string
+jobs:
+
+  build-kayobe-image:
+    name: Build Kayobe Image
+    needs:
+      - check-changes
+    uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
+    with:
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  all-in-one-upgrade-ubuntu-jammy-ovs:
+    name: aio upgrade (Ubuntu Jammy OVS)
+    needs:
+      - check-changes
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: ubuntu
+      os_release: jammy
+      ssh_username: ubuntu
+      neutron_plugin: ovs
+      OS_CLOUD: openstack
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+      upgrade: true
+      destroy: false
+    secrets: inherit
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}

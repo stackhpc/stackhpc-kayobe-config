@@ -59,6 +59,14 @@ on:
         description: Whether to perform an upgrade
         type: boolean
         default: false
+      destroy:
+        description: Whether to destroy the VM
+        type: boolean
+        default: true
+      debug_ssh_key:
+        description: An SSH key to inject for debugging
+        type: boolean
+        default: "string"
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -157,6 +165,7 @@ jobs:
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
           aio_vm_volume_size = "${{ env.VM_VOLUME_SIZE }}"
           aio_vm_tags = ${{ env.VM_TAGS }}
+          aio_debug_ssh_key = "${{ inputs.debug_ssh_key }}"
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
@@ -424,4 +433,4 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
+        if: ${{ always() && inputs.destroy }}
