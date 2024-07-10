@@ -1,8 +1,8 @@
 ---
 # Required for uri module to work with self-signed certificates and for systems to trust
 # the self-signed CA
-- name: Install CA on controllers
-  hosts: controllers
+- name: Install CA
+  hosts: controllers:network
   tasks:
     - name: Copy the intermediate CA
       copy:
@@ -16,9 +16,9 @@
       shell: "{{ 'update-ca-trust' if ansible_facts.os_family == 'RedHat' else 'update-ca-certificates' }}"
 
 - name: Generate backend API certificates
-  hosts: controllers
+  hosts: controllers:network
   vars:
-    vault_api_addr: "https://{{ kolla_internal_fqdn }}:8200"
+    vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
     vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
     - name: Set a fact about the virtualenv on the remote system
@@ -53,6 +53,8 @@
         extra_params:
           ip_sans: "{{ internal_net_name | net_ip }}"
       register: backend_cert
+      environment:
+        https_proxy: ''
 
     - name: Ensure certificates directory exists
       file:

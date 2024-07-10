@@ -127,6 +127,21 @@ Some things to watch out for:
      mysql -u root -p  keystone
      # Enter the database password when prompted.
      SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
+
+ If you have trusts that need updating, you can add the required role to the trust with the following SQL command:
+
+ .. code-block:: sql
+
+      UPDATE trust_role as tr
+      SET role_id = '<MEMBER-ROLE-ID>'
+      WHERE role_id = '<OLD-ROLE-ID>'
+      AND NOT EXISTS (
+         SELECT 1
+         FROM trust_role
+         WHERE trust_id = tr.trust_id
+            AND role_id = '<MEMBER-ROLE-ID>'
+      );
+
 * Policies may require the ``reader`` role rather than the non-standardised
   ``observer`` role. The following error was observed in Horizon: ``Policy doesn’t allow os_compute_api:os-simple-tenant-usage:show to be performed``,
   when the user only had the observer role in the project. It is best to keep the observer role until all projects have the ``enforce_new_defaults``
@@ -135,6 +150,15 @@ Some things to watch out for:
   .. code-block:: console
 
      openstack role assignment list --effective --role observer -f value -c User -c Project | while read line; do echo $line | xargs bash -c 'openstack role add --user $1 --project $2 reader' _; done
+
+Keystone endpoints
+------------------
+
+Keystone's long `deprecated <https://docs.openstack.org/releasenotes/kolla-ansible/zed.html#deprecation-notes>`__
+admin endpoint is now forcefully removed in 2023.1. Any service that had relied
+on it will cease to work following the upgrade. Keystone endpoints configured
+outside of Kolla (a good example being Ceph RGW integration) must be updated
+to use an internal endpoint, ideally prior to the upgrade.
 
 OVN enabled by default
 ----------------------
@@ -199,14 +223,14 @@ Known issues
 
 * Docker log-opts are currently not configured in Antelope. You will see these
   being removed when running a host configure in check+diff mode. See bug for
-  details (fix in progress):
+  details (fix released):
   https://bugs.launchpad.net/ansible-collection-kolla/+bug/2040105
 
 * /etc/hosts are not templated correctly when running a host configure with
   ``--limit``. To work around this, run your host configures with
   ``--skip-tags etc-hosts``. If you do need to change ``/etc/hosts``, for
   example with any newly-added hosts, run a full host configure afterward with
-  ``--tags etc-hosts``. See bug for details (fix in progress):
+  ``--tags etc-hosts``. See bug for details (fix released):
   https://bugs.launchpad.net/kayobe/+bug/2051714
 
 Security baseline
@@ -434,8 +458,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>`_ content should
+be synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 .. _sync-rt-package-repos:
@@ -1042,6 +1066,12 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+Updating the Octavia Amphora Image
+----------------------------------
+
+If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+image <Amphora image>`.
 
 Testing
 -------
