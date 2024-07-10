@@ -23,7 +23,6 @@ jobs:
   all-in-one-upgrade-ubuntu-jammy-ovs:
     name: aio upgrade (Ubuntu Jammy OVS)
     needs:
-      - check-changes
       - build-kayobe-image
     uses: ./.github/workflows/stackhpc-all-in-one.yml
     with:
@@ -33,7 +32,6 @@ jobs:
       ssh_username: ubuntu
       neutron_plugin: ovs
       OS_CLOUD: openstack
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
       upgrade: true
       destroy: false
     secrets: inherit
