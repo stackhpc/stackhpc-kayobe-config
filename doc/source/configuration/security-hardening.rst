@@ -31,6 +31,14 @@ about what each variable does. The documentation can be found here:
 Running the playbooks
 ---------------------
 
+.. note::
+
+  The hosts may need rebooting to fully pick up all of the changes. The CIS
+  roles will warn you when this needs to be done, but the actual reboot is left
+  as a manual operation to allow you to select a convenient time. Generally, if
+  you are applying the hardening for the first time, then you will need to
+  reboot.
+
 As there is potential for unintended side effects when applying the hardening
 playbooks, the playbooks are not currently enabled by default. It is recommended
 that they are first applied to a representative staging environment to determine
