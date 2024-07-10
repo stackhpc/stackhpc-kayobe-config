@@ -40,18 +40,32 @@ whether or not workloads or API requests are affected by any configuration chang
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
 
+Targetting additional hosts
+---------------------------
+
+The ``cis.yml`` playbook targets hosts in the ``cis-hardening`` group. By
+default this includes the ``overcloud`` group. You can adjust this group
+to suit your needs, e.g to add the seed VM:
+
+.. code-block:: yaml
+  :caption: $KAYOBE_CONFIG_PATH/inventory/groups
+
+  [cis-hardening:children]
+  overcloud
+  seed
+
 Enabling the host configure hook
 --------------------------------
 
 A hook is pre-installed but its execution is guarded by the
-``stackhpc_enable_cis_benchmark_hardening`` configuration option.
+``stackhpc_enable_cis_benchmark_hardening_hook`` configuration option.
 If you want the hardening playbooks to run automatically, as part of
 host configure, simply set this flag to ``true``:
 
 .. code-block:: yaml
   :caption: $KAYOBE_CONFIG_PATH/stackhpc.yml
 
-    stackhpc_enable_cis_benchmark_hardening: true
+    stackhpc_enable_cis_benchmark_hardening_hook: true
 
 Alternatively, this can be toggled on a per-environment basis by
 setting it in an environment specific config file, or even on
