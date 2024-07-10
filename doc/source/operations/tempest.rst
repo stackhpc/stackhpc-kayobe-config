@@ -251,6 +251,25 @@ ever contain one host. The seed is usually used as the tempest runner however
 it is also common to use the Ansible control host or an infrastructure VM. The
 main requirement of the host is that it can reach the OpenStack API.
 
+.. _tempest-cacert:
+
+Tempest CA certificate
+----------------------
+
+If your public OpenStack API uses TLS with a Certificate Authority (CA) that is
+not trusted by the Python CA trust store, it may be necessary to add a CA
+certificate to the trust store in the container that runs Tempest. This can be
+done by defining a ``tempest_cacert`` Ansible variable to a path containing the
+CA certificate. You may wish to use ``kayobe_config_path`` or
+``kayobe_env_config_path`` to be agnostic to the path where kayobe-config is
+mounted within the container. For example:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/tempest.yml``
+
+   # Add the Vault CA certificate to the rally container when running tempest.
+   tempest_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
 Running Tempest
 ===============
 

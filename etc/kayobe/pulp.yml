@@ -272,6 +272,12 @@ stackhpc_pulp_rpm_repos:
     base_path: "rocky/9/highavailability/x86_64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
+  - name: Rocky Linux 9 - SIG Security Common
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
+    distribution_name: rocky-9-sig-security-common-
+    base_path: "rocky/sig/9/security/x86_64/security-common/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
   # Additional CentOS Stream 9 repositories
   - name: CentOS Stream 9 - NFV OpenvSwitch
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
@@ -652,14 +658,22 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+# List of extra container image repositories.
+stackhpc_pulp_repository_container_repos_extra: []
+
+# List of extra container image distributions.
+stackhpc_pulp_distribution_container_extra: []
+
 # List of container image repositories.
 stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
-      stackhpc_pulp_repository_container_repos_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
-      stackhpc_pulp_distribution_container_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_extra) | selectattr('required') }}
