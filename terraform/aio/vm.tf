@@ -38,6 +38,12 @@ variable "aio_vm_volume_size" {
   default = 35
 }
 
+variable "aio_debug_ssh_key" {
+  type = string
+  default = ""
+}
+
+
 variable "aio_vm_tags" {
   type = list(string)
   default = []
@@ -61,7 +67,7 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   name         = var.aio_vm_name
   flavor_name  = var.aio_vm_flavor
   config_drive = true
-  user_data    = templatefile("templates/userdata.cfg.tpl", {ssh_public_key = file(var.ssh_public_key)})
+  user_data    = templatefile("templates/userdata.cfg.tpl", {ssh_public_key = file(var.ssh_public_key), debug_ssh_key=var.aio_debug_ssh_key})
   network {
     name = var.aio_vm_network
   }
