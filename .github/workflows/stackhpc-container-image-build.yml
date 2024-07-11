@@ -232,7 +232,7 @@ jobs:
         run: mv image-scan-output image-build-logs/image-scan-output
 
       - name: Fail if no images have passed scanning
-        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -eq 0 ]; then exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
         if: ${{ !inputs.push-dirty }}
 
       - name: Copy clean images to push-attempt-images list
