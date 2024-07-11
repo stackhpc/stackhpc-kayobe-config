@@ -355,6 +355,19 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
+      - name: Ensure we have IP on breth1 to reach the instances
+        # NOTE(wszumski): Whilst we don't need to create resources again, in some circumstances
+        # we can lose the IP address that allows us to connect to the instances. This playbook
+        # also fixes that issue.
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
       - name: Tempest tests
         id: tempest
         run: |
