@@ -132,13 +132,13 @@ Some things to watch out for:
 
  .. code-block:: sql
 
-      UPDATE trust_role
+      UPDATE trust_role as tr
       SET role_id = '<MEMBER-ROLE-ID>'
       WHERE role_id = '<OLD-ROLE-ID>'
       AND NOT EXISTS (
          SELECT 1
          FROM trust_role
-         WHERE trust_id = trust_role.trust_id
+         WHERE trust_id = tr.trust_id
             AND role_id = '<MEMBER-ROLE-ID>'
       );
 
