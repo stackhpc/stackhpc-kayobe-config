@@ -61,8 +61,8 @@ stackhpc_apt_repositories:
     components: upload
     architecture: amd64
     trusted: yes
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_url }}"
-    suites: "{{ ansible_facts.distribution_release }}"
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_focal_url if ansible_facts.distribution_release == 'focal' else stackhpc_repo_docker_ce_ubuntu_jammy_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
     components: stable
     signed_by: docker.asc
     architecture: amd64
