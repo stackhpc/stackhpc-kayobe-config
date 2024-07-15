@@ -19,7 +19,7 @@ Configuration
 --------------
 
 Some overrides to the role defaults are provided in
-``$KAYOBE_CONFIG_PATH/inventory/group_vars/overcloud/cis``. These may not be
+``$KAYOBE_CONFIG_PATH/inventory/group_vars/cis-hardening/cis``. These may not be
 suitable for all deployments and so some fine tuning may be required. For
 instance, you may want different rules on a network node compared to a
 controller. It is best to consult the upstream role documentation for details
