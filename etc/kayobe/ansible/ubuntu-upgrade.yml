@@ -88,6 +88,13 @@
         state: absent
       become: true
 
+    - name: Ensure Kolla Ansible Docker repo definition does not exist
+      file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+      become: true
+      when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
+
     - name: Reboot and wait
       reboot:
         reboot_timeout: 1200
