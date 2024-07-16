@@ -1,9 +1,20 @@
 ---
 
 - name: Security hardening
-  hosts: overcloud
+  hosts: cis-hardening
   become: true
+  tags:
+    - cis
   tasks:
+    # TODO: Remove this when Red Hat FIPS policy has been updated to allow ed25519 keys.
+    # https://gitlab.com/gitlab-org/gitlab/-/issues/367429#note_1840422075
+    - name: Assert that we are using a supported SSH key
+      assert:
+        that:
+          - ssh_key_type != 'ed25519'
+        fail_msg: FIPS policy does not currently support ed25519 SSH keys on RHEL family systems
+      when: ansible_facts.os_family == 'RedHat'
+
     - name: Ensure the cron package is installed on ubuntu
       package:
         name: cron

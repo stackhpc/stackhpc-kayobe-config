@@ -53,3 +53,11 @@ prometheus_instance_label: "{% raw %}{{ ansible_facts.hostname }}{% endraw %}"
 # in Yoga. This is required to include a valid value for the flavor_id label on
 # openstack_nova_server_status metrics.
 prometheus_openstack_exporter_compute_api_version: "2.1"
+
+# The Pulp URL must be templated by Kayobe rather than Kolla Ansible.
+# The rest of the Prometheus Blackbox exporter configuration can be found in
+# the Kolla inventory.
+prometheus_blackbox_exporter_endpoints_kayobe:
+  - endpoints:
+      - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
+    enabled: "{{ seed_pulp_container_enabled | bool }}"

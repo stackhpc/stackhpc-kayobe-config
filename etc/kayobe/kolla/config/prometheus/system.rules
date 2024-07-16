@@ -24,6 +24,24 @@ groups:
       summary: "Prometheus exporter at {{ $labels.instance }} reports low memory"
       description: "Available memory is {{ $value }} GiB."
 
+  - alert: LowSwapSpace
+    expr: node_memory_SwapTotal_bytes > 0 and (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_warning_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Swap space at {{ $labels.instance }} reports low memory"
+      description: "Available swap space is {{ $value | humanizePercentage }}. Running out of swap space causes OOM Kills."
+
+  - alert: LowSwapSpace
+    expr: node_memory_SwapTotal_bytes > 0 and (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_critical_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Swap space at {{ $labels.instance }} reports low memory"
+      description: "Available swap space is {{ $value | humanizePercentage }}. Running out of swap space causes OOM Kills."
+
   - alert: HostOomKillDetected
     expr: increase(node_vmstat_oom_kill[5m]) > 0
     for: 5m
@@ -96,6 +114,30 @@ groups:
       summary: Host clock not synchronising (instance {{ $labels.instance }})
       description: "Clock not synchronising. Ensure NTP is configured on this host."
 
+  - alert: HostNetworkBondDegraded
+    expr: (node_bonding_active - node_bonding_slaves) != 0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host network bond degraded (instance {{ $labels.instance }})
+      description: "Bond {{ $labels.master }} degraded on {{ $labels.instance }}"
+{% endraw %}
+
+{% if alertmanager_warn_network_bond_single_link | bool %}
+{% raw %}
+  - alert: HostNetworkBondSingleLink
+    expr: node_bonding_slaves == 1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: Host network bond with a single link (instance {{ $labels.instance }})
+      description: "Bond {{ $labels.master }} configured with a single link on {{ $labels.instance }}"
+{% endraw %}
+{% endif %}
+
+{% raw %}
   - alert: HostConntrackLimit
     expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
     for: 5m
