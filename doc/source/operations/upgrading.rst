@@ -252,6 +252,7 @@ otherwise afterwards.
 * Configure `walled garden networking <../configuration/walled-garden.html>`_
 * Use `LVM-based host images <../configuration/lvm.html>`_
 * Deploy `Wazuh <../configuration/wazuh.html>`_
+* Run `CIS Hardening <../configuration/security-hardening.html>`_
 
 Prerequisites
 =============
