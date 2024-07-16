@@ -1,6 +1,5 @@
 ---
 - hosts: overcloud
-
   tasks:
     - name: Ensure smartmontools, jq, nvme-cli and cron/cronie are installed
       package:
@@ -49,3 +48,21 @@
         - smartmon
         - nvmemon
       become: yes
+
+    - name: Ensure the DWPD Ratings directory exists
+      file:
+        path: /opt/kayobe/etc/monitoring
+        state: directory
+        mode: '0755'
+      when: stackhpc_dwpd_ratings is defined
+      become: true
+
+    - name: Create a DWPD ratings file
+      copy:
+        content: |
+          {% for drive in stackhpc_dwpd_ratings %}
+          {{ drive.model_name }}: {{ drive.rated_dwpd }}
+          {% endfor %}
+        dest: /opt/kayobe/etc/monitoring/dwpd_ratings.yml
+      when: stackhpc_dwpd_ratings is defined
+      become: true
