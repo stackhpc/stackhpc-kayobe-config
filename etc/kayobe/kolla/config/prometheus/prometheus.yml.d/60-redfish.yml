@@ -5,7 +5,7 @@ scrape_configs:
   - job_name: redfish-exporter-seed
     metrics_path: /redfish
     scrape_timeout: 120s
-    scrape_interval: {{ 8 * groups['redfish_exporter_targets'] | length }}s
+    scrape_interval: {{ [8 * groups['redfish_exporter_targets'] | length, 120] | max }}s
     relabel_configs:
      - source_labels: [__address__]
        target_label: __param_target
