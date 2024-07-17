@@ -238,7 +238,7 @@ https://gist.github.com/MoteHue/ee5990bddea0677f54d8bb93d307aa71#file-octavia_te
 
 
 Attempt to build OFED against the latest kernel in ARK
-###############################################
+######################################################
 
 Note that this only needs to be performed once.
 
