@@ -1,6 +1,6 @@
-=========
-Upgrading
-=========
+===================
+Upgrading OpenStack
+===================
 
 This section describes how to upgrade from the |previous_release| OpenStack
 release series to |current_release|. It is based on the :kayobe-doc:`upstream
