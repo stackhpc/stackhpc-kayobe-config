@@ -237,15 +237,15 @@ Then run Octavia test script:
 https://gist.github.com/MoteHue/ee5990bddea0677f54d8bb93d307aa71#file-octavia_test-sh
 
 
-Attempt to build OFED against the latest kernel
+Attempt to build OFED against the latest kernel in ARK
 ###############################################
 
 Note that this only needs to be performed once.
 
 .. code-block:: console
 
-   kayobe seed host configure -t dnf -kt none
-   kayobe seed host package update --packages "*"
+   kayobe overcloud host configure -t dnf -kt none
+   kayobe overcloud host package update --packages "*"
 
 Then run the OFED test script:
 
