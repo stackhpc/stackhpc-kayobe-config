@@ -247,7 +247,7 @@ Note that this only needs to be performed once.
    kayobe overcloud host configure -t dnf
    kayobe overcloud host package update --packages "*"
 
-Then run the OFED test script:
+Then run the OFED test script on one of the upgraded overcloud hosts:
 
 https://gist.github.com/cityofships/b4883ee19f75d14534f04115892b8465
 
