@@ -244,7 +244,7 @@ Note that this only needs to be performed once.
 
 .. code-block:: console
 
-   kayobe overcloud host configure -t dnf -kt none
+   kayobe overcloud host configure -t dnf
    kayobe overcloud host package update --packages "*"
 
 Then run the OFED test script:
