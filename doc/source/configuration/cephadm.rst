@@ -103,6 +103,23 @@ Default variables for configuring Ceph are provided in
 but you will likely need to set ``cephadm_osd_spec`` to define the OSD
 specification.
 
+Ceph release
+~~~~~~~~~~~~
+
+The Ceph release series is not strictly dependent upon the StackHPC OpenStack
+release, however this configuration does define a default Ceph release series
+and container image tag. The default release series is currently |ceph_series|.
+
+If you wish to use a different Ceph release series, set
+``cephadm_ceph_release``.
+
+If you wish to use different Ceph container image tags, set the following
+variables:
+
+* ``cephadm_image_tag``
+* ``cephadm_haproxy_image_tag``
+* ``cephadm_keepalived_image_tag``
+
 OSD specification
 ~~~~~~~~~~~~~~~~~
 
