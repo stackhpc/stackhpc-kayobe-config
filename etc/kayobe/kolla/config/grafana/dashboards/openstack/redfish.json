@@ -173,6 +173,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -224,11 +225,14 @@
           },
           "expr": "count(redfish_system_power_state != 1)",
           "format": "table",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": true,
           "interval": "",
-          "legendFormat": "",
-          "refId": "A"
+          "legendFormat": "__auto",
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Powered Off",
@@ -242,6 +246,7 @@
       "fieldConfig": {
         "defaults": {
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -304,9 +309,11 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -391,10 +398,6 @@
       "type": "row"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -405,30 +408,13 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 15,
         "w": 5,
         "x": 0,
         "y": 4
       },
-      "hiddenSeries": false,
       "id": 36,
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -483,10 +469,6 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -497,32 +479,13 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 15,
         "w": 6,
         "x": 5,
         "y": 4
       },
-      "hiddenSeries": false,
       "id": 44,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -578,7 +541,6 @@
       }
     },
     {
-      "columns": [],
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -786,7 +748,6 @@
       "type": "table-old"
     },
     {
-      "columns": [],
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -889,10 +850,6 @@
       "type": "table-old"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -903,33 +860,14 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 11,
         "w": 5,
         "x": 0,
         "y": 19
       },
-      "hiddenSeries": false,
       "id": 39,
       "interval": "5m",
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "sort": "max",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -990,10 +928,6 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1003,37 +937,57 @@
         "defaults": {
           "links": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsZero",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsNull",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 11,
         "w": 6,
         "x": 5,
         "y": 19
       },
-      "hiddenSeries": false,
       "id": 40,
       "interval": "5m",
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": true,
-        "hideZero": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -1093,10 +1047,6 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1105,37 +1055,57 @@
         "defaults": {
           "links": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsZero",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "allIsNull",
+                "value": 0
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 11,
         "w": 5,
         "x": 11,
         "y": 19
       },
-      "hiddenSeries": false,
       "id": 41,
       "interval": "5m",
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": true,
-        "hideZero": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -1195,10 +1165,6 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1209,31 +1175,13 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 11,
         "w": 4,
         "x": 16,
         "y": 19
       },
-      "hiddenSeries": false,
       "id": 42,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -1301,10 +1249,6 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1315,31 +1259,13 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 11,
         "w": 4,
         "x": 20,
         "y": 19
       },
-      "hiddenSeries": false,
       "id": 43,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
@@ -1616,6 +1542,7 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1874,10 +1801,6 @@
       "yBucketBound": "auto"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -2325,7 +2248,7 @@
         "h": 4,
         "w": 2,
         "x": 8,
-        "y": 58
+        "y": 63
       },
       "id": 24,
       "options": {
@@ -2390,7 +2313,7 @@
         "h": 4,
         "w": 2,
         "x": 10,
-        "y": 58
+        "y": 63
       },
       "id": 25,
       "options": {
@@ -2455,7 +2378,7 @@
         "h": 4,
         "w": 2,
         "x": 12,
-        "y": 58
+        "y": 63
       },
       "id": 26,
       "options": {
@@ -2520,7 +2443,7 @@
         "h": 4,
         "w": 2,
         "x": 14,
-        "y": 58
+        "y": 63
       },
       "id": 27,
       "options": {
@@ -2584,9 +2507,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 16,
-        "y": 58
+        "w": 24,
+        "x": 0,
+        "y": 78
       },
       "id": 17,
       "options": {
@@ -3013,31 +2936,13 @@
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 62
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 82
       },
-      "hiddenSeries": false,
       "id": 45,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": true,
-        "min": true,
-        "show": true,
-        "sort": "max",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
         "alertThreshold": true
       },
