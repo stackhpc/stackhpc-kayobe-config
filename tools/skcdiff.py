@@ -21,6 +21,7 @@ results = subprocess.run([path + '/skc-diff.sh', arg], stdout=subprocess.PIPE).s
 
 # Split output into list of entries
 for line in results.splitlines():
+    print(line)
     if len(line) > 0 :
         # If the first char isn't whitespace, start a new entry, else append to
         # the old entry
