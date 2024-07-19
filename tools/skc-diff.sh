@@ -17,9 +17,11 @@ git fetch nonduplicatedremotename > /dev/null 2>&1
 
 if [ "$1" = "--month" ];
 then
-    git diff "$LOCAL_BRANCH@{4 weeks ago}" $LOCAL_BRANCH -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    # Doesn't work cause sometimes part of the reno will change but not the whole thing
+    # git diff "$LOCAL_BRANCH@{4 weeks ago}" $LOCAL_BRANCH -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    git diff --name-status "$LOCAL_BRANCH@{4 weeks ago}" $LOCAL_BRANCH -- releasenotes/notes/
 else
-    git diff $LOCAL_BRANCH nonduplicatedremotename/$SKC_BRANCH -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    git diff --name-status $LOCAL_BRANCH nonduplicatedremotename/$SKC_BRANCH -- releasenotes/notes/
 fi;
 
 git remote rm nonduplicatedremotename
