@@ -11,8 +11,8 @@ The short version
    ``etc/kayobe/inventory/group_vars/wazuh-manager/wazuh-manager``, in
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
+#. Ensure to export vault password: ``export KAYOBE_VAULT_PASSWORD={ansible_vault_password}``
 #. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
-#. Encrypt the secrets: ``ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml``
 #. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
 #. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
@@ -241,16 +241,17 @@ Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
 vault file which will be placed in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
 If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/wazuh-secrets.yml``
-Remember to encrypt!
+The secrets will be encrypted after templating and so requires that ``KAYOBE_VAULT_PASSWORD`` is set and exported before running the playbook!
 
 Wazuh secrets template is located in ``etc/kayobe/ansible/templates/wazuh-secrets.yml.j2``.
-It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
+It will be used by wazuh secrets playbook to generate wazuh secrets vault file, which will then be encrypted.
 
 
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
+
+To view ``wazuh-secrets.yml`` simply ``ansible-vault view --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml``
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
