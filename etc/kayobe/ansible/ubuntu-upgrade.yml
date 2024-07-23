@@ -5,6 +5,7 @@
   hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
+    reboot_timeout_s: "{{ 20 * 60 }}"
   tasks:
     - name: Assert that hosts are running Ubuntu Focal
       assert:
@@ -37,7 +38,7 @@
 
     - name: Reboot to apply updates
       reboot:
-        reboot_timeout: 1200
+        reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
       become: true
       when: file_status.stat.exists
@@ -81,6 +82,7 @@
   hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
+    reboot_timeout_s: "{{ 20 * 60 }}"
   tasks:
     - name: Ensure Jammy repo definitions do not exist in sources.list
       blockinfile:
@@ -88,9 +90,16 @@
         state: absent
       become: true
 
+    - name: Ensure Kolla Ansible Docker repo definition does not exist
+      file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+      become: true
+      when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
+
     - name: Reboot and wait
       reboot:
-        reboot_timeout: 1200
+        reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
       become: true
 
