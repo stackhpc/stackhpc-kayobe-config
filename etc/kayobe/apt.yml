@@ -74,7 +74,7 @@ stackhpc_apt_repositories:
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
 # are deployed.
-apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if 'overcloud' in group_names else [] }}"
+apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if stackhpc_repos_enabled | bool else [] }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
@@ -82,7 +82,7 @@ apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list 
 # Do not disable the default apt configuration for non-overcloud hosts. This
 # can result in errors if apt reconfiguration is performed before local
 # repository mirrors are deployed.
-apt_disable_sources_list: "{{ 'overcloud' in group_names }}"
+apt_disable_sources_list: "{{ stackhpc_repos_enabled | bool }}"
 
 # Apt auth configuration for accessing the package repository mirror.
 stackhpc_apt_auth:
@@ -98,7 +98,7 @@ stackhpc_apt_auth:
 # * filename: Name of a file in which to store the auth configuration. The
 #   extension should be '.conf'.
 # Default is an empty list.
-apt_auth: "{{ stackhpc_apt_auth if 'overcloud' in group_names and stackhpc_repo_mirror_username is truthy else [] }}"
+apt_auth: "{{ stackhpc_apt_auth if stackhpc_repos_enabled | bool and stackhpc_repo_mirror_username is truthy else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
