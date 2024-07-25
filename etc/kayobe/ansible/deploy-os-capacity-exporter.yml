@@ -27,6 +27,7 @@
       delegate_to: localhost
       register: credential
       when: stackhpc_enable_os_capacity
+      changed_when: false
 
     - name: Set facts for admin credentials
       ansible.builtin.set_fact:
@@ -43,6 +44,16 @@
         src: templates/os_capacity-clouds.yml.j2
         dest: /opt/kayobe/os-capacity/clouds.yaml
       when: stackhpc_enable_os_capacity
+      register: clouds_yaml_result
+
+    - name: Copy CA certificate to OpenStack Capacity nodes
+      ansible.builtin.copy:
+        src: "{{ stackhpc_os_capacity_openstack_cacert }}"
+        dest: /opt/kayobe/os-capacity/cacert.pem
+      when:
+        - stackhpc_enable_os_capacity
+        - stackhpc_os_capacity_openstack_cacert | length > 0
+      register: cacert_result
 
     - name: Ensure os_capacity container is running
       community.docker.docker_container:
@@ -56,6 +67,7 @@
             source: /opt/kayobe/os-capacity/
             target: /etc/openstack/
         network_mode: host
+        restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
         restart_policy: unless-stopped
       become: true
       when: stackhpc_enable_os_capacity

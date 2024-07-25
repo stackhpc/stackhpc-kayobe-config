@@ -19,12 +19,11 @@ Prerequisites
 =============
 
 * a Rocky Linux 9 or Ubuntu Jammy 22.04 host
-* access to the Test Pulp server on SMS lab
 
 Automated Setup
 ===============
 
-Access the host via SSH.
+Access the host via SSH. You may wish to start a ``tmux`` session.
 
 Download the setup script:
 
@@ -48,10 +47,21 @@ Run the setup script:
    ./automated-setup.sh
 
 The script will pull the current version of Kayobe and this repository, and
-then run the manual setup steps below. The script can be easily edited to use
-a different branch of Kayobe or this repository. The script will automatically
-determine whether your image is LVM based, if so, it will expand the volume sizes
-to allow ansible dependencies to install correctly.
+then run the manual setup steps below. The script can be easily edited with the
+following options:
+
+* ``BASE_PATH`` (default: ``~``) - Directory to deploy from. The directory must
+  exist before running the script.
+* ``KAYOBE_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of Kayobe
+  source code to use.
+* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of
+  ``stackhpc-kayobe-config`` to use.
+* ``KAYOBE_AIO_LVM`` (default: ``true``) - Whether the image uses LVM.
+* ``KAYOBE_CONFIG_EDIT_PAUSE`` (default: ``false``) - Option to pause
+  deployment after cloning the kayobe-config branch, so the environment can be
+  customised before continuing.
+* ``AIO_RUN_TEMPEST`` (default: ``false``) - Whether to run Tempest Refstack
+  after deployment instead of the default VM smoke test.
 
 Manual Setup
 ============
@@ -61,12 +71,29 @@ Host Configuration
 
 Access the host via SSH.
 
-Install package dependencies when on Ubuntu:
+If using an LVM-based image, extend the ``lv_home`` and ``lv_tmp`` logical
+volumes.
+
+.. parsed-literal::
+
+   sudo pvresize $(sudo pvs --noheadings | head -n 1 | awk '{print $1}')
+   sudo lvextend -L 4G /dev/rootvg/lv_home -r
+   sudo lvextend -L 4G /dev/rootvg/lv_tmp -r
+
+Install package dependencies.
+
+On Rocky Linux:
+
+.. parsed-literal::
+
+   sudo dnf install -y git
+
+On Ubuntu:
 
 .. parsed-literal::
 
    sudo apt update
-   sudo apt install -y python3-virtualenv
+   sudo apt install -y gcc git libffi-dev python3-dev python-is-python3 python3-venv
 
 Clone the Kayobe and Kayobe configuration repositories (this one):
 
@@ -86,7 +113,7 @@ Create a virtual environment and install Kayobe:
    cd
    mkdir -p venvs
    pushd venvs
-   virtualenv kayobe
+   python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
    pip install ../src/kayobe
@@ -102,6 +129,12 @@ Add initial network configuration:
    sudo ip l add dummy1 type dummy
    sudo ip l set dummy1 up
    sudo ip l set dummy1 master breth1
+
+On Ubuntu systems, persist the running network configuration.
+
+.. parsed-literal::
+
+   sudo cp /run/systemd/network/* /etc/systemd/network
 
 Configuration
 =============
@@ -136,6 +169,18 @@ Ansible control host.
 
 Deployment
 ----------
+
+If using an LVM-based image, grow the root volume group.
+
+.. parsed-literal::
+
+   kayobe playbook run etc/kayobe/ansible/growroot.yml
+
+On Ubuntu systems, purge the command-not-found package.
+
+.. parsed-literal::
+
+   kayobe playbook run etc/kayobe/ansible/purge-command-not-found.yml
 
 Next, configure the host OS & services.
 

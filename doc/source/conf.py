@@ -32,16 +32,19 @@
 current_series = "2024.1"
 previous_series = "2023.1"
 branch = f"stackhpc/{current_series}"
+ceph_series = "quincy"
 
 # Substitutions loader
 rst_prolog = """
 .. |current_release| replace:: {current_release}
 .. |current_release_git_branch_name| replace:: {current_release_git_branch_name}
 .. |previous_release| replace:: {previous_release}
+.. |ceph_series| replace:: {ceph_series}
 """.format(  # noqa: E501
     current_release_git_branch_name=branch,
     current_release=current_series,
     previous_release=previous_series,
+    ceph_series=ceph_series,
 )
 
 # -- General configuration ----------------------------------------------------
@@ -125,3 +128,4 @@ extlinks = {
 extlinks["skc-doc"] = (f"https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-{current_series}/", "%s documentation")
 extlinks["kayobe-renos"] = (f"https://docs.openstack.org/releasenotes/kayobe/{current_series}.html", "%s release notes")
 extlinks["kolla-ansible-renos"] = (f"https://docs.openstack.org/releasenotes/kolla-ansible/{current_series}.html", "%s release notes")
+extlinks["ceph-doc"] = (f"https://docs.ceph.com/en/{ceph_series}/", "%s documentation")

@@ -70,7 +70,7 @@ Installing Docker on Rocky:
 .. code-block:: bash
 
     sudo dnf install -y dnf-utils
-    sudo dnf-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 Ensure Docker is running & enabled:
@@ -101,7 +101,7 @@ Build a Kayobe automation image:
     git submodule update
     # If running on Ubuntu, the fact cache can confuse Kayobe in the Rocky-based container
     mv etc/kayobe/facts{,-old}
-    sudo DOCKER_BUILDKIT=1 docker build --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
+    sudo DOCKER_BUILDKIT=1 docker build --network host --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 
 Configuration
 =============
@@ -250,6 +250,25 @@ group, which can be any host in the Kayobe inventory. The group should only
 ever contain one host. The seed is usually used as the tempest runner however
 it is also common to use the Ansible control host or an infrastructure VM. The
 main requirement of the host is that it can reach the OpenStack API.
+
+.. _tempest-cacert:
+
+Tempest CA certificate
+----------------------
+
+If your public OpenStack API uses TLS with a Certificate Authority (CA) that is
+not trusted by the Python CA trust store, it may be necessary to add a CA
+certificate to the trust store in the container that runs Tempest. This can be
+done by defining a ``tempest_cacert`` Ansible variable to a path containing the
+CA certificate. You may wish to use ``kayobe_config_path`` or
+``kayobe_env_config_path`` to be agnostic to the path where kayobe-config is
+mounted within the container. For example:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/tempest.yml``
+
+   # Add the Vault CA certificate to the rally container when running tempest.
+   tempest_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
 
 Running Tempest
 ===============

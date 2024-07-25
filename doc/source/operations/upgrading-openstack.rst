@@ -1,6 +1,6 @@
-=========
-Upgrading
-=========
+===================
+Upgrading OpenStack
+===================
 
 This section describes how to upgrade from the |previous_release| OpenStack
 release series to |current_release|. It is based on the :kayobe-doc:`upstream
@@ -919,6 +919,12 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+Updating the Octavia Amphora Image
+----------------------------------
+
+If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+image <Amphora image>`.
 
 Testing
 -------
