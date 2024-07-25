@@ -52,20 +52,29 @@ stackhpc_apt_repositories:
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
     architecture: amd64
+    required: true
   - url: "{{ stackhpc_repo_ubuntu_jammy_security_url }}"
     suites: "{{ ansible_facts.distribution_release }}-security"
     components: main restricted universe multiverse
     architecture: amd64
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_url }}"
-    suites: "{{ ansible_facts.distribution_release }}"
+    required: true
+  - url: "{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_url }}"
+    suites: "pulp"
+    components: upload
+    architecture: amd64
+    trusted: yes
+    required: true
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_jammy_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
     components: stable
     signed_by: docker.asc
     architecture: amd64
+    required: true
 
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
 # are deployed.
-apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names else [] }}"
+apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if 'overcloud' in group_names else [] }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.

@@ -126,6 +126,8 @@ depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
 
+.. _os-capacity:
+
 OpenStack Capacity
 ==================
 
@@ -149,9 +151,19 @@ project domain name in ``stackhpc-monitoring.yml``:
     stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
 
 Additionally, you should ensure these credentials have the correct permissions
-for the exporter. If you are deploying in a cloud with internal TLS, you may be required
-to disable certificate verification for the OpenStack Capacity exporter
-if your certificate is not signed by a trusted CA.
+for the exporter.
+
+If you are deploying in a cloud with internal TLS, you may be required
+to provide a CA certificate for the OpenStack Capacity exporter if your
+certificate is not signed by a trusted CA. For example, to use a CA certificate
+named ``vault.crt`` that is also added to the Kolla containers:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
+Alternatively, to disable certificate verification for the OpenStack Capacity
+exporter:
 
 .. code-block:: yaml
 
@@ -169,3 +181,103 @@ If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
 set correctly, double check you have entered the correct authentication
 information appropiate to your cloud and re-deploy.
+
+Friendly Network Names
+=======================
+For operators that prefer to see descriptive or friendly interface names the
+following play can be run. This takes network names as defined in kayobe and
+relabels the devices/interfaces in Prometheus to make use of these names.
+
+**Check considerations and known limitations to see if this is suitable in any
+given environment before applying.**
+
+This reuses existing fields to provide good compatibility with existing
+dashboards and alerts.
+
+To enable the change:
+
+.. code-block:: console
+
+    kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
+    kayobe overcloud service reconfigure --kt prometheus
+
+This first generates a template based on the prometheus.yml.j2
+``etc/kayobe/ansible/`` and which is further templated for use with
+kolla-ansible.
+This is then rolled out via service reconfigure.
+
+
+This helps Prometheus provide insights that can be more easily understood by
+those without an intimate understanding of a given site. Prometheus Node
+Exporter and cAdvisor both provide network statistics using the
+interface/device names. This play causes Prometheus to relabel these fields to
+human readable names based on the networks as defined in kayobe
+e.g. bond1.1838 may become storage_network.
+
+The default labels are preserved with the prefix ``original_``.
+
+* For node_exporter, ``device`` is then used for network names, while
+  ``original_device`` is used for the interface itself.
+* For cAdvisor, ``interface`` is used for network names, and
+  ``original_interface`` is used to preserve the interface name.
+
+:Known-Limitations/Considerations/Requirements:
+
+Before enabling this feature, the implications must be discussed with the
+customer. The following are key considerations for that conversation:
+
+* Only network names defined within kayobe are within scope.
+* Tenant network interfaces, including SR-IOV are not considered or modified.
+* Only the interface directly attributed to a network will be relabelled.
+  This may be a bond, a vlan tagged sub-interface, or both.
+  The parent bond, or bond members are not relabelled unless they are
+  captured within a distinct defined network.
+* Modified entries will be within existing labels. This may be breaking for
+  anything that expects the original structure, including custom dashboards,
+  alerting, billing, etc.
+* After applying, there will be inconsistency in the time-series db for the
+  duration of the retention period i.e until previously ingested entries
+  expire.
+  The metrics gathered prior to applying these modifications will be unaltered,
+  with all new metrics using the new structure.
+* The interface names and their purpose must be consistent and unique within
+  the environment. i.e if eth0 is defined as admin_interface on one node, no
+  other node can include a different network definition using eth0.
+  This does not apply in the case when both devices are bond members.
+  e.g. bond0 on a controller has eth0 and eth1 as members. bond1 on a compute
+  uses eth0 and eth1 as members. This is not problematic as it is only
+  the bond itself that is relabelled.
+
+Redfish exporter
+================
+
+Redfish exporter will query the overcloud BMCs via their redfish interfaces
+to produce various metrics relating to the hardware, and system health.
+
+To configure the exporter, adjust the variables in
+``$KAYOBE_CONFIG_PATH/stackhpc-monitoring.yml`` to use appropriate values:
+
+.. code-block:: yaml
+
+    # Whether the redfish exporter is enabled.
+    stackhpc_enable_redfish_exporter: true
+
+    # Redfish exporter credentials
+    redfish_exporter_default_username: "{{ ipmi_username }}"
+    redfish_exporter_default_password: "{{ ipmi_password }}"
+
+    # The address of the BMC that is queried by redfish exporter for metrics.
+    redfish_exporter_target_address: "{{ ipmi_address }}"
+
+Deploy the exporter on the seed:
+
+.. code-block:: console
+
+    kayobe seed service deploy -t seed-deploy-containers -kt none
+
+It is required that you re-configure the Prometheus, Grafana
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus

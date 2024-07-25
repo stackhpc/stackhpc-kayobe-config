@@ -1,0 +1,27 @@
+# yamllint disable-file
+---
+{% if seed_redfish_exporter_container_enabled | bool %}
+scrape_configs:
+  - job_name: redfish-exporter-seed
+    metrics_path: /redfish
+    scrape_timeout: 120s
+    scrape_interval: {{ [8 * groups['redfish_exporter_targets'] | length, 120] | max }}s
+    relabel_configs:
+     - source_labels: [__address__]
+       target_label: __param_target
+     - source_labels: [__param_target]
+       target_label: instance
+     - target_label: __address__
+       replacement: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:9610"
+    static_configs:
+{% for host in groups.get('redfish_exporter_targets', []) %}
+{% if hostvars[host]["redfish_exporter_scrape_group"] | default('overcloud') == 'overcloud' %}
+      - targets:
+          - '{{ hostvars[host]["redfish_exporter_target_address"] }}'
+        labels:
+          server: '{{ host }}'
+          env: "{{ kayobe_environment | default('openstack') }}"
+          group: "{{ hostvars[host]['redfish_exporter_scrape_group'] | default('overcloud') }}"
+{% endif %}
+{% endfor %}
+{% endif %}

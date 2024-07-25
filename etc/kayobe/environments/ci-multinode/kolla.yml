@@ -8,11 +8,11 @@ kolla_enable_designate: true
 kolla_enable_redis: true
 kolla_enable_barbican: true
 
-# The multinode environment supports Backend and internal TLS , but it must be
-# enabled in the correct order. See
-# https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/vault.html
-# for details.
-# kolla_enable_tls_internal: true
+kolla_enable_tls_external: true
+kolla_enable_tls_internal: true
+
+kolla_public_openrc_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
+kolla_admin_openrc_cacert: "{{ kolla_public_openrc_cacert }}"
 
 # The multinode environment supports Manila but it is not enabled by default.
 # kolla_enable_manila: true

@@ -35,6 +35,22 @@ rhel9cis_rule_5_3_4: false
 # Please double-check yourself with: sudo passwd -S root
 rhel9cis_rule_5_6_6: false
 
+# Stop the CIS benchmark scanning all files on every filesystem since this
+# takes a long time. Related to the changing permissions block below. This
+# would normally warn you about violations, but we can use Wazuh to continually
+# monitor this.
+rhel9cis_rule_6_1_9: false
+rhel9cis_rule_6_1_10: false
+rhel9cis_rule_6_1_11: false
+rhel9cis_rule_6_1_12: false
+rhel9cis_rule_6_1_13: false
+rhel9cis_rule_6_1_14: false
+rhel9cis_rule_6_1_15: false
+
+# The following rules change permissions on all files on every mounted
+# filesystem.  We do not want to change /var/lib/docker permissions.
+rhel9cis_no_world_write_adjust: false
+
 # Configure log rotation to prevent audit logs from filling the disk
 rhel9cis_auditd:
   space_left_action: syslog
@@ -48,6 +64,10 @@ rhel9cis_max_log_file_size: 1024
 # Disable setting of boatloader password. This requires setting the variable
 # `rhel9cis_bootloader_password_hash`
 rhel9cis_set_boot_pass: false
+
+# NOTICE: rule disabled otherwise rule will prevent access to accounts
+# as it will expire passwords older than one year.
+rhel9cis_rule_5_6_1_1: false
 
 ##############################################################################
 # Ubuntu Jammy CIS Hardening Configuration
@@ -115,9 +135,22 @@ ubtu22cis_sshd:
   deny_users: ""
   deny_groups: ""
 
-# Do not change /var/lib/docker permissions
+# Stop the CIS benchmark scanning all files on every filesystem since this
+# takes a long time. Related to the changing permissions block below. This
+# would normally warn you about violations, but we can use Wazuh to continually
+# monitor this.
+ubtu22cis_rule_6_1_9: false
+ubtu22cis_rule_6_1_10: false
+ubtu22cis_rule_6_1_11: false
+ubtu22cis_rule_6_1_12: false
+ubtu22cis_rule_6_1_13: false
+
+# The following rules change permissions on all files on every mounted
+# filesystem.  We do not want to change /var/lib/docker permissions.
 ubtu22cis_no_group_adjust: false
 ubtu22cis_no_owner_adjust: false
+ubtu22cis_no_world_write_adjust: false
+ubtu22cis_suid_adjust: false
 
 # Configure log rotation to prevent audit logs from filling the disk
 ubtu22cis_auditd:
@@ -133,4 +166,22 @@ ubtu22cis_max_log_file_size: 1024
 # ubtu22cis_bootloader_password_hash
 ubtu22cis_rule_1_4_1: false
 ubtu22cis_rule_1_4_3: false
+
+# Disable: Ensure minimum days between password changes is configured
+ubtu22cis_rule_5_5_1_1: false
+
+# Disable: Ensure password expiration is 365 days or less
+ubtu22cis_rule_5_5_1_2: false
+
+# Disable: Ensure inactive password lock is 30 days or less
+ubtu22cis_rule_5_5_1_4: false
+
+# Disable: Ensure all users last password change date is in the past
+ubtu22cis_rule_5_5_1_5: false
+
+# The way this is disabled currently breaks kolla's IPV6 check, see:
+# https://bugs.launchpad.net/kolla-ansible/+bug/2071443
+# Also matches RHEL hardening behavior.
+ubtu22cis_ipv6_required: true
+
 ##############################################################################
