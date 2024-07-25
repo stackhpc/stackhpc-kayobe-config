@@ -152,8 +152,8 @@ jobs:
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          sudo pip install docker 'requests<2.32.0'
-      
+          sudo pip install docker
+
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
@@ -180,6 +180,13 @@ jobs:
 
       - name: Create build logs output directory
         run: mkdir image-build-logs
+
+      - name: Print environment
+        run: |
+          echo $(cat /etc/os-release) \
+          ; echo $(uname -a) \
+          ; echo $(docker --version)
+
 
       - name: Build kolla overcloud images
         id: build_overcloud_images
