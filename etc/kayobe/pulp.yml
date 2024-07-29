@@ -123,14 +123,30 @@ stackhpc_pulp_deb_repos:
     distributions: "jammy-security"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  - name: "Ubuntu jammy CVE-2024-6387"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-jammy-cve-2024-6387/"
+    distribution_name: "ubuntu-jammy-cve-2024-6387-"
+    base_path: "ubuntu-jammy-cve-2024-6387/"
+    components: "upload"
+    distributions: "pulp"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
   # Third-party repositories
-  - name: "Docker CE for Ubuntu"
-    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-    distribution_name: "docker-ce-for-ubuntu-"
-    base_path: "docker-ce/ubuntu/"
-    distributions: "focal jammy"
+  - name: "Docker CE for Ubuntu Focal"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-focal/{{ stackhpc_pulp_repo_docker_ce_ubuntu_focal_version }}"
+    distribution_name: "docker-ce-for-ubuntu-focal-"
+    base_path: "docker-ce/ubuntu-focal/"
+    distributions: "focal"
     components: "stable"
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
+
+  - name: "Docker CE for Ubuntu Jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-jammy/{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
+    distribution_name: "docker-ce-for-ubuntu-jammy-"
+    base_path: "docker-ce/ubuntu-jammy/"
+    distributions: "jammy"
+    components: "stable"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -431,6 +447,12 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
     distribution_name: "rocky-9-highavailability-"
     base_path: "rocky/9/highavailability/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
+  - name: Rocky Linux 9 - SIG Security Common
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
+    distribution_name: rocky-9-sig-security-common-
+    base_path: "rocky/sig/9/security/x86_64/security-common/"
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
   # Additional CentOS Stream 9 repositories
