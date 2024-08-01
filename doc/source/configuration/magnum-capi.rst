@@ -60,11 +60,11 @@ To deploy the CAPI management cluster using this site-specific environment, run
 
 .. code-block:: bash
 
-    # Activate the environment
-    ./bin/activate <site-specific-name>
-
     # Install or update the local Ansible Python venv
     ./bin/ensure-venv
+
+    # Activate the environment
+    source bin/activate <site-specific-name>
 
     # Install or update Ansible dependencies
     ansible-galaxy install -f -r ./requirements.yml
