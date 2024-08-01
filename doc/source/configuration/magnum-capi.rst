@@ -103,12 +103,7 @@ To configure the Magnum service with the Cluster API driver enabled, first ensur
 
 Next, copy the CAPI management cluster's kubeconfig file into your stackhpc-kayobe-config environment (e.g. ``<your-skc-environment>/kolla/config/magnum/kubeconfig``). This file must be Ansible vault encrypted.
 
-The following config should also be set in your stackhpc-kayobe-config environment:
-
-.. code-block:: yaml
-    :caption: kolla/globals.yml
-
-    magnum_capi_helm_driver_enabled: true
+The presence of a kubeconfig file in the Magnum config directory is used by Kolla to determine whether the CAPI Helm driver should be enabled.
 
 To apply the configuration, run ``kayobe overcloud service reconfigure -kt magnum``.
 
