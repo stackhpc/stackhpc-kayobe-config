@@ -347,6 +347,10 @@ should be used in the Kolla Manila configuration e.g.:
 RADOS Gateways
 --------------
 
+RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
+documentation
+<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+
 RADOS Gateways (RGWs) are defined with the following:
 
 .. code:: yaml
@@ -393,6 +397,12 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
 
+Enable the Kolla Ansible RADOS Gateway integration in ``kolla.yml``:
+
+.. code:: yaml
+
+   kolla_enable_ceph_rgw: true
+
 As we have configured Ceph to respond to Swift APIs, you will need to tell
 Kolla to account for this when registering Swift endpoints with Keystone. Also,
 when ``rgw_swift_account_in_url`` is set, the equivalent Kolla variable should
@@ -414,6 +424,11 @@ before deploying the RADOS gateways. If you are using the Kolla load balancer
 
   kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
 
+There are two options for load balancing RADOS Gateway:
+
+1. HA with Ceph Ingress services
+2. RGWs with hyper-converged Ceph (using the Kolla Ansible deployed HAProxy
+   load balancer)
 
 .. _RGWs-with-hyper-converged-Ceph:
 
