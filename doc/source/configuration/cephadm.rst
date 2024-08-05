@@ -377,7 +377,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
   - "config set client.rgw rgw_enforce_swift_acls true"
   - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
-  - "config set client.rgw rgw_keystone_accepted_roles 'member, Member, _member_, admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
   - "config set client.rgw rgw_keystone_admin_domain Default"
   - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
   - "config set client.rgw rgw_keystone_admin_project service"
