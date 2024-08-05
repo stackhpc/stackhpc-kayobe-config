@@ -4,10 +4,13 @@
   serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(1, true) }}"
   tags:
     - reboot
+  vars:
+    reboot_timeout_s: "{{ 20 * 60 }}"
   tasks:
     - name: Reboot and wait
       become: true
       reboot:
+        reboot_timeout: "{{ reboot_timeout_s }}"
         search_paths:
           # Systems running molly-guard hang waiting for confirmation before rebooting without this.
           - "/lib/molly-guard"
