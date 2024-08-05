@@ -40,6 +40,15 @@
       reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
+        search_paths:
+          # Systems running molly-guard hang waiting for confirmation before rebooting without this.
+          - "/lib/molly-guard"
+          # Default list:
+          - "/sbin"
+          - "/bin"
+          - "/usr/sbin"
+          - "/usr/bin"
+          - "/usr/local/sbin"
       become: true
       when: file_status.stat.exists
 
@@ -101,6 +110,15 @@
       reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
+        search_paths:
+          # Systems running molly-guard hang waiting for confirmation before rebooting without this.
+          - "/lib/molly-guard"
+          # Default list:
+          - "/sbin"
+          - "/bin"
+          - "/usr/sbin"
+          - "/usr/bin"
+          - "/usr/local/sbin"
       become: true
 
     - name: Update distribution facts
