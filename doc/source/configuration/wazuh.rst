@@ -11,8 +11,8 @@ The short version
    ``etc/kayobe/inventory/group_vars/wazuh-manager/wazuh-manager``, in
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
+#. Ensure to export vault password: ``export KAYOBE_VAULT_PASSWORD={ansible_vault_password}``
 #. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
-#. Encrypt the secrets: ``ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml``
 #. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
 #. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
@@ -241,16 +241,17 @@ Wazuh secrets playbook is located in ``etc/kayobe/ansible/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
 vault file which will be placed in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
 If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/wazuh-secrets.yml``
-Remember to encrypt!
+The secrets will be encrypted after templating and so requires that ``KAYOBE_VAULT_PASSWORD`` is set and exported before running the playbook!
 
 Wazuh secrets template is located in ``etc/kayobe/ansible/templates/wazuh-secrets.yml.j2``.
-It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
+It will be used by wazuh secrets playbook to generate wazuh secrets vault file, which will then be encrypted.
 
 
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
+
+To view ``wazuh-secrets.yml`` simply ``ansible-vault view --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml``
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
@@ -317,16 +318,37 @@ You will need to create two files matching the following pattern:
 - ``{{ dashboard_node_name }}-key.pem`` for the private key
 - ``{{ dashboard_node_name }}.pem`` for the certificate
 
-Drop these files into ``$KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/`` if
-using the kayobe environments feature, or ``$KAYOBE_CONFIG_PATH/wazuh/wazuh-certificates/`` if not.
-The key for the external certificate should be in PKCS#8 format (in its header it may have BEGIN
+In order to utilise externally generated certificates, you must first deploy Wazuh Ansible as normal in order to generate the aforementioned certificates; this is because it is unlikely that every Wazuh service will be getting its own custom certificate, especially the ``root`` and ``admin`` certificates. Therefore the ``<...>/wazuh/wazuh-certificates`` directory cannot be manually created as this will result in the Wazuh playbook and ``wazuh-cert-tool.sh`` not generating the remaining non custom certificates. 
+Custom certificates for Wazuh ``indexer`` may be also be added in a similar way as Wazuh ``dashboard`` by changing the ``indexer_node_name`` such that it's going to match the custom certificate's name.
+Once the certificates have been generated a number of steps are required, depending on which set of custom certificates are required to be added or substituted. Regardless, you must ``SSH`` into the ``infra VM`` in which the Wazuh services have been deployed to and, with admin privileges, remove any of the certificates from ``/etc/wazuh-{dashboard | indexer}/certs/`` which are due to be replaced with custom ones. Following this, return to the ``seed`` VM and drop the custom new ``pem`` certificates into ``$KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/`` if
+using a kayobe environment, or ``$KAYOBE_CONFIG_PATH/wazuh/wazuh-certificates/`` if not. Finally, rerun the Wazuh Ansible playbook and now the custom certificates should be copied over to their respective directories in the ``infra VM``.
+
+Following this, the ``sudo systemctl status`` for the three Wazuh services should be checked to make sure they are up and running with no errors. Additionally, testing ``sudo filebeat test output`` and trying to ``curl`` the service's IP will also signify if the certificates are working correctly.
+
+It should also be noted that the key for the external certificate should be in PKCS#8 format (in its header it may have BEGIN
 PRIVATE KEY instead of BEGIN RSA PRIVATE KEY or BEGIN OPENSSH PRIVATE KEY).
 
 Example OpenSSL rune to convert to PKCS#8:
 
 ``openssl pkcs8 -topk8 -nocrypt -in wazuh.key -out wazuh.key.pkcs8``
 
-TODO: document how to use a local certificate. Do we need to override all certificates?
+.. note::
+
+    If you find that your Wazuh playbook isn't generating some of the non custom certificates,
+    namely the ``indexer`` or ``dashboard`` certificates, it is likely that they aren't being 
+    templated correctly in ``wazuh-cert-tool.sh`` and this could be due to a few reasons but
+    the variable used to templated into ``wazuh-cert-tool.sh`` is:
+
+    .. code-block:: bash
+
+        instances:
+          wazuh:
+            name: "{{ inventory_hostname }}"
+            ip: "{{ wazuh_manager_ip }}"
+            role: indexer
+
+    Where ``role`` defines the service which ``wazuh-cert-tool.sh`` will create a certificate for.
+    This should be defined in ``$KAYOBE_CONFIG_PATH/environments/<environment>/inventory/group_vars/wazuh-manager/wazuh-manager.yml``.
 
 Custom SCA Policies (optional)
 ------------------------------
