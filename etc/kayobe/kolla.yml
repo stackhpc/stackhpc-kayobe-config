@@ -422,18 +422,6 @@ kolla_build_blocks:
         rm -f liblasso3_2.7.0-2build3_amd64.deb
     {% endif %}
     {% endraw %}
-  neutron_server_footer: |
-    {% if kolla_base_distro in ['centos', 'rocky'] %}
-    # Install networking-mlnx plugin and dependencies
-    {% raw %}
-    {% if base_package_type == 'rpm' %}
-    ADD plugins-archive /
-    RUN python3 -m pip --no-cache-dir install /plugins/* \
-    && dnf install python3-libvirt python3-ethtool -y \
-    && dnf clean all
-    {% endif %}
-    {% endraw %}
-    {% endif %}
   nova_base_footer: |
     {% if kolla_base_distro == 'centos' %}
     # Fix for https://bugs.launchpad.net/nova/+bug/1955035, i.e.
@@ -441,18 +429,6 @@ kolla_build_blocks:
     {% raw %}
     {% if base_package_type == 'rpm' %}
     RUN sed -i 's/"pc-q35-rhel8.5.0"/"pc-q35-*"/' /usr/share/qemu/firmware/50-edk2-ovmf-cc.json
-    {% endif %}
-    {% endraw %}
-    {% endif %}
-  nova_compute_footer: |
-    {% if kolla_base_distro in ['centos', 'rocky'] %}
-    # Install networking-mlnx plugin and dependencies
-    {% raw %}
-    {% if base_package_type == 'rpm' %}
-    ADD plugins-archive /
-    RUN python3 -m pip --no-cache-dir install /plugins/* \
-    && dnf install python3-libvirt python3-ethtool -y \
-    && dnf clean all
     {% endif %}
     {% endraw %}
     {% endif %}
@@ -480,6 +456,12 @@ kolla_build_customizations_common:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
+  neutron_server_packages_append:
+    - python3-libvirt
+    - python3-ethtool
+  nova_compute_packages_append:
+    - python3-libvirt
+    - python3-ethtool
 
 kolla_build_customizations_el:
   base_yum_repo_files_remove:
