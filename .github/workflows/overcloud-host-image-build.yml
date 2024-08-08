@@ -67,13 +67,6 @@ jobs:
         run: |
           echo "${{ steps.host_image_tag.outputs.host_image_tag }}"
 
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
-
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -81,7 +74,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install ../src/kayobe-config/requirements.txt
 
       - name: Install terraform
         uses: hashicorp/setup-terraform@v2
