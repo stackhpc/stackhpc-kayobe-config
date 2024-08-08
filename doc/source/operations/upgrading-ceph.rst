@@ -63,7 +63,7 @@ Place the host or batch of hosts into maintenance mode:
 
 .. code-block:: console
 
-   sudo cephadm shell -- ceph orch host maintenance enter <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml -l <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
@@ -72,7 +72,8 @@ To update all eligible packages, use ``*``, escaping if necessary:
    kayobe overcloud host package update --packages "*" --limit <host>
 
 If the kernel has been upgraded, reboot the host or batch of hosts to pick up
-the change:
+the change. While running this playbook, consider setting ``ANSIBLE_SERIAL`` to
+the maximum number of hosts that can safely reboot concurrently.
 
 .. code-block:: console
 
@@ -82,7 +83,7 @@ Remove the host or batch of hosts from maintenance mode:
 
 .. code-block:: console
 
-   sudo cephadm shell -- ceph orch host maintenance exit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml -l <host>
 
 Wait for Ceph health to return to ``HEALTH_OK``:
 
