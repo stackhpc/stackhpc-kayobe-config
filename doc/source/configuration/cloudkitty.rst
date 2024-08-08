@@ -35,16 +35,6 @@ following in ``kolla/globals.yml``:
   cloudkitty_fetcher_backend: prometheus
   cloudkitty_storage_backend: elasticsearch
 
-If you have TLS enabled, you will also need to set the cafile for Prometheus
-and Elasticsearch. Set the following in ``kolla/globals.yml``.
-
-.. code-block::
-
-  {% raw %}
-  cloudkitty_prometheus_cafile: "{{ openstack_cacert }}"
-  cloudkitty_elasticsearch_cafile: "{{ openstack_cacert }}"
-  {% endraw %}
-
 The default collection period is one hour, which is likely too long for most
 systems as CloudKitty charges by the **entire** collection period if any usage
 is seen within this timeframe. This is regardless of actual usage, meaning that
