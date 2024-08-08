@@ -52,9 +52,9 @@ following options:
 
 * ``BASE_PATH`` (default: ``~``) - Directory to deploy from. The directory must
   exist before running the script.
-* ``KAYOBE_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of Kayobe
+* ``KAYOBE_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of Kayobe
   source code to use.
-* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of
+* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of
   ``stackhpc-kayobe-config`` to use.
 * ``KAYOBE_AIO_LVM`` (default: ``true``) - Whether the image uses LVM.
 * ``KAYOBE_CONFIG_EDIT_PAUSE`` (default: ``false``) - Option to pause
