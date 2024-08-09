@@ -137,25 +137,25 @@ groups:
     annotations:
       description: "Root volume (OSD and MON store) is dangerously full: {{ $value | humanize }}% free."
 
-  # alert on nic packet errors and drops rates > 1 packet/s
+  # alert on nic packet errors and drops rates > alertmanager_packet_drop_threshold packet/s
   - alert: NetworkPacketsDropped
-    expr: irate(node_network_receive_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) + irate(node_network_transmit_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) > 1
+    expr: irate(node_network_receive_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) + irate(node_network_transmit_drop_total{device!~"lo|br.*|.*-ovs|tap.*"}[5m]) > {% endraw %}{{ alertmanager_packet_drop_threshold }}{% raw %}
     labels:
       severity: warning
     annotations:
       description: >
-        Node {{ $labels.instance }} experiences packet drop > 1
+        Node {{ $labels.instance }} experiences packet drop > {% endraw %}{{ alertmanager_packet_drop_threshold }}{% raw %}
         packet/s on interface {{ $labels.device }}.
 
   - alert: NetworkPacketErrors
     expr: |
       irate(node_network_receive_errs_total{device!="lo"}[5m]) +
-      irate(node_network_transmit_errs_total{device!="lo"}[5m]) > 1
+      irate(node_network_transmit_errs_total{device!="lo"}[5m]) > {% endraw %}{{ alertmanager_packet_errors_threshold }}{% raw %}
     labels:
       severity: warning
     annotations:
       description: >
-        Node {{ $labels.instance }} experiences packet errors > 1
+        Node {{ $labels.instance }} experiences packet errors > {% endraw %}{{ alertmanager_packet_errors_threshold }}{% raw %}
         packet/s on interface {{ $labels.device }}.
 
   - alert: StorageFillingUp
