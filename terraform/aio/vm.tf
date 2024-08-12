@@ -92,7 +92,8 @@ resource "null_resource" "kayobe-aio" {
 
     inline = [
       "#!/bin/sh",
-      "echo 'connected!'"
+      "echo 'connected!'",
+      "sudo hostnamectl set-hostname $(sed s/.novalocal// /etc/hostname)"
       ]
   }
 }
