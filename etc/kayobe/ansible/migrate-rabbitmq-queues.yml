@@ -3,7 +3,7 @@
 # This is primarily used in CI workflows
 
 - name: Migrate RabbitMQ queues
-  hosts: localhost
+  hosts: controllers
   gather_facts: no
   vars:
     - rabbitmq_container_name: "rabbitmq"
@@ -13,6 +13,15 @@
       command: timedatectl status
       register: timedatectl_status
       changed_when: false
+
+    - name: Fail if the clock is not synchronized
+      assert:
+        that:
+          - "'synchronized: yes' not in timedatectl_status.stdout"
+        fail_msg: >
+          timedatectl sees the system clock as unsynchronized.
+          You may need to force synchronisation using `chronyc makestep`.
+          Otherwise, please wait for synchronization.
 
     - name: Generate kolla configuration
       shell:
@@ -32,15 +41,6 @@
       run_once: true
       delegate_to: localhost
       changed_when: false
-
-    - name: Fail if the clock is not synchronized
-      assert:
-        that:
-          - "'synchronized: yes' not in timedatectl_status.stdout"
-        fail_msg: >
-          timedatectl sees the system clock as unsynchronized.
-          You may need to force synchronisation using `chronyc makestep`.
-          Otherwise, please wait for synchronization.
 
     - name: Inspect the {{ rabbitmq_container_name }} container
       shell:
