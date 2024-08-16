@@ -2,6 +2,12 @@
 - name: Reboot the host
   hosts: seed-hypervisor:seed:overcloud:infra-vms
   serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(1, true) }}"
+  gather_facts: false
+  vars:
+    reboot_with_bootstrap_user: false
+    ansible_user: "{{ bootstrap_user if reboot_with_bootstrap_user | bool else kayobe_ansible_user }}"
+    ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no' if reboot_with_bootstrap_user | bool else '' }}"
+    ansible_python_interpreter: "/usr/bin/python3"
   tags:
     - reboot
   tasks:
