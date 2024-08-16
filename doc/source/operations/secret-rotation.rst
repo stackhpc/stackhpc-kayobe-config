@@ -34,17 +34,6 @@ this guide. Installation:
 
    sudo apt/dnf install pwgen
 
-
-As of writing, there is an upstream patch in the works to make this
-process easier.
-
-#. A change to Nova, to automate :ref:`this<nova-change>` step to change the
-   nova cell0 database connection string.
-
-   The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/nova/+/903140>`__.
-
-
 Full method
 ===========
 
