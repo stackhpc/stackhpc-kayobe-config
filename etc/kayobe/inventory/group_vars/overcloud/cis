@@ -35,6 +35,22 @@ rhel9cis_rule_5_3_4: false
 # Please double-check yourself with: sudo passwd -S root
 rhel9cis_rule_5_6_6: false
 
+# Stop the CIS benchmark scanning all files on every filesystem since this
+# takes a long time. Related to the changing permissions block below. This
+# would normally warn you about violations, but we can use Wazuh to continually
+# monitor this.
+rhel9cis_rule_6_1_9: false
+rhel9cis_rule_6_1_10: false
+rhel9cis_rule_6_1_11: false
+rhel9cis_rule_6_1_12: false
+rhel9cis_rule_6_1_13: false
+rhel9cis_rule_6_1_14: false
+rhel9cis_rule_6_1_15: false
+
+# The following rules change permissions on all files on every mounted
+# filesystem.  We do not want to change /var/lib/docker permissions.
+rhel9cis_no_world_write_adjust: false
+
 # Configure log rotation to prevent audit logs from filling the disk
 rhel9cis_auditd:
   space_left_action: syslog
@@ -119,9 +135,22 @@ ubtu22cis_sshd:
   deny_users: ""
   deny_groups: ""
 
-# Do not change /var/lib/docker permissions
+# Stop the CIS benchmark scanning all files on every filesystem since this
+# takes a long time. Related to the changing permissions block below. This
+# would normally warn you about violations, but we can use Wazuh to continually
+# monitor this.
+ubtu22cis_rule_6_1_9: false
+ubtu22cis_rule_6_1_10: false
+ubtu22cis_rule_6_1_11: false
+ubtu22cis_rule_6_1_12: false
+ubtu22cis_rule_6_1_13: false
+
+# The following rules change permissions on all files on every mounted
+# filesystem.  We do not want to change /var/lib/docker permissions.
 ubtu22cis_no_group_adjust: false
 ubtu22cis_no_owner_adjust: false
+ubtu22cis_no_world_write_adjust: false
+ubtu22cis_suid_adjust: false
 
 # Configure log rotation to prevent audit logs from filling the disk
 ubtu22cis_auditd:
