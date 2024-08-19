@@ -41,10 +41,10 @@
 #     file: myrepo
 #     gpgkey: http://gpgkey
 #     gpgcheck: yes
-#dnf_custom_repos:
+dnf_custom_repos: "{{ stackhpc_dnf_repos if stackhpc_repos_enabled | bool else [] }}"
 
 # A dict of custom repositories that point to the local Pulp server.
-# To use these repos, set dnf_custom_repos to the value of stackhpc_dnf_repos.
+# To use these repos, set stackhpc_repos_enabled to true.
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
 stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
