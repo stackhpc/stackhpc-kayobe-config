@@ -2,15 +2,26 @@
 - name: Reboot the host
   hosts: seed-hypervisor:seed:overcloud:infra-vms
   serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(1, true) }}"
+  gather_facts: false
   vars:
-    gather_facts: false
+    reboot_timeout_s: "{{ 20 * 60 }}"
     reboot_with_bootstrap_user: false
-    ansible_user: "{{ bootstrap_user if reboot_with_bootstrap_user else kayobe_ansible_user }}"
-    ansible_python_interpreter: "{{ '/usr/bin/python3' if reboot_with_bootstrap_user else virtualenv_path + '/kayobe/bin/python' }}"
-    ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no' if reboot_with_bootstrap_user else '' }}"
+    ansible_user: "{{ bootstrap_user if reboot_with_bootstrap_user | bool else kayobe_ansible_user }}"
+    ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no' if reboot_with_bootstrap_user | bool else '' }}"
+    ansible_python_interpreter: "/usr/bin/python3"
   tags:
     - reboot
   tasks:
     - name: Reboot and wait
       become: true
       reboot:
+        reboot_timeout: "{{ reboot_timeout_s }}"
+        search_paths:
+          # Systems running molly-guard hang waiting for confirmation before rebooting without this.
+          - "/lib/molly-guard"
+          # Default list:
+          - "/sbin"
+          - "/bin"
+          - "/usr/sbin"
+          - "/usr/bin"
+          - "/usr/local/sbin"
