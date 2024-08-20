@@ -337,8 +337,9 @@ jobs:
 
       # If testing upgrade, checkout the current release branch
       # Stash changes to tracked files, and set clean=false to avoid removing untracked files.
+      # Revert changes to RabbitMQ Queue types to avoid a merge conflict
       - name: Stash config changes
-        run: git stash
+        run: git restore etc/kayobe/environments/ci-aio/kolla/globals && git stash
         if: inputs.upgrade
 
       - name: Checkout current release config
