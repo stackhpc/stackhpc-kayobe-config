@@ -20,7 +20,7 @@ if [[ ! "$1" = "--skip-checks" ]]; then
         exit 1
     fi
     kayobe overcloud service configuration generate --node-config-dir /tmp/rabbit-migration --kolla-tags none
-    # Fail if HA is set or Quorum is not
+    # Fail if HA is set or quorum is not
     if ! grep 'om_enable_rabbitmq_quorum_queues: true' $KOLLA_CONFIG_PATH/globals.yml || grep 'om_enable_rabbitmq_high_availability: true' $KOLLA_CONFIG_PATH/globals.yml; then
         echo "Failed precheck: om_enable_rabbitmq_quorum_queues must be enabled, om_enable_rabbitmq_high_availability must be disabled"
         exit 1
@@ -28,8 +28,8 @@ if [[ ! "$1" = "--skip-checks" ]]; then
 fi
 
 # Generate new config, stop services using rabbit, and reset rabbit state
-kayobe overcloud service configuration generate --node-config-dir /etc/kolla --kolla-skip-tags rabbitmq-ha-precheck &&
-kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_SERVICES_TO_RESTART &&
+kayobe overcloud service configuration generate --node-config-dir /etc/kolla --kolla-skip-tags rabbitmq-ha-precheck
+kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_SERVICES_TO_RESTART
 kayobe kolla ansible run rabbitmq-reset-state
 
 if [[ ! "$1" = "--skip-checks" ]]; then
@@ -46,7 +46,7 @@ if [[ ! "$1" = "--skip-checks" ]]; then
     fi
 fi
 
-# Redeploy with Quorum Queues enabled
+# Redeploy with quorum queues enabled
 kayobe kolla ansible run deploy-containers -kt $RABBITMQ_SERVICES_TO_RESTART
 
 if [[ ! "$1" = "--skip-checks" ]]; then
@@ -55,6 +55,6 @@ if [[ ! "$1" = "--skip-checks" ]]; then
     if kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues type | grep quorum"; then
         echo "Queues migrated successfully" 
     else
-        echo "Failed post-check: A controller does not have any Quorum queues"
+        echo "Failed post-check: A controller does not have any quorum queues"
     fi
 fi
