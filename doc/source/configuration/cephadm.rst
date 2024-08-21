@@ -345,6 +345,10 @@ should be used in the Kolla Manila configuration e.g.:
 RADOS Gateways
 --------------
 
+RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
+documentation
+<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+
 RADOS Gateways (RGWs) are defined with the following:
 
 .. code:: yaml
@@ -375,7 +379,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
   - "config set client.rgw rgw_enforce_swift_acls true"
   - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
-  - "config set client.rgw rgw_keystone_accepted_roles 'member, Member, _member_, admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
   - "config set client.rgw rgw_keystone_admin_domain Default"
   - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
   - "config set client.rgw rgw_keystone_admin_project service"
@@ -390,6 +394,12 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_s3_auth_use_keystone true"
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
+
+Enable the Kolla Ansible RADOS Gateway integration in ``kolla.yml``:
+
+.. code:: yaml
+
+   kolla_enable_ceph_rgw: true
 
 As we have configured Ceph to respond to Swift APIs, you will need to tell
 Kolla to account for this when registering Swift endpoints with Keystone. Also,
@@ -412,6 +422,11 @@ before deploying the RADOS gateways. If you are using the Kolla load balancer
 
   kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
 
+There are two options for load balancing RADOS Gateway:
+
+1. HA with Ceph Ingress services
+2. RGWs with hyper-converged Ceph (using the Kolla Ansible deployed HAProxy
+   load balancer)
 
 .. _RGWs-with-hyper-converged-Ceph:
 

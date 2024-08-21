@@ -12,7 +12,6 @@ The short version
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
 #. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
-#. Encrypt the secrets: ``ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml``
 #. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
 #. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
 
@@ -250,7 +249,6 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 .. code-block:: console
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-  ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/wazuh-secrets.yml
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
