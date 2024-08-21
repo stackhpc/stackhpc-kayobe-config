@@ -61,7 +61,8 @@ jobs:
       neutron_plugin: ${{ inputs.neutron_plugin }}
       upgrade: ${{ inputs.upgrade }}
       break_on: ${{ inputs.break_on }}
-      break_duration: ${{ inputs.break_duration }}
+      # Workaround loss of number type using fromJSON: https://github.com/orgs/community/discussions/67182
+      break_duration: ${{ fromJSON(inputs.break_duration) }}
       ssh_key: ${{ inputs.ssh_key }}
       stackhpc_kayobe_config_version: ${{ github.ref_name }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
