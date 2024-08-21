@@ -264,6 +264,17 @@ jobs:
         run: |
           docker image pull $KAYOBE_IMAGE
 
+      # Fix hostname
+      - name: Reboot
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/fix-hostname.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
       # Reboot to ensure hostname does not contain .novalocal suffix
       # See remote exec provisioner in vm.tf
       - name: Reboot
