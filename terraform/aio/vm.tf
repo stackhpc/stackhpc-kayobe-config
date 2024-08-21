@@ -89,12 +89,10 @@ resource "null_resource" "kayobe-aio" {
       # current images, /tmp is noexec, so the path must be changed
       script_path = "/home/${var.ssh_username}/start.sh"
     }
-    # In Caracal, OVN fails on Rocky 9 hosts with hostnames that contain a
-    # subdomain (a dot in the name)
+
     inline = [
       "#!/bin/sh",
-      "echo 'connected!'",
-      "sudo hostnamectl set-hostname $(sed s/.novalocal// /etc/hostname)"
+      "echo 'connected!'"
       ]
   }
 }
