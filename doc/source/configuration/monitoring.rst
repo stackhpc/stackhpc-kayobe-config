@@ -85,7 +85,7 @@ on the overcloud hosts:
 .. code-block:: console
 
     (kayobe) [stack@node ~]$ cd etc/kayobe
-    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmontools.yml
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmon-tools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
@@ -136,3 +136,59 @@ mgrs group and list them as the endpoints for prometheus. Additionally,
 depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
+
+.. _os-capacity:
+
+OpenStack Capacity
+==================
+
+OpenStack Capacity allows you to see how much space you have available
+in your cloud. StackHPC Kayobe Config will deploy OpenStack Capacity
+by default on a service deploy, this can be disabled by setting
+``stackhpc_enable_os_capacity`` to false.
+
+OpenStack Capacity is deployed automatically using a service deploy hook
+with the generated kolla-ansible admin credentials, you can override these
+by setting the authentication url, username, password, project name and
+project domain name in ``stackhpc-monitoring.yml``:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_auth_url: <keystone_auth_url>
+    stackhpc_os_capacity_username: <openstack_username>
+    stackhpc_os_capacity_password: <openstack_password_encrypted_with_vault>
+    stackhpc_os_capacity_project_name: <openstack_project_name>
+    stackhpc_os_capacity_domain_name: <openstack_project_domain_name>
+    stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
+
+Additionally, you should ensure these credentials have the correct permissions
+for the exporter.
+
+If you are deploying in a cloud with internal TLS, you may be required
+to provide a CA certificate for the OpenStack Capacity exporter if your
+certificate is not signed by a trusted CA. For example, to use a CA certificate
+named ``vault.crt`` that is also added to the Kolla containers:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
+Alternatively, to disable certificate verification for the OpenStack Capacity
+exporter:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_verify: false
+
+If you've modified your credentials, you will need to re-deploy OpenStack Capacity
+using the ``deploy-os-capacity-exporter.yml`` Ansible playbook
+via Kayobe.
+
+.. code-block:: console
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
+
+If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
+alerts after deployment it's likely the os_exporter secrets have not been
+set correctly, double check you have entered the correct authentication
+information appropiate to your cloud and re-deploy.

@@ -1000,7 +1000,7 @@
         }
       ],
       "thresholds": "250,300",
-      "title": "Agerage PGs per OSD",
+      "title": "Average PGs per OSD",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1924,23 +1924,25 @@
         }
       ],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "ceph_cluster_total_objects",
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "expr": "ceph_pool_objects * on(pool_id) group_left(instance,name) ceph_pool_metadata",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
-          "legendFormat": "Total",
+          "legendFormat": "{{name}}",
+          "range": true,
           "refId": "A",
           "step": 300
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
       "timeRegions": [],
-      "timeShift": null,
       "title": "Objects in the Cluster",
       "tooltip": {
         "msResolution": false,

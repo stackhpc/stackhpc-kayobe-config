@@ -46,6 +46,7 @@ groups:
   rules:
   - alert: 10percentOSDsDown
     expr: count(ceph_osd_up == 0) / count(ceph_osd_up) * 100 >= 10
+    for: 15m
     labels:
       severity: critical
     annotations:
@@ -116,7 +117,7 @@ groups:
         requests.
 
   - alert: PgsUnclean
-    expr: ceph_pool_metadata * on(pool_id,instance) group_left() (ceph_pg_total - ceph_pg_clean) > 0
+    expr: ceph_pool_metadata * on(pool_id,instance) group_left() (ceph_pg_total - ceph_pg_clean - ceph_pg_backfilling - ceph_pg_backfill_wait) > 0
     for: 15m
     labels:
       severity: warning

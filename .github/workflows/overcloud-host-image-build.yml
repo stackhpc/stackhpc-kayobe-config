@@ -23,10 +23,6 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
-      SMS:
-        description: Push images to SMS
-        type: boolean
-        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -39,22 +35,39 @@ on:
 
 env:
   ANSIBLE_FORCE_COLOR: True
+  KAYOBE_ENVIRONMENT: ci-builder
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: [self-hosted, stackhpc-kayobe-config-kolla-builder]
+    runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
+
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           path: src/kayobe-config
+
+      - name: Output image tag of the builder
+        id: builder_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
 
       - name: Determine OpenStack release
         id: openstack_release
         run: |
-          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
-          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
       # Generate a tag to apply to all built overcloud host images.
       - name: Generate overcloud host image tag
@@ -66,44 +79,12 @@ jobs:
         run: |
           echo "${{ steps.host_image_tag.outputs.host_image_tag }}"
 
-      - name: Clean any previous build artifact
-        run: |
-          rm -f /tmp/updated_images.txt
-
       - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: stackhpc/kayobe
           ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
           path: src/kayobe
-
-      # FIXME: Failed in kolla-ansible : Ensure the latest version of pip is installed
-      - name: Install dependencies
-        run: |
-          sudo dnf -y install python3-virtualenv zstd
-
-      - name: Setup networking
-        run: |
-          if ! ip l show breth1 >/dev/null 2>&1; then
-              sudo ip l add breth1 type bridge
-          fi
-          sudo ip l set breth1 up
-          if ! ip a show breth1 | grep 192.168.33.3/24; then
-              sudo ip a add 192.168.33.3/24 dev breth1
-          fi
-          if ! ip l show dummy1 >/dev/null 2>&1; then
-              sudo ip l add dummy1 type dummy
-          fi
-          sudo ip l set dummy1 up
-          sudo ip l set dummy1 master breth1
-
-      # FIXME: Without this workaround we see the following issue after the runner is power cycled:
-      # TASK [MichaelRigart.interfaces : RedHat | ensure network service is started and enabled] ***
-      #   Unable to start service network: Job for network.service failed because the control process exited with error code.
-      #   See \"systemctl status network.service\" and \"journalctl -xe\" for details.
-      - name: Kill dhclient (workaround)
-        run: |
-          (sudo killall dhclient || true) && sudo systemctl restart network
 
       - name: Install Kayobe
         run: |
@@ -114,36 +95,132 @@ jobs:
           pip install -U pip &&
           pip install ../src/kayobe
 
-      - name: Bootstrap the control host
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe control host bootstrap
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v2
 
-      - name: Configure the seed host
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
-      - name: Create bifrost_httpboot Docker volume
-        run: |
-          if [[ $(sudo docker volume ls -f Name=bifrost_httpboot -q | wc -l) = 0 ]]; then
-            sudo docker volume create bifrost_httpboot
-          fi
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
       - name: Generate clouds.yaml
         run: |
           cat << EOF > clouds.yaml
           ${{ secrets.CLOUDS_YAML }}
           EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
-      - name: Install OpenStack client
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_public_key = "id_rsa.pub"
+          ssh_username = "rocky"
+          aio_vm_name = "skc-host-image-builder"
+          # Must be a Rocky Linux 9 host to successfully build all images
+          # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
+          aio_vm_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+          aio_vm_flavor = "en1.medium"
+          aio_vm_network = "stackhpc-ci"
+          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_interface = "eth0"
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: "openstack"
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: "openstack"
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-network-allocation.yml
+          ---
+          aio_ips:
+            builder: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write Terraform network interface config
+        run: |
+          mkdir -p src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed
+          rm -f src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          admin_interface: "{{ access_interface.value }}"
+          aio_interface: "{{ access_interface.value }}"
+          EOF
+
+      - name: Manage SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/authorized_keys
+          cat src/kayobe-config/terraform/aio/id_rsa.pub >> ~/.ssh/authorized_keys
+          cp src/kayobe-config/terraform/aio/id_rsa* ~/.ssh/
+
+      - name: Bootstrap the control host
         run: |
           source venvs/kayobe/bin/activate &&
-          pip install python-openstackclient
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host (Builder VM)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure -e seed_bootstrap_user=rocky --skip-tags network
+
+      - name: Install dependencies
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run \
+          --command "sudo dnf config-manager --set-enabled crb && sudo dnf -y install epel-release && sudo dnf -y install zstd debootstrap kpartx cloud-init" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Create bifrost_httpboot Docker volume
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "sudo mkdir -p /var/lib/docker/volumes/bifrost_httpboot/_data" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Build a CentOS Stream 8 overcloud host image
         id: build_centos_stream_8
@@ -159,6 +236,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.centos
 
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-centos-8-stream/overcloud-centos-8-stream.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_centos_stream_8.outcome == 'failure'
+
       - name: Upload CentOS Stream 8 overcloud host image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -173,21 +260,19 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.centos && steps.build_centos_stream_8.outcome == 'success'
 
-      - name: Upload CentOS Stream 8 overcloud host image to SMS
+      - name: Upload CentOS Stream 8 overcloud host image to Dev Cloud
         run: |
           source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-centos-8-stream-${{ steps.host_image_tag.outputs.host_image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /opt/kayobe/images/overcloud-centos-8-stream/overcloud-centos-8-stream.qcow2 \
-          --private \
-          --os-cloud sms-lab-release \
-          --progress
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-centos-8-stream/overcloud-centos-8-stream.qcow2" \
+          -e image_name=overcloud-centos-8-stream-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.centos && steps.build_centos_stream_8.outcome == 'success' && inputs.sms
+        if: inputs.centos && steps.build_centos_stream_8.outcome == 'success'
 
       - name: Build a Rocky Linux 8 overcloud host image
         id: build_rocky_8
@@ -203,6 +288,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky8
 
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-8/overcloud-rocky-8.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_rocky_8.outcome == 'failure'
+
       - name: Upload Rocky Linux 8 overcloud host image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -216,22 +311,20 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky8 && steps.build_rocky_8.outcome == 'success'
-        
-      - name: Upload Rocky Linux 8 overcloud host image to SMS
+
+      - name: Upload Rocky Linux 8 overcloud host image to Dev Cloud
         run: |
           source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-rocky-8-${{ steps.host_image_tag.outputs.host_image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /opt/kayobe/images/overcloud-rocky-8/overcloud-rocky-8.qcow2 \
-          --private \
-          --os-cloud sms-lab-release \
-          --progress
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-8/overcloud-rocky-8.qcow2" \
+          -e image_name=overcloud-rocky-8-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky8 && steps.build_rocky_8.outcome == 'success' && inputs.sms
+        if: inputs.rocky8 && steps.build_rocky_8.outcome == 'success'
 
       - name: Build a Rocky Linux 9 overcloud host image
         id: build_rocky_9
@@ -247,6 +340,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9
 
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_rocky_9.outcome == 'failure'
+
       - name: Upload Rocky Linux 9 overcloud host image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -260,22 +363,20 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
-        
-      - name: Upload Rocky Linux 9 overcloud host image to SMS
+
+      - name: Upload Rocky Linux 9 overcloud host image to Dev Cloud
         run: |
           source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2 \
-          --private \
-          --os-cloud sms-lab-release \
-          --progress
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success' && inputs.sms
+        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Focal 20.04 overcloud host image
         id: build_ubuntu_focal
@@ -291,6 +392,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-focal
 
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-focal/overcloud-ubuntu-focal.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_focal.outcome == 'failure'
+
       - name: Upload Ubuntu Focal 20.04 overcloud host image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -305,21 +416,19 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-focal && steps.build_ubuntu_focal.outcome == 'success'
 
-      - name: Upload Ubuntu Focal 20.04 overcloud host image to SMS
+      - name: Upload Ubuntu Focal overcloud host image to Dev Cloud
         run: |
           source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-ubuntu-focal-${{ steps.host_image_tag.outputs.host_image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /opt/kayobe/images/overcloud-ubuntu-focal/overcloud-ubuntu-focal.qcow2 \
-          --private \
-          --os-cloud sms-lab-release \
-          --progress
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-focal/overcloud-ubuntu-focal.qcow2" \
+          -e image_name=overcloud-ubuntu-focal-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-focal && steps.build_ubuntu_focal.outcome == 'success' && inputs.sms
+        if: inputs.ubuntu-focal && steps.build_ubuntu_focal.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
         id: build_ubuntu_jammy
@@ -335,6 +444,16 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy
 
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_jammy.outcome == 'failure'
+
       - name: Upload Ubuntu Jammy 22.04 overcloud host image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
@@ -349,83 +468,27 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
-      - name: Upload Ubuntu Jammy 22.04 overcloud host image to SMS
+      - name: Upload Ubuntu Jammy overcloud host image to Dev Cloud
         run: |
           source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2 \
-          --private \
-          --os-cloud sms-lab-release \
-          --progress
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success' && inputs.sms
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
-      - name: Upload updated images artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: Updated images list
-          path: /tmp/updated_images.txt
-          retention-days: 7
-        if: steps.build_centos_stream_8.outcome == 'success' ||
-            steps.build_rocky_8.outcome == 'success' ||
-            steps.build_rocky_9.outcome == 'success' ||
-            steps.build_ubuntu_focal.outcome == 'success' ||
-            steps.build_ubuntu_jammy.outcome == 'success'
-
-      - name: Upload CentOS build logs if build failed
-        uses: actions/upload-artifact@v3
-        with:
-          name: CentOS build logs
-          path: |
-            /opt/kayobe/images/overcloud-centos-8-stream/overcloud-centos-8-stream.stdout
-            /opt/kayobe/images/overcloud-centos-8-stream/overcloud-centos-8-stream.stderr
-          retention-days: 7
-        if: steps.build_centos_stream_8.outcome == 'failure'
-
-      - name: Upload Rocky 8 build logs if build failed
-        uses: actions/upload-artifact@v3
-        with:
-          name: Rocky 8 build logs
-          path: |
-            /opt/kayobe/images/overcloud-rocky-8/overcloud-rocky-8.stdout
-            /opt/kayobe/images/overcloud-rocky-8/overcloud-rocky-8.stderr
-          retention-days: 7
-        if: steps.build_rocky_8.outcome == 'failure'
-
-      - name: Upload Rocky 9 build logs if build failed
-        uses: actions/upload-artifact@v3
-        with:
-          name: Rocky 9 build logs
-          path: |
-            /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout
-            /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stderr
-          retention-days: 7
-        if: steps.build_rocky_9.outcome == 'failure'
-
-      - name: Upload Ubuntu Focal 20.04 build logs if build failed
-        uses: actions/upload-artifact@v3
-        with:
-          name: Ubuntu Focal 20.04 build logs
-          path: |
-            /opt/kayobe/images/overcloud-ubuntu-focal/overcloud-ubuntu-focal.stdout
-            /opt/kayobe/images/overcloud-ubuntu-focal/overcloud-ubuntu-focal.stderr
-          retention-days: 7
-        if: steps.build_ubuntu_focal.outcome == 'failure'
-
-      - name: Upload Ubuntu Jammy 22.04 build logs if build failed
-        uses: actions/upload-artifact@v3
-        with:
-          name: Ubuntu Jammy 22.04 build logs
-          path: |
-            /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout
-            /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stderr
-          retention-days: 7
-        if: steps.build_ubuntu_jammy.outcome == 'failure'
+      - name: Copy logs back
+        continue-on-error: true
+        run: |
+          mkdir logs
+          scp -r rocky@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
+          scp -r rocky@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/tmp/updated_images.txt ./logs/ || true
+        if: always()
 
       - name: Fail if any overcloud host image builds failed
         run: |
@@ -437,7 +500,18 @@ jobs:
             steps.build_ubuntu_focal.outcome == 'failure' ||
             steps.build_ubuntu_jammy.outcome == 'failure'
 
-      - name: Clean up build artifacts
-        run: |
-          sudo rm -rf /opt/kayobe/images/
+      - name: Upload logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build logs
+          path: ./logs
+        if: always()
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()

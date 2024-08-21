@@ -44,13 +44,17 @@ format_output() {
 nvme_version="$(nvme version | awk '$1 == "nvme" {print $3}')"
 echo "nvmecli{version=\"${nvme_version}\"} 1" | format_output
 
-# Get devices
-device_list="$(nvme list -o json | jq -r '.Devices | .[].DevicePath')"
+# Get devices (DevicePath and PhysicalSize)
+device_info="$(nvme list -o json | jq -c '.Devices[] | {DevicePath: .DevicePath, PhysicalSize: .PhysicalSize}')"
 
 # Loop through the NVMe devices
-for device in ${device_list}; do
+echo "$device_info" | while read -r device_data; do
+  device=$(echo "$device_data" | jq -r '.DevicePath')
   json_check="$(nvme smart-log -o json "${device}")"
   disk="${device##*/}"
+
+  physical_size=$(echo "$device_data" | jq -r '.PhysicalSize')
+  echo "physical_size_bytes{device=\"${disk}\"} ${physical_size}"
 
   # The temperature value in JSON is in Kelvin, we want Celsius
   value_temperature="$(echo "$json_check" | jq '.temperature - 273')"

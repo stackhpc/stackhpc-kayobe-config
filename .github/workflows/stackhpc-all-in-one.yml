@@ -38,19 +38,23 @@ on:
       vm_flavor:
         description: Flavor for the all-in-one VM
         type: string
-        default: general.v1.medium
+        default: en1.medium
       vm_network:
         description: Network for the all-in-one VM
         type: string
-        default: stackhpc-release
+        default: stackhpc-ci
       vm_subnet:
         description: Subnet for the all-in-one VM
         type: string
-        default: stackhpc-release-subnet
+        default: stackhpc-ci
       OS_CLOUD:
         description: Name of cloud in clouds.yaml
         type: string
         required: true
+      if:
+        description: Whether to run the workflow (workaround for required status checks issue)
+        type: boolean
+        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -65,16 +69,26 @@ jobs:
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
-    runs-on: [self-hosted, stackhpc-kayobe-config-aio]
+    if: ${{ inputs.if && !cancelled() }}
+    runs-on: arc-skc-aio-runner
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs
+
+      - uses: actions/checkout@v4
         with:
            submodules: true
+
+      - name: Make sure dockerd is running and test Docker
+        run: |
+          docker ps
 
       - name: Output image tag
         id: image_tag
@@ -120,6 +134,7 @@ jobs:
           aio_vm_flavor = "${{ env.VM_FLAVOR }}"
           aio_vm_network = "${{ env.VM_NETWORK }}"
           aio_vm_subnet = "${{ env.VM_SUBNET }}"
+          aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
@@ -130,6 +145,7 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
+          VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
         run: terraform plan
@@ -140,7 +156,19 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
@@ -204,11 +232,26 @@ jobs:
       # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
       - name: Pull latest Kayobe image
         run: |
-          sudo docker image pull $KAYOBE_IMAGE
+          docker image pull $KAYOBE_IMAGE
+
+      # NOTE: Boostrap release train repos before growroot due to missing
+      # upstream CS8 repos preventing installation of growroot package.
+      - name: Host configure
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY -e KAYOBE_TAGS -e KOLLA_TAGS \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+          KAYOBE_TAGS: "ssh-known-host,kayobe-ansible-user,kayobe-target-venv,dnf,kolla-ansible-user,kolla-pip,kolla-target-venv"
+          KOLLA_TAGS: "none"
+        if: inputs.os_distribution == 'centos' && inputs.os_release == '8-stream'
 
       - name: Run growroot
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -218,7 +261,7 @@ jobs:
 
       - name: Host configure
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -228,7 +271,7 @@ jobs:
 
       - name: Service deploy
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -238,7 +281,7 @@ jobs:
 
       - name: Configure aio resources
         run: |
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
@@ -249,17 +292,17 @@ jobs:
       - name: Tempest tests
         run: |
           mkdir -p tempest-artifacts
-          sudo -E docker run -t --rm \
+          docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack -e rally_no_sensitive_log=false
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Upload test result artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tempest-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
           path: tempest-artifacts/*
@@ -275,9 +318,4 @@ jobs:
           OS_CLOUD: ${{ inputs.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
-
-      - name: Prune Docker images over 1 week old
-        # May fail if another prune is running
-        run: sudo docker image prune --all --force --filter until=168h || true
         if: always()

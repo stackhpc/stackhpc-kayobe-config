@@ -24,8 +24,10 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # SMSLab is currently running with 1G switches. This causes tests using volumes and images to fail if
     # the concurrency is set too high.
     export TEMPEST_CONCURRENCY=1
-    export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
-    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode
+    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST="ci-multinode-platform.2022.11"
+    # Uncomment this to perform a full tempest test
+    # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
+    # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
   fi
 
 fi

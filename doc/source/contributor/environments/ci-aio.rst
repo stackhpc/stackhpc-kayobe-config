@@ -44,7 +44,9 @@ Run the setup script:
 
 The script will pull the current version of Kayobe and this repository, and
 then run the manual setup steps below. The script can be easily edited to use
-a different branch of Kayobe or this repository.
+a different branch of Kayobe or this repository. The script will automatically
+determine whether your image is LVM based, if so, it will expand the volume sizes
+to allow ansible dependencies to install correctly.
 
 Manual Setup
 ============

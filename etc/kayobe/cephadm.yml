@@ -12,10 +12,22 @@ cephadm_ceph_release: "{{ 'quincy' if (ansible_facts['distribution_release'] == 
 cephadm_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/ceph:{{ cephadm_image_tag }}"
 
 # Ceph container image tag.
-cephadm_image_tag: "{{ 'v17.2.6' if os_release == 'jammy' else 'v16.2.11' }}"
+cephadm_image_tag: "{{ 'v17.2.7' if os_release == 'jammy' else 'v16.2.14' }}"
 
 # Ceph custom repo workaround for Ubuntu Jammy as there are no official ceph repos for jammy.
 cephadm_custom_repos: "{{ ansible_facts['distribution_release'] == 'jammy' }}"
+
+# HAProxy container image.
+cephadm_haproxy_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/haproxy:{{ cephadm_haproxy_image_tag }}"
+
+# HAProxy container image tag.
+cephadm_haproxy_image_tag: "2.3"
+
+# Keepalived container image.
+cephadm_keepalived_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/keepalived:{{ cephadm_keepalived_image_tag }}"
+
+# Keepalived container image tag.
+cephadm_keepalived_image_tag: "2.1.5"
 
 # Ceph container image registry URL.
 cephadm_registry_url: "{{ stackhpc_docker_registry }}"
@@ -74,8 +86,14 @@ cephadm_cluster_network: "{{ storage_mgmt_net_name | net_cidr }}"
 # stackhpc.cephadm.commands for format. Pre commands run before the rest of the
 # post-deployment configuration, post commands run after the rest of the
 # post-deployment configuration.
-#cephadm_commands_pre:
-#cephadm_commands_post:
+cephadm_commands_pre: "{{ cephadm_commands_pre_default + cephadm_commands_pre_extra }}"
+cephadm_commands_post: "{{ cephadm_commands_post_default + cephadm_commands_post_extra }}"
+
+cephadm_commands_pre_default: []
+cephadm_commands_pre_extra: []
+
+cephadm_commands_post_default: "{{ ['mgr module enable prometheus'] if kolla_enable_prometheus_ceph_mgr_exporter | default(False) | bool else [] }}"
+cephadm_commands_post_extra: []
 
 ###############################################################################
 # Kolla Ceph auto-configuration.

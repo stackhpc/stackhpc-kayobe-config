@@ -48,7 +48,7 @@
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
 stackhpc_dnf_repos_8: "{{ dnf_custom_repos_el8 | combine(lookup('vars', 'dnf_custom_repos_' ~ ansible_facts.distribution | lower )) }}"
-stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) }}"
+stackhpc_dnf_repos_9: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
 
 stackhpc_dnf_repos: "{{ stackhpc_dnf_repos_9 if os_release == '9' else stackhpc_dnf_repos_8 }}"
 
@@ -61,6 +61,8 @@ dnf_custom_repos_el8:
     file: epel
     gpgkey: "{{ dnf_epel_8_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   epel-modular:
     baseurl: "{{ stackhpc_repo_epel_modular_url }}"
     description: "Extra Packages for Enterprise Linux Modular $releasever - $basearch"
@@ -68,6 +70,8 @@ dnf_custom_repos_el8:
     file: epel-modular
     gpgkey: "{{ dnf_epel_8_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   docker:
     baseurl: "{{ stackhpc_repo_docker_url }}"
     description: "Package repository for installing docker"
@@ -75,6 +79,8 @@ dnf_custom_repos_el8:
     file: docker
     gpgkey: "{{ dnf_docker_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # CentOS Stream 8 specific repositories
 dnf_custom_repos_centos:
@@ -84,39 +90,63 @@ dnf_custom_repos_centos:
     file: CentOS-Stream-AppStream
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   baseos:
     baseurl: "{{ stackhpc_repo_centos_stream_baseos_url }}"
     description: "CentOS Stream $releasever - BaseOS"
     file: CentOS-Stream-BaseOS
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     gpgcheck: yes
+    # Exclude buggy iptables: https://bugzilla.redhat.com/show_bug.cgi?id=2236501
+    exclude: "iptables-1.8.5* iptables-libs-1.8.5* iptables-ebtables-1.8.5* iptables-services-1.8.5* iptables-arptables-1.8.5* iptables-devel-1.8.5*"
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   extras:
+    # This repo is no longer updated: https://www.spinics.net/lists/centos-devel/msg21454.html
     baseurl: "{{ stackhpc_repo_centos_stream_extras_url }}"
     description: "CentOS Stream $releasever - Extras"
     file: CentOS-Stream-Extras
+    enabled: false
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  extras-common:
+    baseurl: "{{ stackhpc_repo_centos_stream_extras_common_url }}"
+    description: "CentOS Stream $releasever - Extras common Packages"
+    file: CentOS-Stream-Extras-common
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Extras
+    gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Rocky 8 specific repositories
 dnf_custom_repos_rocky:
   appstream:
     baseurl: "{{ stackhpc_repo_rocky_appstream_url }}"
     description: "Rocky Linux $releasever - AppStream"
-    file: Rocky-AppStream
+    file: "{{ 'Rocky-AppStream' if os_release == '8' else 'rocky' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   baseos:
     baseurl: "{{ stackhpc_repo_rocky_baseos_url }}"
     description: "Rocky Linux $releasever - BaseOS"
-    file: Rocky-BaseOS
+    file: "{{ 'Rocky-BaseOS' if os_release == '8' else 'rocky' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   extras:
     baseurl: "{{ stackhpc_repo_rocky_extras_url }}"
     description: "Rocky Linux $releasever - Extras"
-    file: Rocky-Extras
+    file: "{{ 'Rocky-Extras' if os_release == '8' else 'rocky-extras' }}"
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Custom repositories shared between all RHEL 9 derivatives.
 dnf_custom_repos_el9:
@@ -127,6 +157,8 @@ dnf_custom_repos_el9:
     file: epel
     gpgkey: "{{ dnf_epel_9_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   docker:
     baseurl: "{{ stackhpc_repo_centos_stream_9_docker_url }}"
     description: "Package repository for installing docker"
@@ -134,6 +166,20 @@ dnf_custom_repos_el9:
     file: docker
     gpgkey: "{{ dnf_docker_gpg_key_url }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+
+# ELRepo 9
+dnf_custom_repos_elrepo_9:
+  elrepo:
+    baseurl: "{{ stackhpc_repo_elrepo_9_url }}"
+    description: "ELRepo.org Community Enterprise Linux Repository - el9"
+    enabled: "{{ dnf_enable_elrepo_9 | bool }}"
+    file: elrepo
+    gpgkey: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Rocky 9 specific repositories
 dnf_custom_repos_rocky_9:
@@ -143,37 +189,62 @@ dnf_custom_repos_rocky_9:
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   baseos:
     baseurl: "{{ stackhpc_repo_rocky_9_baseos_url }}"
     description: "Rocky Linux $releasever - BaseOS"
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   crb:
     baseurl: "{{ stackhpc_repo_rocky_9_crb_url }}"
     description: "Rocky Linux $releasever - CRB"
     file: rocky
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   extras:
     baseurl: "{{ stackhpc_repo_rocky_9_extras_url }}"
     description: "Rocky Linux $releasever - Extras"
     file: rocky-extras
     gpgkey: "{{ rocky_9_gpg_key }}"
     gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  security-common:
+    baseurl: "{{ stackhpc_repo_rocky_9_sig_security_common_url }}"
+    description: "Rocky Linux $releasever - SIG Security Common"
+    file: Rocky-SIG-Security-Common
+    gpgkey: "{{ rocky_9_sig_security_gpg_key }}"
+    gpgcheck: yes
+    includepkgs: "openssh*"
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
+
+# Whether to enable the ELRepo repository. This affects RedHat-based, 9.x release systems only.
+dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
 
 # URL of EPEL GPG keys.
 dnf_epel_8_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8"
 dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
 
 rocky_9_gpg_key: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
+rocky_9_sig_security_gpg_key: "https://dl.rockylinux.org/pub/sig/9/security/x86_64/security-common/RPM-GPG-KEY-Rocky-SIG-Security"
 
 # Whether to install the epel-release package. This affects RedHat-based
 # systems only. Default value is 'false'.
 #dnf_install_epel:
+
+# Whether to create a repo file for ELRepo. This affects RedHat-based
+# systems only.
+dnf_install_elrepo_9: false
 
 # Whether to enable docker dnf repo in stackhpc_dnf_repos
 dnf_enable_docker: true

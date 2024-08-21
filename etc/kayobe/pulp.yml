@@ -123,14 +123,30 @@ stackhpc_pulp_deb_repos:
     distributions: "jammy-security"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  - name: "Ubuntu jammy CVE-2024-6387"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-jammy-cve-2024-6387/"
+    distribution_name: "ubuntu-jammy-cve-2024-6387-"
+    base_path: "ubuntu-jammy-cve-2024-6387/"
+    components: "upload"
+    distributions: "pulp"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
   # Third-party repositories
-  - name: "Docker CE for Ubuntu"
-    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu/{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
-    distribution_name: "docker-ce-for-ubuntu-"
-    base_path: "docker-ce/ubuntu/"
-    distributions: "focal jammy"
+  - name: "Docker CE for Ubuntu Focal"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-focal/{{ stackhpc_pulp_repo_docker_ce_ubuntu_focal_version }}"
+    distribution_name: "docker-ce-for-ubuntu-focal-"
+    base_path: "docker-ce/ubuntu-focal/"
+    distributions: "focal"
     components: "stable"
-    required: "{{ stackhpc_pulp_sync_ubuntu_focal or stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_focal | bool }}"
+
+  - name: "Docker CE for Ubuntu Jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-jammy/{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
+    distribution_name: "docker-ce-for-ubuntu-jammy-"
+    base_path: "docker-ce/ubuntu-jammy/"
+    distributions: "jammy"
+    components: "stable"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -217,8 +233,8 @@ stackhpc_pulp_sync_centos_stream8: "{{ os_distribution == 'centos' }}"
 
 # Whether to sync Rocky Linux 8 packages.
 stackhpc_pulp_sync_rocky_8: "{{ os_distribution == 'rocky' and os_release == '8' }}"
-# Rocky 8 minor version number. Supported values: 6, 7
-stackhpc_pulp_repo_rocky_8_minor_version: 7
+# Rocky 8 minor version number. Supported values: 6, 7, 8
+stackhpc_pulp_repo_rocky_8_minor_version: 8
 # Rocky 8 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_8_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_8_%s_appstream_version' % stackhpc_pulp_repo_rocky_8_minor_version) }}"
@@ -232,8 +248,8 @@ stackhpc_pulp_sync_el_8: "{{ stackhpc_pulp_sync_rocky_8 or stackhpc_pulp_sync_ce
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' and os_release == '9' }}"
-# Rocky 9 minor version number. Supported values: 1, 2. Default is 2
-stackhpc_pulp_repo_rocky_9_minor_version: 2
+# Rocky 9 minor version number. Supported values: 1, 2, 3. Default is 3
+stackhpc_pulp_repo_rocky_9_minor_version: 3
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
@@ -275,6 +291,12 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/os/{{ stackhpc_pulp_repo_centos_stream_8_extras_version }}"
     distribution_name: "centos-stream-8-extras-"
     base_path: "centos/8-stream/extras/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
+
+  - name: CentOS Stream 8 - Extras Common packages
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/8-stream/extras/x86_64/extras-common/{{ stackhpc_pulp_repo_centos_stream_8_extras_common_version }}"
+    distribution_name: "centos-stream-8-extras-common-"
+    base_path: "centos/8-stream/extras/x86_64/extras-common/"
     required: "{{ stackhpc_pulp_sync_centos_stream8 | bool }}"
 
   # Base Rocky 8 repositories
@@ -376,7 +398,7 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
     distribution_name: "grafana-"
     base_path: "grafana/oss/rpm/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_8 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and ( stackhpc_pulp_sync_el_8 | bool or stackhpc_pulp_sync_el_9 | bool ) }}"
 
   - name: RabbitMQ - Erlang
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
@@ -427,6 +449,12 @@ stackhpc_pulp_rpm_repos:
     base_path: "rocky/9/highavailability/x86_64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
+  - name: Rocky Linux 9 - SIG Security Common
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
+    distribution_name: rocky-9-sig-security-common-
+    base_path: "rocky/sig/9/security/x86_64/security-common/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
   # Additional CentOS Stream 9 repositories
   - name: CentOS Stream 9 - NFV OpenvSwitch
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
@@ -460,6 +488,14 @@ stackhpc_pulp_rpm_repos:
     sync_policy: mirror_content_only
     required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
 
+  # ELRepo 9 repository
+  - name: ELRepo.org Community Enterprise Linux Repository - el9
+    url: "{{ stackhpc_release_pulp_content_url }}/elrepo/elrepo/el9/x86_64/{{ stackhpc_pulp_repo_elrepo_9_version }}"
+    distribution_name: elrepo-el9-x86_64-
+    base_path: elrepo/elrepo/el9/x86_64/
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+
   # Third-party repositories
   - name: Docker CE for CentOS 9
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/9/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
@@ -484,6 +520,18 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
     distribution_name: "rhel-9-influxdb-"
     base_path: "influxdb/rhel/9/x86_64/stable/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
+  - name: OpenSearch 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+    distribution_name: "opensearch-2-x-"
+    base_path: "opensearch/2.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
+  - name: OpenSearch Dashboards 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+    distribution_name: "opensearch-dashboards-2-x-"
+    base_path: "opensearch-dashboards/2.x/yum/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
 # RPM repositories
@@ -560,6 +608,7 @@ stackhpc_pulp_images_kolla:
   - bifrost-deploy
   - blazar-api
   - blazar-manager
+  - caso
   - cinder-api
   - cinder-backup
   - cinder-scheduler
@@ -728,12 +777,36 @@ stackhpc_pulp_repository_container_repos_ceph:
     state: present
     include_tags: "{{ cephadm_image_tag }}"
     required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: "ceph/haproxy"
+    url: "https://quay.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ cephadm_haproxy_image_tag }}"
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: "ceph/keepalived"
+    url: "https://quay.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ cephadm_keepalived_image_tag }}"
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
 
 # List of Ceph container image distributions.
 stackhpc_pulp_distribution_container_ceph:
   - name: ceph
     repository: ceph/ceph
     base_path: ceph/ceph
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: ceph/haproxy
+    repository: ceph/haproxy
+    base_path: ceph/haproxy
+    state: present
+    required: "{{ stackhpc_sync_ceph_images | bool }}"
+  - name: ceph/keepalived
+    repository: ceph/keepalived
+    base_path: ceph/keepalived
     state: present
     required: "{{ stackhpc_sync_ceph_images | bool }}"
 
@@ -770,14 +843,22 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+# List of extra container image repositories.
+stackhpc_pulp_repository_container_repos_extra: []
+
+# List of extra container image distributions.
+stackhpc_pulp_distribution_container_extra: []
+
 # List of container image repositories.
 stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
-      stackhpc_pulp_repository_container_repos_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
 stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
-      stackhpc_pulp_distribution_container_hashicorp) | selectattr('required') }}
+      stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_extra) | selectattr('required') }}

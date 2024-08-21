@@ -17,6 +17,58 @@
     - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss"
     - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard"
   post_tasks:
+    - block:
+        - name: Check if custom SCA policies directory exists
+          stat:
+            path: "{{ local_custom_sca_policies_path }}"
+          register: custom_sca_policies_folder
+          delegate_to: localhost
+          become: no
+
+        - name: Gather list of custom SCA policies
+          find:
+            paths: "{{ local_custom_sca_policies_path }}"
+            patterns: '*.yml'
+          delegate_to: localhost
+          register: custom_sca_policies
+          when: custom_sca_policies_folder.stat.exists
+          become: no
+
+        - name: Copy custom SCA policy files to Wazuh manager
+          copy:
+            # Note the trailing slash to copy directory contents
+            src: "{{ local_custom_sca_policies_path }}/"
+            dest: "/var/ossec/etc/shared/default/"
+            owner: wazuh
+            group: wazuh
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+
+        - name: Add custom policy definition(s) to the shared Agent config
+          blockinfile:
+            path: "/var/ossec/etc/shared/default/agent.conf"
+            state: present
+            owner: wazuh
+            group: wazuh
+            marker: "{mark} ANSIBLE MANAGED BLOCK Custom SCA Policies"
+            insertafter: "<!-- Shared agent configuration here -->"
+            block: |
+              {% filter indent(width=2, first=true) %}
+              <sca>
+                <policies>
+              {% for item in custom_sca_policies.files %}
+                  <policy>etc/shared/{{ item.path | basename }}</policy>
+              {% endfor %}
+                </policies>
+              </sca>
+              {% endfilter %}
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+      notify:
+        - Restart wazuh
+
     - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
       blockinfile:
         path: "/var/ossec/etc/ossec.conf"
@@ -55,7 +107,6 @@
     - name: Perform health check against filebeat
       command: filebeat test output
       changed_when: false
-      become: true
       retries: 2
 
   handlers:

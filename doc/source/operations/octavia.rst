@@ -38,3 +38,55 @@ when building new images.
 
 To rollback an image update, simply delete the old image. The next newest image with
 a tag matching ``amp_image_tag`` will be selected.
+
+Manually deleting broken load balancers
+=======================================
+
+Sometimes, a load balancer will get stuck in a broken state of ``PENDING_CREATE`` or ``PENDING_UPDATE``.
+When in this state, the load balancer cannot be deleted; you will see the error ``Invalid state PENDING_CREATE of loadbalancer resource``.
+To delete a load balancer in this state, you will need to manually update its provisioning status in the database.
+
+Find the database password:
+
+.. code-block:: console
+
+  ansible-vault view --vault-password-file <path-to-vault-pw> $KOLLA_CONFIG_PATH/passwords.yml
+
+  # Search for database_password with:
+  /^database
+
+Access the database from a controller:
+
+.. code-block:: console
+
+  docker exec -it mariadb bash
+  mysql -u root -p  octavia
+  # Enter the database password when promted.
+
+List the load balancers to find the ID of the broken one(s):
+
+.. code-block:: console
+
+  SELECT * FROM load_balancer;
+
+Set the provisioning status to ERROR for any broken load balancer:
+
+.. code-block:: console
+
+  UPDATE load_balancer SET provisioning_status='ERROR' WHERE id='<id>';
+
+Delete the load balancer from the OpenStack CLI, cascading if any stray
+Amphorae are hanging around:
+
+.. code-block:: console
+
+  openstack loadbalancer delete <id> --cascade
+
+
+Sometimes, Amphora may also fail to delete if they are stuck in state
+``BOOTING``. These can be resolved entirely from the OpenStack CLI:
+
+.. code-block:: console
+
+  openstack loadbalancer amphora configure <amphora-id>
+  openstack loadbalancer amphora delete <amphora-id>
