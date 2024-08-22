@@ -11,12 +11,11 @@
           ansible.builtin.pip:
             name: pre-commit
             version: "{{ pre_commit_version  }}"
-            virtualenv: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}"
+            virtualenv: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') | default(omit, true) }}"
           register: pip_install
 
         - name: Register pre-commit hooks with git
           ansible.builtin.command:
-            cmd: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/bin/pre-commit install"
+            cmd: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') | default(lookup('ansible.builtin.env', 'HOME') ~ '/.local', true) }}/bin/pre-commit install"
           args:
-            chdir: "{{ lookup('ansible.builtin.env', 'KAYOBE_CONFIG_PATH') }}"
-          when: pip_install is changed
+            chdir: "{{ playbook_dir | dirname | dirname | dirname }}"
