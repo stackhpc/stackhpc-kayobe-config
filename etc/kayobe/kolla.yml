@@ -139,6 +139,14 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
+  octavia-api-plugin-ovn-octavia-provider:
+    type: git
+    location: https://github.com/stackhpc/ovn-octavia-provider.git
+    reference: stackhpc/{{ openstack_release }}
+  octavia-driver-agent-plugin-ovn-octavia-provider:
+    type: git
+    location: https://github.com/stackhpc/ovn-octavia-provider.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -344,16 +352,44 @@ kolla_build_customizations_common:
     - /additions/*
 
 kolla_build_customizations_rocky:
+  kolla_toolbox_packages_remove:
+    - openvswitch
+  kolla_toolbox_packages_append:
+    - openvswitch3.3
+  manila_base_packages_remove:
+    - openvswitch
+  manila_base_packages_append:
+    - openvswitch3.3
+  neutron_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  neutron_base_packages_append:
+    - openvswitch3.3
+    - python3-openvswitch3.3
+  nova_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  nova_base_packages_append:
+    - openvswitch3.3
+    - python3-openvswitch3.3
+  octavia_base_packages_remove:
+    - python3-openvswitch
+  openvswitch_base_packages_remove:
+    - openvswitch
+    - python3-openvswitch
+  openvswitch_base_packages_append:
+    - openvswitch3.3
+    - python3-openvswitch3.3
   ovn_base_packages_override:
-    - ovn23.03
+    - ovn24.03
   ovn_controller_packages_override:
-    - ovn23.03-host
+    - ovn24.03-host
   ovn_nb_db_server_packages_override:
-    - ovn23.03-central
+    - ovn24.03-central
   ovn_northd_packages_override:
-    - ovn23.03-central
+    - ovn24.03-central
   ovn_sb_db_server_packages_override:
-    - ovn23.03-central
+    - ovn24.03-central
 
 kolla_build_customizations_ubuntu: {}
 
