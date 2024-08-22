@@ -1,0 +1,49 @@
+---
+# This workflow provides a periodic deploy of a multi-node test cluster.
+# The test scenario is randomly selected.
+
+name: Multinode periodic
+'on':
+  schedule:
+    # Runs nightly at 2:42 AM.
+    - cron: "42 2 * * *"
+jobs:
+  generate-inputs:
+    name: Generate inputs
+    runs-on: ubuntu-latest
+    outputs:
+      os_distribution: ${{ steps.generate-inputs.outputs.os_distribution }}
+      os_release: ${{ steps.generate-inputs.outputs.os_release }}
+      ssh_username: ${{ steps.generate-inputs.outputs.ssh_username }}
+      neutron_plugin: ${{ steps.generate-inputs.outputs.neutron_plugin }}
+      upgrade: ${{ steps.generate-inputs.outputs.upgrade }}
+      stackhpc_kayobe_config_version: ${{ steps.generate-inputs.outputs.stackhpc_kayobe_config_version }}
+      stackhpc_kayobe_config_previous_version: ${{ steps.generate-inputs.outputs.stackhpc_kayobe_config_previous_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate inputs for multinode workflow
+        id: generate-inputs
+        run: |
+          python3 .github/workflows/multinode-inputs.py >> $GITHUB_OUTPUT
+
+      - name: Display generated inputs
+        run: |
+          echo '${{ toJSON(steps.generate-inputs.outputs) }}'
+  multinode:
+    name: Multinode periodic
+    needs:
+      - generate-inputs
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@main
+    with:
+      multinode_name: mn-prdc-${{ github.run_id }}
+      os_distribution: ${{ needs.generate-inputs.outputs.os_distribution }}
+      os_release: ${{ needs.generate-inputs.outputs.os_release }}
+      ssh_username: ${{ needs.generate-inputs.outputs.ssh_username }}
+      neutron_plugin: ${{ needs.generate-inputs.outputs.neutron_plugin }}
+      upgrade: ${{ needs.generate-inputs.outputs.upgrade == 'true' }}
+      stackhpc_kayobe_config_version: ${{ needs.generate-inputs.outputs.stackhpc_kayobe_config_version }}
+      stackhpc_kayobe_config_previous_version: ${{ needs.generate-inputs.outputs.stackhpc_kayobe_config_previous_version }}
+      enable_slack_alert: true
+    secrets: inherit
