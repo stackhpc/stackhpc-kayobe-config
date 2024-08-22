@@ -12,7 +12,6 @@ the various features provided.
    release-train
    host-images
    lvm
-   swap
    cephadm
    monitoring
    wazuh

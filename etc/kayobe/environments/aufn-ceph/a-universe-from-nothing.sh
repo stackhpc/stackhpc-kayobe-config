@@ -14,15 +14,6 @@ KAYOBE_BRANCH=stackhpc/2024.1
 KAYOBE_CONFIG_BRANCH=stackhpc/2024.1
 KAYOBE_ENVIRONMENT=aufn-ceph
 
-PELICAN_HOST="10.0.0.34 pelican pelican.service.compute.sms-lab.cloud"
-PULP_HOST="10.205.3.187 pulp-server pulp-server.internal.sms-cloud"
-
-# FIXME: Work around lack of DNS on SMS lab.
-cat << EOF | sudo tee -a /etc/hosts
-$PELICAN_HOST
-$PULP_HOST
-EOF
-
 # Install git and tmux.
 if $(which dnf 2>/dev/null >/dev/null); then
     sudo dnf -y install git tmux
@@ -91,11 +82,6 @@ kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
 
 # Deploying the seed restarts networking interface, run configure-local-networking.sh again to re-add routes.
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
-
-# Add sms lab test pulp to /etc/hosts of seed vm's pulp container
-SEED_IP=192.168.33.5
-REMOTE_COMMAND="docker exec pulp sh -c 'echo $PULP_HOST | tee -a /etc/hosts'"
-ssh stack@$SEED_IP $REMOTE_COMMAND
 
 # Sync package & container repositories.
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml

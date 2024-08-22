@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'StackHPC Kayobe Configuration Release Notes'
-copyright = '2023 StackHPC Ltd'
+copyright = '2024 StackHPC Ltd'
 
 # Release notes do not need a version number in the title, they
 # cover multiple releases.
