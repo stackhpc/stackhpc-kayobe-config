@@ -137,6 +137,17 @@ jobs:
         run: ssh-keygen -f id_rsa -N ''
         working-directory: ${{ github.workspace }}/terraform/aio
 
+      # TODO: Remove the following step in Antelope.
+      # NOTE: In Ansible 2.10 and lower the synchronize module used in the
+      # ansible/diagnostics.yml playbook does not respect SSH connection
+      # variables. This may result in Permission Denied issues if using an SSH
+      # key that is not in ~/.ssh.
+      - name: Copy SSH keypair to .ssh/
+        run: |
+          install -d ~/.ssh -m 700 &&
+          cp id_rsa* ~/.ssh/
+        working-directory: ${{ github.workspace }}/terraform/aio
+
       - name: Generate clouds.yaml
         run: |
           cat << EOF > clouds.yaml
