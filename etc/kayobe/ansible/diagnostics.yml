@@ -1,0 +1,74 @@
+---
+# This playbook runs a script that collects diagnostic information from hosts.
+# The diagnostics are aggregated to a directory
+# (diagnostics_path_local/inventory_hostname) on localhost.
+#
+# NOTE: The diagnostic information contains sensitive information such as
+# passwords in configuration files.
+
+- name: Collect diagnostic information
+  hosts: seed-hypervisor:seed:overcloud:infra-vms
+  vars:
+    diagnostics_path_local: "{{ lookup('env', 'PWD') }}/diagnostics"
+  tasks:
+    - block:
+        - name: Create a temporary directory for diagnostics
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: diagnostics
+          register: diagnostics_tmpdir
+
+        - name: Write host variables to a file
+          ansible.builtin.copy:
+            content: "{{ hostvars[inventory_hostname].ansible_facts | to_nice_json }}"
+            dest: "{{ diagnostics_tmpdir.path }}/facts.json"
+
+        - name: Run diagnostics script
+          ansible.builtin.script: "{{ kayobe_config_path }}/../../tools/diagnostics.sh"
+          become: true
+          failed_when: diagnostics_result.rc is not defined
+          register: diagnostics_result
+          environment:
+            LOG_DIR: "{{ diagnostics_tmpdir.path }}"
+            CONFIG_DIR: "{{ kayobe_config_path }}/../.."
+
+        - name: Download diagnostic logs to localhost
+          ansible.posix.synchronize:
+            src: "{{ diagnostics_tmpdir.path }}/"
+            dest: "{{ diagnostics_path_local }}/{{ inventory_hostname }}"
+            mode: pull
+            archive: no
+            recursive: true
+            copy_links: true
+            verify_host: true
+            # For jump host
+            use_ssh_args: true
+          vars:
+            # FIXME: The synchronize module fails on Yoga, due to not templating
+            # the SSH user.
+            ansible_user: stack
+      always:
+        - name: Clean up temporary directory
+          ansible.builtin.file:
+            path: "{{ diagnostics_tmpdir.path }}"
+            state: absent
+
+        - name: Display diagnostics collection stdout
+          ansible.builtin.debug:
+            msg: "{{ diagnostics_result.stdout }}"
+          when: diagnostics_result.stdout is defined
+
+        - name: Display diagnostics collection stderr
+          ansible.builtin.debug:
+            msg: "{{ diagnostics_result.stderr }}"
+          when: diagnostics_result.stderr is defined
+
+        - name: Fail if diagnostics collection failed
+          ansible.builtin.fail:
+            msg: Diagnostics collection failed
+          when: diagnostics_result.rc != 0
+
+        - name: Display location of diagnostics archive
+          ansible.builtin.debug:
+            msg: >-
+              Wrote diagnostics to {{ diagnostics_path_local }} on localhost

@@ -85,7 +85,7 @@ on the overcloud hosts:
 .. code-block:: console
 
     (kayobe) [stack@node ~]$ cd etc/kayobe
-    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmontools.yml
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmon-tools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
