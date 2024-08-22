@@ -57,7 +57,6 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    cd
    mkdir -p src
    pushd src
-   git clone https://github.com/stackhpc/kayobe.git -b |current_release_git_branch_name|
    git clone https://github.com/stackhpc/stackhpc-kayobe-config -b |current_release_git_branch_name| kayobe-config
    popd
 
@@ -71,7 +70,7 @@ Create a virtual environment and install Kayobe:
    python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
-   pip install ../src/kayobe
+   pip install ../src/kayobe-config/requirements.txt
    popd
 
 Add initial network configuration:

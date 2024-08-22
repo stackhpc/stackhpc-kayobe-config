@@ -32,7 +32,7 @@
 current_series = "2024.1"
 previous_series = "2023.1"
 branch = f"stackhpc/{current_series}"
-ceph_series = "quincy"
+ceph_series = "reef"
 
 # Substitutions loader
 rst_prolog = """
@@ -122,10 +122,10 @@ extlinks_projects = {
 }
 
 extlinks = {
-    f"{project}-doc": (f"https://docs.openstack.org/{project}/{current_series}/", "%s documentation")
+    f"{project}-doc": (f"https://docs.openstack.org/{project}/{current_series}/%s", "%s documentation")
     for project in extlinks_projects
 }
-extlinks["skc-doc"] = (f"https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-{current_series}/", "%s documentation")
-extlinks["kayobe-renos"] = (f"https://docs.openstack.org/releasenotes/kayobe/{current_series}.html", "%s release notes")
-extlinks["kolla-ansible-renos"] = (f"https://docs.openstack.org/releasenotes/kolla-ansible/{current_series}.html", "%s release notes")
-extlinks["ceph-doc"] = (f"https://docs.ceph.com/en/{ceph_series}/", "%s documentation")
+extlinks["skc-doc"] = (f"https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-{current_series}/%s", "%s documentation")
+extlinks["kayobe-renos"] = (f"https://docs.openstack.org/releasenotes/kayobe/{current_series}.html%s", "%s release notes")
+extlinks["kolla-ansible-renos"] = (f"https://docs.openstack.org/releasenotes/kolla-ansible/{current_series}.html%s", "%s release notes")
+extlinks["ceph-doc"] = (f"https://docs.ceph.com/en/{ceph_series}/%s", "%s documentation")
