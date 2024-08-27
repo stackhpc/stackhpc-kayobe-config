@@ -44,3 +44,15 @@ designate_ns_record:
 designate_backend: "bind9"
 designate_recursion: "yes"
 designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
+
+{% if kolla_enable_tls_internal | bool %}
+############################################################################
+# Internal and backend TLS configuration
+
+# Copy the self-signed CA into the kolla containers
+kolla_copy_ca_into_containers: "yes"
+openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution == 'rocky' else '/etc/ssl/certs/ca-certificates.crt' }}"
+kolla_enable_tls_backend: "yes"
+rabbitmq_enable_tls: "yes"
+
+{% endif %}
