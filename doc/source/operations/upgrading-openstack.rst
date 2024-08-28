@@ -35,6 +35,64 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
+RabbitMQ SLURP upgrade
+----------------------
+
+Because this is a SLURP upgrade, RabbitMQ must be upgraded manually from 3.11,
+to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
+should not cause an API outage (though it should still be considered "at
+risk").
+
+There are two prerequisites:
+
+1. Kolla-Ansible should be upgraded to the latest version. Assuming a typical
+   production layout, execute the following from the kolla-ansible source
+   directory:
+
+   .. code-block:: bash
+
+      git fetch && git pull && ../../venvs/kolla-ansible/bin/pip install .
+
+2. The RabbitMQ container image tag must be equal to or newer than
+   ``20240823T101942``. Check the timestamps in
+   ``etc/kayobe/kolla-image-tags.yml``.
+
+Once complete, upgrade RabbitMQ:
+
+.. code-block:: bash
+
+   kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
+   kayobe kolla ansibe run "rabbitmq-upgrade 3.12"
+   kayobe kolla ansibe run "rabbitmq-upgrade 3.13"
+
+RabbitMQ quorum queues
+----------------------
+
+In Caracal, quorum queues are enabled by default for RabbitMQ. This is
+different to Antelope which used HA queues. Before upgrading to Caracal, it is
+strongly recommended that you migrate from HA to quorum queues. The migration
+is automated using a script.
+
+.. warning::
+   This migration will stop all services using RabbitMQ and cause an
+   extended API outage while queues are migrated. It should only be
+   performed in a pre-agreed maintenance window.
+
+Set the following variables in your kolla globals file (i.e.
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
+
+.. code-block:: yaml
+
+      om_enable_rabbitmq_high_availability: false
+      om_enable_rabbitmq_quorum_queues: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
+
 Heat disabled by default
 ------------------------
 
@@ -85,7 +143,16 @@ configuration must change the names of those files in
 Known issues
 ============
 
-* None!
+* OVN breaks on Rocky 9 deployments where hostnames are FQDNs.
+  Before upgrading, you must make sure no compute or controller nodes have any
+  ``.`` characters in their hostnames. Run the command below to check:
+
+  .. code-block:: bash
+
+     kayobe overcloud host command run --command "grep -v \'\.\' /etc/hostname" --show-output
+
+  There is currently no known fix for this issue aside from reprovisioning. A
+  patch will be developed soon.
 
 Security baseline
 =================
