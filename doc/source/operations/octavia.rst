@@ -2,6 +2,13 @@
 Octavia
 =======
 
+.. Introduction to Octavia:
+
+Introduction to Octavia
+=======================
+
+Octavia is known as an *operator-scaled* load balancing service. 
+
 .. _Deploying Octavia:
 
 Deploying Octavia
@@ -22,8 +29,8 @@ should also be set in ``kolla.yml``.
 
 By default Octavia will deploy a single Amphora VM per load balancing service, this should be 
 changed to make them highly available and have two Amphora VM per service. Done by setting 
-``octavia_loadbalancer_topology: "ACTIVE_STANDBY"``, this will ensure that if an Amphora VM 
-were to go down, the other would be able to take over the load balancing functions.  
+``octavia_loadbalancer_topology: "ACTIVE_STANDBY"``, this will ensure that if the master 
+Amphora VM were to go down, the other would be able to take over the load balancing functions.  
 
 .. _Amphora image:
 
