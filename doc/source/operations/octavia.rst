@@ -2,6 +2,29 @@
 Octavia
 =======
 
+.. _Deploying Octavia:
+
+Deploying Octavia
+=================
+
+Much like any other Kolla managed service, the method of deploying Octavia is as simple 
+as enabling ``kolla_enable_octavia: true`` within the chosen environment's ``kolla.yml``.
+However, before running a ``kayobe overcloud service configure``, check 
+``octavia_net_interface`` (often found within the ``controllers`` directory within 
+``group_vars``) to see the network which Octavia management network will be using. 
+If it is configured to use a VLAN then ``kolla_enable_neutron_provider_networks: true``
+should also be set in ``kolla.yml``.
+
+.. note::
+
+      It of course goes without saying that the network configured for ``octavia_net_interface`` 
+      should also exist in ``networks.yml``.
+
+By default Octavia will deploy a single Amphora VM per load balancing service, this should be 
+changed to make them highly available and have two Amphora VM per service. Done by setting 
+``octavia_loadbalancer_topology: "ACTIVE_STANDBY"``, this will ensure that if an Amphora VM 
+were to go down, the other would be able to take over the load balancing functions.  
+
 .. _Amphora image:
 
 Building and rotating amphora images
