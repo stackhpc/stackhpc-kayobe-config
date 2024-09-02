@@ -139,14 +139,14 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe-config/requirements.txt
+          pip install -r ../src/kayobe-config/requirements.txt
 
       # Required for Pulp auth proxy deployment and Docker registry login.
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
           sudo pip install docker 'requests<2.32.0'
-      
+
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
