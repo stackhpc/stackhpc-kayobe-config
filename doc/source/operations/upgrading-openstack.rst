@@ -112,6 +112,24 @@ using Heat, and disable the service.
 
 TODO: guide for disabling Heat
 
+Designate sink disabled by default
+----------------------------------
+
+Designate sink is optional designate service which listens for event
+Notifications, primarily from Nova and Neutron. It is disabled by default (when
+designate is enabled) in Caracal.
+
+This behavior can be overridden manually:
+
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
+
+   designate_enable_notifications_sink: true
+
+If you are using Designate and do not make this change, the Antelope
+``designate-sink`` container will remain on the controllers after the upgrade.
+It must be removed manually.
+
 Grafana Volume
 --------------
 The Grafana container volume is no longer used. If you wish to automatically
