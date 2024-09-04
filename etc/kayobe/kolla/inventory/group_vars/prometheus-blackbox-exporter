@@ -6,13 +6,16 @@
 # prometheus_blackbox_exporter_endpoints_kayobe is another set of default
 # endpoints that are templated by Kayobe rather than Kolla Ansible. See
 # kolla/globals.yml for more details.
-prometheus_blackbox_exporter_endpoints: >-
-  {{ (prometheus_blackbox_exporter_endpoints_kayobe | default([]) +
-  prometheus_blackbox_exporter_endpoints_default) |
-  selectattr('enabled', 'true') |
-  map(attribute='endpoints') | flatten |
-  union(prometheus_blackbox_exporter_endpoints_custom) |
-  unique | select | list }}
+prometheus_blackbox_exporter_endpoints: |
+  {% set endpoints = [] %}
+  {% for dict_item in (prometheus_blackbox_exporter_endpoints_kayobe | default([]) + prometheus_blackbox_exporter_endpoints_default) %}
+  {% if dict_item.enabled | bool %}
+  {% for endpoint in dict_item.endpoints %}
+  {% set _ = endpoints.append(endpoint) %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {{ (endpoints + prometheus_blackbox_exporter_endpoints_custom) | unique | list }}
 
 # A list of custom prometheus Blackbox exporter endpoints. Each element should
 # have the following format:
