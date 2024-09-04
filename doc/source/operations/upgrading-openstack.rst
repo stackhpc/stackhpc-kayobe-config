@@ -45,13 +45,13 @@ risk").
 
 There are two prerequisites:
 
-1. Kolla-Ansible should be upgraded to the latest version. Assuming a typical
-   production layout, execute the following from the kolla-ansible source
-   directory:
+1. Kolla-Ansible should be upgraded to the latest version:
 
    .. code-block:: bash
 
-      git fetch && git pull && ../../venvs/kolla-ansible/bin/pip install .
+      cd $KOLLA_SOURCE_PATH
+      git fetch && git pull
+      $KOLLA_VENV_PATH/bin/pip install .
 
 2. The RabbitMQ container image tag must be equal to or newer than
    ``20240823T101942``. Check the timestamps in
