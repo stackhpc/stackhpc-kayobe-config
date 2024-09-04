@@ -117,9 +117,9 @@ Designate sink disabled by default
 
 Designate sink is optional designate service which listens for event
 Notifications, primarily from Nova and Neutron. It is disabled by default (when
-designate is enabled) in Caracal.
+designate is enabled) in Caracal. It is not required for Designate to function.
 
-This behavior can be overridden manually:
+If you still wish to use it, you should set the flag manually:
 
 .. code-block:: yaml
    :caption: ``kolla/globals.yml``
