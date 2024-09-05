@@ -48,6 +48,8 @@ Full method
 2. Edit your Kolla-Ansible checkout to include changes not yet included
    upstream. 
 
+TODO
+
 .. _kolla-change:
 
    1. Add this line within the ``kolla_docker`` dict in
@@ -62,16 +64,7 @@ Full method
       This change will break new deployments and should be reverted once this
       process is complete
 
-.. _k-a-change:
-
-   2. Cherry-pick `this patch
-      <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__
-
-      .. code:: bash
-
-         git fetch https://review.opendev.org/openstack/kolla-ansible refs/changes/78/903178/2 && git cherry-pick FETCH_HEAD
-   
-   3. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
+   2. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
       environment
 
 
