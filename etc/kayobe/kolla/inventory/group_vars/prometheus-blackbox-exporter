@@ -149,7 +149,7 @@ heat_cfn_internal_base_endpoint: "{{ heat_cfn_internal_fqdn | kolla_url(internal
 heat_cfn_public_base_endpoint: "{{ heat_cfn_external_fqdn | kolla_url(public_protocol, heat_api_cfn_public_port) }}"
 heat_internal_base_endpoint: "{{ heat_internal_fqdn | kolla_url(internal_protocol, heat_api_port) }}"
 heat_public_base_endpoint: "{{ heat_external_fqdn | kolla_url(public_protocol, heat_api_public_port) }}"
-horizon_public_endpoint: "{{ horizon_external_fqdn | kolla_url(public_protocol, horizon_listen_port) }}"
+horizon_public_endpoint: "{{ horizon_external_fqdn | kolla_url(public_protocol, horizon_tls_port if kolla_enable_tls_external | bool else horizon_port) }}"
 ironic_inspector_internal_endpoint: "{{ ironic_inspector_internal_fqdn | kolla_url(internal_protocol, ironic_inspector_port) }}"
 ironic_inspector_public_endpoint: "{{ ironic_inspector_external_fqdn | kolla_url(public_protocol, ironic_inspector_public_port) }}"
 magnum_internal_base_endpoint: "{{ magnum_internal_fqdn | kolla_url(internal_protocol, magnum_api_port) }}"
