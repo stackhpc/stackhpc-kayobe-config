@@ -397,11 +397,11 @@ baremetal node registration.
     project_name: "{{ lookup('env', 'OS_PROJECT_NAME') }}"
 
 With these variables defined we can now begin deploying the baremetal nodes as
-instances, to begin we invoke the deploy-baremetal-hypervisor ansible playbook.
+instances, to begin we invoke the deploy-baremetal-instance ansible playbook.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-baremetal-hypervisor.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-baremetal-instance.yml
 
 This playbook will update the Kayobe network allocations with the the admin
 network addresses associated with that rack for each baremetal server, e.g.
