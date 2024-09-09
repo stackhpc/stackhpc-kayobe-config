@@ -235,24 +235,24 @@ Nodes can now be entered directly into the hosts file as part of this group.
 
 .. code-block:: ini
 
-    [rack1]
-    hv001 ipmi_address=10.1.28.16
-    hv002 ipmi_address=10.1.28.17
-    …
+  [rack1]
+  hv001 ipmi_address=10.1.28.16
+  hv002 ipmi_address=10.1.28.17
+  …
 
 This rack group contains the baremetal hosts but will also need to be
 associated with the baremetal-compute and baremetal-sr645 groups in order for
 those variables to be associated with the rack group.
-	
+
 .. code-block:: ini
 
-	[baremetal-<YOUR_BAREMETAL_HARDWARE_TYPE>:children]
-	rack1
-	…
+  [baremetal-<YOUR_BAREMETAL_HARDWARE_TYPE>:children]
+  rack1
+  …
 
-	[baremetal-compute:children]
-	rack1
-	…
+  [baremetal-compute:children]
+  rack1
+  …
 
 Node enrollment
 ===============
@@ -297,21 +297,21 @@ hosts.
 
 .. code-block:: ini
 
-	[rack1]
+  [rack1]
   hv001 ipmi_address=10.1.28.16
   hv002 ipmi_address=10.1.28.17
   …
 
-	[rack1-compute]
+  [rack1-compute]
   hv003 ipmi_address=10.1.28.18
   hv004 ipmi_address=10.1.28.19
   …
 
-	[rack1:children]
-	rack1-compute
+  [rack1:children]
+  rack1-compute
 
-	[compute:children]
-	rack1-compute
+  [compute:children]
+  rack1-compute
 
 The rack1-compute group as shown above is also associated with the Kayobe
 compute group in order for Kayobe to run the compute Kolla workflows on these
@@ -324,9 +324,9 @@ The configuration should resemble below in networks.yml:
 
 .. code-block:: yaml
 
-	physical_rack1_admin_oc_net_cidr: “172.16.208.128/27”
-	physical_rack1_admin_oc_net_gateway: “172.16.208.129”
-	physical_rack1_admin_net_defroute: true
+  physical_rack1_admin_oc_net_cidr: “172.16.208.128/27”
+  physical_rack1_admin_oc_net_gateway: “172.16.208.129”
+  physical_rack1_admin_net_defroute: true
 
 You will also need to configure a neutron network for racks to deploy instances
 on, we can configure this in openstack-config as before. We will need to define
@@ -335,16 +335,16 @@ Ironic.
 
 .. code-block:: yaml
 
-	openstack_network_rack:
-  name: "rack-net"
-  project: "admin"
-  provider_network_type: "vlan"
-  provider_physical_network: "provider"
-  provider_segmentation_id: 450
-  shared: false
-  external: false
-  subnets:
-	- "{{ openstack_subnet_rack1 }}"
+  openstack_network_rack:
+    name: "rack-net"
+    project: "admin"
+    provider_network_type: "vlan"
+    provider_physical_network: "provider"
+    provider_segmentation_id: 450
+    shared: false
+    external: false
+    subnets:
+    - "{{ openstack_subnet_rack1 }}"
 
   openstack_subnet_rack1:
     name: "rack1-subnet"
@@ -385,12 +385,12 @@ baremetal node registration.
 
 .. code-block:: yaml
 
-	hypervisor_image: "<image_uuid>"
-	key_name: "<key_name>"
-	availability_zone: "nova"
-	baremetal_flavor: "<ironic_flavor_name>"
-	baremetal_network: "rack-net"
-	auth:
+  hypervisor_image: "<image_uuid>"
+  key_name: "<key_name>"
+  availability_zone: "nova"
+  baremetal_flavor: "<ironic_flavor_name>"
+  baremetal_network: "rack-net"
+  auth:
     auth_url: "{{ lookup('env', 'OS_AUTH_URL') }}"
     username: "{{ lookup('env', 'OS_USERNAME') }}"
     password: "{{ lookup('env', 'OS_PASSWORD') }}"
@@ -401,11 +401,11 @@ instances, to begin we invoke the deploy-baremetal-hypervisor ansible playbook.
 
 .. code-block:: console
 
-	kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-baremetal-hypervisor.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-baremetal-hypervisor.yml
 
 This playbook will update the Kayobe network allocations with the the admin
 network addresses associated with that rack for each baremetal server, e.g.
-in the case of rack 1 this will appear in network-allocations.yml as 
+in the case of rack 1 this will appear in network-allocations.yml as
 
 .. code-block:: yaml
 
