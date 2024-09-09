@@ -54,6 +54,24 @@ using Heat, and disable the service.
 
 TODO: guide for disabling Heat
 
+Designate sink disabled by default
+----------------------------------
+
+Designate sink is an optional Designate service which listens for event
+notifications, primarily from Nova and Neutron. It is disabled by default (when
+designate is enabled) in Caracal. It is not required for Designate to function.
+
+If you still wish to use it, you should set the flag manually:
+
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
+
+   designate_enable_notifications_sink: true
+
+If you are using Designate and do not make this change, the Antelope
+``designate-sink`` container will remain on the controllers after the upgrade.
+It must be removed manually.
+
 Grafana Volume
 --------------
 The Grafana container volume is no longer used. If you wish to automatically
@@ -85,7 +103,16 @@ configuration must change the names of those files in
 Known issues
 ============
 
-* None!
+* OVN breaks on Rocky 9 deployments where hostnames are FQDNs.
+  Before upgrading, you must make sure no compute or controller nodes have any
+  ``.`` characters in their hostnames. Run the command below to check:
+
+  .. code-block:: bash
+
+     kayobe overcloud host command run --command "grep -v \'\.\' /etc/hostname" --show-output
+
+  There is currently no known fix for this issue aside from reprovisioning. A
+  patch will be developed soon.
 
 Security baseline
 =================
@@ -125,6 +152,53 @@ suggestions:
 * Check Grafana dashboards.
 * Update the deployment to use the latest |previous_release| images and
   configuration.
+
+RabbitMQ SLURP upgrade
+----------------------
+
+.. note::
+   The upgrade is reliant on recent changes. Make sure you have updated to
+   the latest version of kolla ansible and deployed the latest kolla containers
+   before proceeding.
+
+Because this is a SLURP upgrade, RabbitMQ must be upgraded manually from 3.11,
+to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
+should not cause an API outage (though it should still be considered "at
+risk").
+
+.. code-block:: bash
+
+   kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
+   kayobe kolla ansible run "rabbitmq-upgrade 3.12"
+   kayobe kolla ansible run "rabbitmq-upgrade 3.13"
+
+RabbitMQ quorum queues
+----------------------
+
+In Caracal, quorum queues are enabled by default for RabbitMQ. This is
+different to Antelope which used HA queues. Before upgrading to Caracal, it is
+strongly recommended that you migrate from HA to quorum queues. The migration
+is automated using a script.
+
+.. warning::
+   This migration will stop all services using RabbitMQ and cause an
+   extended API outage while queues are migrated. It should only be
+   performed in a pre-agreed maintenance window.
+
+Set the following variables in your kolla globals file (i.e.
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
+
+.. code-block:: yaml
+
+      om_enable_rabbitmq_high_availability: false
+      om_enable_rabbitmq_quorum_queues: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
 
 Preparation
 ===========

@@ -70,7 +70,7 @@ Create a virtual environment and install Kayobe:
    python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
-   pip install ../src/kayobe-config/requirements.txt
+   pip install -r ../src/kayobe-config/requirements.txt
    popd
 
 Add initial network configuration:

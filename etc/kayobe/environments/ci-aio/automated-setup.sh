@@ -60,7 +60,7 @@ set +u
 source kayobe/bin/activate
 set -u
 pip install -U pip
-pip install ../src/kayobe-config/requirements.txt
+pip install -r ../src/kayobe-config/requirements.txt
 popd
 
 if ! ip l show breth1 >/dev/null 2>&1; then
