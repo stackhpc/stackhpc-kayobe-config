@@ -21,3 +21,9 @@
         cmd: hostnamectl set-hostname "{{ inventory_hostname }}"
       when: current_hostname.stdout != inventory_hostname
       become: true
+
+- name: Reboot hosts
+  import_playbook: "{{ playbook_dir | realpath }}/reboot.yml"
+  vars:
+    reboot_hosts: fix-hostname
+  when: current_hostname.stdout != inventory_hostname
