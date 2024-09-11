@@ -100,6 +100,19 @@ have been renamed to ``_9998-kolla-settings.py`` and
 configuration must change the names of those files in
 ``etc/kolla/config/horizon`` as well.
 
+Neutron DNS Domain
+------------------
+When Designate is enabled and the default Neutron DNS integration has not been
+disabled, ``neutron_dns_domain`` must be configured manually in
+``kolla/globals.yml``.
+
+The ``neutron_dns_domain`` must end with a period ``.`` e.g. ``example.com.``.
+The domain set should be something that is not use anywhere else such as
+``internal.compute.example.com.``
+
+The Neuron DNS integration can be disabled by setting
+``neutron_dns_integration: false`` in ``kolla/globals.yml``
+
 Known issues
 ============
 
