@@ -8,14 +8,14 @@ Working with Cephadm
 This documentation provides guide for Ceph operations. For deploying Ceph,
 please refer to :ref:`cephadm-kayobe` documentation.
 
-cephadm configuration location
+Cephadm configuration location
 ------------------------------
 
 In kayobe-config repository, under ``etc/kayobe/cephadm.yml`` (or in a specific
 Kayobe environment when using multiple environment, e.g.
 ``etc/kayobe/environments/<Environment Name>/cephadm.yml``)
 
-StackHPC's cephadm Ansible collection relies on multiple inventory groups:
+StackHPC's Cephadm Ansible collection relies on multiple inventory groups:
 
 - ``mons``
 - ``mgrs``
@@ -24,11 +24,11 @@ StackHPC's cephadm Ansible collection relies on multiple inventory groups:
 
 Those groups are usually defined in ``etc/kayobe/inventory/groups``.
 
-Running cephadm playbooks
+Running Cephadm playbooks
 -------------------------
 
 In kayobe-config repository, under ``etc/kayobe/ansible`` there is a set of
-cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
+Cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
 
 - ``cephadm.yml`` - runs the end to end process starting with deployment and
   defining EC profiles/crush rules/pools and users
@@ -176,11 +176,11 @@ Remove the OSD using Ceph orchestrator command:
    ceph orch osd rm <ID> --replace
 
 After removing OSDs, if the drives the OSDs were deployed on once again become
-available, cephadm may automatically try to deploy more OSDs on these drives if
+available, Cephadm may automatically try to deploy more OSDs on these drives if
 they match an existing drivegroup spec.
 If this is not your desired action plan - it's best to modify the drivegroup
 spec before (``cephadm_osd_spec`` variable in ``etc/kayobe/cephadm.yml``).
-Either set ``unmanaged: true`` to stop cephadm from picking up new disks or
+Either set ``unmanaged: true`` to stop Cephadm from picking up new disks or
 modify it in some way that it no longer matches the drives you want to remove.
 
 Host maintenance

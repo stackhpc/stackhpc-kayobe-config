@@ -26,7 +26,7 @@ Monitoring
 ----------
 
 * `Back up InfluxDB <https://docs.influxdata.com/influxdb/v1.8/administration/backup_and_restore/>`__
-* `Back up ElasticSearch <https://www.elastic.co/guide/en/elasticsearch/reference/current/backup-cluster-data.html>`__
+* `Back up OpenSearch <https://opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/snapshots/snapshot-restore/>`__
 * `Back up Prometheus <https://prometheus.io/docs/prometheus/latest/querying/api/#snapshot>`__
 
 Seed
@@ -42,8 +42,8 @@ Ansible control host
 Control Plane Monitoring
 ========================
 
-The control plane has been configured to collect logs centrally using the EFK
-stack (Elasticsearch, Fluentd and Kibana).
+The control plane has been configured to collect logs centrally using Fluentd,
+OpenSearch and OpenSearch Dashboards.
 
 Telemetry monitoring of the control plane is performed by Prometheus. Metrics
 are collected by Prometheus exporters, which are either running on all hosts
@@ -227,7 +227,7 @@ Overview
 * Remove the node from maintenance mode in bifrost
 * Bifrost should automatically power on the node via IPMI
 * Check that all docker containers are running
-* Check Kibana for any messages with log level ERROR or equivalent
+* Check OpenSearch Dashboards for any messages with log level ERROR or equivalent
 
 Controllers
 -----------
@@ -277,7 +277,7 @@ Stop all Docker containers:
 
 .. code-block:: console
 
-   monitoring0# for i in `docker ps -q`; do docker stop $i; done
+   monitoring0# for i in `docker ps -a`; do systemctl stop kolla-$i-container; done
 
 Shut down the node:
 
@@ -342,21 +342,6 @@ Host packages can be updated with:
 
 See https://docs.openstack.org/kayobe/latest/administration/overcloud.html#updating-packages
 
-Upgrading OpenStack Services
-----------------------------
-
-* Update tags for the images in ``etc/kayobe/kolla-image-tags.yml``
-* Pull container images to overcloud hosts with ``kayobe overcloud container image pull``
-* Run ``kayobe overcloud service upgrade``
-
-You can update the subset of containers or hosts by
-
-.. code-block:: console
-
-   kayobe# kayobe overcloud service upgrade --kolla-tags <service> --limit <hostname> --kolla-limit <hostname>
-
-For more information, see: https://docs.openstack.org/kayobe/latest/upgrading.html
-
 Troubleshooting
 ===============
 
@@ -378,27 +363,7 @@ To boot an instance on a specific hypervisor
 
 .. code-block:: console
 
-   openstack server create --flavor <flavour name>--network <network name> --key-name <key> --image <Image name> --os-compute-api-version 2.74 --host <hypervisor hostname> <vm name>
-
-Cleanup Procedures
-==================
-
-OpenStack services can sometimes fail to remove all resources correctly. This
-is the case with Magnum, which fails to clean up users in its domain after
-clusters are deleted. `A patch has been submitted to stable branches
-<https://review.opendev.org/#/q/Ibadd5b57fe175bb0b100266e2dbcc2e1ea4efcf9>`__.
-Until this fix becomes available, if Magnum is in use, administrators can
-perform the following cleanup procedure regularly:
-
-.. code-block:: console
-
-   for user in $(openstack user list --domain magnum -f value -c Name | grep -v magnum_trustee_domain_admin); do
-      if openstack coe cluster list -c uuid -f value | grep -q $(echo $user | sed 's/_[0-9a-f]*$//'); then
-         echo "$user still in use, not deleting"
-      else
-         openstack user delete --domain magnum $user
-      fi
-      done
+   openstack server create --flavor <flavour name> --network <network name> --key-name <key name> --image <image name> --os-compute-api-version 2.74 --host <hypervisor hostname> <vm name>
 
 OpenSearch indexes retention
 =============================
