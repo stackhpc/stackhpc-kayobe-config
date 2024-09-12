@@ -130,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_abs_path(relative_path: str) -> str:
+def get_abs_path(relative_path: str) -> pathlib.Path:
     """Return the absolute path of a file in SKC."""
     script_path = pathlib.Path(inspect.getfile(inspect.currentframe()))
     return script_path.parent.parent / relative_path
