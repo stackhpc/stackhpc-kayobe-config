@@ -113,6 +113,6 @@ If the ``horizon`` container is restarting with the following error:
    /var/lib/kolla/venv/bin/python /var/lib/kolla/venv/bin/manage.py compress --force
    CommandError: An error occurred during rendering /var/lib/kolla/venv/lib/python3.6/site-packages/openstack_dashboard/templates/horizon/_scripts.html: Couldn't find any precompiler in COMPRESS_PRECOMPILERS setting for mimetype '\'text/javascript\''.
 
-It can be resolved by dropping cached content with ``docker restart
-memcached``. Note this will log out users from Horizon, as Django sessions are
-stored in Memcached.
+It can be resolved by dropping cached content with ``systemctl restart
+kolla-memcached-container``. Note this will log out users from Horizon, as Django
+sessions are stored in Memcached.
