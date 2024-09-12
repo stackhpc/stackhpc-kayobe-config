@@ -1,5 +1,5 @@
 # This file is a list of path filters for the PR workflow in .github/workflows/stackhpc-pull-request.yml.
-aio:
+aio: &aio
   - '.automation'
   - '.automation.conf/config.sh'
   - '.automation.conf/tempest/load-lists/default'
@@ -20,8 +20,11 @@ aio:
   - 'kayobe-env'
   - 'requirements.txt'
   - 'terraform/aio/**'
-check-tags:
+check-tags: &check-tags
   - '.github/workflows/stackhpc-check-tags.yml'
   - 'etc/kayobe/kolla-image-tags.yml'
   - 'etc/kayobe/pulp.yml'
   - 'tools/kolla-images.py'
+build-kayobe-image:
+  - *aio
+  - *check-tags
