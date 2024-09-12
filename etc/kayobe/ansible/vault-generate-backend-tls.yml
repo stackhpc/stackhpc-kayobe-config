@@ -18,7 +18,7 @@
 - name: Generate backend API certificates
   hosts: controllers:network
   vars:
-    vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
+    vault_api_addr: "https://{{ internal_net_name | net_ip(groups['controllers'][0]) }}:8200"
     vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
     - name: Set a fact about the virtualenv on the remote system
