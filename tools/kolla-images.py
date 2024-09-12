@@ -52,6 +52,7 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
         "mariabackup",
     ],
     "neutron-mlnx-agent": [
+        "neutron_eswitchd",
         "neutron_mlnx_agent",
     ],
     "neutron-metadata-agent": [
