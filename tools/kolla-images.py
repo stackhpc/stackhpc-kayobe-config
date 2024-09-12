@@ -39,15 +39,19 @@ KollaImageTags = Dict[str, Dict[str, str]]
 
 # Maps a Kolla image to a list of containers that use the image.
 IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
+    "dnsmasq": [
+        "ironic_dnsmasq",
+    ],
     "haproxy": [
         "glance_tls_proxy",
+        "haproxy",
         "neutron_tls_proxy",
     ],
     "mariadb-server": [
         "mariadb",
         "mariabackup",
     ],
-    "neutron-eswitchd": [
+    "neutron-mlnx-agent": [
         "neutron_mlnx_agent",
     ],
     "neutron-metadata-agent": [
@@ -57,6 +61,15 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
     "nova-conductor": [
         "nova_super_conductor",
         "nova_conductor",
+    ],
+    "openvswitch-db-server": [
+        "openvswitch_db",
+    ],
+    "ovn-nb-db-server": [
+        "ovn_nb_db",
+    ],
+    "ovn-sb-db-server": [
+        "ovn_sb_db",
     ],
     "prometheus-v2-server": [
         "prometheus_server",
