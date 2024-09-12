@@ -52,20 +52,29 @@ stackhpc_apt_repositories:
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
     architecture: amd64
+    required: true
   - url: "{{ stackhpc_repo_ubuntu_focal_security_url if ansible_facts.distribution_release == 'focal' else stackhpc_repo_ubuntu_jammy_security_url }}"
     suites: "{{ ansible_facts.distribution_release }}-security"
     components: main restricted universe multiverse
     architecture: amd64
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_url }}"
-    suites: "{{ ansible_facts.distribution_release }}"
+    required: true
+  - url: "{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_url }}"
+    suites: "pulp"
+    components: upload
+    architecture: amd64
+    trusted: yes
+    required: "{{ ansible_facts.distribution_release == 'jammy' }}"
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_focal_url if ansible_facts.distribution_release == 'focal' else stackhpc_repo_docker_ce_ubuntu_jammy_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
     components: stable
     signed_by: docker.asc
     architecture: amd64
+    required: true
 
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
 # are deployed.
-apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names else [] }}"
+apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if 'overcloud' in group_names else [] }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
@@ -74,6 +83,22 @@ apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names el
 # can result in errors if apt reconfiguration is performed before local
 # repository mirrors are deployed.
 apt_disable_sources_list: "{{ 'overcloud' in group_names }}"
+
+# Apt auth configuration for accessing the package repository mirror.
+stackhpc_apt_auth:
+  - machine: "{{ stackhpc_repo_mirror_url }}"
+    login: "{{ stackhpc_repo_mirror_username }}"
+    password: "{{ stackhpc_repo_mirror_password }}"
+    filename: "kayobe.conf"
+
+# List of Apt auth configurations. Each item is a dict with the following keys:
+# * machine: 'machine' entry in the auth file
+# * login: 'login' entry in the auth file
+# * password: 'password' entry in the auth file
+# * filename: Name of a file in which to store the auth configuration. The
+#   extension should be '.conf'.
+# Default is an empty list.
+apt_auth: "{{ stackhpc_apt_auth if 'overcloud' in group_names and stackhpc_repo_mirror_username is truthy else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

@@ -111,7 +111,7 @@ Setup HAProxy config for Vault
 
    .. code-block::
 
-      kayobe overcloud service deploy -kt haproxy
+      kayobe overcloud service deploy --skip-tags os_capacity -kt haproxy
 
 Setup Vault HA on the overcloud hosts
 -------------------------------------
@@ -195,6 +195,8 @@ Enable the required TLS variables in kayobe and kolla
 
       # Whether TLS is enabled for the internal API endpoints. Default is 'no'.
       kolla_enable_tls_internal: yes
+
+   See :ref:`os-capacity` for information on adding CA certificates to the trust store when deploying the OpenStack Capacity exporter.
 
 2. Set the following in etc/kayobe/kolla/globals.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
 
@@ -296,7 +298,9 @@ Configure Barbican
       [vault_plugin]
       vault_url = https://{{ kolla_internal_vip_address }}:8200
       use_ssl = True
-      ssl_ca_crt_file = {% raw %}{{ openstack_cacert }}{% endraw %}
+      {% raw %}
+      ssl_ca_crt_file = {{ openstack_cacert }}
+      {% endraw %}
       approle_role_id = {{ secrets_barbican_approle_role_id }}
       approle_secret_id = {{ secrets_barbican_approle_secret_id }}
       kv_mountpoint = barbican

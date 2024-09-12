@@ -22,10 +22,10 @@ jobs:
       aio: ${{ steps.changes.outputs.aio }}
     steps:
       - name: GitHub Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check changed files
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: changes
         with:
           # Filters are defined in this file.
@@ -47,11 +47,11 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     steps:
       - name: GitHub Checkout 🛎
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Tox 📦
@@ -85,10 +85,10 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-centos-ovn:
     name: aio (CentOS OVN)
@@ -99,10 +99,10 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       neutron_plugin: ovn
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-8-ovs:
     name: aio (Rocky OVS)
@@ -115,10 +115,10 @@ jobs:
       os_distribution: rocky
       os_release: "8"
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-8-ovn:
     name: aio (Rocky OVN)
@@ -131,10 +131,10 @@ jobs:
       os_distribution: rocky
       os_release: "8"
       neutron_plugin: ovn
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-ovs:
     name: aio (Ubuntu OVS)
@@ -148,10 +148,10 @@ jobs:
       os_release: focal
       ssh_username: ubuntu
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-ovn:
     name: aio (Ubuntu OVN)
@@ -165,10 +165,10 @@ jobs:
       os_release: focal
       ssh_username: ubuntu
       neutron_plugin: ovn
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)
@@ -182,10 +182,10 @@ jobs:
       os_release: jammy
       ssh_username: ubuntu
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-jammy-ovn:
     name: aio (Ubuntu Jammy OVN)
@@ -199,10 +199,10 @@ jobs:
       os_release: jammy
       ssh_username: ubuntu
       neutron_plugin: ovn
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovs:
     name: aio (Rocky 9 OVS)
@@ -216,10 +216,10 @@ jobs:
       os_release: "9"
       ssh_username: cloud-user
       neutron_plugin: ovs
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-rocky-9-ovn:
     name: aio (Rocky 9 OVN)
@@ -233,7 +233,7 @@ jobs:
       os_release: "9"
       ssh_username: cloud-user
       neutron_plugin: ovn
-      OS_CLOUD: sms-lab-release
+      OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
     secrets: inherit
-    if: ${{ ! failure() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}

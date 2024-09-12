@@ -45,11 +45,6 @@ The following patches have been **merged** to the downstream StackHPC ``stackhpc
 
 -  https://review.opendev.org/c/openstack/kayobe/+/898563 (to fix ``kayobe overcloud deprovision``)
 -  https://review.opendev.org/c/openstack/kayobe/+/898284 (if deployment predates Ussuri)
-
-   - TODO: Put this into the procedure.
-   -  **Must reprocess inspection data to update IPA kernel URL (see
-      release note)**
-
 -  https://review.opendev.org/c/openstack/kayobe/+/898777
 -  https://review.opendev.org/c/openstack/kayobe/+/898915
 -  https://review.opendev.org/c/openstack/kayobe/+/898905
@@ -83,8 +78,17 @@ Make the following changes to your Kayobe configuration:
      hw_machine_type = x86_64=q35
      num_pcie_ports = 16
 
-  This change does not need to be applied before migrating to Rocky Linux 9, but it should cause no harm to do so.
-  Note that this will not affect existing VMs, only newly created VMs.
+  This change does not need to be applied before migrating to Rocky Linux 9,
+  but it is likely the best time to do so.
+
+  .. warning::
+
+     This change will cause the interface names to change on any new VMs
+     launched with images that do not specify a hw_machine_type already.
+     Existing VMs will not be affected, but a rebuild will have the names
+     changed. Customers should be informed of this in case they have any
+     tooling that relies on interface names within their VMs.
+
 
 Routing rules
 -------------
@@ -109,6 +113,45 @@ The error from NetworkManager was:
   .. code-block:: shell
 
       [1697192659.9611] keyfile: ipv4.routing-rules: invalid value for "routing-rule1": invalid value for "table"
+
+Updating the IPA kernel URL
+---------------------------
+
+If the enrolment of the overcloud nodes in Bifrost predates Ussuri, the
+``deploy_kernel`` configuration probably still points to the old
+``ipa.vmlinuz`` file, resulting in the following error in Bifrost:
+
+.. code-block:: shell
+
+   Failed to prepare to deploy: Validation of image href http://10.161.0.3:8080/ipa.vmlinuz failed, reason: Got HTTP code 404 instead of 200 in response to HEAD request.
+
+Switch the deployment kernel to ``ipa.kernel``:
+
+.. code-block:: shell
+
+   (bifrost-deploy) OS_CLOUD=bifrost baremetal node set <node> --driver-info deploy_kernel=http://<seed-ip>:8080/ipa.kernel
+
+Alternatively, the node inspection data can be reprocessed, but this may erase
+any manual configuration changes applied since the last inspection:
+
+.. code-block:: shell
+
+   (bifrost-deploy) OS_CLOUD=bifrost baremetal introspection reprocess <node>
+
+Switching to iPXE
+-----------------
+
+The ``pxe`` boot_interface is currently broken. When provisioning, you will see an error similar to:
+
+  .. code-block:: shell
+
+      Failed to prepare to deploy: Could not link image http://192.168.1.1:8080/ipa.vmlinuz from /httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted to /tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel, error: [Errno 18] Invalid cross-device link: '/httpboot/master_images/99d5b4b4-0420-578a-a327-acd88c1f1ff6.converted' -> '/tftpboot/d6673eaa-17a4-4cd4-a4e7-8e8cbd4fca31/deploy_kernel'
+
+After deprovisioning a node, switch the boot interface to iPXE:
+
+  .. code-block:: shell
+
+       openstack baremetal node set <node> --boot-interface ipxe
 
 Prerequisites
 =============
@@ -137,7 +180,7 @@ Elasticsearch/Kibana should be migrated to OpenSearch.
 - Read the `Kolla Ansible OpenSearch migration
   docs <https://docs.openstack.org/kolla-ansible/yoga/reference/logging-and-monitoring/central-logging-guide-opensearch.html#migration>`__
 - If necessary, take a backup of the Elasticsearch data.
-- Ensure ``kolla_enable_elasticsearch`` is unset in ``etc/kayobe/kolla.yml``
+- Ensure ``kolla_enable_elasticsearch`` is set to false in ``etc/kayobe/kolla.yml``
 - If you have a custom Kolla Ansible inventory, ensure that it contains the ``opensearch`` and ``opensearch-dashboards`` groups. Otherwise, sync with the inventory in Kayobe.
 - Set ``kolla_enable_opensearch: true`` in ``etc/kayobe/kolla.yml``
 - ``kayobe overcloud service configuration generate --node-config-dir '/tmp/ignore' --kolla-tags none``
@@ -241,6 +284,14 @@ Potential issues
 
 -  If you are using hyper-converged Ceph, please also note the potential issues
    in the Storage section below.
+
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one host
 ---------------------------
@@ -367,7 +418,13 @@ The possible batches depend on a number of things:
 Potential issues
 ----------------
 
-Nothing yet!
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for one batch of hosts
 -------------------------------------
@@ -405,13 +462,33 @@ Full procedure for one batch of hosts
 
       kayobe overcloud provision -l <hostname>
 
-5. Host configure:
+5. If the compute node is using Libvirt on the Host, and one wants to transition to containerized Libvirt.
+
+   1. Update kolla.yml
+
+      .. code-block:: yaml
+
+         kolla_enable_nova_libvirt_container: "{{ inventory_hostname != 'localhost' and ansible_facts.distribution_major_version == '9' }}"
+
+   2. Update kolla/globals.yml
+
+      .. code-block:: yaml
+
+         enable_nova_libvirt_container: "{% raw %}{{ ansible_facts.distribution_major_version == '9' }}{% endraw %}"
+
+   .. note::
+
+      Those settings are needed only for the timeframe of migration to Rocky Linux 9,
+      when CentOS Stream 8 or Rocky Linux 8 hosts with Libvirt on the hosts exists
+      in the environment.
+
+6. Host configure:
 
    .. code:: console
 
       kayobe overcloud host configure -l <hostname> -kl <hostname>
 
-6. If the compute node is running Ceph OSD services:
+7. If the compute node is running Ceph OSD services:
 
    1. Make sure the cephadm public key is in ``authorized_keys`` for stack or
       root user - depends on your setup. For example, your SSH key may
@@ -436,13 +513,13 @@ Full procedure for one batch of hosts
          ceph -s
          ceph -w
 
-7. Service deploy:
+8. Service deploy:
 
    .. code:: console
 
       kayobe overcloud service deploy -kl <hostname>
 
-8. If you are using Wazuh, you will need to deploy the agent again.
+9. If you are using Wazuh, you will need to deploy the agent again.
     Note that CIS benchmarks do not run on RL9 out-the-box. See
     `our Wazuh docs <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-yoga/configuration/wazuh.html#custom-sca-policies-optional>`__
     for details.
@@ -451,7 +528,7 @@ Full procedure for one batch of hosts
 
        kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml -l <hostname>
 
-9. Restore the system to full health.
+10. Restore the system to full health.
 
    1. If any VMs were powered off, they may now be powered back on.
 
@@ -517,6 +594,14 @@ Potential issues
 
 -  Commands starting with ``ceph`` are all run on the cephadm bootstrap
    host in a cephadm shell unless stated otherwise.
+
+-  Network interface names may change between CentOS Stream 8 and Rocky Linux
+   9, in which case you will need to update Kayobe configuration. Note that the
+   configuration should remain correct for hosts not yet migrated, otherwise
+   fact gathering may fail. For example, this can be done using ``group_vars``
+   with a temporary group for the updated hosts or ``host_vars``.  Once all
+   hosts are migrated, the change can be moved to the original group's
+   ``group_vars`` and the temporary changes reverted.
 
 Full procedure for any storage host
 -----------------------------------
@@ -660,15 +745,16 @@ Full procedure
 
     .. code:: console
 
-       sudo mkdir /var/lib/libvirt/images/backup
-       sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images/backup
+       sudo mkdir /var/lib/libvirt/images-backup
+       sudo cp -r /var/lib/libvirt/images /var/lib/libvirt/images-backup
 
-9.  Delete the seed root volume (check the structure & naming
-    conventions first)
+9.  Delete the seed root volume and the configdrive (check the structure &
+    naming conventions first)
 
     .. code:: console
 
        sudo virsh vol-delete seed-root --pool default
+       sudo virsh vol-delete seed-configdrive --pool default
 
 10.  Reprovision the seed
 

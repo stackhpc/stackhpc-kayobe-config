@@ -29,20 +29,23 @@ kolla_enable_ovn: true
 kolla_enable_prometheus: true
 kolla_enable_redis: true
 kolla_enable_skydive: true
-
-###############################################################################
-# Network configuration.
-
-# Don't touch resolv.conf: use Neutron DNS for accessing Pulp server via
-# hostname.
-resolv_is_managed: false
+kolla_build_neutron_ovs: true
 
 ###############################################################################
 # StackHPC configuration.
 
 # Host and port of a package repository mirror.
 # Build against the development Pulp service repositories.
-stackhpc_repo_mirror_url: "http://pulp-server.internal.sms-cloud:8080"
+# Use Ark's package repositories to install packages.
+stackhpc_repo_mirror_url: "{{ stackhpc_repo_mirror_auth_proxy_url if stackhpc_repo_mirror_auth_proxy_enabled | bool else stackhpc_release_pulp_url }}"
+stackhpc_repo_mirror_username: "skc-ci-aio"
+stackhpc_repo_mirror_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  31386366383365666135336331663635396237623139306362633933636233613765663731666338
+  3633633736333936383439623066653663333964343234350a393137383537316164323837386437
+  36613139323161643766666565643739373037623363636234343965343436653261326238393566
+  3837336661653962340a316631366463623138623530373133336665376433633437306631383666
+  30333461333535363433363336663664316634343432633766346564323833346663
 
 # Build against released Pulp repository versions.
 stackhpc_repo_centos_stream_baseos_version: "{{ stackhpc_pulp_repo_centos_stream_8_baseos_version }}"
@@ -70,7 +73,9 @@ stackhpc_repo_ubuntu_focal_version: "{{ stackhpc_pulp_repo_ubuntu_focal_version 
 stackhpc_repo_ubuntu_focal_security_version: "{{ stackhpc_pulp_repo_ubuntu_focal_security_version }}"
 stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
 stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
-stackhpc_repo_docker_ce_ubuntu_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_version }}"
+stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: ""
+stackhpc_repo_docker_ce_ubuntu_focal_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_focal_version }}"
+stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
 stackhpc_repo_centos_stream_9_openstack_yoga_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_yoga_version }}"
 stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
@@ -80,6 +85,8 @@ stackhpc_repo_rhel_9_treasuredata_4_version: "{{ stackhpc_pulp_repo_rhel_9_treas
 stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
 stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
 stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_version }}"
+stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+stackhpc_repo_opensearch_dashboards_2_x_version: "{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
 ## Use derived vars from etc/kayobe/pulp.yml to switch between
 ## minor Rocky versions using stackhpc_pulp_repo_rocky_x_minor_version
 stackhpc_repo_rocky_baseos_version: "{{ stackhpc_pulp_repo_rocky_8_baseos_version }}"
@@ -90,6 +97,7 @@ stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstrea
 stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
 stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
 stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
 
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true

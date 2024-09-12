@@ -11,3 +11,6 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    octavia
    hotfix-playbook
    rocky-linux-9
+   ubuntu-jammy
+   secret-rotation
+   tempest

@@ -2,6 +2,23 @@
 # Host and port of a package repository mirror.
 stackhpc_repo_mirror_url: "{{ pulp_url }}"
 
+# Username of a package repository mirror.
+stackhpc_repo_mirror_username:
+
+# Password of a package repository mirror.
+stackhpc_repo_mirror_password:
+
+# Whether to use an authenticating reverse proxy to access the package
+# repository mirror.  This may be used when building container images, to avoid
+# injecting package repository mirror credentials into the built images.  See
+# ansible/roles/pulp_auth_proxy/README.md for details.
+stackhpc_repo_mirror_auth_proxy_enabled: false
+
+# URL of an authenticating reverse proxy used to access the package repository
+# mirror. Used during container image builds when
+# stackhpc_repo_mirror_auth_proxy_enabled is true.
+stackhpc_repo_mirror_auth_proxy_url: "http://localhost"
+
 # Distribution name. Either 'development' or 'production'.
 stackhpc_repo_distribution: "development"
 
@@ -30,13 +47,21 @@ stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_repo_distribution }}"
 stackhpc_repo_ubuntu_jammy_security_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu/jammy-security/{{ stackhpc_repo_ubuntu_jammy_security_version }}"
 stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_repo_distribution }}"
 
+# Ubuntu jammy CVE-3034-6287
+stackhpc_repo_ubuntu_jammy_cve_2024_6387_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu-jammy-cve-2024-6387/{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_version }}"
+stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: "{{ stackhpc_repo_distribution }}"
+
 # Ubuntu Cloud Archive
 stackhpc_repo_ubuntu_cloud_archive_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu-cloud-archive/{{ stackhpc_repo_ubuntu_cloud_archive_version }}"
 stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_repo_distribution }}"
 
-# Docker CE for Ubuntu
-stackhpc_repo_docker_ce_ubuntu_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/ubuntu/{{ stackhpc_repo_docker_ce_ubuntu_version }}"
-stackhpc_repo_docker_ce_ubuntu_version: "{{ stackhpc_repo_distribution }}"
+# Docker CE for Ubuntu Focal
+stackhpc_repo_docker_ce_ubuntu_focal_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/ubuntu-focal/{{ stackhpc_repo_docker_ce_ubuntu_focal_version }}"
+stackhpc_repo_docker_ce_ubuntu_focal_version: "{{ stackhpc_repo_distribution }}"
+
+# Docker CE for Ubuntu Jammy
+stackhpc_repo_docker_ce_ubuntu_jammy_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/ubuntu-jammy/{{ stackhpc_repo_docker_ce_ubuntu_jammy_version }}"
+stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_repo_distribution }}"
 
 ###############################################################################
 # RPMs
@@ -165,6 +190,14 @@ stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_repo_distribution }}"
 stackhpc_repo_rhel_9_influxdb_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/influxdb/rhel/9/x86_64/stable/{{ stackhpc_repo_rhel_9_influxdb_version }}"
 stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_repo_distribution }}"
 
+# OpenSearch for RHEL 9
+stackhpc_repo_opensearch_2_x_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/opensearch/2.x/yum/{{ stackhpc_repo_opensearch_2_x_version }}"
+stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_repo_distribution }}"
+
+# OpenSearch Dashboards for RHEL 9
+stackhpc_repo_opensearch_dashboards_2_x_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/opensearch-dashboards/2.x/yum/{{ stackhpc_repo_opensearch_dashboards_2_x_version }}"
+stackhpc_repo_opensearch_dashboards_2_x_version: "{{ stackhpc_repo_distribution }}"
+
 # Rocky 9 AppStream
 stackhpc_repo_rocky_9_appstream_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/AppStream/x86_64/os/{{ stackhpc_repo_rocky_9_appstream_version }}"
 stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_repo_distribution }}"
@@ -184,6 +217,10 @@ stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_repo_distribution }}"
 # Rocky 9 highavailability
 stackhpc_repo_rocky_9_highavailability_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/{{ stackhpc_rocky_9_url_version }}/highavailability/x86_64/os/{{ stackhpc_repo_rocky_9_highavailability_version }}"
 stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_repo_distribution }}"
+
+# Rocky 9 SIG Security Common
+stackhpc_repo_rocky_9_sig_security_common_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_repo_rocky_9_sig_security_common_version }}"
+stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_repo_distribution }}"
 
 # EPEL 9
 stackhpc_repo_epel_9_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/epel/9/Everything/x86_64/{{ stackhpc_repo_epel_9_version }}"
