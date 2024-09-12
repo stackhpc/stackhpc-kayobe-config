@@ -39,11 +39,20 @@ KollaImageTags = Dict[str, Dict[str, str]]
 
 # Maps a Kolla image to a list of containers that use the image.
 IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
+    "dnsmasq": [
+        "ironic_dnsmasq",
+    ],
     "haproxy": [
         "glance_tls_proxy",
+        "haproxy",
         "neutron_tls_proxy",
     ],
-    "neutron-eswitchd": [
+    "mariadb-server": [
+        "mariadb",
+        "mariabackup",
+    ],
+    "neutron-mlnx-agent": [
+        "neutron_eswitchd",
         "neutron_mlnx_agent",
     ],
     "neutron-metadata-agent": [
@@ -53,6 +62,15 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
     "nova-conductor": [
         "nova_super_conductor",
         "nova_conductor",
+    ],
+    "openvswitch-db-server": [
+        "openvswitch_db",
+    ],
+    "ovn-nb-db-server": [
+        "ovn_nb_db",
+    ],
+    "ovn-sb-db-server": [
+        "ovn_sb_db",
     ],
     "prometheus-v2-server": [
         "prometheus_server",
@@ -91,6 +109,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-distros", default=",".join(SUPPORTED_BASE_DISTROS), choices=SUPPORTED_BASE_DISTROS)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    subparser = subparsers.add_parser("check-image-map", help="Check image mapping against kolla-ansible")
+    subparser.add_argument("--kolla-ansible-path", required=True, help="Path to kolla-ansible repostory checked out to correct branch")
+
     subparser = subparsers.add_parser("check-hierarchy", help="Check tag variable hierarchy against kolla-ansible")
     subparser.add_argument("--kolla-ansible-path", required=True, help="Path to kolla-ansible repostory checked out to correct branch")
 
@@ -109,7 +130,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_abs_path(relative_path: str) -> str:
+def get_abs_path(relative_path: str) -> pathlib.Path:
     """Return the absolute path of a file in SKC."""
     script_path = pathlib.Path(inspect.getfile(inspect.currentframe()))
     return script_path.parent.parent / relative_path
@@ -272,6 +293,45 @@ def check_tags(base_distros: List[str], kolla_image_tags: KollaImageTags, regist
         sys.exit(1)
 
 
+def check_image_map(kolla_ansible_path: str):
+    """Check the image mapping against Kolla Ansible variables.
+
+    The *_image variables in Kolla Ansible define the mapping between
+    containers and images. Ensure that the mapping defined in this script
+    matches the one in Kolla Ansible.
+    """
+    supported_images = read_images("etc/kayobe/pulp.yml")
+    assert supported_images
+    # Build a map from container to image name.
+    cmd = """git grep -h '^[a-z0-9_]*_image:' ansible/roles/*/defaults/main.yml"""
+    image_map_str = subprocess.check_output(cmd, shell=True, cwd=os.path.realpath(kolla_ansible_path))
+    image_map = yaml.safe_load(image_map_str)
+    image_var_re = re.compile(r"^([a-z0-9_]+)_image$")
+    image_map = {
+        image_var_re.match(image_var).group(1): image.split("/")[-1]
+        for image_var, image in image_map.items()
+    }
+    # Filter out unsupported images.
+    image_map = {
+        container: image
+        for container, image in image_map.items()
+        if image in supported_images
+    }
+    assert image_map
+    errors = []
+    # Check that our mapping is correct.
+    for container, image in image_map.items():
+        containers = get_containers(image)
+        if container not in containers:
+            errors.append((container, image))
+    if errors:
+        print("Errors:")
+    for tag_var, image in errors:
+        print(f"Expected {tag_var} container to use {image} image")
+    if errors:
+        sys.exit(1)
+
+
 def check_hierarchy(kolla_ansible_path: str):
     """Check the tag variable hierarchy against Kolla Ansible variables."""
     cmd = """git grep -h '^[a-z0-9_]*_tag:' ansible/roles/*/defaults/main.yml"""
@@ -347,7 +407,9 @@ def main():
 
     validate(kolla_image_tags)
 
-    if args.command == "check-hierarchy":
+    if args.command == "check-image-map":
+        check_image_map(args.kolla_ansible_path)
+    elif args.command == "check-hierarchy":
         check_hierarchy(args.kolla_ansible_path)
     elif args.command == "check-tags":
         check_tags(base_distros, kolla_image_tags, args.registry, args.namespace)
