@@ -98,15 +98,15 @@ jobs:
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
-          ssh_username = "rocky"
+          ssh_username = "ubuntu"
           aio_vm_name = "skc-host-image-builder"
-          # Must be a Rocky Linux 9 host to successfully build all images
+          # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+          aio_vm_image = "Ubuntu-22.04"
           aio_vm_flavor = "en1.medium"
           aio_vm_network = "stackhpc-ci"
           aio_vm_subnet = "stackhpc-ci"
-          aio_vm_interface = "eth0"
+          aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
@@ -184,14 +184,14 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure -e seed_bootstrap_user=rocky --skip-tags network
+          kayobe seed host configure -e seed_bootstrap_user=ubuntu --skip-tags network
 
       - name: Install dependencies
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run \
-          --command "sudo dnf config-manager --set-enabled crb && sudo dnf -y install epel-release && sudo dnf -y install cloud-init debootstrap git kpartx zstd" --show-output
+          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -311,8 +311,8 @@ jobs:
         continue-on-error: true
         run: |
           mkdir logs
-          scp -r rocky@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
-          scp -r rocky@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/tmp/updated_images.txt ./logs/ || true
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/tmp/updated_images.txt ./logs/ || true
         if: always()
 
       - name: Fail if any overcloud host image builds failed

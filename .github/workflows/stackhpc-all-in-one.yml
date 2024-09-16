@@ -396,13 +396,15 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
+      # NOTE(Alex-Welsh): configure host with selinux_state=disabled, because
+      # Antelope images are not built as permissive
       - name: Host configure
         run: |
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -e selinux_state=disabled
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
