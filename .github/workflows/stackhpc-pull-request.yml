@@ -20,6 +20,7 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     outputs:
       aio: ${{ steps.changes.outputs.aio }}
+      build-kayobe-image: ${{ steps.changes.outputs.build-kayobe-image }}
       check-tags: ${{ steps.changes.outputs.check-tags }}
     steps:
       - name: GitHub Checkout
@@ -74,7 +75,7 @@ jobs:
       - check-changes
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
     with:
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+      if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   check-tags:
