@@ -11,9 +11,9 @@ please refer to :ref:`cephadm-kayobe` documentation.
 Cephadm configuration location
 ------------------------------
 
-In kayobe-config repository, under ``etc/kayobe/cephadm.yml`` (or in a specific
+In kayobe-config repository, under ``$KAYOBE_CONFIG_PATH/cephadm.yml`` (or in a specific
 Kayobe environment when using multiple environment, e.g.
-``etc/kayobe/environments/<Environment Name>/cephadm.yml``)
+``$KAYOBE_CONFIG_PATH/environments/<environment name>/cephadm.yml``)
 
 StackHPC's Cephadm Ansible collection relies on multiple inventory groups:
 
@@ -22,12 +22,12 @@ StackHPC's Cephadm Ansible collection relies on multiple inventory groups:
 - ``osds``
 - ``rgws`` (optional)
 
-Those groups are usually defined in ``etc/kayobe/inventory/groups``.
+Those groups are usually defined in ``$KAYOBE_CONFIG_PATH/inventory/groups``.
 
 Running Cephadm playbooks
 -------------------------
 
-In kayobe-config repository, under ``etc/kayobe/ansible`` there is a set of
+In kayobe-config repository, under ``$KAYOBE_CONFIG_PATH/ansible`` there is a set of
 Cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
 
 ``cephadm.yml`` runs the end to end process of Cephadm deployment and
@@ -38,14 +38,14 @@ and they can be run separately.
   additional playbooks
 - ``cephadm-commands-pre.yml`` - Runs Ceph commands before post-deployment
   configuration (You can set a list of commands at ``cephadm_commands_pre_extra``
-  in ``cephadm.yml``)
+  variable in ``$KAYOBE_CONFIG_PATH/cephadm.yml``)
 - ``cephadm-ec-profiles.yml`` - Defines Ceph EC profiles
 - ``cephadm-crush-rules.yml`` - Defines Ceph crush rules according
 - ``cephadm-pools.yml`` - Defines Ceph pools
 - ``cephadm-keys.yml`` - Defines Ceph users/keys
 - ``cephadm-commands-post.yml`` - Runs Ceph commands after post-deployment
   configuration (You can set a list of commands at ``cephadm_commands_post_extra``
-  in ``cephadm.yml``)
+  variable in ``$KAYOBE_CONFIG_PATH/cephadm.yml``)
 
 There are also other Ceph playbooks that are not part of ``cephadm.yml``
 
@@ -102,7 +102,7 @@ Once all daemons are removed - you can remove the host:
    ceph orch host rm <host>
 
 And then remove the host from inventory (usually in
-``etc/kayobe/inventory/overcloud``)
+``$KAYOBE_CONFIG_PATH/inventory/overcloud``)
 
 Additional options/commands may be found in
 `Host management <https://docs.ceph.com/en/latest/cephadm/host-management/>`_
@@ -194,7 +194,7 @@ After removing OSDs, if the drives the OSDs were deployed on once again become
 available, Cephadm may automatically try to deploy more OSDs on these drives if
 they match an existing drivegroup spec.
 If this is not your desired action plan - it's best to modify the drivegroup
-spec before (``cephadm_osd_spec`` variable in ``etc/kayobe/cephadm.yml``).
+spec before (``cephadm_osd_spec`` variable in ``$KAYOBE_CONFIG_PATH/cephadm.yml``).
 Either set ``unmanaged: true`` to stop Cephadm from picking up new disks or
 modify it in some way that it no longer matches the drives you want to remove.
 

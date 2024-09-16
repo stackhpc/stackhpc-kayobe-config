@@ -991,7 +991,7 @@ Configure nova-scheduler
 
 The nova-scheduler service must be configured to enable the ``PciPassthroughFilter``
 To enable it add it to the list of filters to Kolla-Ansible configuration file:
-``etc/kayobe/kolla/config/nova.conf``, for instance:
+``$KAYOBE_CONFIG_PATH/kolla/config/nova.conf``, for instance:
 
 .. code-block:: yaml
 
@@ -1006,7 +1006,7 @@ Configuration can be applied in flexible ways using Kolla-Ansible's
 methods for `inventory-driven customisation of configuration
 <https://docs.openstack.org/kayobe/latest/configuration/reference/kolla-ansible.html#service-configuration>`_.
 The following configuration could be added to
-``etc/kayobe/kolla/config/nova/nova-compute.conf`` to enable PCI
+``$KAYOBE_CONFIG_PATH/kolla/config/nova/nova-compute.conf`` to enable PCI
 passthrough of GPU devices for hosts in a group named ``compute_gpu``.
 Again, the 4-digit PCI Vendor ID and Device ID extracted from ``lspci
 -nn`` can be used here to specify the GPU device(s).
@@ -1037,7 +1037,7 @@ Configure nova-api
 pci.alias also needs to be configured on the controller.
 This configuration should match the configuration found on the compute nodes.
 Add it to Kolla-Ansible configuration file:
-``etc/kayobe/kolla/config/nova/nova-api.conf``, for instance:
+``$KAYOBE_CONFIG_PATH/kolla/config/nova/nova-api.conf``, for instance:
 
 .. code-block:: yaml
 
