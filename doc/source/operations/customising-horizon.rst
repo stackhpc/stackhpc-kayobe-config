@@ -51,7 +51,7 @@ Adding the custom theme
 
 Create a directory and transfer custom theme files to it ``$KAYOBE_CONFIG_PATH/kolla/config/horizon/themes/<custom theme name>``.
 
-Define the custom theme in ``etc/kayobe/kolla/globals.yml``
+Define the custom theme in ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
 
 .. code-block:: yaml
 

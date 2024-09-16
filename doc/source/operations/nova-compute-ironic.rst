@@ -68,7 +68,7 @@ Moving from multiple Nova Compute Instances to a single instance
 1. Decide where the single instance should run. This should normally be
    one of the three OpenStack control plane hosts. For convention, pick
    the first one, unless you can think of a good reason not to. Once you
-   have chosen, set the following variable in ``etc/kayobe/nova.yml``.
+   have chosen, set the following variable in ``$KAYOBE_CONFIG_PATH/nova.yml``.
    Here we have picked ``controller1``.
 
   .. code-block:: yaml
@@ -196,7 +196,7 @@ constant, such that the new Nova Compute Ironic instance comes up with the
 same name as the one it replaces.
 
 For example, if the original instance resides on ``controller1``, then set the
-following in ``etc/kayobe/nova.yml``:
+following in ``$KAYOBE_CONFIG_PATH/nova.yml``:
 
 .. code-block:: yaml
 
@@ -270,8 +270,8 @@ Current host is not accessible
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this case you will need to remove the inaccessible host from the inventory.
-For example, in ``etc/kayobe/inventory/hosts``, remove ``controller1`` from
-the ``controllers`` group.
+For example, in ``$KAYOBE_CONFIG_PATH/inventory/hosts``, remove ``controller1``
+from the ``controllers`` group.
 
 Adjust the ``kolla_nova_compute_ironic_host`` variable to point to the
 new host, eg.
