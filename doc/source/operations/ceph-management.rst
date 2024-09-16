@@ -30,16 +30,31 @@ Running Cephadm playbooks
 In kayobe-config repository, under ``etc/kayobe/ansible`` there is a set of
 Cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
 
-- ``cephadm.yml`` - runs the end to end process starting with deployment and
-  defining EC profiles/crush rules/pools and users
-- ``cephadm-crush-rules.yml`` - defines Ceph crush rules according
-- ``cephadm-deploy.yml`` - runs the bootstrap/deploy playbook without the
+``cephadm.yml`` runs the end to end process of Cephadm deployment and
+configuration. It is composed with following list of other Cephadm playbooks
+and they can be run separately.
+
+- ``cephadm-deploy.yml`` - Runs the bootstrap/deploy playbook without the
   additional playbooks
-- ``cephadm-ec-profiles.yml`` - defines Ceph EC profiles
-- ``cephadm-gather-keys.yml`` - gather Ceph configuration and keys and populate
-  kayobe-config
-- ``cephadm-keys.yml`` - defines Ceph users/keys
-- ``cephadm-pools.yml`` - defines Ceph pools\
+- ``cephadm-commands-pre.yml`` - Runs Ceph commands before post-deployment
+  configuration (You can set a list of commands at ``cephadm_commands_pre_extra``
+  in ``cephadm.yml``)
+- ``cephadm-ec-profiles.yml`` - Defines Ceph EC profiles
+- ``cephadm-crush-rules.yml`` - Defines Ceph crush rules according
+- ``cephadm-pools.yml`` - Defines Ceph pools
+- ``cephadm-keys.yml`` - Defines Ceph users/keys
+- ``cephadm-commands-post.yml`` - Runs Ceph commands after post-deployment
+  configuration (You can set a list of commands at ``cephadm_commands_post_extra``
+  in ``cephadm.yml``)
+
+There are also other Ceph playbooks that are not part of ``cephadm.yml``
+
+- ``cephadm-gather-keys.yml`` - Populate ``ceph.conf`` in kayobe-config by
+  gathering Ceph configuration and keys
+- ``ceph-enter-maintenance.yml`` - Set Ceph to maintenance mode for storage
+  hosts (Can limit the hosts with ``-l <hostname>``)
+- ``ceph-exit-maintenance.yml`` - Unset Ceph to maintenance mode for storage
+  hosts (Can limit the hosts with ``-l <hostname>``)
 
 Running Ceph commands
 ---------------------
