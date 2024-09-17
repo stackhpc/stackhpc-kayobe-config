@@ -39,8 +39,20 @@
           - createrepo
           - cmake-filesystem
           - libnl3-devel
+          - python3-devel
         state: latest
         update_cache: true
+
+    - name: Set GRUB default index to saved
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        line: "GRUB_DEFAULT=saved"
+
+    - name: Set update default index in kernel sysconfig
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/kernel
+        line: "UPDATEDEFAULT=yes"
+        create: true
 
     - name: Update the default kernel entry
       ansible.builtin.shell:
@@ -51,8 +63,7 @@
     - name: Disable noexec in temporary file system
       ansible.builtin.replace:
         path: /etc/fstab
-        regexp: '^(exclude=.*)noexec,\*\s*'
-        replace: '\1'
+        regexp: 'noexec,'
 
     - name: Reboot builder to apply kernel update
       ansible.builtin.reboot:
