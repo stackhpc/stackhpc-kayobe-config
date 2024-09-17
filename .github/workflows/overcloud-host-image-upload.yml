@@ -43,6 +43,7 @@ jobs:
   overcloud-host-image-upload:
     name: Upload overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: Leafcloud
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
@@ -106,7 +107,7 @@ jobs:
           openstack image show \
           overcloud-centos-8-stream-${{ steps.centos_8_stream_image_tag.outputs.image_tag }}
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         continue-on-error: true
@@ -134,7 +135,7 @@ jobs:
           --private \
           --progress
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.centos && steps.centos_8_stream_image_exists.outcome == 'failure'
@@ -151,7 +152,7 @@ jobs:
           openstack image show \
           overcloud-rocky-8-${{ steps.rocky_8_image_tag.outputs.image_tag }}
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         continue-on-error: true
@@ -179,7 +180,7 @@ jobs:
           --private \
           --progress
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.rocky8 && steps.rocky_8_image_exists.outcome == 'failure'
@@ -196,7 +197,7 @@ jobs:
           openstack image show \
           overcloud-rocky-9-${{ steps.rocky_9_image_tag.outputs.image_tag }}
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         continue-on-error: true
@@ -224,7 +225,7 @@ jobs:
           --private \
           --progress
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
@@ -241,7 +242,7 @@ jobs:
           openstack image show \
           overcloud-ubuntu-focal-${{ steps.ubuntu_focal_image_tag.outputs.image_tag }}
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         continue-on-error: true
@@ -269,7 +270,7 @@ jobs:
           --private \
           --progress
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.ubuntu-focal && steps.ubuntu_focal_image_exists.outcome == 'failure'
@@ -286,7 +287,7 @@ jobs:
           openstack image show \
           overcloud-ubuntu-jammy-${{ steps.ubuntu_jammy_image_tag.outputs.image_tag }}
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         continue-on-error: true
@@ -314,7 +315,7 @@ jobs:
           --private \
           --progress
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'

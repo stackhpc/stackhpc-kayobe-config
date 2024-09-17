@@ -41,6 +41,7 @@ jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: Leafcloud
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
@@ -121,10 +122,10 @@ jobs:
           aio_vm_name = "skc-host-image-builder"
           # Must be a Rocky Linux 9 host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
-          aio_vm_flavor = "en1.medium"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "eth0"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -133,7 +134,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -153,7 +154,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -511,7 +512,7 @@ jobs:
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()

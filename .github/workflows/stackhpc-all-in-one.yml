@@ -35,22 +35,6 @@ on:
         description: Default network interface name
         type: string
         default: ens3
-      vm_flavor:
-        description: Flavor for the all-in-one VM
-        type: string
-        default: en1.medium
-      vm_network:
-        description: Network for the all-in-one VM
-        type: string
-        default: stackhpc-ci
-      vm_subnet:
-        description: Subnet for the all-in-one VM
-        type: string
-        default: stackhpc-ci
-      OS_CLOUD:
-        description: Name of cloud in clouds.yaml
-        type: string
-        required: true
       if:
         description: Whether to run the workflow (workaround for required status checks issue)
         type: boolean
@@ -70,6 +54,7 @@ jobs:
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
+    environment: Leafcloud
     runs-on: arc-skc-aio-runner
     permissions: {}
     env:
@@ -152,9 +137,9 @@ jobs:
           SSH_USERNAME: "${{ inputs.ssh_username }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
-          VM_FLAVOR: ${{ inputs.vm_flavor }}
-          VM_NETWORK: ${{ inputs.vm_network }}
-          VM_SUBNET: ${{ inputs.vm_subnet }}
+          VM_FLAVOR: ${{ vars.AIO_FLAVOR }}
+          VM_NETWORK: ${{ vars.AIO_NETWORK }}
+          VM_SUBNET: ${{ vars.AIO_SUBNET }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
           VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
@@ -162,7 +147,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -183,7 +168,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -345,7 +330,7 @@ jobs:
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()
