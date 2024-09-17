@@ -251,6 +251,8 @@ kolla_build_blocks:
         mkdir -p /etc/yum.repos.d.backup && \
         tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
     {% endif %}
+        echo "===== Before sed modifications I =====" && \
+        cat /etc/yum.repos.d/*.repo && \
     {% for repo in stackhpc_yum_repos %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
@@ -258,6 +260,9 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+        && \
+        echo "===== After sed modifications I =====" && \
+        cat /etc/yum.repos.d/*.repo
     {% else %}
     RUN \
         rm /etc/apt/sources.list && \
@@ -274,6 +279,8 @@ kolla_build_blocks:
     {# fixme #}
     {% if kolla_base_distro == 'rocky' %}
         && \
+        echo "===== Before sed modifications II =====" && \
+        cat /etc/yum.repos.d/*.repo && \
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
         tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
         tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
@@ -281,9 +288,13 @@ kolla_build_blocks:
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[ \t]*\(https.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+        && \
+        echo "===== After sed modifications II =====" && \
+        cat /etc/yum.repos.d/*.repo \
     {% endif %}
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
