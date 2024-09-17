@@ -3,13 +3,17 @@
   become: true
   hosts: ofed-builder
   gather_facts: false
-  vars:
-    stackhpc_mlnx_ofed_file_string: MLNX_OFED_LINUX-{{ stackhpc_pulp_mlnx_ofed_version }}-rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}-x86_64
   tasks:
     - name: Extend the home logical volume
       community.general.lvol:
         vg: rootvg
         lv: lv_home
+        size: +5G
+
+    - name: Extend the temporary logical volume
+      community.general.lvol:
+        vg: rootvg
+        lv: lv_var_tmp
         size: +5G
 
     - name: Install package dependencies
@@ -38,12 +42,25 @@
       ansible.builtin.shell:
         cmd: |
           grubby --set-default /boot/$(rpm -qa kernel-devel | sed 's/kernel-devel/vmlinuz/g')
-          echo 'GRUB_DEFAULT=2' >> /etc/default/grub
           grub2-mkconfig -o /boot/grub2/grub.cfg
+
+    - name: Disable noexec in temporary file system
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^(exclude=.*)noexec,\*\s*'
+        replace: '\1'
 
     - name: Reboot builder to apply kernel update
       ansible.builtin.reboot:
         reboot_timeout: 600
+
+    - name: Add DOCA host repository
+      ansible.builtin.dnf:
+        name: https://developer.nvidia.com/downloads/networking/secure/doca-sdk/DOCA_2.8/doca-host-2.8.0-204000_{{ stackhpc_pulp_doca_ofed_version }}_rhel9{{ stackhpc_pulp_repo_rocky_9_minor_version }}.x86_64.rpm
+
+    - name: Install DOCA extra packages
+      ansible.builtin.dnf:
+        name: doca-extra
 
     - name: Create build directory
       ansible.builtin.file:
@@ -51,25 +68,13 @@
         state: directory
         mode: 0777
 
-    - name: Download MellanoxOFED archive
-      ansible.builtin.get_url:
-        url: https://content.mellanox.com/ofed/MLNX_OFED-{{ stackhpc_pulp_mlnx_ofed_version }}/{{ stackhpc_mlnx_ofed_file_string }}.tgz
-        dest: /home/cloud-user/ofed/ofed-archive.tgz
-
-    - name: Extract MellanoxOFED archive
-      ansible.builtin.unarchive:
-        src: /home/cloud-user/ofed/ofed-archive.tgz
-        dest: /home/cloud-user/ofed
+    - name: Set build directory
+      ansible.builtin.lineinfile:
+        path: /opt/mellanox/doca/tools/doca-kernel-support
+        search_string: 'TMP_DIR=$1'
+        line: '    TMP_DIR=/home/cloud-user/ofed'
 
     - name: Ensure the current kernel is supported
       ansible.builtin.shell:
         cmd: |
-          /home/cloud-user/ofed/{{ stackhpc_mlnx_ofed_file_string }}/mlnx_add_kernel_support.sh \
-          --mlnx_ofed /home/cloud-user/ofed/{{ stackhpc_mlnx_ofed_file_string }} \
-          --tmpdir /home/cloud-user/ofed/ofed-build \
-          --make-tgz -y \
-
-    - name: Extract the new archive
-      ansible.builtin.unarchive:
-        src: /home/cloud-user/ofed/ofed-build/{{ stackhpc_mlnx_ofed_file_string }}-ext.tgz
-        dest: /home/cloud-user/ofed/
+          /opt/mellanox/doca/tools/doca-kernel-support
