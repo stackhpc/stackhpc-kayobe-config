@@ -37,6 +37,8 @@
           - gcc-gfortran
           - tcl
           - createrepo
+          - cmake-filesystem
+          - libnl3-devel
         state: latest
         update_cache: true
 
@@ -76,7 +78,13 @@
         search_string: 'TMP_DIR=$1'
         line: '    TMP_DIR=/home/cloud-user/ofed'
 
-    - name: Ensure the current kernel is supported
+    - name: Build OFED kernel modules
       ansible.builtin.shell:
         cmd: |
           /opt/mellanox/doca/tools/doca-kernel-support
+
+    - name: Download OFED userspace packages
+      ansible.builtin.dnf:
+        name: doca-ofed-userspace
+        download_only: true
+        download_dir: /home/cloud-user/ofed
