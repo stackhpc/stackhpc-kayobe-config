@@ -12,6 +12,20 @@ alertmanager_low_memory_threshold_gib: 5
 # link. Change to false to disable this alert.
 alertmanager_warn_network_bond_single_link: true
 
+# Threshold to trigger an LowSwapSpace alert on swap space depletion (ratio).
+# When the ratio of free swap space is lower than each of these values, warning
+# and critical alerts will be triggered respectively.
+alertmanager_node_free_swap_warning_threshold_ratio: 0.25
+alertmanager_node_free_swap_critical_threshold_ratio: 0.1
+
+# Threshold to trigger an alert for dropped packets, measured in packets/s
+# averaged over 5 minutes.
+alertmanager_packet_drop_threshold: 1
+
+# Threshold to trigger an alert for packet receive/transmit errors, measured in
+# packets/s averaged over 5 minutes.
+alertmanager_packet_errors_threshold: 1
+
 ###############################################################################
 # Exporter configuration
 
@@ -20,6 +34,22 @@ alertmanager_warn_network_bond_single_link: true
 # targets being templated during deployment.
 stackhpc_enable_os_capacity: true
 
+# Path to a CA certificate file to trust in the OpenStack Capacity exporter.
+stackhpc_os_capacity_openstack_cacert: ""
+
 # Whether TLS certificate verification is enabled for the OpenStack Capacity
 # exporter during Keystone authentication.
 stackhpc_os_capacity_openstack_verify: true
+# Redfish exporter
+
+# Whether the redfish exporter is enabled.
+stackhpc_enable_redfish_exporter: false
+
+# Credentials
+redfish_exporter_default_username: "{{ ipmi_user }}"
+redfish_exporter_default_password: "{{ ipmi_password }}"
+
+# The address of the BMC that is used to query redfish metrics.
+redfish_exporter_target_address: "{{ ipmi_address }}"
+
+###############################################################################

@@ -22,6 +22,12 @@ kolla_image_tags:
 # Variables defining which tag to use for each container's image.
 {{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}
 
+# NOTE(priteau): Nova container images can use Rocky Linux 9.3 to avoid
+# Libvirt/QEMU version bump.
+{% if stackhpc_pulp_repo_rocky_9_minor_version < 4 %}
+nova_tag: 2023.1-rocky-9-20240725T200915
+{% endif %}
+
 #############################################################################
 # RabbitMQ
 
@@ -53,3 +59,11 @@ prometheus_instance_label: "{% raw %}{{ ansible_facts.hostname }}{% endraw %}"
 # in Yoga. This is required to include a valid value for the flavor_id label on
 # openstack_nova_server_status metrics.
 prometheus_openstack_exporter_compute_api_version: "2.1"
+
+# The Pulp URL must be templated by Kayobe rather than Kolla Ansible.
+# The rest of the Prometheus Blackbox exporter configuration can be found in
+# the Kolla inventory.
+prometheus_blackbox_exporter_endpoints_kayobe:
+  - endpoints:
+      - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
+    enabled: "{{ seed_pulp_container_enabled | bool }}"

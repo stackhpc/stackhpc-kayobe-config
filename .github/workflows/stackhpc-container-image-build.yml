@@ -34,11 +34,10 @@ on:
         required: false
         default: true
       push-dirty:
-        description: Push scanned images that have vulnerabilities?
+        description: Push scanned images that have critical vulnerabilities?
         type: boolean
         required: false
-        # NOTE(Alex-Welsh): This default should be flipped once we resolve existing failures
-        default: true
+        default: false
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -136,6 +135,10 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
 
+      - name: Install yq
+        run: |
+          curl -sL https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz | tar xz && sudo mv yq_linux_amd64 /usr/bin/yq
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -176,7 +179,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Create build logs output directory
-        run: mkdir image-build-logs 
+        run: mkdir image-build-logs
 
       - name: Build kolla overcloud images
         id: build_overcloud_images
@@ -228,16 +231,23 @@ jobs:
         run: mv image-scan-output image-build-logs/image-scan-output
 
       - name: Fail if no images have passed scanning
-        run: if [ $(wc -l < image-build-logs/image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
         if: ${{ !inputs.push-dirty }}
 
       - name: Copy clean images to push-attempt-images list
         run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
         if: inputs.push
 
+      # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
+      # This should be reverted when it's decided to filter high level CVEs as well.
       - name: Append dirty images to push list
         run: |
           cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push }}
+
+      - name: Append images with critical vulnerabilities to push list
+        run: |
+          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
         if: ${{ inputs.push && inputs.push-dirty }}
 
       - name: Push images
@@ -249,7 +259,7 @@ jobs:
 
           while read -r image; do
             # Retries!
-            for i in {1..5}; do 
+            for i in {1..5}; do
               if docker push $image; then
                 echo "Pushed $image"
                 break
@@ -283,8 +293,15 @@ jobs:
         run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
         if: ${{ !cancelled() }}
 
-      - name: Fail when images failed scanning
-        run: if [ $(wc -l < image-build-logs/dirty-images.txt) -gt 0 ]; then cat image-build-logs/dirty-images.txt && exit 1; fi
+      # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
+      # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
+      # decided to fail the job on detecting high CVEs as well.
+      # - name: Fail when images failed scanning
+      #   run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
+      #   if: ${{ !inputs.push-dirty && !cancelled() }}
+
+      - name: Fail when critical vulnerabilities are found
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
         if: ${{ !inputs.push-dirty && !cancelled() }}
 
       # NOTE(mgoddard): Trigger another CI workflow in the

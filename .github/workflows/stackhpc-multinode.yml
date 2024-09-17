@@ -1,0 +1,71 @@
+---
+# This workflow provides a workflow_dispatch (manual) trigger to deploy a
+# multi-node test cluster.
+
+name: Multinode
+'on':
+  workflow_dispatch:
+    # NOTE: workflow_dispatch is limited to 10 inputs.
+    inputs:
+      multinode_name:
+        description: Multinode cluster name
+        type: string
+        required: true
+      os_distribution:
+        description: Host OS distribution
+        type: choice
+        default: rocky
+        options:
+          - rocky
+          - ubuntu
+      neutron_plugin:
+        description: Neutron ML2 plugin
+        type: choice
+        default: ovn
+        options:
+          - ovn
+          - ovs
+      upgrade:
+        description: Whether to perform an upgrade
+        type: boolean
+        default: false
+      break_on:
+        description: When to break execution for manual interaction
+        type: choice
+        default: never
+        options:
+          - always
+          - failure
+          - never
+          - success
+      break_duration:
+        description: How long to break execution for (minutes)
+        type: number
+        default: 60
+      ssh_key:
+        description: SSH public key to authorise on Ansible control host
+        type: string
+      terraform_kayobe_multinode_version:
+        description: terraform-kayobe-multinode version
+        type: string
+        default: main
+jobs:
+  multinode:
+    name: Multinode
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.1.0
+    with:
+      multinode_name: ${{ inputs.multinode_name }}
+      os_distribution: ${{ inputs.os_distribution }}
+      os_release: ${{ inputs.os_distribution == 'rocky' && '9' || 'jammy' }}
+      ssh_username: ${{ inputs.os_distribution == 'rocky' && 'cloud-user' || 'ubuntu' }}
+      neutron_plugin: ${{ inputs.neutron_plugin }}
+      upgrade: ${{ inputs.upgrade }}
+      break_on: ${{ inputs.break_on }}
+      # Workaround loss of number type using fromJSON: https://github.com/orgs/community/discussions/67182
+      break_duration: ${{ fromJSON(inputs.break_duration) }}
+      ssh_key: ${{ inputs.ssh_key }}
+      stackhpc_kayobe_config_version: ${{ github.ref_name }}
+      # NOTE(upgrade): Reference the PREVIOUS release here.
+      stackhpc_kayobe_config_previous_version: stackhpc/zed
+      terraform_kayobe_multinode_version: ${{ inputs.terraform_kayobe_multinode_version }}
+    secrets: inherit

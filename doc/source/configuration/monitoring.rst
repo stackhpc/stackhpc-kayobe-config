@@ -74,7 +74,7 @@ on the overcloud hosts:
 .. code-block:: console
 
     (kayobe) [stack@node ~]$ cd etc/kayobe
-    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmontools.yml
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmon-tools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
@@ -126,6 +126,8 @@ depending on your configuration, you may need set the
 ``kolla_enable_prometheus_ceph_mgr_exporter`` variable to ``true`` in order to
 enable the ceph mgr exporter.
 
+.. _os-capacity:
+
 OpenStack Capacity
 ==================
 
@@ -149,9 +151,19 @@ project domain name in ``stackhpc-monitoring.yml``:
     stackhpc_os_capacity_openstack_region_name: <openstack_region_name>
 
 Additionally, you should ensure these credentials have the correct permissions
-for the exporter. If you are deploying in a cloud with internal TLS, you may be required
-to disable certificate verification for the OpenStack Capacity exporter
-if your certificate is not signed by a trusted CA.
+for the exporter.
+
+If you are deploying in a cloud with internal TLS, you may be required
+to provide a CA certificate for the OpenStack Capacity exporter if your
+certificate is not signed by a trusted CA. For example, to use a CA certificate
+named ``vault.crt`` that is also added to the Kolla containers:
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
+Alternatively, to disable certificate verification for the OpenStack Capacity
+exporter:
 
 .. code-block:: yaml
 
@@ -235,3 +247,37 @@ customer. The following are key considerations for that conversation:
   e.g. bond0 on a controller has eth0 and eth1 as members. bond1 on a compute
   uses eth0 and eth1 as members. This is not problematic as it is only
   the bond itself that is relabelled.
+
+Redfish exporter
+================
+
+Redfish exporter will query the overcloud BMCs via their redfish interfaces
+to produce various metrics relating to the hardware, and system health.
+
+To configure the exporter, adjust the variables in
+``$KAYOBE_CONFIG_PATH/stackhpc-monitoring.yml`` to use appropriate values:
+
+.. code-block:: yaml
+
+    # Whether the redfish exporter is enabled.
+    stackhpc_enable_redfish_exporter: true
+
+    # Redfish exporter credentials
+    redfish_exporter_default_username: "{{ ipmi_username }}"
+    redfish_exporter_default_password: "{{ ipmi_password }}"
+
+    # The address of the BMC that is queried by redfish exporter for metrics.
+    redfish_exporter_target_address: "{{ ipmi_address }}"
+
+Deploy the exporter on the seed:
+
+.. code-block:: console
+
+    kayobe seed service deploy -t seed-deploy-containers -kt none
+
+It is required that you re-configure the Prometheus, Grafana
+services following deployment, to do this run the following Kayobe command.
+
+.. code-block:: console
+
+    kayobe overcloud service reconfigure -kt grafana,prometheus

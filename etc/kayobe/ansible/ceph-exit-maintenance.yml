@@ -1,0 +1,12 @@
+---
+- name: Ensure a Ceph host has exited maintenance
+  gather_facts: true
+  any_errors_fatal: true
+  hosts: ceph
+  # The role currently requires hosts to exit maintenance serially.
+  serial: 1
+  become: true
+  tasks:
+    - name: Ensure a Ceph host has exited maintenance
+      ansible.builtin.import_role:
+        name: stackhpc.cephadm.exit_maintenance

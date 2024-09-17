@@ -1,9 +1,9 @@
-================
-Cephadm & Kayobe
-================
+====
+Ceph
+====
 
 This section describes how to use the Cephadm integration included in StackHPC
-Kayobe configuration since Xena to deploy Ceph.
+Kayobe configuration to deploy Ceph.
 
 The Cephadm integration takes the form of custom playbooks that wrap
 around the Ansible `stackhpc.cephadm collection
@@ -19,10 +19,10 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/pacific/cephadm/index.html
--  https://docs.ceph.com/en/pacific/
 -  https://docs.ceph.com/en/quincy/cephadm/index.html
 -  https://docs.ceph.com/en/quincy/
+-  https://docs.ceph.com/en/reef/cephadm/index.html
+-  https://docs.ceph.com/en/reef/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration
@@ -103,11 +103,28 @@ Default variables for configuring Ceph are provided in
 but you will likely need to set ``cephadm_osd_spec`` to define the OSD
 specification.
 
+Ceph release
+~~~~~~~~~~~~
+
+The Ceph release series is not strictly dependent upon the StackHPC OpenStack
+release, however this configuration does define a default Ceph release series
+and container image tag. The default release series is currently |ceph_series|.
+
+If you wish to use a different Ceph release series, set
+``cephadm_ceph_release``.
+
+If you wish to use different Ceph container image tags, set the following
+variables:
+
+* ``cephadm_image_tag``
+* ``cephadm_haproxy_image_tag``
+* ``cephadm_keepalived_image_tag``
+
 OSD specification
 ~~~~~~~~~~~~~~~~~
 
 The following example is a basic OSD spec that adds OSDs for all
-available disks:
+available disks with encryption at rest:
 
 .. code:: yaml
 
@@ -118,9 +135,10 @@ available disks:
        host_pattern: "*"
      data_devices:
        all: true
+     encrypted: true
 
 More information about OSD service placement is available
-`here <https://docs.ceph.com/en/pacific/cephadm/services/osd/#advanced-osd-service-specifications>`__.
+`here <https://docs.ceph.com/en/quincy/cephadm/services/osd/#advanced-osd-service-specifications>`__.
 
 Container image
 ~~~~~~~~~~~~~~~
@@ -264,6 +282,24 @@ post-deployment configuration is applied. Commands in the
 ``cephadm_commands_post`` list are executed after the rest of the Ceph
 post-deployment configuration is applied.
 
+Messenger v2 encryption in transit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Messenger v2 is the default on-wire protocol since the Nautilus release. It
+supports `encryption of data in transit
+<https://docs.ceph.com/en/quincy/rados/configuration/msgr2/#connection-mode-configuration-options>`_,
+but this is not used by default. It may be enabled as follows:
+
+.. code:: yaml
+
+   # A list of commands to pass to cephadm shell -- ceph. See stackhpc.cephadm.commands
+   # for format.
+   cephadm_commands_pre:
+    # Enable messenger v2 encryption in transit.
+    - "config set global ms_cluster_mode secure"
+    - "config set global ms_service_mode secure"
+    - "config set global ms_client_mode secure"
+
 Manila & CephFS
 ~~~~~~~~~~~~~~~
 
@@ -311,6 +347,10 @@ should be used in the Kolla Manila configuration e.g.:
 RADOS Gateways
 --------------
 
+RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
+documentation
+<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+
 RADOS Gateways (RGWs) are defined with the following:
 
 .. code:: yaml
@@ -341,7 +381,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
   - "config set client.rgw rgw_enforce_swift_acls true"
   - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
-  - "config set client.rgw rgw_keystone_accepted_roles 'member, Member, _member_, admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
   - "config set client.rgw rgw_keystone_admin_domain Default"
   - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
   - "config set client.rgw rgw_keystone_admin_project service"
@@ -356,6 +396,12 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_s3_auth_use_keystone true"
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
+
+Enable the Kolla Ansible RADOS Gateway integration in ``kolla.yml``:
+
+.. code:: yaml
+
+   kolla_enable_ceph_rgw: true
 
 As we have configured Ceph to respond to Swift APIs, you will need to tell
 Kolla to account for this when registering Swift endpoints with Keystone. Also,
@@ -378,6 +424,11 @@ before deploying the RADOS gateways. If you are using the Kolla load balancer
 
   kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
 
+There are two options for load balancing RADOS Gateway:
+
+1. HA with Ceph Ingress services
+2. RGWs with hyper-converged Ceph (using the Kolla Ansible deployed HAProxy
+   load balancer)
 
 .. _RGWs-with-hyper-converged-Ceph:
 

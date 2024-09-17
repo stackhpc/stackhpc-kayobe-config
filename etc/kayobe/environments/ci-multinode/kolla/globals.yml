@@ -1,4 +1,21 @@
+# yamllint disable-file
 ---
+############################################################################
+# TLS
+
+# Internal TLS configuration
+# Copy the self-signed CA into the kolla containers
+kolla_copy_ca_into_containers: "yes"
+# Use the following trust store within the container
+openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution == 'rocky' else '/etc/ssl/certs/ca-certificates.crt' }}"
+
+# Enable backend TLS
+kolla_enable_tls_backend: "yes"
+
+# Enable RabbitMQ TLS
+rabbitmq_enable_tls: "yes"
+
+############################################################################
 # Most development environments will use nested virtualisation, and we can't
 # guarantee that nested KVM support is available. Use QEMU as a lowest common
 # denominator.
@@ -48,3 +65,10 @@ designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
 # Open up ports in firewalld for services on the public API network.
 enable_external_api_firewalld: true
 external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
+
+############################################################################
+# RabbitMQ
+
+# Ensure Rabbit is deployed with HA rather than quorum queues (to test migrations)
+om_enable_rabbitmq_high_availability: true
+om_enable_rabbitmq_quorum_queues: false

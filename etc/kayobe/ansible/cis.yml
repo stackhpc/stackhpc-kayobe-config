@@ -1,21 +1,41 @@
 ---
 
 - name: Security hardening
-  hosts: overcloud
+  hosts: cis-hardening
   become: true
+  tags:
+    - cis
   tasks:
+    # TODO: Remove this when Red Hat FIPS policy has been updated to allow ed25519 keys.
+    # https://gitlab.com/gitlab-org/gitlab/-/issues/367429#note_1840422075
+    - name: Assert that we are using a supported SSH key
+      assert:
+        that:
+          - ssh_key_type != 'ed25519'
+        fail_msg: FIPS policy does not currently support ed25519 SSH keys on RHEL family systems
+      when: ansible_facts.os_family == 'RedHat'
+
     - name: Ensure the cron package is installed on ubuntu
       package:
         name: cron
         state: present
       when: ansible_facts.distribution == 'Ubuntu'
 
+    - name: Ensure service accounts have no expiry options set
+      # This is to workaround an issue where we set the expiry to 365 days on kayobe
+      # service accounts in a previous iteration of the CIS benchmark hardening
+      # defaults. This should restore the defaults and can eventually be removed.
+      command: chage -m 0 -M 99999 -W 7 -I -1 {{ item }}
+      become: true
+      changed_when: false
+      with_items:
+        - "{{ kayobe_ansible_user }}"
+        - "{{ kolla_ansible_user }}"
+
     - include_role:
         name: ansible-lockdown.rhel9_cis
       when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9'
-      tags: always
 
     - include_role:
         name: ansible-lockdown.ubuntu22_cis
       when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '22'
-      tags: always
