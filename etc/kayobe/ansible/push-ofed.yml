@@ -15,6 +15,11 @@
         state: present
       retries: "{{ pulp_timeout_retries | default(3) }}"
 
+    - name: Lookup Pulp RPMs on builder
+      ansible.builtin.find:
+        paths: "/home/cloud-user/ofed"
+      register: rpm_dir
+
     - name: Upload OFED RPMs to Pulp
       ansible.builtin.shell:
         cmd: |
@@ -25,8 +30,8 @@
           rpm content \
           --type package upload \
           --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
-          --file {{ item }} \
-      with_fileglob: "/home/cloud-user/ofed/*.rpm"
+          --file {{ item.path }} \
+      with_items: "{{ rpm_dir.files }}"
       no_log: true
 
     - name: Create Pulp publication for OFED
