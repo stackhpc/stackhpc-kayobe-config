@@ -82,19 +82,32 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
+      - name: Output image tag
+        id: image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_${{ inputs.os_distribution }}_$(sed s/-/_/ <(echo "${{ inputs.os_release }}"))_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
+      - name: Output image name
+        id: image_name
+        run: |
+          echo image_name=overcloud-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
+
       - name: Generate terraform.tfvars
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
-          ssh_username = "rocky"
-          aio_vm_name = "skc-host-image-builder"
-          aio_vm_image = "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+          ssh_username = "cloud-user"
+          aio_vm_name = "skc-ofed-builder"
+          aio_vm_image = "${{ env.VM_IMAGE }}"
           aio_vm_flavor = "en1.medium"
           aio_vm_network = "stackhpc-ci"
           aio_vm_subnet = "stackhpc-ci"
-          aio_vm_interface = "eth0"
+          aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -166,19 +179,19 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
-      - name: Configure the seed host (Builder VM)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure -e seed_bootstrap_user=rocky --skip-tags network
-
       - name: Run growroot playbook
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Configure the seed host (Builder VM)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure -e seed_bootstrap_user=cloud-user --skip-tags network,docker
 
       - name: Run OFED builder playbook
         run: |
@@ -186,7 +199,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/build-ofed.yml
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Run OFED publish playbook
         run: |
@@ -194,7 +207,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Destroy
         run: terraform destroy -auto-approve
