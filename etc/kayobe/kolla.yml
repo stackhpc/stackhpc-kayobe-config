@@ -138,6 +138,14 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
+  neutron-server-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
+  nova-compute-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -341,6 +349,12 @@ kolla_build_customizations_common:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
+  neutron_server_packages_append:
+    - python3-libvirt
+    - python3-ethtool
+  nova_compute_packages_append:
+    - python3-libvirt
+    - python3-ethtool
 
 kolla_build_customizations_rocky:
   kolla_toolbox_packages_remove:
