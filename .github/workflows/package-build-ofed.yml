@@ -192,6 +192,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host configure -e seed_bootstrap_user=cloud-user --skip-tags network,docker
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Run OFED builder playbook
         run: |
