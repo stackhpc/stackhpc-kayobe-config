@@ -85,13 +85,13 @@ jobs:
       - name: Output image tag
         id: image_tag
         run: |
-          echo image_tag=$(grep stackhpc_${{ inputs.os_distribution }}_$(sed s/-/_/ <(echo "${{ inputs.os_release }}"))_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+          echo image_tag=$(grep stackhpc_rocky_$(sed s/-/_/ <(echo "9"))_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
 
       # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
         id: image_name
         run: |
-          echo image_name=overcloud-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
+          echo image_name=overcloud-rocky-9-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
 
       - name: Generate terraform.tfvars
         run: |
