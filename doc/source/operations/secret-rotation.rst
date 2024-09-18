@@ -74,7 +74,7 @@ Full method
    the state of the cloud before any changes are made
 
 2. Edit your Kolla-Ansible checkout to include changes not yet included
-   upstream. 
+   upstream.
 
 .. _kolla-change:
 
@@ -98,7 +98,7 @@ Full method
       .. code:: bash
 
          git fetch https://review.opendev.org/openstack/kolla-ansible refs/changes/78/903178/2 && git cherry-pick FETCH_HEAD
-   
+
    3. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
       environment
 
@@ -129,7 +129,7 @@ Full method
       ^redis_master_password
       ^memcache_secret_key
       _ssh_key
-         
+
          private_key
          public_key
       ^$
@@ -222,17 +222,32 @@ Full method
 
     2. Update the value of ``grafana_admin_password`` in ``passwords.yml``
 
-    3. Exec into the Grafana container on a controller
+    3. Exec into the MariaDB container on a controller then login to MariaDB
+
+       .. code:: bash
+
+          sudo docker exec -u 0 -it mariadb bash
+          (mariadb) mysql grafana -p
+          # Enter database password when prompted
+
+    4. Query for the ID of ``grafana_local_admin``
+
+       .. code:: sql
+
+          SELECT id,login FROM user WHERE login = "grafana_local_admin";
+          # Take a note of this ID
+
+    5. Exec into the Grafana container on a controller
 
        .. code:: bash
 
           sudo docker exec -it grafana bash
 
-    4. Run the password reset command, then enter the new password
+    6. Run the password reset command, then enter the new password
 
        .. code:: bash
 
-          grafana-cli admin reset-admin-password --password-from-stdin
+          grafana-cli admin reset-admin-password --user-id <id> --password-from-stdin
 
 12. Update the MariaDB database password
 
