@@ -222,39 +222,32 @@ Full method
 
     2. Update the value of ``grafana_admin_password`` in ``passwords.yml``
 
-    3. Exec into the Grafana container on a controller
+    3. Exec into the MariaDB container on a controller then login to MariaDB
+
+       .. code:: bash
+
+          sudo docker exec -u 0 -it mariadb bash
+          (mariadb) mysql grafana -p
+          # Enter database password when prompted
+
+    4. Query for the ID of ``grafana_local_admin``
+
+       .. code:: sql
+
+          SELECT id,login FROM user WHERE login = "grafana_local_admin";
+          # Take a note of this ID
+
+    5. Exec into the Grafana container on a controller
 
        .. code:: bash
 
           sudo docker exec -it grafana bash
 
-    4. Run the password reset command, then enter the new password
+    6. Run the password reset command, then enter the new password
 
        .. code:: bash
 
-          grafana-cli admin reset-admin-password --password-from-stdin
-
-    .. note::
-
-      If you see an error ``Error: ✗ could not read user from database. Error: user not found``
-      from Grafana CLI, it means that the ID of ``grafana_local_admin``
-      is not 1 (The default value used with password reset command).
-      You can find the ID of ``grafana_local_admin`` by accessing MariaDB.
-
-      .. code:: sql
-
-         # Enter MariaDB with
-         docker exec -u 0 -it mariadb bash
-         mysql grafana -p
-         # Enter database password when prompted
-
-         SELECT id,login FROM user WHERE login = "grafana_local_admin";
-
-      Once you get the ID, run the password reset with user-id option
-
-      .. code:: bash
-
-         grafana-cli admin reset-admin-password --user-id <id> --password-from-stdin
+          grafana-cli admin reset-admin-password --user-id <id> --password-from-stdin
 
 12. Update the MariaDB database password
 
