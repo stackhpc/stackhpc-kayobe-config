@@ -11,6 +11,16 @@ In general it is preferable to use the `container image build CI workflow
 to build container images, but this manual approach may be useful in some
 cases.
 
+.. seealso::
+
+   A container image build GitHub Actions workflow using this environment is
+   described :ref:`here <testing-container-images>`.
+
+.. seealso::
+
+   An overcloud host image build GitHub Actions workflow using this environment
+   is described :ref:`here <testing-host-images>`.
+
 Prerequisites
 =============
 

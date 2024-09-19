@@ -10,6 +10,11 @@ automates the manual setup steps below, and is recommended for most users.
 The manual setup steps are provided for reference, and for users who wish to
 make changes to the setup process.
 
+.. seealso::
+
+   All-in-one GitHub CI testing using this environment is described :ref:`here
+   <testing-ci-aio>`.
+
 Prerequisites
 =============
 
