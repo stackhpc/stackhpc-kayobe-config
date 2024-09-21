@@ -46,10 +46,10 @@
         mode: 0777
 
     - name: Set build directory
-      ansible.builtin.lineinfile:
+      ansible.builtin.replace:
         path: /opt/mellanox/doca/tools/doca-kernel-support
-        search_string: 'TMP_DIR=$1'
-        line: '    TMP_DIR=/home/cloud-user/ofed'
+        regexp: 'TMP_DIR=\$1'
+        replace: 'TMP_DIR=/home/cloud-user/ofed'
 
     - name: Build OFED kernel modules
       ansible.builtin.shell:
