@@ -4,6 +4,16 @@
   hosts: ofed-builder
   gather_facts: false
   tasks:
+    - name: Check whether noexec is enabled for /var/tmp
+      ansible.builtin.lineinfile:
+        path: "/etc/fstab"
+        regexp: "noexec"
+        state: absent
+      changed_when: false
+      check_mode: true
+      register: result
+      failed_when: result.found
+
     - name: Install package dependencies
       ansible.builtin.dnf:
         name:
