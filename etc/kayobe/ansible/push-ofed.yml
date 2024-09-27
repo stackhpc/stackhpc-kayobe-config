@@ -1,0 +1,54 @@
+---
+- name: Push OFED packages
+  hosts: ofed-builder
+  tasks:
+    - name: Install python dependencies
+      ansible.builtin.pip:
+        name: pulp-cli
+
+    - name: Create Pulp repository for OFED
+      pulp.squeezer.rpm_repository:
+        pulp_url: "{{ stackhpc_release_pulp_url }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}"
+        state: present
+      retries: "{{ pulp_timeout_retries | default(3) }}"
+
+    - name: Lookup Pulp RPMs on builder
+      ansible.builtin.find:
+        paths: "/home/cloud-user/ofed"
+      register: rpm_dir
+
+    - name: Upload OFED RPMs to Pulp
+      ansible.builtin.shell:
+        cmd: |
+          pulp \
+          --base-url '{{ stackhpc_release_pulp_url }}' \
+          --username '{{ stackhpc_release_pulp_username }}' \
+          --password '{{ stackhpc_release_pulp_password }}' \
+          rpm content \
+          --type package upload \
+          --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
+          --file {{ item.path }} \
+      with_items: "{{ rpm_dir.files }}"
+      no_log: true
+
+    - name: Create Pulp publication for OFED
+      pulp.squeezer.rpm_publication:
+        pulp_url: "{{ stackhpc_release_pulp_url }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        repository: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}"
+        state: present
+      register: publication
+
+    - name: Create Pulp distribution for OFED
+      pulp.squeezer.rpm_distribution:
+        pulp_url: "{{ stackhpc_release_pulp_url }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }}"
+        publication: "{{ publication.publication.pulp_href }}"
+        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}"
+        state: present
