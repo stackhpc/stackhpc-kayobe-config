@@ -4,7 +4,7 @@ OFED
 
 Warning: Experimental workflow subject to change
 
-This section documents the workflow for building OFED packages for Release train integration. 
+This section documents the workflow for building OFED packages for Release train integration.
 
 The workflow builds the OFED kernel modules against the latest available kernel in Release train
 (as configured in SKC) and compiles them into RPM packages to be uploaded to Ark. Addtionally,
