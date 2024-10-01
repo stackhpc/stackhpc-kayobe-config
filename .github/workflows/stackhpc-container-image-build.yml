@@ -74,8 +74,8 @@ jobs:
       - name: Generate build matrix
         id: set-matrix
         run: |
-          comma=""
           echo -n "matrix={\"distro\": [" >> $GITHUB_OUTPUT
+          comma=""
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
             echo -n "$comma\"rocky\"" >> $GITHUB_OUTPUT
             comma=", "
@@ -84,7 +84,7 @@ jobs:
             echo -n "$comma\"ubuntu\"" >> $GITHUB_OUTPUT
             comma=", "
           fi
-          echo "]}" >> $GITHUB_OUTPUT
+          echo "], \"arch\": [\"amd64\", \"aarch64\"]}" >> $GITHUB_OUTPUT
 
       - name: Display container datetime tag
         run: |
@@ -99,6 +99,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
+      # Exclude ubuntu aarch64 builds for now
+      exclude:
+        - distro: ubuntu
+          arch: aarch64
     needs:
       - generate-tag
     steps:
@@ -149,7 +153,12 @@ jobs:
 
       - name: Get Kolla tag
         id: write-kolla-tag
-        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
+        run: |
+          kolla_tag="${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ needs.generate-tag.outputs.datetime_tag }}"
+          if [[ "${{ matrix.distro }}" == 'rocky' ]]; then
+            kolla_tag="$kolla_tag-${{ matrix.arch }}"
+          fi
+          echo "kolla-tag=$kolla_tag" >> $GITHUB_OUTPUT
 
       - name: Configure localhost as a seed
         run: |
@@ -179,8 +188,11 @@ jobs:
         continue-on-error: true
         run: |
           args="${{ inputs.regexes }}"
+          if [[ "${{ matrix.arch }}" = 'aarch64' ]]; then
+            args="$args -e kolla_base_arch=${{ matrix.arch }}"
+          fi
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -193,26 +205,37 @@ jobs:
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-overcloud.log
         if: inputs.overcloud
 
+      - name: Copy build configs to output directory
+        run: sudo cp -rnL /opt/kayobe/etc/kolla/* image-build-logs/
+        if: inputs.overcloud
+
+      - name: Get Kolla tag for seed images
+        id: write-kolla-tag-seed
+        run: |
+          kolla_tag_seed="${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ needs.generate-tag.outputs.datetime_tag }}"
+          echo "kolla-tag-seed=$kolla_tag_seed" >> $GITHUB_OUTPUT
+        if: inputs.seed
+
       - name: Build kolla seed images
         id: build_seed_images
         continue-on-error: true
         run: |
           args="-e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          args="$args -e kolla_tag=${{ steps.write-kolla-tag-seed.outputs.kolla-tag-seed }}"
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.seed
+        if: inputs.seed && matrix.arch == 'amd64'
 
       - name: Copy seed container image build logs to output directory
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
         if: inputs.seed
 
       - name: Get built container images
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}" > ${{ matrix.distro }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" > ${{ matrix.distro }}-container-images
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
@@ -273,7 +296,7 @@ jobs:
       - name: Upload output artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.distro }}-logs
+          name: ${{ matrix.distro }}-${{ matrix.arch }}-logs
           path: image-build-logs
           retention-days: 7
         if: ${{ !cancelled() }}

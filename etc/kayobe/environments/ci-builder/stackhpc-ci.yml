@@ -48,24 +48,26 @@ stackhpc_repo_mirror_password: !vault |
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
-stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
+stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
 stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
 stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
 stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
 stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: ""
 stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
 stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
-stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
-stackhpc_repo_centos_stream_9_openstack_caracal_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
-stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
-stackhpc_repo_centos_stream_9_storage_ceph_reef_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
-stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
-stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
-stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
-stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
-stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_version }}"
+stackhpc_repo_ceph_reef_debian_version: "{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
+stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
+stackhpc_repo_centos_stream_9_openstack_caracal_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
+stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_reef_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
+stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stream_9_docker_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_centos_stream_9_docker_version }}"
+stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
+stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
+stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rhel_9_influxdb_version }}"
+stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_epel_9_version }}"
 stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
 stackhpc_repo_opensearch_dashboards_2_x_version: "{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+
 ## Use derived vars from etc/kayobe/pulp.yml to switch between
 ## minor Rocky versions using stackhpc_pulp_repo_rocky_x_minor_version
 stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
@@ -73,7 +75,7 @@ stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstrea
 stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
 stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
 stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
-stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
+stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_rocky_9_sig_security_common_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
 
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true
