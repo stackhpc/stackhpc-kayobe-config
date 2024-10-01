@@ -34,6 +34,13 @@ jobs:
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
       - name: Install package dependencies
         run: |
           sudo apt update
