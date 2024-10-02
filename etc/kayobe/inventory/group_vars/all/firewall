@@ -211,6 +211,10 @@ stackhpc_compute_firewalld_rules_template:
 ###############################################################################
 # Ceph firewalld rules
 
+# Port on which radosgw is exposed.
+# See: https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2024.1/configuration/cephadm.html#rados-gateways
+stackhpc_ceph_firewalld_radosgw_port: 8100
+
 stackhpc_ceph_firewalld_rules_template:
   # Ceph Prometheus exporter
   - rules:
@@ -229,7 +233,7 @@ stackhpc_ceph_firewalld_rules_template:
       - service: ceph-mon
         network: "{{ storage_net_name }}"
         state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
-      - port: 8100/tcp
+      - port: "{{ stackhpc_ceph_firewalld_radosgw_port }}/tcp"
         network: "{{ storage_net_name }}"
         state: "{{ 'enabled' if 'rgws' in group_names else 'disabled' }}"
     enabled: "{{ 'ceph' in group_names }}"

@@ -108,6 +108,9 @@ Storage firewalld Configuration
    # - state: enabled
    storage_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
 
+If using RADOS Gateway, you can customise ``stackhpc_ceph_firewalld_radosgw_port`` to match
+the ``rgw_frontend_port`` as documented in :ref:`RGWs-with-Ceph`.
+
 Monitoring firewalld Configuration
 ----------------------------------
 
@@ -234,6 +237,7 @@ The following workaround is needed to prevent VM network traffic from being bloc
 
 .. code-block:: yaml
    :caption: ``seed_hypervisor.yml``
+
    seed_hypervisor_sysctl_parameters:
    # By default this is 1, which causes layer 2 traffic flowing through Linux
    # bridges to pass through iptables. This blocks traffic from VMs (seed, wazuh) to
