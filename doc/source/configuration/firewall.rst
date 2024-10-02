@@ -169,6 +169,9 @@ control host Infrastructure VMs.
    # - state: enabled
    infra_vm_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
 
+When configuring wazuh-manager, remember to set ``wazuh_dashboard_net_name`` if you have customised
+the network where the Wazuh dashboard is exposed.
+
 Seed firewalld Configuration
 ----------------------------
 
@@ -226,6 +229,18 @@ Seed Hypervisor firewalld Configuration
    # - permanent: true
    # - state: enabled
    seed_hypervisor_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
+
+The following workaround is needed to prevent VM network traffic from being blocked:
+
+.. code-block:: yaml
+   :caption: ``seed_hypervisor.yml``
+   seed_hypervisor_sysctl_parameters:
+   # By default this is 1, which causes layer 2 traffic flowing through Linux
+   # bridges to pass through iptables. This blocks traffic from VMs (seed, wazuh) to
+   # the Internet.
+   net.bridge.bridge-nf-call-iptables: 0
+
+The hope is that in the future this can be replaced by some additional firewalld configuration.
 
 Kolla-Ansible configuration
 ---------------------------
