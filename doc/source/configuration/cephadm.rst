@@ -344,6 +344,8 @@ should be used in the Kolla Manila configuration e.g.:
 
   manila_cephfs_filesystem_name: manila-cephfs
 
+.. _RGWs-With-Ceph:
+
 RADOS Gateways
 --------------
 
