@@ -30,8 +30,12 @@ is not enabled by default. To enable it, set the following in
       kolla_enable_manila: true
       kolla_enable_manila_backend_cephfs_native: true
 
-And re-run ``kayobe overcloud service deploy`` if you are working on an existing
-deployment.
+If you are working on an existing deployment, re-run Cephadm playbook by
+``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml``
+to add Ceph configurations (such as Manila pools and CephFS file system)
+for Manila.
+
+Then, run ``kayobe overcloud service deploy`` to deploy Manila.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
 kernel client, so you will need to use a different image. Any regular Linux
