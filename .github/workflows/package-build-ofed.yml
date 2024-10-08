@@ -1,5 +1,5 @@
 ---
-name: Build OFED packages
+name: Build OFED kernel modules
 on:
   workflow_dispatch:
     inputs:
@@ -23,7 +23,7 @@ env:
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
   overcloud-ofed-packages:
-    name: Build OFED packages
+    name: Build OFED kernel modules
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
@@ -47,6 +47,11 @@ jobs:
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+
+      - name: Generate OFED tag
+        id: ofed_tag
+        run: |
+          echo "ofed_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Clone StackHPC Kayobe repository
         uses: actions/checkout@v4
@@ -86,6 +91,7 @@ jobs:
         id: image_tag
         run: |
           echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: ${{ github.workspace }}/src/kayobe-config
 
       # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
@@ -183,7 +189,9 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml \
+          -e seed_bootstrap_user="cloud-user" \
+          -e controller_bootstrap_user="cloud-user" \
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -191,7 +199,13 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure --skip-tags network,docker
+          kayobe seed host configure \
+          --skip-tags network,docker,docker-registry \
+          -e seed_bootstrap_user="cloud-user" \
+          -e controller_bootstrap_user="cloud-user" \
+          -e dnf_install_doca=true \
+          -e dnf_enable_doca_modules=false \
+          -e stackhpc_repos_enabled=true
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -199,7 +213,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --become --command "dnf distro-sync --refresh"
+          kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -240,7 +254,8 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml \
+          -e "ofed_tag=${{ steps.ofed_tag.outputs.ofed_tag }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
