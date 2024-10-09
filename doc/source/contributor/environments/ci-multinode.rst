@@ -36,6 +36,7 @@ If you are working on an existing deployment, you need to do the following first
 2. Create cephx key for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-keys.yml``
 3. Run Manila related Ceph commands: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-commands-post.yml``
 4. Gather Ceph configuration and keyring for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml``
+5. Configure Storage network on Seed node: ``kayobe seed host configure -t network,ip-allocation,snat``
 
 Then, run ``kayobe overcloud service deploy`` to deploy Manila.
 
