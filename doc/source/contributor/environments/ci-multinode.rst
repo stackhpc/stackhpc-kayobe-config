@@ -30,9 +30,9 @@ is not enabled by default. To enable it, set the following in
       kolla_enable_manila: true
       kolla_enable_manila_backend_cephfs_native: true
 
-If you are working on an existing deployment, re-run Cephadm playbook by
+If you are working on an existing deployment, re-run the Cephadm playbook
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml``
-to add Ceph configurations (such as Manila pools and CephFS file system)
+to add the Ceph configuration (such as pools and CephFS file systems)
 for Manila.
 
 Then, run ``kayobe overcloud service deploy`` to deploy Manila.
