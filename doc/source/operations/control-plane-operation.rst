@@ -20,7 +20,7 @@ Compute
 
 The compute nodes can largely be thought of as ephemeral, but you do need to
 make sure you have migrated any instances and disabled the hypervisor before
-decommissioning or making any disruptive configuration change.
+rebooting, decommissioning or making any disruptive configuration change.
 
 Monitoring
 ----------
@@ -197,7 +197,7 @@ following order:
 
 * Perform a graceful shutdown of all virtual machine instances
 * Shut down compute nodes
-* Shut down monitoring node
+* Shut down monitoring node (if separate from controllers)
 * Shut down network nodes (if separate from controllers)
 * Shut down controllers
 * Shut down Ceph nodes (if applicable)
