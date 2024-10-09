@@ -109,35 +109,36 @@ Then create a share type and share:
 
 .. code-block:: bash
 
-      manila type-create cephfs-type false --is_public true
-      manila type-key cephfs-type set vendor_name=Ceph storage_protocol=CEPHFS
-      manila create --name test-share --share-type cephfs-type CephFS 2
+      openstack share type create cephfs-type false --public true
+      openstack share type set cephfs-type --extra-specs vendor_name=Ceph
+      openstack share type set cephfs-type --extra-specs storage_protocol=CEPHFS
+      openstack share create --name test-share --share-type cephfs-type --public true CephFS 2
 
 Wait until the share is available:
 
 .. code-block:: bash
 
-      manila list
+      openstack share list
 
 Then allow access to the shares to two users:
 
 .. code-block:: bash
 
-      manila access-allow test-share cephx alice
-      manila access-allow test-share cephx bob
+      openstack share access create test-share cephx alice
+      openstack share access create test-share cephx bob
 
 Show the access list to make sure the state of both entries is ``active`` and
 take note of the access keys:
 
 .. code-block:: bash
 
-      manila access-list test-share
+      openstack share access list test-share
 
 And take note of the path to the share:
 
 .. code-block:: bash
 
-      manila share-export-location-list test-share
+      openstack share export location list test-share
 
 SSH into the first instance, create a directory for the share, and mount it:
 
