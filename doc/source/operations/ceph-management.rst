@@ -49,7 +49,7 @@ and they can be run separately.
 
 There are also other Ceph playbooks that are not part of ``cephadm.yml``
 
-- ``cephadm-gather-keys.yml`` - Populate ``ceph.conf`` in kayobe-config by
+- ``cephadm-gather-keys.yml`` - Populate ``ceph.conf`` and keyrings in kayobe-config by
   gathering Ceph configuration and keys
 - ``ceph-enter-maintenance.yml`` - Set Ceph to maintenance mode for storage
   hosts (Can limit the hosts with ``-l <hostname>``)
