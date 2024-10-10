@@ -19,6 +19,11 @@ beyond the defaults. This includes:
 * Magnum
 * Wazuh
 
+.. seealso::
+
+   On-demand and nightly GitHub Actions workflows workflow using this
+   environment are described :ref:`here <testing-multinode>`.
+
 Manila
 ======
 The Multinode environment supports Manila with the CephFS native backend, but it

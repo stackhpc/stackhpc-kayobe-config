@@ -13,3 +13,4 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
    package-updates
    pre-commit
    ofed
+   testing-ci-automation
