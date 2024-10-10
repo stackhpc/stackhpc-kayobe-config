@@ -399,8 +399,12 @@ kolla_build_blocks:
         fi
     {% endif %}
     {% endif %}
+  kolla_toolbox_header: |
+    ENV UPPER_CONSTRAINTS_FILE=https://raw.githubusercontent.com/stackhpc/requirements/stackhpc/{{ openstack_release }}/upper-constraints.txt
   bifrost_base_header: |
     ADD additions-archive /
+    ENV ANSIBLE_PIP_VERSION='>=8,<9'
+    ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel \
         && grafana-cli plugins install grafana-piechart-panel
