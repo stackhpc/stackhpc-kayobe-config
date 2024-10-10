@@ -113,6 +113,14 @@ The domain set should be something that is not use anywhere else such as
 The Neuron DNS integration can be disabled by setting
 ``neutron_dns_integration: false`` in ``kolla/globals.yml``
 
+Redis Default User
+------------------
+
+The ``redis_connection_string`` has changed the username used from ``admin``
+to ``default``. Whilst this does not have any negative impact on services
+that utilise Redis it will feature prominently in any preview of the overcloud
+configuration.
+
 Known issues
 ============
 
