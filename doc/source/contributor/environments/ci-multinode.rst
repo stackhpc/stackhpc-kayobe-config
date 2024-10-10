@@ -111,8 +111,7 @@ Then create a share type and share:
 .. code-block:: bash
 
       openstack share type create cephfs-type false --public true
-      openstack share type set cephfs-type --extra-specs vendor_name=Ceph
-      openstack share type set cephfs-type --extra-specs storage_protocol=CEPHFS
+      openstack share type set cephfs-type --extra-specs vendor_name=Ceph, storage_protocol=CEPHFS
       openstack share create --name test-share --share-type cephfs-type --public true CephFS 2
 
 Wait until the share is available:
