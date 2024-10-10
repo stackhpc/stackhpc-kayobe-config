@@ -88,7 +88,7 @@ jobs:
       - name: Install Package
         uses: ConorMacBride/install-package@main
         with:
-          apt: git unzip nodejs
+          apt: git unzip nodejs openssh-client
 
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
@@ -223,6 +223,7 @@ jobs:
           admin_bootproto: dhcp
           admin_ips:
             controller0: "{{ access_ip_v4.value }}"
+          admin_zone: admin
           EOF
 
       - name: Write Terraform network interface config

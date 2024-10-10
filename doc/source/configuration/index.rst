@@ -8,16 +8,17 @@ the various features provided.
 .. toctree::
    :maxdepth: 1
 
-   walled-garden
    release-train
    host-images
    lvm
    swap
    cephadm
    monitoring
-   wazuh
    vault
+   wazuh
+   walled-garden
+   security-hardening
+   firewall
    magnum-capi
    ci-cd
-   security-hardening
    cloudkitty
