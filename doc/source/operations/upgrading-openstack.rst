@@ -494,7 +494,7 @@ Save the old configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 Generate the new configuration to a tmpdir.
 
@@ -506,7 +506,7 @@ Save the new configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 The old and new configuration will be saved to ``~/kolla-diff/old`` and
 ``~/kolla-diff/new`` respectively on the Ansible control host.
