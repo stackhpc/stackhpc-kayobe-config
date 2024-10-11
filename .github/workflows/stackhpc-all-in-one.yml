@@ -384,8 +384,6 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: StackHPC OpenStack tests
-        id: stackhpc-openstack-tests
-        continue-on-error: true
         run: |
           mkdir -p sot-results
           docker run -t --rm \
@@ -421,16 +419,20 @@ jobs:
             sot-results/
         if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-openstack-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
-      - name: Fail if any Tempest tests failed
+      - name: Fail if any tests failed
         run: |
-          test $(wc -l < tempest-artifacts/failed-tests) -lt 1
-
-      - name: Fail if any StackHPC OpenStack tests failed
-        run: |
-          echo "Some StackHPC OpenStack tests failed."
-          echo "See HTML results artifact (sot-results) for details."
-          exit 1
-        if: steps.stackhpc-openstack-tests.outcome == 'failure'
+          rc=0
+          if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
+            echo "Some Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          if [[ $(wc -l < sot-results/failed-tests) -ne 0 ]]; then
+            echo "Some StackHPC OpenStack tests failed."
+            echo "See HTML results artifact (sot-results) for details."
+            rc=1
+          fi
+          exit $rc
 
       - name: Destroy
         run: terraform destroy -auto-approve
