@@ -19,11 +19,11 @@ function prechecks() {
 
 function rabbit_upgrade() {
     # Ensure RabbitMQ is upgraded to 3.13
-    if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.11" --show-output; then
+    if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.11." --show-output; then
         kayobe kolla ansible run "rabbitmq-upgrade 3.12"
     fi
     sleep 200
-    if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.12" --show-output; then
+    if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.12." --show-output; then
         kayobe kolla ansible run "rabbitmq-upgrade 3.13"
     fi
 }
@@ -35,7 +35,7 @@ function rabbit_migration() {
                -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
             $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
 
-        $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
+        $KAYOBE_CONFIG_ROOT/tools/rabbitmq-quorum-migration.sh
 
         sed -i -e 's/om_enable_rabbitmq_high_availability: false/om_enable_rabbitmq_high_availability: true/' \
                -e 's/om_enable_rabbitmq_quorum_queues: true/om_enable_rabbitmq_quorum_queues: false/' \
