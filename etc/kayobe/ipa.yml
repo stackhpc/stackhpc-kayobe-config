@@ -29,7 +29,9 @@
 
 # List of additional Diskimage Builder (DIB) elements to use when building IPA
 # images. Default is none.
-#ipa_build_dib_elements_extra:
+ipa_build_dib_elements_extra:
+  - extra-hardware
+  - mellanox
 
 # List of Diskimage Builder (DIB) elements to use when building IPA images.
 # Default is combination of ipa_build_dib_elements_default and
@@ -115,7 +117,10 @@
 #ipa_collectors_default:
 
 # List of additional inspection collectors to run.
-#ipa_collectors_extra:
+ipa_collectors_extra:
+  - "dmi-decode"
+  - "extra-hardware"
+  - "numa-topology"
 
 # List of inspection collectors to run.
 #ipa_collectors:
@@ -133,7 +138,11 @@
 #ipa_kernel_options_default:
 
 # List of additional kernel parameters for Ironic python agent.
-#ipa_kernel_options_extra:
+ipa_kernel_options_extra:
+  # Useful until NTP is configured by default
+  - ipa-insecure=1
+  # Avoid disk benchmark failures on some NVMe drives
+  - nvme_core.multipath=N
 
 # List of kernel parameters for Ironic python agent.
 #ipa_kernel_options:
