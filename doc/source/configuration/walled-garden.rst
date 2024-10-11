@@ -53,16 +53,17 @@ in ``etc/kayobe/containers/squid_proxy/squid.conf``:
 
    dns_v4_first on
 
-In ``etc/kayobe/inventory/group_vars/overcloud/proxy`` (and any other
-groups that need to use the proxy), configure overcloud hosts to use the
-proxy:
+Proxy for the overcloud can be configured either in ``etc/kayobe/proxy.yml``
+or ``etc/kayobe/inventory/group_vars/overcloud/proxy``. If the latter
+is used, in kolla-ansible playbook level group vars will take precedence. (This will disable proxy
+in kolla containers - container_http_proxy will be set to empty string.)
 
 .. code:: yaml
 
    ---
    # HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
-   http_proxy: "http://{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}:3128"
+   http_proxy: "{{ ('http://' + lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] + ':3128') if 'seed' not in group_names else '' }}"
 
    # HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
@@ -81,6 +82,13 @@ proxy:
      - "{{ lookup('vars', admin_oc_net_name ~ '_ips')[inventory_hostname] }}"
      - "{{ kolla_external_fqdn }}"
      - "{{ kolla_internal_fqdn }}"
+
+   # PyPI proxy URL (format: http(s)://[user:password@]proxy_name:port)
+   pip_proxy: "{{ https_proxy }}"
+
+Proxy for python pip should be configured in ``etc/kayobe/pip.yml``:
+
+.. code:: yaml
 
    # PyPI proxy URL (format: http(s)://[user:password@]proxy_name:port)
    pip_proxy: "{{ https_proxy }}"
