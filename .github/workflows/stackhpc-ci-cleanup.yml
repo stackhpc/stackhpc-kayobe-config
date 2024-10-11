@@ -75,3 +75,24 @@ jobs:
           OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Send message to Slack via Workflow Builder
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "channel-id": "${{ env.SLACK_CHANNEL_ID }}",
+              "inputs": "${{ env.INPUTS }}",
+              "message": "${{ env.MESSAGE }}",
+              "results-url": "${{ env.RESULTS_URL }}",
+              "workflow-url": "${{ env.WORKFLOW_URL }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # #release-train-alerts
+          SLACK_CHANNEL_ID: C03B28HRP53
+          INPUTS: "N/A"
+          MESSAGE: "SKC CI Cleanup workflow failed :sob:"
+          RESULTS_URL: "N/A"
+          WORKFLOW_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        if: failure()

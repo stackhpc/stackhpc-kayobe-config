@@ -10,10 +10,10 @@ automates the manual setup steps below, and is recommended for most users.
 The manual setup steps are provided for reference, and for users who wish to
 make changes to the setup process.
 
-.. warning::
+.. seealso::
 
-    This guide was written for the Yoga release and has not been validated for
-    Caracal. Proceed with caution.
+   All-in-one GitHub CI testing using this environment is described :ref:`here
+   <testing-ci-aio>`.
 
 Prerequisites
 =============

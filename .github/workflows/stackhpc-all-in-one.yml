@@ -88,7 +88,7 @@ jobs:
       - name: Install Package
         uses: ConorMacBride/install-package@main
         with:
-          apt: git unzip nodejs
+          apt: git unzip nodejs openssh-client
 
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
@@ -223,6 +223,7 @@ jobs:
           admin_bootproto: dhcp
           admin_ips:
             controller0: "{{ access_ip_v4.value }}"
+          admin_zone: admin
           EOF
 
       - name: Write Terraform network interface config
@@ -443,7 +444,7 @@ jobs:
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack -e rally_no_sensitive_log=false
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 

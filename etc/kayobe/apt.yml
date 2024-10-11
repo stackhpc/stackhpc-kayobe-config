@@ -33,6 +33,8 @@ apt_config:
 apt_keys:
   - url: "https://download.docker.com/linux/ubuntu/gpg"
     filename: docker.asc
+  - url: "https://download.ceph.com/keys/release.asc"
+    filename: ceph.asc
 
 # A list of Apt repositories. Each item is a dict with the following keys:
 # * types: whitespace-separated list of repository types, e.g. deb or deb-src
@@ -68,6 +70,12 @@ stackhpc_apt_repositories:
     suites: "{{ ansible_facts.distribution_release  }}"
     components: stable
     signed_by: docker.asc
+    architecture: amd64
+    required: true
+  - url: "{{ stackhpc_repo_ceph_reef_debian_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
+    components: main
+    signed_by: ceph.asc
     architecture: amd64
     required: true
 
