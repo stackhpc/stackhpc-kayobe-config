@@ -226,8 +226,13 @@ Build locally customised container images
 
 In some cases it is necessary to build some or all images locally to apply
 customisations. In order to do this it is necessary to set
-``stackhpc_pulp_sync_for_local_container_build`` to ``true`` before
-syncing container images.
+``stackhpc_pulp_sync_for_local_container_build`` to ``true`` before redeploying
+Pulp and syncing host packages. Note that Pulp will fail to start successfully
+until the following command is executed:
+
+.. code-block:: console
+
+   docker exec pulp bash -c "pulpcore-manager handle-artifact-checksums"
 
 To build the overcloud images locally and push them to the local Pulp server:
 
