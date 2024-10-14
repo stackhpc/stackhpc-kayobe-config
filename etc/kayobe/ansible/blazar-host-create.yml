@@ -1,0 +1,24 @@
+---
+- name: Create Blazar hosts
+  hosts: blazar-compute
+  gather_facts: false
+  vars:
+    venv: "/stack/kayobe-automation-env/venvs/os-venv"
+  tasks:
+    - name: List Blazar compute hosts
+      ansible.builtin.shell:
+        cmd: |
+          {{ venv }}/bin/openstack reservation host show \
+          {{ inventory_hostname }} \
+      register: host_show
+      failed_when: false
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Ensure Blazar compute hosts are created
+      ansible.builtin.shell:
+        cmd: |
+          {{ venv }}/bin/openstack reservation host create \
+          {{ inventory_hostname }} \
+      delegate_to: localhost
+      when: '"Unable to find resource" in host_show.stderr'
