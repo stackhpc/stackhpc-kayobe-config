@@ -187,10 +187,15 @@ to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
 should not cause an API outage (though it should still be considered "at
 risk").
 
+Some errors have been observed in testing when the upgrades are perfomed
+back-to-back. A 200s delay eliminates this issue. On particularly large or slow
+deployments, consider increasing this timeout.
+
 .. code-block:: bash
 
    kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
    kayobe kolla ansible run "rabbitmq-upgrade 3.12"
+   sleep 200
    kayobe kolla ansible run "rabbitmq-upgrade 3.13"
 
 RabbitMQ quorum queues
