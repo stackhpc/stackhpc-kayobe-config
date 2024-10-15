@@ -150,12 +150,7 @@ jobs:
 
       - name: Get Kolla tag
         id: write-kolla-tag
-        run: |
-          kolla_tag="${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ needs.generate-tag.outputs.datetime_tag }}"
-          if [[ "${{ matrix.distro }}" == 'rocky' ]]; then
-            kolla_tag="$kolla_tag-${{ matrix.arch }}"
-          fi
-          echo "kolla-tag=$kolla_tag" >> $GITHUB_OUTPUT
+        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
 
       - name: Configure localhost as a seed
         run: |
@@ -189,7 +184,11 @@ jobs:
             args="$args -e kolla_base_arch=${{ matrix.arch }}"
           fi
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          if [[ "${{ matrix.distro }}" = 'rocky' ]]; then
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}-${{ matrix.arch }}"
+          else
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          fi
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -206,19 +205,12 @@ jobs:
         run: sudo cp -rnL /opt/kayobe/etc/kolla/* image-build-logs/
         if: inputs.overcloud
 
-      - name: Get Kolla tag for seed images
-        id: write-kolla-tag-seed
-        run: |
-          kolla_tag_seed="${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ needs.generate-tag.outputs.datetime_tag }}"
-          echo "kolla-tag-seed=$kolla_tag_seed" >> $GITHUB_OUTPUT
-        if: inputs.seed
-
       - name: Build kolla seed images
         id: build_seed_images
         continue-on-error: true
         run: |
           args="-e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag-seed.outputs.kolla-tag-seed }}"
+          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -319,7 +311,7 @@ jobs:
 
   create-manifests:
     # Only for Rocky Linux for now
-    name: Create Docker Manifests
+    name: Create Multiarch Docker Manifests
     if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
     runs-on: arc-skc-container-image-builder-runner
     permissions: {}
@@ -399,8 +391,12 @@ jobs:
           set -ex
           mkdir -p logs
           images=$(cat all-pushed-images.txt | sort | uniq)
-          # Filter out Ubuntu images
-          manifest_images=$(echo "$images" | grep 'rocky' | sed -E 's/-(amd64|aarch64)$//' | sort | uniq)
+          # Filter out Ubuntu and Rocky Bifrost images
+          manifest_images=$(echo "$images" | grep 'rocky' | grep -E '.*-(amd64|aarch64)$' | sed -E 's/-(amd64|aarch64)$//' | sort | uniq)
+          if [ -z "$manifest_images" ]; then
+            echo "No Rocky overcloud images found. Skipping manifest creation." | tee -a logs/manifest-creation.log
+            exit 0
+          fi
           for base_image in $manifest_images; do
             arch_images=""
             for arch in amd64 aarch64; do
