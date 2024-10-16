@@ -3,8 +3,22 @@
   hosts: blazar-compute
   gather_facts: false
   vars:
-    venv: "/stack/kayobe-automation-env/venvs/os-venv"
+    venv: "{{ virtualenv_path }}/blazar"
+    venv_python: "{{ 'python' ~ ansible_facts.python.version.major ~ '.' ~ ansible_facts.python.version.minor }}"
   tasks:
+    - name: Set up openstack cli virtualenv
+      ansible.builtin.pip:
+        virtualenv: "{{ venv }}"
+        virtualenv_command: "{{ venv_python }} -m venv"
+        name:
+          - python-openstackclient
+          - python-blazarclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+      delegate_to: localhost
+      become: true
+
     - name: List Blazar compute hosts
       ansible.builtin.shell:
         cmd: |
