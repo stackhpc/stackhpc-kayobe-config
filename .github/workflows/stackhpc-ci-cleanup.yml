@@ -9,6 +9,7 @@ jobs:
   ci-cleanup:
     name: Clean up stale CI resources
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: Leafcloud
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -52,7 +53,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -72,7 +73,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
