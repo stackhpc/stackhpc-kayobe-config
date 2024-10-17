@@ -35,8 +35,15 @@ is not enabled by default. To enable it, set the following in
       kolla_enable_manila: true
       kolla_enable_manila_backend_cephfs_native: true
 
-And re-run ``kayobe overcloud service deploy`` if you are working on an existing
-deployment.
+If you are working on an existing deployment, you need to do the following first.
+
+1. Create CephFS pools: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-pools.yml``
+2. Create cephx key for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-keys.yml``
+3. Run Manila related Ceph commands: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-commands-post.yml``
+4. Gather Ceph configuration and keyring for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml``
+5. Configure Storage network on Seed node: ``kayobe seed host configure -t network,ip-allocation,snat``
+
+Then, run ``kayobe overcloud service deploy`` to deploy Manila.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
 kernel client, so you will need to use a different image. Any regular Linux
@@ -108,35 +115,35 @@ Then create a share type and share:
 
 .. code-block:: bash
 
-      manila type-create cephfs-type false --is_public true
-      manila type-key cephfs-type set vendor_name=Ceph storage_protocol=CEPHFS
-      manila create --name test-share --share-type cephfs-type CephFS 2
+      openstack share type create cephfs-type false --public true
+      openstack share type set cephfs-type --extra-specs vendor_name=Ceph, storage_protocol=CEPHFS
+      openstack share create --name test-share --share-type cephfs-type --public true CephFS 2
 
 Wait until the share is available:
 
 .. code-block:: bash
 
-      manila list
+      openstack share list
 
 Then allow access to the shares to two users:
 
 .. code-block:: bash
 
-      manila access-allow test-share cephx alice
-      manila access-allow test-share cephx bob
+      openstack share access create test-share cephx alice
+      openstack share access create test-share cephx bob
 
 Show the access list to make sure the state of both entries is ``active`` and
 take note of the access keys:
 
 .. code-block:: bash
 
-      manila access-list test-share
+      openstack share access list test-share
 
 And take note of the path to the share:
 
 .. code-block:: bash
 
-      manila share-export-location-list test-share
+      openstack share export location list test-share
 
 SSH into the first instance, create a directory for the share, and mount it:
 

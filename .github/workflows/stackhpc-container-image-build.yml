@@ -9,12 +9,12 @@ on:
         required: false
         default: ""
       overcloud:
-        description: Build overcloud images?
+        description: Build container images for overcloud services?
         type: boolean
         required: false
         default: true
       seed:
-        description: Build seed images?
+        description: Build container images for seed services?
         type: boolean
         required: false
         default: false
@@ -52,6 +52,17 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+          if [[ ${{ inputs.overcloud }} == 'false' && ${{ inputs.seed }} == 'false' ]]; then
+            echo "At least one of overcloud or seed must be selected"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
