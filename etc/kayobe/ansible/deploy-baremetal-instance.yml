@@ -1,0 +1,99 @@
+---
+
+- name: Update network allocations for new hypervisors
+  hosts: compute
+  gather_facts: false
+  connection: local
+  serial: 1
+  vars:
+    network_allocation_path: "{{ kayobe_env_config_path }}/network-allocation.yml"
+  tasks:
+    - name: Show baremetal node
+      ansible.builtin.shell:
+        cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
+      register: node_show
+      failed_when: false
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Set baremetal node JSON variable
+      ansible.builtin.set_fact:
+        node_show_json: "{{ node_show.stdout | to_json | from_json }}"
+      failed_when: false
+      changed_when: false
+
+    - block:
+        - name: Slurp network allocations
+          ansible.builtin.slurp:
+            path: "{{ network_allocation_path }}"
+          register: net_alc
+
+        - name: Read network allocations
+          ansible.builtin.set_fact:
+            net_alc_yaml: "{{ net_alc['content'] | b64decode | from_yaml }}"
+
+        - name: Write node IP address to allocations
+          ansible.builtin.set_fact:
+            new_net_alc: "{{ net_alc_yaml | combine(new_ips, recursive=True) }}"
+          vars:
+            new_ips: "{ '{{ admin_oc_net_name }}_ips': { '{{ inventory_hostname }}': '{{ ansible_host }}' } }"
+
+        - name: Write new network allocations
+          ansible.builtin.copy:
+            content: "{{ new_net_alc | to_nice_yaml(indent=2) }}"
+            dest: "{{ network_allocation_path }}"
+      when:
+        - '"HTTP 404" not in node_show.stderr'
+
+- name: Deploy baremetal compute nodes as hypervisors
+  hosts: compute
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Show baremetal node
+      ansible.builtin.shell:
+        cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
+      register: node_show
+      failed_when: false
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Set baremetal node JSON variable
+      ansible.builtin.set_fact:
+        node_show_json: "{{ node_show.stdout | to_json | from_json }}"
+      failed_when: false
+      changed_when: false
+
+    - block:
+        - name: Create port
+          openstack.cloud.port:
+            state: present
+            name: "{{ inventory_hostname }}"
+            network: "{{ baremetal_network }}"
+            auth: "{{ auth }}"
+            fixed_ips:
+              - ip_address: "{{ ansible_host }}"
+            vnic_type: baremetal
+          delegate_to: localhost
+          register: port
+
+        - name: Deploy hypervisor image
+          openstack.cloud.server:
+            state: present
+            name: "{{ inventory_hostname }}"
+            nics:
+              - port-id: "{{ port.port.id }}"
+            auth: "{{ auth }}"
+            availability_zone: "{{ availability_zone }}::{{ node_show_json.uuid }}"
+            image: "{{ hypervisor_image }}"
+            flavor: "{{ baremetal_flavor }}"
+            key_name: "{{ key_name }}"
+            timeout: 1800
+            config_drive: yes
+            meta:
+              ironic_node: "{{ inventory_hostname }}"
+          delegate_to: localhost
+          register: server
+      when:
+        - '"HTTP 404" not in node_show.stderr'
+        - '"available" in node_show_json.provision_state'
