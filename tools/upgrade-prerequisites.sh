@@ -35,7 +35,7 @@ function rabbit_migration() {
                -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
             $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
 
-        $KAYOBE_CONFIG_ROOT/tools/rabbitmq-quorum-migration.sh
+        $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
 
         sed -i -e 's/om_enable_rabbitmq_high_availability: false/om_enable_rabbitmq_high_availability: true/' \
                -e 's/om_enable_rabbitmq_quorum_queues: true/om_enable_rabbitmq_quorum_queues: false/' \
