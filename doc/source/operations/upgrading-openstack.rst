@@ -127,6 +127,12 @@ Known issues
   There is currently no known fix for this issue aside from reprovisioning. A
   patch will be developed soon.
 
+* Due to an incorrect default value NGS will attempt to use v3alpha for the api
+  path when communicating with etcd3. This isn't possible as in Caracal etcd is
+  running a newer version that has dropped support for v3alpha. You can work
+  around this in custom config, see the SMS PR for an example:
+  https://github.com/stackhpc/smslab-kayobe-config/pull/354
+
 Security baseline
 =================
 
