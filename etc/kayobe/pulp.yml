@@ -122,6 +122,14 @@ stackhpc_pulp_deb_repos:
     components: "stable"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  - name: "Docker CE for Ubuntu Jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/ceph/debian-reef/{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
+    distribution_name: "docker-ce-for-ubuntu-jammy-"
+    base_path: "docker-ce/ubuntu-jammy/"
+    distributions: "jammy"
+    components: "stable"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
 
@@ -237,16 +245,16 @@ stackhpc_pulp_rpm_repos:
     base_path: "grafana/oss/rpm/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: RabbitMQ - Erlang
-    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
-    distribution_name: "rabbitmq-erlang-"
-    base_path: "rabbitmq/erlang/el/8/x86_64/"
+  - name: RabbitMQ - Erlang - RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
+    distribution_name: "rhel9-rabbitmq-erlang-"
+    base_path: "rabbitmq/erlang/el/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: RabbitMQ - Server
-    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/8/x86_64/{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
-    distribution_name: "rabbitmq-server-"
-    base_path: "rabbitmq/rabbitmq-server/el/8/x86_64/"
+  - name: RabbitMQ - Server - RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+    distribution_name: "rhel9-rabbitmq-server-"
+    base_path: "rabbitmq/rabbitmq-server/el/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # Base Rocky 9 repositories
@@ -293,11 +301,10 @@ stackhpc_pulp_rpm_repos:
     base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-
-  - name: CentOS Stream 9 - OpenStack Antelope
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-antelope/{{ stackhpc_pulp_repo_centos_stream_9_openstack_antelope_version }}"
-    distribution_name: "centos-stream-9-openstack-antelope-"
-    base_path: "centos/9-stream/cloud/x86_64/openstack-antelope/"
+  - name: CentOS Stream 9 - OpenStack Caracal
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-caracal/{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
+    distribution_name: "centos-stream-9-openstack-caracal-"
+    base_path: "centos/9-stream/cloud/x86_64/openstack-caracal/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   - name: CentOS 9 - OpsTools - collectd
@@ -306,10 +313,10 @@ stackhpc_pulp_rpm_repos:
     base_path: "centos/9-stream/opstools/x86_64/collectd-5/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: CentOS Stream 9 - Ceph Quincy
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-quincy/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_quincy_version }}"
-    distribution_name: "centos-stream-9-ceph-quincy-"
-    base_path: "centos/9-stream/storage/x86_64/ceph-quincy/"
+  - name: CentOS Stream 9 - Ceph Reef
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-reef/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
+    distribution_name: "centos-stream-9-ceph-reef-"
+    base_path: "centos/9-stream/storage/x86_64/ceph-reef/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # EPEL 9 repository
@@ -336,16 +343,16 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
 
   # Additional RHEL 9 repositories
-  - name: TreasureData 4 for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_4_version }}"
-    distribution_name: "rhel-9-treasuredata-4-"
-    base_path: "treasuredata/4/redhat/9/x86_64/"
+  - name: TreasureData 5 for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
+    distribution_name: "rhel-9-treasuredata-5-"
+    base_path: "treasuredata/5/redhat/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: MariaDB 10.6 for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.6/yum/rhel/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
-    distribution_name: "rhel-9-mariadb-10-6-"
-    base_path: "mariadb-10.6/yum/rhel/9/x86_64/"
+  - name: MariaDB 10.11 for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
+    distribution_name: "rhel-9-mariadb-10-11-"
+    base_path: "mariadb-10.11/yum/rhel/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   - name: InfluxDB for RHEL 9
@@ -512,7 +519,6 @@ stackhpc_pulp_images_kolla:
   - opensearch
   - opensearch-dashboards
   - openvswitch-db-server
-  - openvswitch-netcontrold
   - openvswitch-vswitchd
   - ovn-controller
   - ovn-nb-db-server
@@ -523,7 +529,6 @@ stackhpc_pulp_images_kolla:
   - prometheus-blackbox-exporter
   - prometheus-cadvisor
   - prometheus-elasticsearch-exporter
-  - prometheus-haproxy-exporter
   - prometheus-libvirt-exporter
   - prometheus-memcached-exporter
   - prometheus-msteams
@@ -533,8 +538,6 @@ stackhpc_pulp_images_kolla:
   - prometheus-openstack-exporter
   - prometheus-v2-server
   - rabbitmq
-  - rabbitmq-3-12
-  - rabbitmq-3-13
   - redis
   - redis-sentinel
 

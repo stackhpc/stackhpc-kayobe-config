@@ -35,224 +35,130 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-Systemd container management
-----------------------------
+Heat disabled by default
+------------------------
 
-Containers deployed by Kolla Ansible are now managed by Systemd. Containers log
-to journald and have a unit file in ``/etc/systemd/system`` named
-``kolla-<container name>-container.service``. Manual control of containers
-should be performed using ``systemd start|stop|restart`` etc. rather than using
-the Docker CLI.
+The Heat OpenStack service is no longer enabled by default.
 
-Secure RBAC
------------
+This behavior can be overridden manually:
 
-Secure Role Based Access Control (RBAC) is an ongoing effort in OpenStack, and
-new policies have been evolving alongside the deprecated legacy policies.
-Several projects have changed the default value of the ``[oslo_policy]
-enforce_new_defaults`` configuration option to ``True``, meaning that the
-deprecated legacy policies are no longer applied. This results in more strict
-policies that may affect existing API users. The following projects have made
-this change:
+.. code-block:: yaml
+   :caption: ``kolla.yml``
 
-* Glance
-* Nova
+   kolla_enable_heat: true
 
-Some things to watch out for:
+Wherever possible, Magnum deployments should be migrated to the CAPI Helm
+driver. Instructions for enabling the driver can be found `here
+<../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
+using Heat, and disable the service.
 
-* Policies may require the ``member`` role rather than the deprecated
-  ``_member_`` and ``Member`` roles.
-* Application credentials may need to be regenerated to grant any roles
-  required by the secure RBAC policies.
-* Application credentials generated before the existence of any implicit roles
-  will not be granted those roles. This may include the ``reader`` role, which
-  is referenced in some of the new secure RBAC policies. This issue has been
-  seen in app creds generated in the Yoga release. See `Keystone bug 2030061
-  <https://bugs.launchpad.net/keystone/+bug/2030061>`_.
+TODO: guide for disabling Heat
 
-  While the Keystone docs suggest that the ``member`` role should imply the
-  ``reader`` role, it has been seen at a customer that newly-generated app
-  creds in the Antelope release may need both the ``member`` and ``reader``
-  role specified.
+Designate sink disabled by default
+----------------------------------
 
-  Here are some SQL scripts you can call to first see if any app creds are
-  affected, and then add the reader role where needed. It is recommended to
-  `backup the database
-  <https://docs.openstack.org/kayobe/latest/administration/overcloud.html#performing-database-backups>`__
-  before running these.
+Designate sink is an optional Designate service which listens for event
+notifications, primarily from Nova and Neutron. It is disabled by default (when
+designate is enabled) in Caracal. It is not required for Designate to function.
 
-  .. code-block:: sql
+If you still wish to use it, you should set the flag manually:
 
-     docker exec -it mariadb bash
-     mysql -u root -p  keystone
-     # Enter the database password when prompted.
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
 
-     SELECT application_credential.internal_id, role.id AS reader_role_id
-     FROM application_credential, role
-     WHERE role.name = 'reader'
-     AND NOT EXISTS (
-         SELECT 1
-         FROM application_credential_role
-         WHERE application_credential_role.application_credential_id = application_credential.internal_id
-         AND application_credential_role.role_id = role.id
-     );
+   designate_enable_notifications_sink: true
 
-     INSERT INTO application_credential_role (application_credential_id, role_id)
-     SELECT application_credential.internal_id, role.id
-     FROM application_credential, role
-     WHERE role.name = 'reader'
-     AND NOT EXISTS (
-         SELECT 1
-         FROM application_credential_role
-         WHERE application_credential_role.application_credential_id = application_credential.internal_id
-         AND application_credential_role.role_id = role.id
-     );
+If you are using Designate and do not make this change, the Antelope
+``designate-sink`` container will remain on the controllers after the upgrade.
+It must be removed manually.
 
-* If you have overwritten ``[auth] tempest_roles`` in your Tempest config, such
-  as to add the ``creator`` role for Barbican, you will need to also add the
-  ``member role``. eg:
+Grafana Volume
+--------------
+The Grafana container volume is no longer used. If you wish to automatically
+remove the old volume, set ``grafana_remove_old_volume`` to ``true`` in
+``kolla/globals.yml``. Note that doing this will lose any plugins installed via
+the CLI directly and not through Kolla. If you have previously installed
+Grafana plugins via the Grafana UI or CLI, you must change to installing them
+at image build time. The Grafana volume, which contains existing custom
+plugins, will be automatically removed in the next release.
 
-  .. code-block:: ini
+Prometheus HAproxy Exporter
+---------------------------
+Due to the change from using the ``prometheus-haproxy-exporter`` to using the
+native support for Prometheus which is now built into HAProxy, metric names may
+have been replaced and/or removed, and in some cases the metric names may have
+remained the same but the labels may have changed. Alerts and dashboards may
+also need to be updated to use the new metrics. Please review any configuration
+that references the old metrics as this is not a backwards compatible change.
 
-     [auth]
-     tempest_roles = creator,member
-* To check trusts for the _member_ role, you will need to list the role
-  assignments in the database, as only the trustor and trustee users can show
-  trust details from the CLI:
+Horizon configuration
+---------------------
+The Horizon role has been reworked to the preferred ``local_settings.d``
+configuration model. Files ``local_settings`` and ``custom_local_settings``
+have been renamed to ``_9998-kolla-settings.py`` and
+``_9999-custom-settings.py`` respectively. Users who use Horizon's custom
+configuration must change the names of those files in
+``etc/kolla/config/horizon`` as well.
 
-  .. code-block:: console
+Neutron DNS Domain
+------------------
+When Designate is enabled and the default Neutron DNS integration has not been
+disabled, ``neutron_dns_domain`` must be configured manually in
+``kolla/globals.yml``.
 
-     openstack trust list
-     docker exec -it mariadb bash
-     mysql -u root -p  keystone
-     # Enter the database password when prompted.
-     SELECT * FROM trust_role WHERE trust_id = '<trust-id>' AND role_id = '<_member_-role-id>';
+The ``neutron_dns_domain`` must end with a period ``.`` e.g. ``example.com.``.
+The domain set should be something that is not use anywhere else such as
+``internal.compute.example.com.``
 
- If you have trusts that need updating, you can add the required role to the trust with the following SQL command:
+The Neuron DNS integration can be disabled by setting
+``neutron_dns_integration: false`` in ``kolla/globals.yml``
 
- .. code-block:: sql
-
-      UPDATE trust_role as tr
-      SET role_id = '<MEMBER-ROLE-ID>'
-      WHERE role_id = '<OLD-ROLE-ID>'
-      AND NOT EXISTS (
-         SELECT 1
-         FROM trust_role
-         WHERE trust_id = tr.trust_id
-            AND role_id = '<MEMBER-ROLE-ID>'
-      );
-
-* Policies may require the ``reader`` role rather than the non-standardised
-  ``observer`` role. The following error was observed in Horizon: ``Policy doesn’t allow os_compute_api:os-simple-tenant-usage:show to be performed``,
-  when the user only had the observer role in the project. It is best to keep the observer role until all projects have the ``enforce_new_defaults``
-  config option set. A one liner is shown below (or update your projects config):
-
-  .. code-block:: console
-
-     openstack role assignment list --effective --role observer -f value -c User -c Project | while read line; do echo $line | xargs bash -c 'openstack role add --user $1 --project $2 reader' _; done
-
-Keystone endpoints
+Redis Default User
 ------------------
 
-Keystone's long `deprecated <https://docs.openstack.org/releasenotes/kolla-ansible/zed.html#deprecation-notes>`__
-admin endpoint is now forcefully removed in 2023.1. Any service that had relied
-on it will cease to work following the upgrade. Keystone endpoints configured
-outside of Kolla (a good example being Ceph RGW integration) must be updated
-to use an internal endpoint, ideally prior to the upgrade.
-
-OVN enabled by default
-----------------------
-
-OVN is now enabled by default in StackHPC Kayobe Configuration.  This change
-was made to align with our standard deployment configuration.
-
-There is currently not a tested migration path from OVS to OVN on a running
-system. If you are using a Neutron plugin other than ML2/OVN, set
-``kolla_enable_ovn`` to ``false`` in ``etc/kayobe/kolla.yml``.
-
-For new deployments using OVN, see
-:kolla-ansible-doc:`reference/networking/neutron.html#ovn-ml2-ovn`.
-
-Kolla config merging
---------------------
-
-The Antelope release introduces Kolla config merging between Kayobe
-environments and base configurations. Before Antelope, any configuration under
-``$KAYOBE_CONFIG_PATH/kolla/config`` would be ignored when any Kayobe
-environment was activated.
-
-In Antelope, the Kolla configuration from the base will be merged with the
-environment. This can result in significant changes to the Kolla config. Take
-extra care when creating the Antelope branch of the kayobe-config and always
-check the config diff.
+The ``redis_connection_string`` has changed the username used from ``admin``
+to ``default``. Whilst this does not have any negative impact on services
+that utilise Redis it will feature prominently in any preview of the overcloud
+configuration.
 
 Known issues
 ============
 
-* Rebuilds of servers with volumes are broken if there are any Nova compute
-  services running an older release, including any that are down. Old compute
-  services should be removed using ``openstack compute service delete``, then
-  remaining compute services restarted. See `LP#2040264
-  <https://bugs.launchpad.net/nova/+bug/2040264>`__.
+* OVN breaks on Rocky 9 deployments where hostnames are FQDNs.
+  Before upgrading, you must make sure no compute or controller nodes have any
+  ``.`` characters in their hostnames. Run the command below to check:
 
-* The OVN sync repair tool removes metadata ports, breaking OVN load balancers.
-  See `LP#2038091 <https://bugs.launchpad.net/neutron/+bug/2038091>`__.
+  .. code-block:: bash
 
-* When you try to generate config before the 2023.1 upgrade (i.e. using 2023.1
-  Kolla-Ansible but still running Zed kolla-toolbox), it will fail on Octavia.
-  This patch is needed to fix this:
-  https://review.opendev.org/c/openstack/kolla-ansible/+/905500
+     kayobe overcloud host command run --command "grep -v \'\.\' /etc/hostname" --show-output
 
-* If you run ``kayobe overcloud service upgrade`` twice, it will cause shard
-  allocation to be disabled in OpenSearch. See `LP#2049512
-  <https://bugs.launchpad.net/kolla-ansible/+bug/2049512>`__ for details.
+  There is currently no known fix for this issue aside from reprovisioning. A
+  patch will be developed soon.
 
-  You can check if this is affecting your system with the following command. If
-  ``transient.cluster.routing.allocation.enable=none`` is present, shard
-  allocation is disabled.
-
-  .. code-block:: console
-
-     curl http://<controller-ip>:9200/_cluster/settings
-
-  For now, the easiest way to fix this is to turn allocation back on:
-
-  .. code-block:: console
-
-     curl -X PUT http://<controller-ip>:9200/_cluster/settings -H 'Content-Type:application/json' -d '{"transient":{"cluster":{"routing":{"allocation":{"enable":"all"}}}}}'
-
-* Docker log-opts are currently not configured in Antelope. You will see these
-  being removed when running a host configure in check+diff mode. See bug for
-  details (fix released):
-  https://bugs.launchpad.net/ansible-collection-kolla/+bug/2040105
-
-* /etc/hosts are not templated correctly when running a host configure with
-  ``--limit``. To work around this, run your host configures with
-  ``--skip-tags etc-hosts``. If you do need to change ``/etc/hosts``, for
-  example with any newly-added hosts, run a full host configure afterward with
-  ``--tags etc-hosts``. See bug for details (fix released):
-  https://bugs.launchpad.net/kayobe/+bug/2051714
+* Due to an incorrect default value NGS will attempt to use v3alpha for the api
+  path when communicating with etcd3. This isn't possible as in Caracal etcd is
+  running a newer version that has dropped support for v3alpha. You can work
+  around this in custom config, see the SMS PR for an example:
+  https://github.com/stackhpc/smslab-kayobe-config/pull/354
 
 Security baseline
 =================
 
-As part of the Zed and Antelope releases we are looking to improve the security
+As part of the Caracal release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
-been done, they should ideally be completed before the upgrade begins,
-otherwise afterwards.
+been done, they should be completed before the upgrade begins.
 
 .. TODO: Add these when docs exist
 
    * Enable `host firewalling <TODO>`_
-   * Enable `Center for Internet Security (CIS) compliance <TODO>`_
 
+* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.rst>`_
 * Enable TLS on the :kayobe-doc:`public API network
   <configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`
 * Enable TLS on the `internal API network <../configuration/vault.html>`_
 * Configure `walled garden networking <../configuration/walled-garden.html>`_
 * Use `LVM-based host images <../configuration/lvm.html>`_
 * Deploy `Wazuh <../configuration/wazuh.html>`_
-* Run `CIS Hardening <../configuration/security-hardening.html>`_
 
 Prerequisites
 =============
@@ -273,6 +179,58 @@ suggestions:
 * Check Grafana dashboards.
 * Update the deployment to use the latest |previous_release| images and
   configuration.
+
+RabbitMQ SLURP upgrade
+----------------------
+
+.. note::
+   The upgrade is reliant on recent changes. Make sure you have updated to
+   the latest version of kolla ansible and deployed the latest kolla containers
+   before proceeding.
+
+Because this is a SLURP upgrade, RabbitMQ must be upgraded manually from 3.11,
+to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
+should not cause an API outage (though it should still be considered "at
+risk").
+
+Some errors have been observed in testing when the upgrades are perfomed
+back-to-back. A 200s delay eliminates this issue. On particularly large or slow
+deployments, consider increasing this timeout.
+
+.. code-block:: bash
+
+   kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
+   kayobe kolla ansible run "rabbitmq-upgrade 3.12"
+   sleep 200
+   kayobe kolla ansible run "rabbitmq-upgrade 3.13"
+
+RabbitMQ quorum queues
+----------------------
+
+In Caracal, quorum queues are enabled by default for RabbitMQ. This is
+different to Antelope which used HA queues. Before upgrading to Caracal, it is
+strongly recommended that you migrate from HA to quorum queues. The migration
+is automated using a script.
+
+.. warning::
+   This migration will stop all services using RabbitMQ and cause an
+   extended API outage while queues are migrated. It should only be
+   performed in a pre-agreed maintenance window.
+
+Set the following variables in your kolla globals file (i.e.
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
+
+.. code-block:: yaml
+
+      om_enable_rabbitmq_high_availability: false
+      om_enable_rabbitmq_quorum_queues: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
 
 Preparation
 ===========
@@ -459,8 +417,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>`_ content should
-be synced to the local Pulp server. This includes host packages (Deb/RPM) and
+New `StackHPC Release Train <../configuration/release-train>` content should be
+synced to the local Pulp server. This includes host packages (Deb/RPM) and
 container images.
 
 .. _sync-rt-package-repos:
@@ -547,7 +505,7 @@ Save the old configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 Generate the new configuration to a tmpdir.
 
@@ -559,7 +517,7 @@ Save the new configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 The old and new configuration will be saved to ``~/kolla-diff/old`` and
 ``~/kolla-diff/new`` respectively on the Ansible control host.

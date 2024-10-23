@@ -41,13 +41,6 @@ jobs:
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
         working-directory: src/kayobe-config
 
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
-
       - name: Setup networking
         run: |
           if ! ip l show breth1 >/dev/null 2>&1; then
@@ -70,7 +63,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Bootstrap the control host
         run: |

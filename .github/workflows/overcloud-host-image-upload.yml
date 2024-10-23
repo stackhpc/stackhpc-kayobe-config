@@ -56,13 +56,6 @@ jobs:
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
-
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -70,7 +63,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Bootstrap the control host
         run: |

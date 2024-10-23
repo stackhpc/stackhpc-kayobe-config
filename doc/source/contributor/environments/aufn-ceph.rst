@@ -9,7 +9,7 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Antelope. Proceed with caution.
+    Caracal. Proceed with caution.
 
 Prerequisites
 =============
@@ -42,13 +42,6 @@ Ubuntu:
     sudo apt update
     sudo apt -y install gcc libffi-dev python3-dev python-is-python3
 
-
-As a workaround for SMS lab's lack of DNS, add the following lines to ``/etc/hosts`` of the baremetal node:
-
-.. parsed-literal::
-
-    10.0.0.34 pelican pelican.service.compute.sms-lab.cloud
-    10.205.3.187 pulp-server pulp-server.internal.sms-cloud
 
 Configure the system firewall and security settings:
 
@@ -123,14 +116,6 @@ Once the seed vm is provisioned, deploy a local pulp server on the seed and then
 
     kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
     $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-local-networking.sh
-
-Once the local pulp server is deployed, we need to add the address of SMS lab test pulp to the local pulp container:
-
-.. parsed-literal::
-
-    ssh stack@192.168.33.5
-    docker exec pulp sh -c 'echo "10.205.3.187 pulp-server pulp-server.internal.sms-cloud" | tee -a /etc/hosts'
-    exit
 
 We can now sync the contents of the local pulp server with that of SMS test pulp and then complete the seed VM setup:
 

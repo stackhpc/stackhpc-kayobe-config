@@ -81,9 +81,9 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
-      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-zed
+      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2023.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
-      PREVIOUS_BRANCH: stackhpc/zed
+      PREVIOUS_BRANCH: stackhpc/2023.1
     steps:
       - name: Install Package
         uses: ConorMacBride/install-package@main
@@ -265,6 +265,28 @@ jobs:
         run: |
           docker image pull $KAYOBE_IMAGE
 
+      # Rocky 9 OVN deployments will fail when the hostname contains a '.'
+      - name: Fix hostname
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/fix-hostname.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      # Reboot to Apply hostname change
+      - name: Reboot
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/reboot.yml -e reboot_with_bootstrap_user=true
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
       - name: Run growroot
         run: |
           docker run -t --rm \
@@ -305,10 +327,51 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      - name: Upgrade to RabbitMQ 3.12
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.12"
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
+      - name: Upgrade to RabbitMQ 3.13
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.13"
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
+      - name: Change rabbit queues from HA to Quorum
+        run: |
+          sed -i -e 's/om_enable_rabbitmq_high_availability: true/om_enable_rabbitmq_high_availability: false/' \
+                 -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
+                 etc/kayobe/environments/ci-aio/kolla/globals.yml
+        if: inputs.upgrade
+
+      - name: Migrate RabbitMQ queues
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/rabbitmq-quorum-migration.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
       # If testing upgrade, checkout the current release branch
       # Stash changes to tracked files, and set clean=false to avoid removing untracked files.
+      # Revert changes to RabbitMQ Queue types to avoid a merge conflict
       - name: Stash config changes
-        run: git stash
+        run: git restore etc/kayobe/environments/ci-aio/kolla/globals.yml && git stash
         if: inputs.upgrade
 
       - name: Checkout current release config
@@ -334,13 +397,15 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
+      # NOTE(Alex-Welsh): configure host with selinux_state=disabled, because
+      # Antelope images are not built as permissive
       - name: Host configure
         run: |
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -e selinux_state=disabled
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade

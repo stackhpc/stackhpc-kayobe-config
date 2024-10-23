@@ -34,34 +34,6 @@ this guide. Installation:
 
    sudo apt/dnf install pwgen
 
-
-As of writing, there are three upstream patches in the works to make this
-process easier.
-
-#. A change to Kolla, to automate :ref:`this<kolla-change>` step to change the
-   extended start for the ``nova-api`` container.
-
-   The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/kolla/+/902057>`__.
-
-   This was previously mitigated with a change to the StackHPC fork of
-   Kolla-Ansible, which has since been reverted due to an unforeseen issue. See
-   `here <https://github.com/stackhpc/kolla-ansible/pull/503>`__ for more
-   details.
-
-#. A change to Nova, to automate :ref:`this<nova-change>` step to change the
-   nova cell0 database connection string.
-
-   The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/nova/+/903140>`__.
-
-#. A change to Kolla-Ansible, to automate :ref:`this<k-a-change>` step to
-   update service keystone user passwords.
-
-   The upstream patch can be found `here
-   <https://review.opendev.org/c/openstack/kolla-ansible/+/903178>`__.
-
-
 Full method
 ===========
 

@@ -88,7 +88,6 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "heat_api_cfn": "heat",
     "ironic_neutron_agent": "neutron",
     "kolla_toolbox": "common",
-    "mariabackup": "mariadb",
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
     "nova_compute_ironic": "nova",

@@ -2,6 +2,11 @@
 Multinode Test Environment
 ==========================
 
+.. warning::
+
+    This guide was written for the Yoga release and has not been validated for
+    Caracal. Proceed with caution.
+
 The ``ci-multinode`` environment provides a Kayobe configuration for multi-node
 clouds to be used for test and development purposes. It is designed to be used
 in combination with the `terraform-kayobe-multinode
@@ -42,19 +47,19 @@ Then, run ``kayobe overcloud service deploy`` to deploy Manila.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
 kernel client, so you will need to use a different image. Any regular Linux
-distribution should work. As an example, this guide will use Ubuntu 20.04.
+distribution should work. As an example, this guide will use Ubuntu 22.04.
 
 Download the image locally:
 
 .. code-block:: bash
 
-      wget http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+      wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
 
 Upload the image to Glance:
 
 .. code-block:: bash
 
-      openstack image create --container-format bare --disk-format qcow2 --file focal-server-cloudimg-amd64.img Ubuntu-20.04 --progress
+      openstack image create --container-format bare --disk-format qcow2 --file jammy-server-cloudimg-amd64.img Ubuntu-22.04 --progress
 
 Create a keypair:
 
@@ -66,8 +71,8 @@ Create two virtual machines from the image:
 
 .. code-block:: bash
 
-      openstack server create --flavor m1.small --image Ubuntu-20.04 --key-name id_rsa --network admin-tenant ubuntu-client-1
-      openstack server create --flavor m1.small --image Ubuntu-20.04 --key-name id_rsa --network admin-tenant ubuntu-client-2
+      openstack server create --flavor m1.small --image Ubuntu-22.04 --key-name id_rsa --network admin-tenant ubuntu-client-1
+      openstack server create --flavor m1.small --image Ubuntu-22.04 --key-name id_rsa --network admin-tenant ubuntu-client-2
 
 Wait until the instances are active. It is worth noting that this process can
 take a while, especially if the overcloud is deployed to virtual machines. You

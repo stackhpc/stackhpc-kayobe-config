@@ -121,10 +121,6 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/cloudkitty.git
     reference: stackhpc/{{ openstack_release }}
-  horizon:
-    type: git
-    location: https://github.com/stackhpc/horizon.git
-    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -134,14 +130,9 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  # Not yet merged: https://github.com/stackhpc/magnum/pull/139
   magnum-base:
     type: git
     location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/{{ openstack_release }}
-  neutron-base:
-    type: git
-    location: https://github.com/stackhpc/neutron.git
     reference: stackhpc/{{ openstack_release }}
   neutron-base-plugin-networking-generic-switch:
     type: git
@@ -180,9 +171,9 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
-  - url: "{{ stackhpc_repo_centos_stream_9_openstack_antelope_url }}"
-    file: "CentOS-OpenStack-antelope.repo"
-    tag: "centos-openstack-antelope"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_caracal_url }}"
+    file: "CentOS-OpenStack-caracal.repo"
+    tag: "centos-openstack-caracal"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -198,22 +189,22 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_grafana_url }}"
     file: "grafana.repo"
     tag: "grafana"
-  - url: "{{ stackhpc_repo_rhel_9_treasuredata_4_url }}"
+  - url: "{{ stackhpc_repo_rhel_9_treasuredata_5_url }}"
     file: "td.repo"
     tag: "treasuredata"
-  - url: "{{ stackhpc_repo_rhel_9_mariadb_10_6_url }}"
+  - url: "{{ stackhpc_repo_rhel_9_mariadb_10_11_url }}"
     file: "mariadb.repo"
     tag: "mariadb"
   - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
     file: "influxdb.repo"
     tag: "influxdb"
-  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_quincy_url }}"
-    file: "CentOS-Ceph-Quincy.repo"
-    tag: "centos-ceph-quincy"
-  - url: "{{ stackhpc_repo_rabbitmq_erlang_url }}"
+  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_reef_url }}"
+    file: "CentOS-Ceph-Reef.repo"
+    tag: "centos-ceph-reef"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
     tag: "rabbitmq_rabbitmq-erlang"
-  - url: "{{ stackhpc_repo_rabbitmq_server_url }}"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
   - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
@@ -337,7 +328,6 @@ kolla_build_blocks:
     ENV UPPER_CONSTRAINTS_FILE=https://raw.githubusercontent.com/stackhpc/requirements/stackhpc/{{ openstack_release }}/upper-constraints.txt
   bifrost_base_header: |
     ADD additions-archive /
-    ENV ANSIBLE_PIP_VERSION='>=8,<9'
     ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel \
@@ -351,92 +341,6 @@ kolla_build_blocks:
     {% raw %}
     {% set magnum_capi_packages = ['magnum-capi-helm==1.1.0'] %}
     RUN {{ macros.install_pip(magnum_capi_packages | customizable("pip_packages")) }}
-    {% endraw %}
-  nova_compute_header:
-    # See: https://review.opendev.org/c/openstack/kolla/+/878663/1/docker/neutron/neutron-mlnx-agent/Dockerfile.j2
-    RUN sed -e "s/^pyzmq===20.0.0/pyzmq==21.*/g" -i /requirements/upper-constraints.txt
-  neutron_server_header:
-    # See: https://review.opendev.org/c/openstack/kolla/+/878663/1/docker/neutron/neutron-mlnx-agent/Dockerfile.j2
-    RUN sed -e "s/^pyzmq===20.0.0/pyzmq==21.*/g" -i /requirements/upper-constraints.txt
-  prometheus_alertmanager_repository_version: | # 2023.1 kolla has 0.24.0
-    {% raw %}
-    ARG prometheus_alertmanager_version=0.26.0
-    ARG prometheus_alertmanager_archive=alertmanager-${prometheus_alertmanager_version}.linux-{{debian_arch}}.tar.gz
-    ARG prometheus_alertmanager_sha256sums_url=https://github.com/prometheus/alertmanager/releases/download/v${prometheus_alertmanager_version}/sha256sums.txt
-    ARG prometheus_alertmanager_download_url=https://github.com/prometheus/alertmanager/releases/download/v${prometheus_alertmanager_version}/${prometheus_alertmanager_archive}
-    {% endraw %}
-  prometheus_blackbox_exporter_repository_version: | # 2023.1 kolla has 0.23.0
-    {% raw %}
-    ARG blackbox_exporter_version=0.25.0
-    ARG blackbox_exporter_url=https://github.com/prometheus/blackbox_exporter/releases/download/v${blackbox_exporter_version}/blackbox_exporter-${blackbox_exporter_version}.linux-{{debian_arch}}.tar.gz
-    {% endraw %}
-  prometheus_cadvisor_repository_version: | # 2023.1 kolla has 0.48.0
-    {% raw %}
-    ARG prometheus_cadvisor_version=0.49.1
-    {% if debian_arch == 'arm64' %}
-    ARG prometheus_cadvisor_sha256sum=c535f46d789599f25c7c680af193d4402da27a98d9828eb2ec916af6256e0c0c
-    {% else %}
-    ARG prometheus_cadvisor_sha256sum=1d5cc701a3fcdf1e8ed1c86da5304b896a6997d9e6673139e78a6f87812495b0
-    {% endif %}
-    ARG prometheus_cadvisor_url=https://github.com/google/cadvisor/releases/download/v${prometheus_cadvisor_version}/cadvisor-v${prometheus_cadvisor_version}-linux-{{debian_arch}}
-    {% endraw %}
-  haproxy_exporter_repository_version: | # 2023.1 kolla has 0.13.0
-    {% raw %}
-    ARG haproxy_exporter_version=0.15.0
-    ARG haproxy_exporter_url=https://github.com/prometheus/haproxy_exporter/releases/download/v${haproxy_exporter_version}/haproxy_exporter-${haproxy_exporter_version}.linux-{{debian_arch}}.tar.gz
-    {% endraw %}
-  prometheus_memcached_exporter_repository_version: | #  2023.1 kolla has 0.10.0
-    {% raw %}
-    ARG memcached_exporter_version=0.14.3
-    ARG memcached_exporter_url=https://github.com/prometheus/memcached_exporter/releases/download/v${memcached_exporter_version}/memcached_exporter-${memcached_exporter_version}.linux-{{debian_arch}}.tar.gz
-    {% endraw %}
-  prometheus_msteams_repository_version: | # 2023.1 kolla has 1.5.1
-    {% raw %}
-    ARG prometheus_msteams_version=1.5.2
-    ARG prometheus_msteams_sha256sum=0f4df9ee31e655d1ec876ea2c53ab5ae5b07143ef21b9190e61b4d52839e135c
-    ARG prometheus_msteams_url=https://github.com/prometheus-msteams/prometheus-msteams/releases/download/v${prometheus_msteams_version}/prometheus-msteams-linux-{{debian_arch}}
-    {% endraw %}
-  prometheus_mtail_version: | # 2023.1 kolla has 3.0.0-rc50
-    {% raw %}
-    ARG prometheus_mtail_version=3.0.0-rc53
-    ARG prometheus_mtail_url=https://github.com/google/mtail/releases/download/v${prometheus_mtail_version}/mtail_${prometheus_mtail_version}_linux_{{debian_arch}}.tar.gz
-    {% endraw %}
-  mysqld_exporter_repository_version: | # 2023.1 kolla has 0.15.0
-    {% raw %}
-    ARG mysqld_exporter_version=0.15.1
-    ARG mysqld_exporter_url=https://github.com/prometheus/mysqld_exporter/releases/download/v${mysqld_exporter_version}/mysqld_exporter-${mysqld_exporter_version}.linux-{{debian_arch}}.tar.gz
-    {% endraw %}
-  node_exporter_repository_version: | # 2023.1 kolla has 1.4.0
-    {% raw %}
-    ARG node_exporter_version=1.7.0
-    {% if debian_arch == 'arm64' %}
-    ARG node_exporter_sha256sum=e386c7b53bc130eaf5e74da28efc6b444857b77df8070537be52678aefd34d96
-    {% else %}
-    ARG node_exporter_sha256sum=a550cd5c05f760b7934a2d0afad66d2e92e681482f5f57a917465b1fba3b02a6
-    {% endif %}
-    ARG node_exporter_url=https://github.com/prometheus/node_exporter/releases/download/v{$node_exporter_version}/node_exporter-${node_exporter_version}.linux-{{debian_arch}}.tar.gz
-    {% endraw %}
-  prometheus_openstack_exporter_repository_version: | # 2023.1 kolla has 1.6.0
-    {% raw %}
-    ARG prometheus_openstack_exporter_version=1.7.0
-    ARG prometheus_openstack_exporter_url=https://github.com/openstack-exporter/openstack-exporter/releases/download/v${prometheus_openstack_exporter_version}/openstack-exporter_${prometheus_openstack_exporter_version}_linux_{{debian_arch}}.tar.gz
-    {% endraw %}
-  prometheus_ovn_exporter_repository_version: | # 2023.1 kolla has 1.0.6
-    {% raw %}
-    {% if base_arch == 'x86_64' %}
-    ARG ovn_arch=amd64
-    {% elif base_arch == 'aarch64' %}
-    ARG ovn_arch=arm64
-    {% endif %}
-    ARG prometheus_ovn_version=1.0.7
-    ARG prometheus_ovn_cksum_url=https://github.com/greenpau/ovn_exporter/releases/download/v${prometheus_ovn_version}/checksums.txt
-    ARG ovn_exporter_tgz=ovn-exporter_${prometheus_ovn_version}_linux_${ovn_arch}.tar.gz
-    ARG prometheus_ovn_url=https://github.com/greenpau/ovn_exporter/releases/download/v${prometheus_ovn_version}/${ovn_exporter_tgz}
-    {% endraw %}
-  prometheus_v2_server_repository_version: | # 2023.1 kolla has 2.38.0
-    {% raw %}
-    ARG prometheus_version=2.51.1
-    ARG prometheus_url=https://github.com/prometheus/prometheus/releases/download/v${prometheus_version}/prometheus-${prometheus_version}.linux-{{debian_arch}}.tar.gz
     {% endraw %}
 
 # Dict mapping image customization variable names to their values.
@@ -456,6 +360,8 @@ kolla_build_customizations_common:
   nova_compute_packages_append:
     - python3-libvirt
     - python3-ethtool
+  neutron_mlnx_agent_pip_packages_override:
+    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
 
 kolla_build_customizations_rocky:
   kolla_toolbox_packages_remove:
@@ -508,8 +414,7 @@ kolla_build_customizations_ubuntu: {}
 kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_rocky if kolla_base_distro == 'rocky' else kolla_build_customizations_ubuntu) }}"
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
-kolla_build_args:
-  placeholder: "placeholder"
+kolla_build_args: {}
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
@@ -691,7 +596,7 @@ kolla_enable_central_logging: true
 #kolla_enable_external_api_firewalld:
 #kolla_enable_external_mariadb_load_balancer:
 #kolla_enable_fluentd:
-#kolla_enable_freezer:
+#kolla_enable_fluentd_systemd:
 #kolla_enable_glance:
 #kolla_enable_glance_horizon_policy_file:
 #kolla_enable_glance_image_cache:
@@ -702,40 +607,36 @@ kolla_enable_grafana: true
 #kolla_enable_hacluster:
 #kolla_enable_haproxy:
 #kolla_enable_haproxy_memcached:
-#kolla_enable_heat:
+kolla_enable_heat: false
 #kolla_enable_heat_horizon_policy_file:
 #kolla_enable_horizon:
 #kolla_enable_horizon_blazar:
 #kolla_enable_horizon_cloudkitty:
 #kolla_enable_horizon_designate:
-#kolla_enable_horizon_freezer:
+#kolla_enable_horizon_fwaas:
 #kolla_enable_horizon_heat:
 #kolla_enable_horizon_ironic:
 #kolla_enable_horizon_magnum:
 #kolla_enable_horizon_manila:
 #kolla_enable_horizon_masakari:
 #kolla_enable_horizon_mistral:
-#kolla_enable_horizon_murano:
 #kolla_enable_horizon_neutron_vpnaas:
 #kolla_enable_horizon_octavia:
-#kolla_enable_horizon_sahara:
-#kolla_enable_horizon_senlin:
-#kolla_enable_horizon_solum:
 #kolla_enable_horizon_tacker:
 #kolla_enable_horizon_trove:
-#kolla_enable_horizon_vitrage:
 #kolla_enable_horizon_watcher:
 #kolla_enable_horizon_zun:
 #kolla_enable_influxdb:
 #kolla_enable_ironic:
 #kolla_enable_ironic_neutron_agent:
-#kolla_enable_ironic_pxe_uefi:
+kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
 #kolla_enable_keepalived:
 #kolla_enable_keystone:
 #kolla_enable_keystone_federation:
 #kolla_enable_keystone_horizon_policy_file:
 #kolla_enable_kuryr:
+#kolla_enable_letsencrypt:
 #kolla_enable_loadbalancer:
 #kolla_enable_magnum:
 #kolla_enable_manila:
@@ -752,11 +653,11 @@ kolla_enable_mariabackup: True
 #kolla_enable_memcached:
 #kolla_enable_mistral:
 #kolla_enable_multipathd:
-#kolla_enable_murano:
 #kolla_enable_neutron:
 #kolla_enable_neutron_agent_ha:
 #kolla_enable_neutron_bgp_dragent:
 #kolla_enable_neutron_dvr:
+#kolla_enable_neutron_fwaas:
 #kolla_enable_neutron_horizon_policy_file:
 #kolla_enable_neutron_infoblox_ipam_agent:
 #kolla_enable_neutron_metering:
@@ -768,6 +669,7 @@ kolla_enable_mariabackup: True
 #kolla_enable_neutron_segments:
 #kolla_enable_neutron_sfc:
 #kolla_enable_neutron_sriov:
+#kolla_enable_neutron_taas:
 #kolla_enable_neutron_trunk:
 #kolla_enable_neutron_vpnaas:
 #kolla_enable_nova:
@@ -778,13 +680,13 @@ kolla_enable_mariabackup: True
 #kolla_enable_nova_ssh:
 #kolla_enable_octavia:
 #kolla_enable_octavia_driver_agent:
+#kolla_enable_octavia_jobboard:
 #kolla_enable_opensearch:
 #kolla_enable_opensearch_dashboards:
 #kolla_enable_opensearch_dashboards_external:
 #kolla_enable_openstack_core:
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
-#kolla_enable_outward_rabbitmq:
 kolla_enable_ovn: true
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
@@ -809,9 +711,7 @@ kolla_enable_prometheus: true
 #kolla_enable_proxysql:
 #kolla_enable_rabbitmq:
 #kolla_enable_redis:
-#kolla_enable_sahara:
-#kolla_enable_senlin:
-#kolla_enable_solum:
+#kolla_enable_skyline:
 #kolla_enable_swift:
 #kolla_enable_swift_recon:
 #kolla_enable_swift_s3api:
@@ -819,8 +719,7 @@ kolla_enable_prometheus: true
 #kolla_enable_telegraf:
 #kolla_enable_trove:
 #kolla_enable_trove_singletenant:
-#kolla_enable_vitrage:
-#kolla_enable_vitrage_prometheus_datasource:
+#kolla_enable_venus:
 #kolla_enable_watcher:
 #kolla_enable_zun:
 
