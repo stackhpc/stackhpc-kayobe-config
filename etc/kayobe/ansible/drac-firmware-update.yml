@@ -1,0 +1,64 @@
+---
+- hosts: overcloud
+  gather_facts: false
+  connection: local
+  serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(1, true) }}"
+
+  collections:
+   - dellemc.openmanage
+
+  vars:
+    # Run with ``-e dell_drm_apply_update=true`` to apply the firmware updates.
+    dell_drm_apply_update: False
+    dell_drm_address: "https://{{ oob_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+    secrets_ipmi_username: "{{ ipmi_admin_user }}"
+    secrets_ipmi_password: "{{ ipmi_admin_password }}"
+    # Look at the README for more details, but you need a repo
+    # created in drm, and exported via a webserver:
+    # drm --create -r=idrac_repo --inputplatformlist=R640,R6525
+    dell_drm_repo: "idrac_repo_Catalog.xml"
+    # Run with -e bifrost_maintenance=false if nodes have not been enroled yet
+    set_bifrost_maintenance: True
+
+  tasks:
+    - name: Set maintenance mode
+      command: |-
+        docker exec bifrost_deploy bash -c '
+          OS_CLOUD=bifrost openstack baremetal node maintenance set \
+            --reason "Running drac-firmware-update.yml" \
+            {{ inventory_hostname }}'
+      become: true
+      delegate_to: "{{ groups.seed.0 }}"
+      vars:
+        ansible_connection: ssh
+        ansible_host: "{{ hostvars[groups.seed.0].ansible_host }}"
+      when: set_bifrost_maintenance | bool
+
+    - name: Update firmware from repository on a HTTP
+      idrac_firmware:
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+        reboot: True
+        job_wait: True
+        apply_update: "{{ dell_drm_apply_update | bool }}"
+        share_name: "{{ dell_drm_address }}"
+        catalog_file_name: "{{ dell_drm_repo }}"
+        ignore_cert_warning: True
+      register: idrac_firmware_output
+      delegate_to: localhost
+      when: ipmi_address is defined
+    - debug:
+        msg: "{{ idrac_firmware_output }}"
+
+    - name: Unset maintenance mode
+      command: |-
+        docker exec bifrost_deploy bash -c '
+          OS_CLOUD=bifrost openstack baremetal node maintenance unset \
+            {{ inventory_hostname }}'
+      become: true
+      delegate_to: "{{ groups.seed.0 }}"
+      vars:
+        ansible_connection: ssh
+        ansible_host: "{{ hostvars[groups.seed.0].ansible_host }}"
+      when: set_bifrost_maintenance | bool
