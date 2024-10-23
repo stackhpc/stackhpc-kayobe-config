@@ -339,11 +339,6 @@ kolla_build_blocks:
     ADD additions-archive /
     ENV ANSIBLE_PIP_VERSION='>=8,<9'
     ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
-  grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel \
-        && grafana-cli plugins install grafana-piechart-panel \
-        && grafana-cli plugins install grafana-opensearch-datasource \
-        && grafana-cli plugins install gnocchixyz-gnocchi-datasource
   ironic_inspector_header: |
     ADD additions-archive /
   magnum_base_footer: |
@@ -448,6 +443,9 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  grafana_plugins_append:
+    - grafana-piechart-panel
+    - vonage-status-panel
   ironic_inspector_pip_packages_append:
     - /additions/*
   neutron_server_packages_append:
