@@ -4,8 +4,8 @@ set -eux
 
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/2023.1
-KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
-KAYOBE_AIO_LVM=true
+KAYOBE_CONFIG_BRANCH=aio-tenks
+KAYOBE_AIO_LVM=false
 KAYOBE_CONFIG_EDIT_PAUSE=false
 AIO_RUN_TEMPEST=false
 
@@ -36,7 +36,11 @@ mkdir -p src
 pushd src
 [[ -d kayobe ]] || git clone https://github.com/stackhpc/kayobe.git -b $KAYOBE_BRANCH
 [[ -d kayobe-config ]] || git clone https://github.com/stackhpc/stackhpc-kayobe-config kayobe-config -b $KAYOBE_CONFIG_BRANCH
+[[ -d kayobe/tenks ]] || (cd kayobe && git clone https://opendev.org/openstack/tenks.git)
 popd
+
+sed -i "s/memory_mb: 1024/memory_mb: 4096/g" $BASE_PATH/src/kayobe/dev/tenks-deploy-config-compute.yml
+sed -i "s/capacity: 4GiB/capacity: 10GiB/g" $BASE_PATH/src/kayobe/dev/tenks-deploy-config-compute.yml
 
 if $KAYOBE_CONFIG_EDIT_PAUSE; then
    echo "Deployment is paused, edit configuration in another terminal"
@@ -88,9 +92,14 @@ kayobe control host bootstrap
 
 kayobe playbook run etc/kayobe/ansible/growroot.yml etc/kayobe/ansible/purge-command-not-found.yml
 
-kayobe overcloud host configure
+kayobe overcloud host configure --skip-tags selinux
 
 kayobe overcloud service deploy
+
+source $BASE_PATH/src/kayobe-config/etc/kolla/public-openrc.sh
+kayobe overcloud post configure
+export KAYOBE_CONFIG_SOURCE_PATH=~/src/kayobe-config
+export KAYOBE_VENV_PATH=~/venvs/kayobe
 
 if $AIO_RUN_TEMPEST; then
     pushd $BASE_PATH/src/kayobe-config
@@ -106,8 +115,8 @@ if $AIO_RUN_TEMPEST; then
     sleep 300
     sudo docker logs -f tempest
 else
-    export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
-    export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
     pushd $BASE_PATH/src/kayobe
     ./dev/overcloud-test-vm.sh
 fi
+
+./dev/tenks-deploy-compute.sh ./tenks/
