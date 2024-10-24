@@ -1,15 +1,24 @@
 ---
+# This playbook executes tests from the StackHPC OpenStack Tests repository.
+# https://github.com/stackhpc/stackhpc-openstack-tests
+
 - name: Run StackHPC OpenStack tests
-  hosts: tempest_runner
+  hosts: tempest_runner:overcloud
   tags:
     - stackhpc-openstack-tests
   vars:
     sot_venv: "{{ virtualenv_path }}/sot-venv"
     sot_repo: "https://github.com/stackhpc/stackhpc-openstack-tests"
-    sot_version: "v0.0.1"
+    # FIXME
+    sot_version: "docker-selinux"
     sot_timeout: 30
     results_path_local: "{{ lookup('env', 'HOME') }}/sot-results"
   tasks:
+    - name: Assert that there is only one host in the tempest_runner group
+      assert:
+        that: groups.get('tempest_runner', []) | length == 1
+        fail_msg: The tempest_runner group should contain exactly one host
+
     - block:
         - name: Create a temporary directory for tests repo
           ansible.builtin.tempfile:
@@ -55,37 +64,106 @@
             file: "{{ kayobe_env_config_path }}/kolla/passwords.yml"
             name: kolla_passwords
 
-        - name: Run StackHPC OpenStack tests
+        # Monitoring tests should run once, executed on the host in the
+        # tempest_runner group.
+        - name: Run StackHPC OpenStack monitoring tests
           ansible.builtin.command:
             cmd: >
               {{ sot_venv }}/bin/py.test
-              --html={{ results_tmpdir.path }}/stackhpc-openstack-tests.html
+              --html={{ results_tmpdir.path }}/monitoring.html
               --self-contained-html
-              --pyargs stackhpc_openstack_tests
+              --pyargs stackhpc_openstack_tests.monitoring
               --timeout {{ sot_timeout }}
               -vv
           environment:
+            GRAFANA_URL: "{{ sot_grafana_url }}"
+            GRAFANA_USERNAME: "{{ sot_grafana_username }}"
+            GRAFANA_PASSWORD: "{{ sot_grafana_password }}"
             OPENSEARCH_HOSTS: "{{ sot_opensearch_hosts }}"
             OPENSEARCH_PORT: "{{ sot_opensearch_port }}"
             OPENSEARCH_TLS: "{{ sot_opensearch_tls }}"
+            OPENSEARCH_DASHBOARDS_URL: "{{ sot_opensearch_dashboards_url }}"
+            OPENSEARCH_DASHBOARDS_USERNAME: "{{ sot_opensearch_dashboards_username }}"
+            OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sot_opensearch_dashboards_password }}"
+            OPENSEARCH_DASHBOARDS_CACERT: "{{ sot_opensearch_dashboards_cacert }}"
             PROMETHEUS_URL: "{{ sot_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sot_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sot_prometheus_password }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
+            sot_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
+            sot_grafana_username: "grafana_local_admin"
+            sot_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
             sot_opensearch_hosts: "{{ kolla_internal_fqdn }}"
             sot_opensearch_port: 9200
-            sot_opensearch_tls: false
+            sot_opensearch_tls: "{{ kolla_enable_tls_internal | bool }}"
+            sot_opensearch_dashboards_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:5601"
+            sot_opensearch_dashboards_username: "opensearch"
+            sot_opensearch_dashboards_password: "{{ kolla_passwords.opensearch_dashboards_password }}"
+            sot_opensearch_dashboards_cacert: "TODO"
             sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
             sot_prometheus_username: "admin"
             sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+          failed_when: monitoring_results.rc not in [0, 1]
+          register: monitoring_results
+          when: "'tempest_runner' in group_names"
+
+        # Host tests should run on every host in the overcloud group.
+        # TODO: Use TestInfra's native Ansible or SSH connection plugins for
+        # remote test execution? That would place all results in a single file
+        # and allow us to execute all tests from a single host.
+        # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
+        - name: Run StackHPC OpenStack host tests
+          ansible.builtin.command:
+            cmd: >
+              {{ sot_venv }}/bin/py.test
+              --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
+              --self-contained-html
+              --pyargs stackhpc_openstack_tests.host
+              --timeout {{ sot_timeout }}
+              -vv
+          environment:
+            DOCKER_VERSION_MIN: "{{ sot_docker_version_min }}"
+            DOCKER_VERSION_MAX: "{{ sot_docker_version_max }}"
+            SELINUX_STATE: "{{ sot_selinux_state }}"
+          vars:
+            # Inclusive min
+            sot_docker_version_min: "24.0.0"
+            # Exclusive max
+            sot_docker_version_max: "27.0.0"
+            sot_selinux_state: "{{ selinux_state }}"
+          failed_when: host_results.rc not in [0, 1]
+          register: host_results
+          when: "'overcloud' in group_names"
       always:
-        - name: Fetch results
-          ansible.builtin.fetch:
-            src: "{{ results_tmpdir.path }}/stackhpc-openstack-tests.html"
+        - name: Synchronize results
+          ansible.posix.synchronize:
+            src: "{{ results_tmpdir.path }}/"
             dest: "{{ results_path_local }}/"
-            flat: true
+            mode: pull
+            archive: no
+            recursive: true
+            # For jump host
+            use_ssh_args: true
+
+        - name: Write a file containing failed test runs
+          ansible.builtin.copy:
+            content: |-
+              {% for host in ansible_play_hosts_all %}
+              {% if host not in ansible_play_hosts %}
+              {{ host }}: Host failure
+              {% endif %}
+              {% if hostvars[host].monitoring_results.rc | default(0) != 0 %}
+              monitoring.html
+              {% endif %}
+              {% if hostvars[host].host_results.rc | default(0) != 0 %}
+              host-{{ host }}.html
+              {% endif %}
+              {% endfor %}
+            dest: "{{ results_path_local }}/failed-tests"
+          delegate_to: localhost
+          run_once: true
 
         - name: Clean up temporary directory
           ansible.builtin.file:
