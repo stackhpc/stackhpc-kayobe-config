@@ -82,18 +82,19 @@ jobs:
       # Dynamically define job matrix.
       # We need a separate matrix entry for each distribution, when the relevant input is true.
       # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+      # For now include only RL9 in aarch64
       - name: Generate build matrix
         id: set-matrix
         run: |
+          echo -n "matrix={\"include\": [" >> $GITHUB_OUTPUT
           comma=""
-          echo -n "matrix={\"distro\": [" >> $GITHUB_OUTPUT
-          if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
-            echo -n "$comma\"rocky\"" >> $GITHUB_OUTPUT
+          if [[ '${{ inputs.rocky-linux-9 }}' == 'true' ]]; then
+            echo -n "$comma{\"distro\": \"rocky\", \"arch\": \"amd64\"}" >> $GITHUB_OUTPUT
             comma=", "
+            echo -n "$comma{\"distro\": \"rocky\", \"arch\": \"aarch64\"}" >> $GITHUB_OUTPUT
           fi
-          if [[ ${{ inputs.ubuntu-jammy }} == 'true' ]]; then
-            echo -n "$comma\"ubuntu\"" >> $GITHUB_OUTPUT
-            comma=", "
+          if [[ '${{ inputs.ubuntu-jammy }}' == 'true' ]]; then
+            echo -n "$comma{\"distro\": \"ubuntu\", \"arch\": \"amd64\"}" >> $GITHUB_OUTPUT
           fi
           echo "]}" >> $GITHUB_OUTPUT
 
@@ -190,8 +191,15 @@ jobs:
         continue-on-error: true
         run: |
           args="${{ inputs.regexes }}"
+          if [[ "${{ matrix.arch }}" = 'aarch64' ]]; then
+            args="$args -e kolla_base_arch=${{ matrix.arch }}"
+          fi
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          if [[ "${{ matrix.distro }}" = 'rocky' ]]; then
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}-${{ matrix.arch }}"
+          else
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          fi
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -202,6 +210,10 @@ jobs:
 
       - name: Copy overcloud container image build logs to output directory
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-overcloud.log
+        if: inputs.overcloud
+
+      - name: Copy build configs to output directory
+        run: sudo cp -rnL /opt/kayobe/etc/kolla/* image-build-logs/
         if: inputs.overcloud
 
       - name: Build kolla seed images
@@ -216,14 +228,14 @@ jobs:
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.seed
+        if: inputs.seed && matrix.arch == 'amd64'
 
       - name: Copy seed container image build logs to output directory
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
-        if: inputs.seed
+        if: inputs.seed && matrix.arch == 'amd64'
 
       - name: Get built container images
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}" > ${{ matrix.distro }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" > ${{ matrix.distro }}-container-images
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
@@ -284,7 +296,7 @@ jobs:
       - name: Upload output artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.distro }}-logs
+          name: ${{ matrix.distro }}-${{ matrix.arch }}-logs
           path: image-build-logs
           retention-days: 7
         if: ${{ !cancelled() }}
@@ -307,6 +319,120 @@ jobs:
       - name: Fail when critical vulnerabilities are found
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
         if: ${{ !inputs.push-dirty && !cancelled() }}
+
+  create-manifests:
+    # Only for Rocky Linux for now
+    name: Create Multiarch Docker Manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
+    runs-on: arc-skc-container-image-builder-runner
+    permissions: {}
+    needs:
+      - container-image-build
+    steps:
+      - name: Install package dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git unzip python3-wheel python3-pip python3-venv curl jq wget openssh-server openssh-client
+
+      - name: Install gh
+        run: |
+          sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Checkout Kayobe Config
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      # Required for Pulp auth proxy deployment and Docker registry login.
+      # Normally installed during host configure.
+      - name: Install Docker Python SDK
+        run: |
+          sudo pip install docker
+
+      - name: Configure localhost as a seed
+        run: |
+          cat > src/kayobe-config/etc/kayobe/environments/ci-builder/inventory/hosts << EOF
+          # A 'seed' host used for building images.
+          # Use localhost for container image builds.
+          [seed]
+          localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+          EOF
+
+      # See etc/kayobe/ansible/roles/pulp_auth_proxy/README.md for details.
+      # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+      # runner and dind containers.
+      - name: Deploy an authenticating package repository mirror proxy
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Combine pushed images lists
+        run: |
+          find . -name 'push-attempt-images.txt' -exec cat {} + > all-pushed-images.txt
+
+      - name: Log in to Docker registry
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/docker-registry-login.yml
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Create and Push Docker Manifests
+        run: |
+          set -ex
+          mkdir -p logs
+          images=$(cat all-pushed-images.txt | sort | uniq)
+          # Filter out Ubuntu and Rocky Bifrost images
+          manifest_images=$(echo "$images" | grep 'rocky' | grep -E '.*-(amd64|aarch64)$' | sed -E 's/-(amd64|aarch64)$//' | sort | uniq)
+          if [ -z "$manifest_images" ]; then
+            echo "No Rocky overcloud images found. Skipping manifest creation." | tee -a logs/manifest-creation.log
+            exit 0
+          fi
+          for base_image in $manifest_images; do
+            arch_images=""
+            for arch in amd64 aarch64; do
+              arch_image="${base_image}-${arch}"
+              # Check if the image exists in the registry
+              if docker manifest inspect "$arch_image" > /dev/null 2>&1; then
+                arch_images="$arch_images $arch_image"
+              fi
+            done
+            if [ -n "$arch_images" ]; then
+              echo "Creating manifest for $base_image with images:$arch_images" | tee -a logs/manifest-creation.log
+              docker manifest create "$base_image" $arch_images | tee -a logs/manifest-creation.log
+              docker manifest push "$base_image" | tee -a logs/manifest-creation.log
+            else
+              echo "No images found for $base_image, skipping." | tee -a logs/manifest-creation.log
+            fi
+          done
+
+      - name: Upload manifest logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-logs
+          path: |
+            all-pushed-images.txt
+            logs/manifest-creation.log
 
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
