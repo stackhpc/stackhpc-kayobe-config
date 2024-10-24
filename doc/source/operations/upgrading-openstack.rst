@@ -141,6 +141,12 @@ Known issues
   around this in custom config, see the SMS PR for an example:
   https://github.com/stackhpc/smslab-kayobe-config/pull/354
 
+* Due to a `security-related change in the GRUB package on Rocky Linux 9
+  <https://access.redhat.com/security/cve/CVE-2023-4001>`__, the operating
+  system can become unbootable (boot will stop at a ``grub>`` prompt). Remove
+  the ``--root-dev-only`` option from ``/boot/efi/EFI/rocky/grub.cfg`` after
+  applying package updates.
+
 Security baseline
 =================
 
