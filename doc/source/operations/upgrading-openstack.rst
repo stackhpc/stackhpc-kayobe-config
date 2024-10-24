@@ -124,17 +124,6 @@ configuration.
 Known issues
 ============
 
-* OVN breaks on Rocky 9 deployments where hostnames are FQDNs.
-  Before upgrading, you must make sure no compute or controller nodes have any
-  ``.`` characters in their hostnames. Run the command below to check:
-
-  .. code-block:: bash
-
-     kayobe overcloud host command run --command "grep -v \'\.\' /etc/hostname" --show-output
-
-  There is currently no known fix for this issue aside from reprovisioning. A
-  patch will be developed soon.
-
 * Due to an incorrect default value NGS will attempt to use v3alpha for the api
   path when communicating with etcd3. This isn't possible as in Caracal etcd is
   running a newer version that has dropped support for v3alpha. You can work
