@@ -10,6 +10,7 @@ the various features provided.
 
    release-train
    host-images
+   ironic
    lvm
    swap
    cephadm
