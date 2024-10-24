@@ -119,4 +119,5 @@ else
     ./dev/overcloud-test-vm.sh
 fi
 
+sudo chmod 755 /usr/bin/ovs-vsctl
 ./dev/tenks-deploy-compute.sh ./tenks/
