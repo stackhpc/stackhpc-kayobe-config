@@ -49,6 +49,17 @@ dnf_custom_repos: "{{ stackhpc_dnf_repos if stackhpc_repos_enabled | bool else [
 # file.
 stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
 
+# OFED repository for Rocky 9
+dnf_custom_repos_ofed:
+  ofed:
+    baseurl: "{{ stackhpc_repo_rocky_ofed_url }}"
+    description: "Mellanox Technologies doca_ofed {{ stackhpc_pulp_doca_ofed_version }} Rocky 9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}"
+    enabled: "{{ dnf_enable_rocky_ofed | bool }}"
+    file: ofed
+    gpgcheck: no
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+
 # Custom repositories shared between all RHEL 9 derivatives.
 dnf_custom_repos_el9:
   epel:
@@ -152,6 +163,8 @@ dnf_enable_docker: true
 #URL of docker repo GPG key
 dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
 
+# Whether to enable OFED repositories
+dnf_enable_rocky_ofed: false
 
 ###############################################################################
 # DNF Automatic configuration.
