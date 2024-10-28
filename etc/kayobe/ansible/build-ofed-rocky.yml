@@ -51,7 +51,7 @@
 
     - name: Create build directory
       ansible.builtin.file:
-        path: /home/cloud-user/ofed
+        path: /home/stack/ofed
         state: directory
         mode: 0777
 
@@ -59,7 +59,7 @@
       ansible.builtin.replace:
         path: /opt/mellanox/doca/tools/doca-kernel-support
         regexp: 'TMP_DIR=\$1'
-        replace: 'TMP_DIR=/home/cloud-user/ofed'
+        replace: 'TMP_DIR=/home/stack/ofed'
 
     - name: Build OFED kernel modules
       ansible.builtin.shell:
@@ -70,4 +70,4 @@
       ansible.builtin.dnf:
         name: doca-ofed-userspace
         download_only: true
-        download_dir: /home/cloud-user/ofed
+        download_dir: /home/stack/ofed
