@@ -20,28 +20,32 @@
         paths: "/home/stack/ofed"
       register: rpm_dir
 
+    - name: Ensure Pulp configuration directory exists
+      ansible.builtin.file:
+        path: /home/stack/.config/pulp/
+        state: directory
+        recurse: true
+
+    - name: Setup Pulp credentials
+      ansible.builtin.blockinfile:
+        path: /home/stack/.config/pulp/cli.toml
+        create: true
+        block: |
+          [cli]
+          base_url = '{{ stackhpc_release_pulp_url }}'
+          verify_ssl = true
+          format = "json"
+          username = '{{ stackhpc_release_pulp_username }}'
+          password = '{{ stackhpc_release_pulp_password }}'
+      no_log: true
+
     - name: Upload OFED RPMs to Pulp
       ansible.builtin.shell:
         cmd: |
           pulp \
-          --base-url '{{ stackhpc_release_pulp_url }}' \
-          --username '{{ stackhpc_release_pulp_username }}' \
-          --password '{{ stackhpc_release_pulp_password }}' \
           rpm content \
           --type package upload \
           --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
           --file {{ item.path }} \
       with_items: "{{ rpm_dir.files }}"
-      no_log: true
-      register: upload_debug
       failed_when: false
-
-    - name: Write stdout to file
-      copy:
-        content: "{{ upload_debug.stdout }}"
-        dest: "/home/stack/upload-debug"
-
-    - name: Write stderr to file
-      copy:
-        content: "{{ upload_debug.stderr }}"
-        dest: "/home/stack/upload-error"
