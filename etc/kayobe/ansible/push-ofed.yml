@@ -1,6 +1,8 @@
 ---
 - name: Push OFED packages
   hosts: ofed-builder
+  vars:
+    venv: "/opt/kayobe/venvs/kayobe"
   tasks:
     - name: Install python dependencies
       ansible.builtin.pip:
@@ -23,7 +25,7 @@
     - name: Upload OFED RPMs to Pulp
       ansible.builtin.shell:
         cmd: |
-          pulp \
+          {{ venv }}/bin/pulp \
           rpm content \
           --type package upload \
           --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
