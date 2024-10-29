@@ -65,3 +65,22 @@
         name: doca-ofed-userspace
         download_only: true
         download_dir: /home/stack/ofed
+  
+    - name: Ensure Pulp configuration directory exists
+      ansible.builtin.file:
+        path: /home/stack/.config/pulp/
+        state: directory
+        recurse: true
+
+    - name: Setup Pulp credentials
+      ansible.builtin.blockinfile:
+        path: /home/stack/.config/pulp/cli.toml
+        create: true
+        block: |
+          [cli]
+          base_url = '{{ stackhpc_release_pulp_url }}'
+          verify_ssl = true
+          format = "json"
+          username = '{{ stackhpc_release_pulp_username }}'
+          password = '{{ stackhpc_release_pulp_password }}'
+      no_log: true
