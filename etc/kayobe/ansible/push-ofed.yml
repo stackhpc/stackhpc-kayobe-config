@@ -33,22 +33,17 @@
           --file {{ item.path }} \
       with_items: "{{ rpm_dir.files }}"
       no_log: true
+      register: upload_debug
+      failed_when: false
 
-    - name: Create Pulp publication for OFED
-      pulp.squeezer.rpm_publication:
-        pulp_url: "{{ stackhpc_release_pulp_url }}"
-        username: "{{ stackhpc_release_pulp_username }}"
-        password: "{{ stackhpc_release_pulp_password }}"
-        repository: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}"
-        state: present
-      register: publication
+    - name: Write stdout to file
+      copy:
+        content: "{{ upload_debug.stdout }}"
+        dest: "/home/stack/upload-debug"
+      no_log: true
 
-    - name: Create Pulp distribution for OFED
-      pulp.squeezer.rpm_distribution:
-        pulp_url: "{{ stackhpc_release_pulp_url }}"
-        username: "{{ stackhpc_release_pulp_username }}"
-        password: "{{ stackhpc_release_pulp_password }}"
-        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }}"
-        publication: "{{ publication.publication.pulp_href }}"
-        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}"
-        state: present
+    - name: Write stderr to file
+      copy:
+        content: "{{ upload_debug.stderr }}"
+        dest: "/home/stack/upload-error"
+      no_log: true
