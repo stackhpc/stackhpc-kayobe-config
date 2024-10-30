@@ -8,6 +8,10 @@
       ansible.builtin.pip:
         name: pulp-cli
 
+    - name: Generate timestamp for distribution
+      ansible.builtin.set_fact:
+        stackhpc_doca_ofed_repo_version: "{{ ansible_date_time.iso8601_basic_short }}"
+
     - name: Create Pulp repository for OFED
       pulp.squeezer.rpm_repository:
         pulp_url: "{{ stackhpc_release_pulp_url }}"
@@ -33,6 +37,7 @@
           --type package upload \
           --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
           --file {{ item.path }} \
+          --no-publish \
       with_items: "{{ rpm_dir.files }}"
       no_log: true
 
@@ -50,7 +55,8 @@
         pulp_url: "{{ stackhpc_release_pulp_url }}"
         username: "{{ stackhpc_release_pulp_username }}"
         password: "{{ stackhpc_release_pulp_password }}"
-        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }}"
+        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }} ~ {{ stackhpc_doca_ofed_repo_version }}"
         publication: "{{ publication.publication.pulp_href }}"
-        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}"
+        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}/{{ stackhpc_doca_ofed_repo_version }}"
+        content_guard: "development"
         state: present
