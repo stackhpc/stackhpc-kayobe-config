@@ -137,6 +137,12 @@ Known issues
   applying package updates. This will happen automatically as a post hook when
   running the ``kayobe overcloud host package update`` command.
 
+* The Octavia bootstrap will fail during the the 2024.1 upgrade because the
+  Octavia persistence database user is missing. See bug for details:
+  https://bugs.launchpad.net/kolla-ansible/+bug/2065591
+  There is a Kolla-Ansible patch in-progress that you can cherry-pick:
+  https://review.opendev.org/c/openstack/kolla-ansible/+/932408
+
 Security baseline
 =================
 
