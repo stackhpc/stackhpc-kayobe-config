@@ -8,9 +8,24 @@
       ansible.builtin.pip:
         name: pulp-cli
 
-    - name: Generate timestamp for distribution
-      ansible.builtin.set_fact:
-        stackhpc_doca_ofed_repo_version: "{{ '%Y%m%dT%H%M%S' | strftime }}"
+    - name: Ensure Pulp configuration directory exists
+      ansible.builtin.file:
+        path: /home/stack/.config/pulp/
+        state: directory
+        recurse: true
+
+    - name: Setup Pulp credentials
+      ansible.builtin.blockinfile:
+        path: /home/stack/.config/pulp/cli.toml
+        create: true
+        block: |
+          [cli]
+          base_url = '{{ stackhpc_release_pulp_url }}'
+          verify_ssl = true
+          format = "json"
+          username = '{{ stackhpc_release_pulp_username }}'
+          password = '{{ stackhpc_release_pulp_password }}'
+      no_log: true
 
     - name: Create Pulp repository for OFED
       pulp.squeezer.rpm_repository:
@@ -30,16 +45,12 @@
       ansible.builtin.shell:
         cmd: |
           {{ venv }}/bin/pulp \
-          --base-url '{{ stackhpc_release_pulp_url }}' \
-          --username '{{ stackhpc_release_pulp_username }}' \
-          --password '{{ stackhpc_release_pulp_password }}' \
           rpm content \
           --type package upload \
           --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
           --file {{ item.path }} \
           --no-publish \
       with_items: "{{ rpm_dir.files }}"
-      no_log: true
 
     - name: Create Pulp publication for OFED
       pulp.squeezer.rpm_publication:
@@ -55,8 +66,8 @@
         pulp_url: "{{ stackhpc_release_pulp_url }}"
         username: "{{ stackhpc_release_pulp_username }}"
         password: "{{ stackhpc_release_pulp_password }}"
-        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }}{{ ofed_tag }}"
+        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name + ofed_tag }}"
         publication: "{{ publication.publication.pulp_href }}"
         content_guard: development
-        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }/{{ ofed_tag }}"
+        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}/{{ ofed_tag }}"
         state: present
