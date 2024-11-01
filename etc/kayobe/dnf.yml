@@ -47,7 +47,7 @@ dnf_custom_repos: "{{ stackhpc_dnf_repos if stackhpc_repos_enabled | bool else [
 # To use these repos, set stackhpc_repos_enabled to true.
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
-stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
+stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool | combine(dnf_custom_repos_ofed if dnf_install_rocky_ofed) | bool else {}) }}"
 
 # OFED repository for Rocky 9
 dnf_custom_repos_ofed:
@@ -163,8 +163,12 @@ dnf_enable_docker: true
 #URL of docker repo GPG key
 dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
 
-# Whether to enable OFED repositories
+# Whether to enable OFED repositories. This affects RedHat-based systems only.
 dnf_enable_rocky_ofed: false
+
+# Whether to create a repo file for OFED. This affects RedHat-based
+# systems only.
+dnf_install_rocky_ofed: false
 
 ###############################################################################
 # DNF Automatic configuration.
