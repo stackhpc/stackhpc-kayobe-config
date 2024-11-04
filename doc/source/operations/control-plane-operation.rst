@@ -42,6 +42,9 @@ Ansible control host
 Control Plane Monitoring
 ========================
 
+This section shows user guide of monitoring control plane. To see how to
+configure monitoring services, read :ref:`monitoring-service-configuration`.
+
 The control plane has been configured to collect logs centrally using Fluentd,
 OpenSearch and OpenSearch Dashboards.
 
