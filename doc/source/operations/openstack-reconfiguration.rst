@@ -35,8 +35,14 @@ On each controller:
 Some services may store data in a dedicated Docker volume, which can be removed
 with ``docker volume rm``.
 
-Installing TLS Certificates
-===========================
+.. _installing-external-tls-certificates:
+
+Installing External TLS Certificates
+====================================
+
+This section explains the process of deploying external TLS.
+For internal and backend TLS, see `Hashicorp Vault for internal PKI
+<hashicorp-vault>`__.
 
 To configure TLS for the first time, we write the contents of a PEM
 file to the ``secrets.yml`` file as ``secrets_kolla_external_tls_cert``.
@@ -81,8 +87,8 @@ See `Kolla-Ansible TLS guide
 <https://docs.openstack.org/kolla-ansible/latest/admin/tls.html>`__ for
 further details.
 
-Updating TLS Certificates
--------------------------
+Updating External TLS Certificates
+----------------------------------
 
 Check the expiry date on an installed TLS certificate from a host that can
 reach the OpenStack APIs:
