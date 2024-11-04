@@ -210,11 +210,12 @@ following order:
 Rebooting a node
 ----------------
 
+Use ``reboot.yml`` playbook to reboot nodes
 Example: Reboot all compute hosts apart from compute0:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud host command run --limit 'compute:!compute0' -b --command "shutdown -r"
+   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit 'compute:!compute0'
 
 References
 ----------
