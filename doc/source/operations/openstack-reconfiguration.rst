@@ -97,8 +97,10 @@ reach the OpenStack APIs:
 
    openstack# openssl s_client -connect <Public endpoint FQDN>:443 2> /dev/null | openssl x509 -noout -dates
 
-*NOTE*: Prometheus Blackbox monitoring can check certificates automatically
-and alert when expiry is approaching.
+.. note::
+
+   Prometheus Blackbox monitoring can check certificates automatically
+   and alert when expiry is approaching.
 
 To update an existing certificate, for example when it has reached expiration,
 change the value of ``secrets_kolla_external_tls_cert``, in the same order as
