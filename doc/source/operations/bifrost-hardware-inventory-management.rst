@@ -1,8 +1,8 @@
-=============================
-Hardware Inventory Management
-=============================
+=====================================
+Bifrost Hardware Inventory Management
+=====================================
 
-At its lowest level, hardware inventory is managed in the Bifrost service.
+In most deployments, hardware inventory is managed by the Bifrost service.
 
 Reconfiguring Control Plane Hardware
 ====================================
@@ -56,7 +56,9 @@ in Bifrost:
    | da0c61af-b411-41b9-8909-df2509f2059b | example-hypervisor-01 | None          | power off   | enroll             | False       |
    +--------------------------------------+-----------------------+---------------+-------------+--------------------+-------------+
 
-After editing ``${KAYOBE_CONFIG_PATH}/overcloud.yml`` to add these new hosts to
+After editing ``${KAYOBE_CONFIG_PATH}/overcloud.yml`` (or
+``${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/overcloud.yml``
+if Kayobe environment is used) to add these new hosts to
 the correct groups, import them in Kayobe's inventory with:
 
 .. code-block:: console
@@ -138,7 +140,7 @@ migrate as the process needs manual confirmation. You can do this with:
 
 .. code-block:: console
 
-   openstack # openstack server resize confirm <instance-uuid>
+   openstack# openstack server resize confirm <instance-uuid>
 
 The symptom to look out for is that the server is showing a status of ``VERIFY
 RESIZE`` as shown in this snippet of ``openstack server show <instance-uuid>``:

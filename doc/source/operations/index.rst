@@ -11,7 +11,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    control-plane-operation
    customising-horizon
    gpu-in-openstack
-   hardware-inventory-management
+   bifrost-hardware-inventory-management
    hotfix-playbook
    migrating-vm
    nova-compute-ironic
