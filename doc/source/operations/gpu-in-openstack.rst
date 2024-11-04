@@ -2,35 +2,18 @@
 Support for GPUs in OpenStack
 =============================
 
-NVIDIA Virtual GPU
-##################
+Virtual GPUs
+############
 
 BIOS configuration
 ------------------
 
-Intel
-^^^^^
-
-* Enable `VT-x` in the BIOS for virtualisation support.
-* Enable `VT-d` in the BIOS for IOMMU support.
-
-Dell
-^^^^
-
-Enabling SR-IOV with `racadm`:
-
-.. code:: shell
-
-    /opt/dell/srvadmin/bin/idracadm7 set BIOS.IntegratedDevices.SriovGlobalEnable Enabled
-    /opt/dell/srvadmin/bin/idracadm7 jobqueue create BIOS.Setup.1-1
-    <reboot>
-
+See upstream documentation: `BIOS configuration <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#bios-configuration>`__
 
 Obtain driver from NVIDIA licensing portal
--------------------------------------------
+------------------------------------------
 
-Download Nvidia GRID driver from `here <https://docs.nvidia.com/grid/latest/grid-software-quick-start-guide/index.html#redeeming-pak-and-downloading-grid-software>`__
-(This requires a login). The file can either be placed on the :ref:`ansible control host<NVIDIA control host>` or :ref:`uploaded to pulp<NVIDIA Pulp>`.
+See upstream documentation: `Obtain driver from NVIDIA licencing portal <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#obtain-driver-from-nvidia-licensing-portal>`__
 
 .. _NVIDIA Pulp:
 
@@ -52,7 +35,8 @@ running in a CI environment.
 The file will then be available at ``<pulp_url>/pulp/content/nvidia/NVIDIA-GRID-Linux-KVM-525.105.14-525.105.17-528.89.zip``. You
 will need to set the ``vgpu_driver_url`` configuration option to this value:
 
-.. code:: yaml
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/vgpu.yml
 
    # URL of GRID driver in pulp
    vgpu_driver_url: "{{ pulp_url }}/pulp/content/nvidia/NVIDIA-GRID-Linux-KVM-525.105.14-525.105.17-528.89.zip"
@@ -67,7 +51,8 @@ Placing the GRID driver on the ansible control host
 Copy the driver bundle to a known location on the ansible control host. Set the ``vgpu_driver_url`` configuration variable to reference this
 path using ``file`` as the url scheme e.g:
 
-.. code:: yaml
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/vgpu.yml
 
     # Location of NVIDIA GRID driver on localhost
     vgpu_driver_url: "file://{{ lookup('env', 'HOME') }}/NVIDIA-GRID-Linux-KVM-525.105.14-525.105.17-528.89.zip"
@@ -81,24 +66,12 @@ OS Configuration
 
 Host OS configuration is done by using roles in the `stackhpc.linux <https://github.com/stackhpc/ansible-collection-linux>`_ ansible collection.
 
-Add the following to your ansible ``requirements.yml``:
-
-.. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/ansible/requirements.yml
-
-    #FIXME: Update to known release When VGPU and IOMMU roles have landed
-    collections:
-      - name: stackhpc.linux
-        source: git+https://github.com/stackhpc/ansible-collection-linux.git,preemptive/vgpu-iommu
-        type: git
-
 Create a new playbook or update an existing on to apply the roles:
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/ansible/host-configure.yml
 
     ---
-
       - hosts: iommu
         tags:
           - iommu
@@ -176,15 +149,6 @@ hosts can automatically be mapped to these groups by configuring
 Role Configuration
 ^^^^^^^^^^^^^^^^^^
 
-Configure the location of the NVIDIA driver:
-
-.. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/vgpu.yml
-
-    ---
-
-    vgpu_driver_url: "http://{{ pulp_url }}/pulp/content/nvidia/NVIDIA-GRID-Linux-KVM-525.105.14-525.105.17-528.89.zip"
-
 Configure the VGPU devices:
 
 .. code-block:: yaml
@@ -260,56 +224,8 @@ ensure you do not forget to run it when hosts are enrolled in the future.
 Kolla-Ansible configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use the mdev devices that were created, modify nova.conf to add a list of mdev devices that
-can be passed through to guests:
-
-.. code-block::
-   :caption: $KAYOBE_CONFIG_PATH/kolla/config/nova/nova-compute.conf
-
-    {% if inventory_hostname in groups['compute_multi_instance_gpu'] %}
-    [devices]
-    enabled_mdev_types = nvidia-700, nvidia-699
-
-    [mdev_nvidia-700]
-    device_addresses = 0000:21:00.4,0000:21:00.5,0000:21:00.6,0000:81:00.4,0000:81:00.5,0000:81:00.6
-    mdev_class = CUSTOM_NVIDIA_700
-
-    [mdev_nvidia-699]
-    device_addresses = 0000:21:00.7,0000:81:00.7
-    mdev_class = CUSTOM_NVIDIA_699
-
-    {% elif inventory_hostname in groups['compute_vgpu'] %}
-    [devices]
-    enabled_mdev_types = nvidia-697
-
-    [mdev_nvidia-697]
-    device_addresses = 0000:21:00.4,0000:21:00.5,0000:81:00.4,0000:81:00.5
-    # Custom resource classes don't work when you only have single resource type.
-    mdev_class = VGPU
-
-    {% endif %}
-
-You will need to adjust the PCI addresses to match the virtual function
-addresses. These can be obtained by checking the mdevctl configuration after
-running the role:
-
-.. code-block:: shell
-
-   # mdevctl list
-
-   73269d0f-b2c9-438d-8f28-f9e4bc6c6995 0000:17:00.4 nvidia-700 manual (defined)
-   dc352ef3-efeb-4a5d-a48e-912eb230bc76 0000:17:00.5 nvidia-700 manual (defined)
-   a464fbae-1f89-419a-a7bd-3a79c7b2eef4 0000:17:00.6 nvidia-700 manual (defined)
-   f3b823d3-97c8-4e0a-ae1b-1f102dcb3bce 0000:17:00.7 nvidia-699 manual (defined)
-   330be289-ba3f-4416-8c8a-b46ba7e51284 0000:65:00.4 nvidia-700 manual (defined)
-   1ba5392c-c61f-4f48-8fb1-4c6b2bbb0673 0000:65:00.5 nvidia-700 manual (defined)
-   f6868020-eb3a-49c6-9701-6c93e4e3fa9c 0000:65:00.6 nvidia-700 manual (defined)
-   00501f37-c468-5ba4-8be2-8d653c4604ed 0000:65:00.7 nvidia-699 manual (defined)
-
-The mdev_class maps to a resource class that you can set in your flavor definition.
-Note that if you only define a single mdev type on a given hypervisor, then the
-mdev_class configuration option is silently ignored and it will use the ``VGPU``
-resource class (bug?).
+See upstream documentation: `Kolla Ansible configuration <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#kolla-ansible-configuration>`__
+then follow the rest.
 
 Map through the kayobe inventory groups into kolla:
 
@@ -356,28 +272,7 @@ You will need to reconfigure nova for this change to be applied:
 Openstack flavors
 ^^^^^^^^^^^^^^^^^
 
-Define some flavors that request the resource class that was configured in nova.conf.
-An example definition, that can be used with ``openstack.cloud.compute_flavor`` Ansible module,
-is shown below:
-
-.. code-block:: yaml
-
-  vgpu_a100_2g_20gb:
-    name: "vgpu.a100.2g.20gb"
-    ram: 65536
-    disk: 30
-    vcpus: 8
-    is_public: false
-    extra_specs:
-      hw:cpu_policy: "dedicated"
-      hw:cpu_thread_policy: "prefer"
-      hw:mem_page_size: "1GB"
-      hw:cpu_sockets: 2
-      hw:numa_nodes: 8
-      hw_rng:allowed: "True"
-      resources:CUSTOM_NVIDIA_700: "1"
-
-You now should be able to launch a VM with this flavor.
+See upstream documentation: `OpenStack flavors <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#openstack-flavors>`__
 
 NVIDIA License Server
 ^^^^^^^^^^^^^^^^^^^^^
@@ -667,123 +562,7 @@ Example output:
 Changing VGPU device types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Converting the second card to an NVIDIA-698 (whole card). The hypervisor
-is empty so we can freely delete mdevs. First clean up the mdev
-definition:
-
-.. code:: shell
-
-   [stack@computegpu007 ~]$ sudo mdevctl list
-   5c630867-a673-5d75-aa31-a499e6c7cb19 0000:21:00.4 nvidia-697 manual (defined)
-   eaa6e018-308e-58e2-b351-aadbcf01f5a8 0000:21:00.5 nvidia-697 manual (defined)
-   72291b01-689b-5b7a-9171-6b3480deabf4 0000:81:00.4 nvidia-697 manual (defined)
-   0a47ffd1-392e-5373-8428-707a4e0ce31a 0000:81:00.5 nvidia-697 manual (defined)
-
-   [stack@computegpu007 ~]$ sudo mdevctl stop --uuid 72291b01-689b-5b7a-9171-6b3480deabf4
-   [stack@computegpu007 ~]$ sudo mdevctl stop --uuid 0a47ffd1-392e-5373-8428-707a4e0ce31a
-
-   [stack@computegpu007 ~]$ sudo mdevctl undefine --uuid 0a47ffd1-392e-5373-8428-707a4e0ce31a
-
-   [stack@computegpu007 ~]$ sudo mdevctl list --defined
-   5c630867-a673-5d75-aa31-a499e6c7cb19 0000:21:00.4 nvidia-697 manual (active)
-   eaa6e018-308e-58e2-b351-aadbcf01f5a8 0000:21:00.5 nvidia-697 manual (active)
-   72291b01-689b-5b7a-9171-6b3480deabf4 0000:81:00.4 nvidia-697 manual
-
-   # We can re-use the first virtual function
-
-Secondly remove the systemd unit that starts the mdev device:
-
-.. code:: shell
-
-   [stack@computegpu007 ~]$ sudo rm /etc/systemd/system/multi-user.target.wants/nvidia-mdev@0a47ffd1-392e-5373-8428-707a4e0ce31a.service
-
-Example config change:
-
-.. code:: shell
-
-   diff --git a/etc/kayobe/environments/cci1/inventory/host_vars/computegpu007/vgpu b/etc/kayobe/environments/cci1/inventory/host_vars/computegpu007/vgpu
-   new file mode 100644
-   index 0000000..6cea9bf
-   --- /dev/null
-   +++ b/etc/kayobe/environments/cci1/inventory/host_vars/computegpu007/vgpu
-   @@ -0,0 +1,12 @@
-   +---
-   +vgpu_definitions:
-   +    - pci_address: "0000:21:00.0"
-   +      virtual_functions:
-   +        - mdev_type: nvidia-697
-   +          index: 0
-   +        - mdev_type: nvidia-697
-   +          index: 1
-   +    - pci_address: "0000:81:00.0"
-   +      virtual_functions:
-   +        - mdev_type: nvidia-698
-   +          index: 0
-   diff --git a/etc/kayobe/kolla/config/nova/nova-compute.conf b/etc/kayobe/kolla/config/nova/nova-compute.conf
-   index 6f680cb..e663ec4 100644
-   --- a/etc/kayobe/kolla/config/nova/nova-compute.conf
-   +++ b/etc/kayobe/kolla/config/nova/nova-compute.conf
-   @@ -39,7 +39,19 @@ cpu_mode = host-model
-    {% endraw %}
-
-    {% raw %}
-   -{% if inventory_hostname in groups['compute_multi_instance_gpu'] %}
-   +{% if inventory_hostname == "computegpu007" %}
-   +[devices]
-   +enabled_mdev_types = nvidia-697, nvidia-698
-   +
-   +[mdev_nvidia-697]
-   +device_addresses = 0000:21:00.4,0000:21:00.5
-   +mdev_class = VGPU
-   +
-   +[mdev_nvidia-698]
-   +device_addresses = 0000:81:00.4
-   +mdev_class = CUSTOM_NVIDIA_698
-   +
-   +{% elif inventory_hostname in groups['compute_multi_instance_gpu'] %}
-    [devices]
-    enabled_mdev_types = nvidia-700, nvidia-699
-
-   @@ -50,15 +62,14 @@ mdev_class = CUSTOM_NVIDIA_700
-    [mdev_nvidia-699]
-    device_addresses = 0000:21:00.7,0000:81:00.7
-    mdev_class = CUSTOM_NVIDIA_699
-   -{% endif %}
-
-   -{% if inventory_hostname in groups['compute_vgpu'] %}
-   +{% elif inventory_hostname in groups['compute_vgpu'] %}
-    [devices]
-    enabled_mdev_types = nvidia-697
-
-    [mdev_nvidia-697]
-    device_addresses = 0000:21:00.4,0000:21:00.5,0000:81:00.4,0000:81:00.5
-   -# Custom resource classes don't seem to work for this card.
-   +# Custom resource classes don't work when you only have single resource type.
-    mdev_class = VGPU
-
-    {% endif %}
-
-Re-run the configure playbook:
-
-.. code:: shell
-
-   (kayobe) [stack@ansiblenode1 kayobe]$ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/host-configure.yml --tags vgpu --limit computegpu007
-
-Check the result:
-
-.. code:: shell
-
-   [stack@computegpu007 ~]$ mdevctl list
-   5c630867-a673-5d75-aa31-a499e6c7cb19 0000:21:00.4 nvidia-697 manual
-   eaa6e018-308e-58e2-b351-aadbcf01f5a8 0000:21:00.5 nvidia-697 manual
-   72291b01-689b-5b7a-9171-6b3480deabf4 0000:81:00.4 nvidia-698 manual
-
-Reconfigure nova to match the change:
-
-.. code:: shell
-
-   kayobe overcloud service reconfigure -kt nova --kolla-limit computegpu007 --skip-prechecks
-
+See upstream documentation: `Changing VGPU device types <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#changing-vgpu-device-types>`__
 
 PCI Passthrough
 ###############
@@ -986,81 +765,16 @@ IOMMU should be enabled at kernel level as well - we can verify that on the comp
 OpenStack Nova configuration
 ----------------------------
 
-Configure nova-scheduler
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-The nova-scheduler service must be configured to enable the ``PciPassthroughFilter``
-To enable it add it to the list of filters to Kolla-Ansible configuration file:
-``$KAYOBE_CONFIG_PATH/kolla/config/nova.conf``, for instance:
-
-.. code-block:: yaml
-
-   [filter_scheduler]
-   available_filters = nova.scheduler.filters.all_filters
-   enabled_filters = AvailabilityZoneFilter, ComputeFilter, ComputeCapabilitiesFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, PciPassthroughFilter
-
-Configure nova-compute
-^^^^^^^^^^^^^^^^^^^^^^
-
-Configuration can be applied in flexible ways using Kolla-Ansible's
-methods for `inventory-driven customisation of configuration
-<https://docs.openstack.org/kayobe/latest/configuration/reference/kolla-ansible.html#service-configuration>`_.
-The following configuration could be added to
-``$KAYOBE_CONFIG_PATH/kolla/config/nova/nova-compute.conf`` to enable PCI
-passthrough of GPU devices for hosts in a group named ``compute_gpu``.
-Again, the 4-digit PCI Vendor ID and Device ID extracted from ``lspci
--nn`` can be used here to specify the GPU device(s).
-
-.. code-block:: jinja
-
-   [pci]
-   {% raw %}
-   {% if inventory_hostname in groups['compute_gpu'] %}
-   # We could support multiple models of GPU.
-   # This can be done more selectively using different inventory groups.
-   # GPU models defined here:
-   # NVidia Tesla V100 16GB
-   # NVidia Tesla V100 32GB
-   # NVidia Tesla P100 16GB
-   passthrough_whitelist = [{ "vendor_id":"10de", "product_id":"1db4" },
-                            { "vendor_id":"10de", "product_id":"1db5" },
-                            { "vendor_id":"10de", "product_id":"15f8" }]
-   alias = { "vendor_id":"10de", "product_id":"1db4", "device_type":"type-PCI", "name":"gpu-v100-16" }
-   alias = { "vendor_id":"10de", "product_id":"1db5", "device_type":"type-PCI", "name":"gpu-v100-32" }
-   alias = { "vendor_id":"10de", "product_id":"15f8", "device_type":"type-PCI", "name":"gpu-p100" }
-   {% endif %}
-   {% endraw %}
-
-Configure nova-api
-^^^^^^^^^^^^^^^^^^
-
-pci.alias also needs to be configured on the controller.
-This configuration should match the configuration found on the compute nodes.
-Add it to Kolla-Ansible configuration file:
-``$KAYOBE_CONFIG_PATH/kolla/config/nova/nova-api.conf``, for instance:
-
-.. code-block:: yaml
-
-   [pci]
-   alias = { "vendor_id":"10de", "product_id":"1db4", "device_type":"type-PCI", "name":"gpu-v100-16" }
-   alias = { "vendor_id":"10de", "product_id":"1db5", "device_type":"type-PCI", "name":"gpu-v100-32" }
-   alias = { "vendor_id":"10de", "product_id":"15f8", "device_type":"type-PCI", "name":"gpu-p100" }
-
-Reconfigure nova service
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: text
-
-   kayobe overcloud service reconfigure --kolla-tags nova --kolla-skip-tags common --skip-prechecks
+See upsteram Nova documentation: `Attaching physical PCI devices to guests <https://docs.openstack.org/nova/latest/admin/pci-passthrough.html>`__
 
 Configure a flavor
 ^^^^^^^^^^^^^^^^^^
 
-For example, to request two of the GPUs with alias gpu-p100
+For example, to request two of the GPUs with alias **a1**
 
 .. code-block:: text
 
-   openstack flavor set m1.medium --property "pci_passthrough:alias"="gpu-p100:2"
+   openstack flavor set m1.medium --property "pci_passthrough:alias"="a1:2"
 
 
 This can be also defined in the openstack-config repository
@@ -1072,12 +786,12 @@ add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
    admin# cd src/openstack-config
    admin# vim etc/openstack-config/openstack-config.yml
 
-    name: "m1.medium"
+    name: "m1.medium-gpu"
     ram: 4096
     disk: 40
     vcpus: 2
     extra_specs:
-      "pci_passthrough:alias": "gpu-p100:2"
+      "pci_passthrough:alias": "a1:2"
 
 Invoke configuration playbooks afterwards:
 
@@ -1092,7 +806,7 @@ Create instance with GPU passthrough
 
 .. code-block:: text
 
-   openstack server create --flavor m1.medium --image ubuntu2004 --wait test-pci
+   openstack server create --flavor m1.medium-gpu --image ubuntu22.04 --wait test-pci
 
 Testing GPU in a Guest VM
 -------------------------
