@@ -7,7 +7,12 @@ Octavia
 Introduction to Octavia
 =======================
 
-Octavia is known as an *operator-scaled* load balancing service.
+Octavia is known as an *operator-scaled* load balancing service, whose primary goal is to
+distribute incoming network traffic, destined for a single VM, across multiple VMs instead;
+thus preventing overloading the VM and improving the overall performance of the VM's outbound
+service.
+
+For more information on Octavia, please refer to the `official documentation <https://docs.openstack.org/octavia/latest/reference/introduction.html>`_.
 
 .. _Deploying Octavia:
 
@@ -18,8 +23,8 @@ Much like any other Kolla managed service, the method of deploying Octavia is as
 as enabling ``kolla_enable_octavia: true`` within the chosen environment's ``kolla.yml``.
 However, before running a ``kayobe overcloud service configure``, check
 ``octavia_net_interface`` (often found within the ``controllers`` directory within
-``group_vars``) to see the network which Octavia management network will be using.
-If it is configured to use a VLAN then ``kolla_enable_neutron_provider_networks: true``
+``${KAYOBE_CONFIG_PATH}/inventory/group_vars``) to see the network which Octavia management
+network will be using. If it is configured to use a VLAN then ``kolla_enable_neutron_provider_networks: true``
 should also be set in ``kolla.yml``.
 
 .. note::
@@ -27,11 +32,14 @@ should also be set in ``kolla.yml``.
       It of course goes without saying that the network configured for ``octavia_net_interface``
       should also exist in ``networks.yml``.
 
-By default Octavia will deploy a single Amphora VM per load balancing service, this should be
+By default Octavia will deploy an Amphorae (a single Amphora VM) per load balancing service, this should be
 changed to make them highly available and have two Amphora VM per service. Done by setting
 ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``,
 this will ensure that if the master Amphora VM were to go down, the other would be able to
 take over the load balancing functions.
+
+Further configuration options and details on installation can be found in the
+`Octavia documentation <https://docs.openstack.org/octavia/latest/install/index.html>`_.
 
 .. _Amphora image:
 
