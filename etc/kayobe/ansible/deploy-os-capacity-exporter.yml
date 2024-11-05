@@ -57,19 +57,19 @@
           when: stackhpc_os_capacity_openstack_cacert | length > 0
           register: cacert_result
 
-        - name: Ensure os_capacity container is running
-          community.docker.docker_container:
-            name: os_capacity
-            image: ghcr.io/stackhpc/os-capacity:master
-            env:
-              OS_CLOUD: openstack
-              OS_CLIENT_CONFIG_FILE: /etc/openstack/clouds.yaml
-            mounts:
-              - type: bind
-                source: /opt/kayobe/os-capacity/
-                target: /etc/openstack/
-            network_mode: host
-            restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
-            restart_policy: unless-stopped
-          become: true
-      when: stackhpc_enable_os_capacity and openrc_file_stat.stat.exists
+    - name: Ensure os_capacity container is running
+      community.docker.docker_container:
+        name: os_capacity
+        image: ghcr.io/stackhpc/os-capacity:v0.5
+        env:
+          OS_CLOUD: openstack
+          OS_CLIENT_CONFIG_FILE: /etc/openstack/clouds.yaml
+        mounts:
+          - type: bind
+            source: /opt/kayobe/os-capacity/
+            target: /etc/openstack/
+        network_mode: host
+        restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
+        restart_policy: unless-stopped
+      become: true
+      when: stackhpc_enable_os_capacity
