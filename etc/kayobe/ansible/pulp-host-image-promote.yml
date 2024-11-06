@@ -6,11 +6,10 @@
     remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
     remote_pulp_username: "{{ stackhpc_image_repository_username }}"
     remote_pulp_password: "{{ stackhpc_image_repository_password }}"
-    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
-    base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    repository_name: kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}
+    base_path: kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}
     promotion_tag: "{{ lookup('env', 'OVERCLOUD_HOST_IMAGE_TAG') }}"
   tasks:
-
     - name: Check whether the image exists
       pulp.squeezer.file_distribution:
         pulp_url: "{{ remote_pulp_url }}"
@@ -24,8 +23,8 @@
       delay: 5
 
     - name: Fail if the image does not exist
-      fail:
-        msg: "Image {{ promotion_tag }} does not exist"
+      ansible.builtin.fail:
+        msg: Image {{ promotion_tag }} does not exist
       when: distribution_details.distribution is none
 
     - name: Ensure production content guard is set
@@ -43,5 +42,5 @@
       delay: 5
 
     - name: Print version tag and os
-      debug:
+      ansible.builtin.debug:
         msg: "Promoted tag: {{ promotion_tag }}"

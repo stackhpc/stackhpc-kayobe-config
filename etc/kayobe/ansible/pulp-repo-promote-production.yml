@@ -1,9 +1,10 @@
 ---
 - name: Promote development Pulp repositories to production
   hosts: localhost
-  gather_facts: True
+  gather_facts: true
   tasks:
-    - import_role:
+    - name: Ensure repository publications exist
+      ansible.builtin.import_role:
         name: stackhpc.pulp.pulp_distribution
       vars:
         pulp_distribution_deb: "{{ stackhpc_pulp_distribution_deb_production | selectattr('required') }}"

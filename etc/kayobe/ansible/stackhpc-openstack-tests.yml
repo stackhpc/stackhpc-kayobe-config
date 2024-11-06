@@ -5,12 +5,13 @@
     - stackhpc-openstack-tests
   vars:
     sot_venv: "{{ virtualenv_path }}/sot-venv"
-    sot_repo: "https://github.com/stackhpc/stackhpc-openstack-tests"
-    sot_version: "v0.0.1"
+    sot_repo: https://github.com/stackhpc/stackhpc-openstack-tests
+    sot_version: v0.0.1
     sot_timeout: 30
     results_path_local: "{{ lookup('env', 'HOME') }}/sot-results"
   tasks:
-    - block:
+    - name: Stackhpc OpenStack tests
+      block:
         - name: Create a temporary directory for tests repo
           ansible.builtin.tempfile:
             state: directory
@@ -31,12 +32,12 @@
             depth: 1
             single_branch: true
 
-        - name: Ensure the latest versions of pip and setuptools are installed  # noqa package-latest
+        - name: Ensure the latest versions of pip and setuptools are installed # noqa package-latest
           ansible.builtin.pip:
             name: "{{ item.name }}"
             state: latest
             virtualenv: "{{ sot_venv }}"
-            virtualenv_command: "python3 -m venv"
+            virtualenv_command: python3 -m venv
           with_items:
             - { name: pip }
             - { name: setuptools }
@@ -45,7 +46,7 @@
           ansible.builtin.pip:
             name:
               - "{{ repo_tmpdir.path }}"
-              - "-r{{ repo_tmpdir.path }}/requirements.txt"
+              - -r{{ repo_tmpdir.path }}/requirements.txt
               - pytest-html
               - pytest-timeout
             virtualenv: "{{ sot_venv }}"
@@ -78,7 +79,7 @@
             sot_opensearch_port: 9200
             sot_opensearch_tls: false
             sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
-            sot_prometheus_username: "admin"
+            sot_prometheus_username: admin
             sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
       always:
         - name: Fetch results

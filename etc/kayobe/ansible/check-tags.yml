@@ -7,18 +7,19 @@
   gather_facts: false
   tasks:
     - name: Query images and tags
-      command:
+      ansible.builtin.command:
         cmd: >-
           {{ kayobe_config_path }}/../../tools/kolla-images.py list-tags
       register: kolla_images_result
       changed_when: false
 
     - name: Set a fact about images and tags
-      set_fact:
+      ansible.builtin.set_fact:
         kolla_images: "{{ kolla_images_result.stdout | from_yaml }}"
 
     # Use state=read and allow_missing=false to check for missing tags in test pulp.
-    - import_role:
+    - name: Check for missing tags
+      ansible.builtin.import_role:
         name: stackhpc.pulp.pulp_container_content
       vars:
         pulp_container_content: >-
