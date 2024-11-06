@@ -39,7 +39,7 @@ this will ensure that if the master Amphora VM were to go down, the other would 
 take over the load balancing functions.
 
 Further configuration options and details on installation can be found in the
-`Octavia documentation <https://docs.openstack.org/octavia/latest/install/index.html>`_.
+`Octavia documentation <https://docs.openstack.org/kolla-ansible/latest/reference/networking/octavia.html>`_.
 
 .. _Amphora image:
 
