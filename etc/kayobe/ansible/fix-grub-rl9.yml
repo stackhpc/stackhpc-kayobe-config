@@ -1,0 +1,15 @@
+---
+- name: Remove "--root-dev-only" from grub.cfg if OS is Rocky Linux 9
+  hosts: overcloud
+  become: yes
+  gather_facts: true
+
+  tasks:
+    - name: Remove "--root-dev-only" from /boot/efi/EFI/rocky/grub.cfg
+      ansible.builtin.replace:
+        path: /boot/efi/EFI/rocky/grub.cfg
+        regexp: '--root-dev-only\s?'
+        replace: ''
+      when:
+        - ansible_facts['distribution'] == 'Rocky'
+        - ansible_facts['distribution_major_version'] == '9'

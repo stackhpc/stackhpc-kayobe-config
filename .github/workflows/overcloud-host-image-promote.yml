@@ -23,6 +23,13 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-22.04
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           path: src/kayobe-config

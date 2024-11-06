@@ -122,6 +122,14 @@ stackhpc_pulp_deb_repos:
     components: "stable"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  - name: "Ceph Reef for Debian"
+    url: "{{ stackhpc_release_pulp_content_url }}/ceph/debian-reef/{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
+    distribution_name: "ceph-reef-debian-"
+    base_path: "ceph/debian-reef/"
+    distributions: "jammy"
+    components: "main"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
 
@@ -470,7 +478,6 @@ stackhpc_pulp_images_kolla:
   - ironic-conductor
   - ironic-inspector
   - ironic-neutron-agent
-  - ironic-prometheus-exporter
   - ironic-pxe
   - keepalived
   - keystone
@@ -491,6 +498,7 @@ stackhpc_pulp_images_kolla:
   - neutron-dhcp-agent
   - neutron-l3-agent
   - neutron-metadata-agent
+  - neutron-mlnx-agent
   - neutron-openvswitch-agent
   - neutron-server
   - neutron-sriov-agent

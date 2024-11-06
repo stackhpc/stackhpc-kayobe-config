@@ -138,6 +138,18 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
+  neutron-server-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
+  nova-compute-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
+  octavia-base:
+    type: git
+    location: https://github.com/stackhpc/octavia.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
@@ -272,6 +284,7 @@ kolla_build_blocks:
     {% for repo in base_centos_repo_overrides_post_yum_list %}
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[ \t]*\(https.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
@@ -341,6 +354,14 @@ kolla_build_customizations_common:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
+  neutron_server_packages_append:
+    - python3-libvirt
+    - python3-ethtool
+  nova_compute_packages_append:
+    - python3-libvirt
+    - python3-ethtool
+  neutron_mlnx_agent_pip_packages_override:
+    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
 
 kolla_build_customizations_rocky:
   kolla_toolbox_packages_remove:
@@ -608,7 +629,7 @@ kolla_enable_heat: false
 #kolla_enable_influxdb:
 #kolla_enable_ironic:
 #kolla_enable_ironic_neutron_agent:
-#kolla_enable_ironic_prometheus_exporter:
+kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
 #kolla_enable_keepalived:
 #kolla_enable_keystone:
@@ -666,7 +687,6 @@ kolla_enable_mariabackup: True
 #kolla_enable_openstack_core:
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
-#kolla_enable_outward_rabbitmq:
 kolla_enable_ovn: true
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
