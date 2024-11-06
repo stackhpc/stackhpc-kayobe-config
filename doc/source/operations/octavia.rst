@@ -32,7 +32,7 @@ should also be set in ``kolla.yml``.
       It of course goes without saying that the network configured for ``octavia_net_interface``
       should also exist in ``networks.yml``.
 
-By default Octavia will deploy an Amphorae (a single Amphora VM) per load balancing service, this should be
+By default Octavia will deploy an Amphora (a single Ubuntu VM running HAProxy) per load balancing service. This should be
 changed to make them highly available and have two Amphora VM per service. Done by setting
 ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``,
 this will ensure that if the master Amphora VM were to go down, the other would be able to
