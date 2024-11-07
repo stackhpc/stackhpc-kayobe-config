@@ -20,23 +20,52 @@ Deploying Octavia
 =================
 
 Much like any other Kolla managed service, the method of deploying Octavia is as simple
-as enabling ``kolla_enable_octavia: true`` within the chosen environment's ``kolla.yml``.
-However, before running a ``kayobe overcloud service configure``, check
-``octavia_net_interface`` (often found within the ``controllers`` directory within
-``${KAYOBE_CONFIG_PATH}/inventory/group_vars``) to see the network which Octavia management
-network will be using. If it is configured to use a VLAN then ``kolla_enable_neutron_provider_networks: true``
-should also be set in ``kolla.yml``.
+as:
 
-.. note::
+#. Enabling ``kolla_enable_octavia: true`` within the chosen environment's ``kolla.yml``.
 
-      It of course goes without saying that the network configured for ``octavia_net_interface``
-      should also exist in ``networks.yml``.
+#. Check ``octavia_net_interface`` is configured in ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/`` (often in ``controllers/network-interfaces.yml``).
 
-By default Octavia will deploy an Amphora (a single Ubuntu VM running HAProxy) per load balancing service. 
-Consequently, if using Amphora this default behaviour should be changed to make them highly available so that 
-there are two Amphora VMs per service. Done by setting ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` 
-in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``, this will ensure that if the master Amphora VM were to go down, 
-the other would be able to take over the load balancing functions.
+   - IF NOT CONFIGURED  
+
+     2.1. Check if a ``bond_interface`` has been configured, still within ``network-interfaces.yml``.  
+
+     2.2. Check whether other network interfaces, such as ``internal_interface``, are configured to use ``{{ bond_interface }}`` and/or ``{{ .._vlan }}``.  
+     
+     2.3. If they are, then ``octavia_net_interface: "{{ brbond0_interface }}.{{ octavia_net`` ± ``_vlan }}"``.  
+
+   - IF CONFIGURED   
+
+     2.1. Continue to step 3.
+
+#. Check that the ``{{ .._net_.. }}`` network configured for ``octavia_net_interface`` exists in ``networks.yml``.  
+
+   - IF NOT CONFIGURED  
+
+     3.1. Set ``octavia_net_name: octavia_net``.  
+     
+     3.2. Configure the Octavia network IP information, making sure to set ``octavia_net_vlan`` if using a VLAN.  
+   
+   - IF CONFIGURED  
+     
+     3.1. Continue to step 4.
+
+#. Dependencies if:  
+
+   - USING VLAN  
+
+     4.1. Set ``kolla_enable_neutron_provider_networks: true`` in ``kolla.yml``.  
+   
+   - USING AMPHORA  
+  
+     4.1. Set ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``.
+
+#. Run ``kayobe overcloud service configure``.
+
+By default Octavia will deploy an Amphora (a single Ubuntu VM running HAProxy) per load balancing service.
+Consequently, if using Amphora, this default behaviour should be changed to make them highly available so that
+there are two Amphora VMs per service. Achieved by step 4.2 above, this will ensure that if the master Amphora
+VM were to go down, the other would be able to take over the load balancing functions.
 
 Further configuration options and details on installation can be found in the
 `Octavia documentation <https://docs.openstack.org/kolla-ansible/latest/reference/networking/octavia.html>`_.
