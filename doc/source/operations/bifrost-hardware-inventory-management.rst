@@ -73,6 +73,11 @@ We can then provision and configure them:
    kayobe# kayobe overcloud host configure --limit <Hostname>
    kayobe# kayobe overcloud service deploy --limit <Hostname> --kolla-limit <Hostname>
 
+.. note::
+
+   Reconfiguring monitoring services on controllers is required after provisioning them.
+   Otherwise, they will not show up.
+
 Replacing a Failing Hypervisor
 ------------------------------
 
