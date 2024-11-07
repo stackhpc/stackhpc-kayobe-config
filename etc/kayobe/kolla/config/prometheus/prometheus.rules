@@ -7,8 +7,17 @@ groups:
   rules:
 
   - alert: PrometheusTargetMissing
-    expr: up == 0
+    expr: up{job!="redfish-exporter-seed"} == 0
     for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Prometheus target missing (instance {{ $labels.instance }})"
+      description: "A Prometheus target has disappeared. An exporter might have crashed."
+
+  - alert: PrometheusTargetMissing
+    expr: up{job="redfish-exporter-seed"} == 0
+    for: 15m
     labels:
       severity: critical
     annotations:

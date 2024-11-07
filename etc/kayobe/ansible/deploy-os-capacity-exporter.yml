@@ -15,59 +15,61 @@
   tags: os_capacity
   gather_facts: false
   tasks:
-    - name: Create os-capacity directory
-      ansible.builtin.file:
-        path: /opt/kayobe/os-capacity/
-        state: directory
-      when: stackhpc_enable_os_capacity
-
-    - name: Read admin-openrc credential file
-      ansible.builtin.command:
-        cmd: "cat {{ lookup('ansible.builtin.env', 'KOLLA_CONFIG_PATH') }}/admin-openrc.sh"
+    - name: Check if admin-openrc.sh exists
+      ansible.builtin.stat:
+        path: "{{ lookup('ansible.builtin.env', 'KOLLA_CONFIG_PATH') }}/admin-openrc.sh"
       delegate_to: localhost
-      register: credential
-      when: stackhpc_enable_os_capacity
-      changed_when: false
+      register: openrc_file_stat
+      run_once: true
 
-    - name: Set facts for admin credentials
-      ansible.builtin.set_fact:
-        stackhpc_os_capacity_auth_url: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\",'') }}"
-        stackhpc_os_capacity_project_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-        stackhpc_os_capacity_domain_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-        stackhpc_os_capacity_openstack_region_name: "{{ credential.stdout_lines | select('match', '.*OS_REGION_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-        stackhpc_os_capacity_username: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-        stackhpc_os_capacity_password: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\",'') }}"
-      when: stackhpc_enable_os_capacity
+    - block:
+        - name: Create os-capacity directory
+          ansible.builtin.file:
+            path: /opt/kayobe/os-capacity/
+            state: directory
 
-    - name: Template clouds.yml
-      ansible.builtin.template:
-        src: templates/os_capacity-clouds.yml.j2
-        dest: /opt/kayobe/os-capacity/clouds.yaml
-      when: stackhpc_enable_os_capacity
-      register: clouds_yaml_result
+        - name: Read admin-openrc credential file
+          ansible.builtin.command:
+            cmd: "cat {{ lookup('ansible.builtin.env', 'KOLLA_CONFIG_PATH') }}/admin-openrc.sh"
+          delegate_to: localhost
+          register: credential
+          changed_when: false
 
-    - name: Copy CA certificate to OpenStack Capacity nodes
-      ansible.builtin.copy:
-        src: "{{ stackhpc_os_capacity_openstack_cacert }}"
-        dest: /opt/kayobe/os-capacity/cacert.pem
-      when:
-        - stackhpc_enable_os_capacity
-        - stackhpc_os_capacity_openstack_cacert | length > 0
-      register: cacert_result
+        - name: Set facts for admin credentials
+          ansible.builtin.set_fact:
+            stackhpc_os_capacity_auth_url: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_project_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_domain_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_openstack_region_name: "{{ credential.stdout_lines | select('match', '.*OS_REGION_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_username: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_password: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\",'') }}"
 
-    - name: Ensure os_capacity container is running
-      community.docker.docker_container:
-        name: os_capacity
-        image: ghcr.io/stackhpc/os-capacity:master
-        env:
-          OS_CLOUD: openstack
-          OS_CLIENT_CONFIG_FILE: /etc/openstack/clouds.yaml
-        mounts:
-          - type: bind
-            source: /opt/kayobe/os-capacity/
-            target: /etc/openstack/
-        network_mode: host
-        restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
-        restart_policy: unless-stopped
-      become: true
-      when: stackhpc_enable_os_capacity
+        - name: Template clouds.yml
+          ansible.builtin.template:
+            src: templates/os_capacity-clouds.yml.j2
+            dest: /opt/kayobe/os-capacity/clouds.yaml
+          register: clouds_yaml_result
+
+        - name: Copy CA certificate to OpenStack Capacity nodes
+          ansible.builtin.copy:
+            src: "{{ stackhpc_os_capacity_openstack_cacert }}"
+            dest: /opt/kayobe/os-capacity/cacert.pem
+          when: stackhpc_os_capacity_openstack_cacert | length > 0
+          register: cacert_result
+
+        - name: Ensure os_capacity container is running
+          community.docker.docker_container:
+            name: os_capacity
+            image: ghcr.io/stackhpc/os-capacity:master
+            env:
+              OS_CLOUD: openstack
+              OS_CLIENT_CONFIG_FILE: /etc/openstack/clouds.yaml
+            mounts:
+              - type: bind
+                source: /opt/kayobe/os-capacity/
+                target: /etc/openstack/
+            network_mode: host
+            restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
+            restart_policy: unless-stopped
+          become: true
+      when: stackhpc_enable_os_capacity and openrc_file_stat.stat.exists
