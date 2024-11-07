@@ -104,7 +104,7 @@ reach the OpenStack APIs:
 
 To update an existing certificate, for example when it has reached expiration,
 change the value of ``secrets_kolla_external_tls_cert``, in the same order as
-above.  Run the following command:
+above. Run the following command:
 
 .. code-block:: console
 

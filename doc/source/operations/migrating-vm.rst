@@ -19,4 +19,4 @@ To move a virtual machine with local disks:
 
 .. code-block:: console
 
-   admin# openstack  server migrate --live-migration --block-migration --host hypervisor-01 <VM name or uuid>
+   admin# openstack server migrate --live-migration --block-migration --host hypervisor-01 <VM name or uuid>
