@@ -13,7 +13,7 @@ can be reinspected like this:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud hardware inspect --limit <Host name>
+   kayobe overcloud hardware inspect --limit <Host name>
 
 .. _enrolling-new-hypervisors:
 
@@ -30,26 +30,26 @@ file located at ``$KAYOBE_CONFIG_PATH/secrets.yml``.
 
 .. code-block:: console
 
-   bifrost# ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi chassis bootdev pxe
+   ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi chassis bootdev pxe
 
 If node is are off, power them on:
 
 .. code-block:: console
 
-   bifrost# ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi power on
+   ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi power on
 
 If nodes is on, reset them:
 
 .. code-block:: console
 
-   bifrost# ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi power reset
+   ipmitool -I lanplus -U <ipmi username> -H <Hostname>-ipmi power reset
 
 Once node have booted and have completed introspection, they should be visible
 in Bifrost:
 
 .. code-block:: console
 
-   bifrost# baremetal node list --provision-state enroll
+   baremetal node list --provision-state enroll
    +--------------------------------------+-----------------------+---------------+-------------+--------------------+-------------+
    | UUID                                 | Name                  | Instance UUID | Power State | Provisioning State | Maintenance |
    +--------------------------------------+-----------------------+---------------+-------------+--------------------+-------------+
@@ -63,15 +63,15 @@ the correct groups, import them in Kayobe's inventory with:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud inventory discover
+   kayobe overcloud inventory discover
 
 We can then provision and configure them:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud provision --limit <Hostname>
-   kayobe# kayobe overcloud host configure --limit <Hostname>
-   kayobe# kayobe overcloud service deploy --limit <Hostname> --kolla-limit <Hostname>
+   kayobe overcloud provision --limit <Hostname>
+   kayobe overcloud host configure --limit <Hostname>
+   kayobe overcloud service deploy --limit <Hostname> --kolla-limit <Hostname>
 
 .. note::
 
@@ -94,7 +94,7 @@ To deprovision an existing hypervisor, run:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud deprovision --limit <Hypervisor hostname>
+   kayobe overcloud deprovision --limit <Hypervisor hostname>
 
 .. warning::
 
@@ -109,14 +109,14 @@ Evacuating all instances
 
 .. code-block:: console
 
-   admin# openstack server evacuate $(openstack server list --host <Hypervisor hostname> --format value --column ID)
+   openstack server evacuate $(openstack server list --host <Hypervisor hostname> --format value --column ID)
 
 You should now check the status of all the instances that were running on that
 hypervisor. They should all show the status ACTIVE. This can be verified with:
 
 .. code-block:: console
 
-   admin# openstack server show <instance uuid>
+   openstack server show <instance uuid>
 
 Troubleshooting
 ===============
@@ -145,7 +145,7 @@ migrate as the process needs manual confirmation. You can do this with:
 
 .. code-block:: console
 
-   openstack# openstack server resize confirm <instance-uuid>
+   openstack server resize confirm <instance-uuid>
 
 The symptom to look out for is that the server is showing a status of ``VERIFY
 RESIZE`` as shown in this snippet of ``openstack server show <instance-uuid>``:
@@ -161,7 +161,7 @@ Set maintenance mode on a node in Bifrost
 
 .. code-block:: console
 
-   seed# docker exec -it bifrost_deploy /bin/bash
+   docker exec -it bifrost_deploy /bin/bash
    (bifrost-deploy)[root@seed bifrost-base]# export OS_CLOUD=bifrost
    (bifrost-deploy)[root@seed bifrost-base]# baremetal node maintenance set <Hostname>
 
@@ -172,7 +172,7 @@ Unset maintenance mode on a node in Bifrost
 
 .. code-block:: console
 
-   seed# docker exec -it bifrost_deploy /bin/bash
+   docker exec -it bifrost_deploy /bin/bash
    (bifrost-deploy)[root@seed bifrost-base]# export OS_CLOUD=bifrost
    (bifrost-deploy)[root@seed bifrost-base]# baremetal node maintenance unset <Hostname>
 
@@ -210,7 +210,7 @@ into ``$KAYOBE_CONFIG_PATH/overcloud-introspection-data``:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud introspection data save
+   kayobe overcloud introspection data save
 
 Using ADVise
 ------------

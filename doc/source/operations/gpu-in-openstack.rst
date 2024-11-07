@@ -783,8 +783,8 @@ add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
 
 .. code-block:: console
 
-   admin# cd src/openstack-config
-   admin# vim etc/openstack-config/openstack-config.yml
+   cd src/openstack-config
+   vim etc/openstack-config/openstack-config.yml
 
     name: "m1.medium-gpu"
     ram: 4096
@@ -797,9 +797,9 @@ Invoke configuration playbooks afterwards:
 
 .. code-block:: console
 
-   admin# source src/kayobe-config/etc/kolla/public-openrc.sh
-   admin# source venvs/openstack/bin/activate
-   admin# tools/openstack-config --vault-password-file <Vault password file path>
+   source src/kayobe-config/etc/kolla/public-openrc.sh
+   source venvs/openstack/bin/activate
+   tools/openstack-config --vault-password-file <Vault password file path>
 
 Create instance with GPU passthrough
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

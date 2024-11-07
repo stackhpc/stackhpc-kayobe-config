@@ -120,7 +120,7 @@ The password can be found using:
 
 .. code-block:: console
 
-   kayobe# ansible-vault view $KAYOBE_CONFIG_PATH/kolla/passwords.yml \
+   ansible-vault view $KAYOBE_CONFIG_PATH/kolla/passwords.yml \
            --vault-password-file <Vault password file path> | grep ^database
 
 Checking RabbitMQ
@@ -188,7 +188,7 @@ Shutting down the seed VM
 
 .. code-block:: console
 
-   kayobe# virsh shutdown <Seed hostname>
+   virsh shutdown <Seed hostname>
 
 .. _full-shutdown:
 
@@ -215,7 +215,7 @@ Example: Reboot all compute hosts apart from compute0:
 
 .. code-block:: console
 
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit 'compute:!compute0'
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit 'compute:!compute0'
 
 References
 ----------
@@ -242,7 +242,7 @@ with the following command:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud database recover
+   kayobe overcloud database recover
 
 Ansible Control Host
 --------------------
@@ -258,7 +258,7 @@ hypervisor is powered on. If it does not, it can be started with:
 
 .. code-block:: console
 
-   kayobe# virsh start <Seed hostname>
+   virsh start <Seed hostname>
 
 Full power on
 -------------
@@ -275,7 +275,7 @@ Log into the monitoring host(s):
 
 .. code-block:: console
 
-   kayobe# ssh stack@monitoring0
+   ssh stack@monitoring0
 
 Stop all Docker containers:
 
@@ -312,22 +312,22 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
 
 If the system is production environment and want to use packages tested in test/staging
 environment, you can promote them by:
 
 .. code-block:: console
 
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
 
 To sync container images:
 
 .. code-block:: console
 
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
 
 For more information about StackHPC Release Train, see :ref:`stackhpc-release-train` documentation.
 
@@ -341,8 +341,8 @@ Host packages can be updated with:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud host package update --limit <node> --packages '*'
-   kayobe# kayobe seed host package update --packages '*'
+   kayobe overcloud host package update --limit <node> --packages '*'
+   kayobe seed host package update --packages '*'
 
 See https://docs.openstack.org/kayobe/latest/administration/overcloud.html#updating-packages
 
@@ -387,7 +387,7 @@ Reconfigure Opensearch with new values:
 
 .. code-block:: console
 
-   kayobe# kayobe overcloud service reconfigure --kolla-tags opensearch
+   kayobe overcloud service reconfigure --kolla-tags opensearch
 
 For more information see the `upstream documentation
 <https://docs.openstack.org/kolla-ansible/latest/reference/logging-and-monitoring/central-logging-guide.html#applying-log-retention-policies>`__.
