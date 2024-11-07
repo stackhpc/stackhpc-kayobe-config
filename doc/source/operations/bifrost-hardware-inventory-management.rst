@@ -26,7 +26,7 @@ configured to network boot on the provisioning network, the following commands
 will instruct them to PXE boot. The nodes will boot on the Ironic Python Agent
 kernel and ramdisk, which is configured to extract hardware information and
 send it to Bifrost. Note that IPMI credentials can be found in the encrypted
-file located at ``${KAYOBE_CONFIG_PATH}/secrets.yml``.
+file located at ``$KAYOBE_CONFIG_PATH/secrets.yml``.
 
 .. code-block:: console
 
@@ -56,8 +56,8 @@ in Bifrost:
    | da0c61af-b411-41b9-8909-df2509f2059b | example-hypervisor-01 | None          | power off   | enroll             | False       |
    +--------------------------------------+-----------------------+---------------+-------------+--------------------+-------------+
 
-After editing ``${KAYOBE_CONFIG_PATH}/overcloud.yml`` (or
-``${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/overcloud.yml``
+After editing ``$KAYOBE_CONFIG_PATH/overcloud.yml`` (or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/overcloud.yml``
 if Kayobe environment is used) to add these new hosts to
 the correct groups, import them in Kayobe's inventory with:
 
@@ -201,7 +201,7 @@ To build ipa image with extra-hardware  you need to edit ``ipa.yml`` and add thi
    - "extra-hardware"
 
 Extract introspection data from Bifrost with Kayobe. JSON files will be created
-into ``${KAYOBE_CONFIG_PATH}/overcloud-introspection-data``:
+into ``$KAYOBE_CONFIG_PATH/overcloud-introspection-data``:
 
 .. code-block:: console
 
@@ -210,7 +210,7 @@ into ``${KAYOBE_CONFIG_PATH}/overcloud-introspection-data``:
 Using ADVise
 ------------
 
-The Ansible playbook ``advise-run.yml`` can be found at ``${KAYOBE_CONFIG_PATH}/ansible/advise-run.yml``.
+The Ansible playbook ``advise-run.yml`` can be found at ``$KAYOBE_CONFIG_PATH/ansible/advise-run.yml``.
 
 The playbook will:
 
@@ -220,8 +220,8 @@ The playbook will:
 
 .. code-block:: console
 
-   cd ${KAYOBE_CONFIG_PATH}
-   ansible-playbook ${KAYOBE_CONFIG_PATH}/ansible/advise-run.yml
+   cd $KAYOBE_CONFIG_PATH
+   ansible-playbook $KAYOBE_CONFIG_PATH/ansible/advise-run.yml
 
 The playbook has the following optional parameters:
 

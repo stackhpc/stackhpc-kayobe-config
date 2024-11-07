@@ -10,7 +10,7 @@ service is handled less well, because of Ansible's imperative style.
 
 To remove a service, it is disabled in Kayobe's Kolla config, which prevents
 other services from communicating with it. For example, to disable
-``cinder-backup``, edit ``${KAYOBE_CONFIG_PATH}/kolla.yml``:
+``cinder-backup``, edit ``$KAYOBE_CONFIG_PATH/kolla.yml``:
 
 .. code-block:: diff
 
@@ -50,7 +50,7 @@ Use a command of this form:
 
 .. code-block:: console
 
-   kayobe# ansible-vault edit ${KAYOBE_CONFIG_PATH}/secrets.yml --vault-password-file=<Vault password file path>
+   kayobe# ansible-vault edit $KAYOBE_CONFIG_PATH/secrets.yml --vault-password-file=<Vault password file path>
 
 Concatenate the contents of the certificate and key files to create
 ``secrets_kolla_external_tls_cert``.  The certificates should be installed in
@@ -60,7 +60,7 @@ this order:
 * Any intermediate certificates
 * The TLS certificate private key
 
-In ``${KAYOBE_CONFIG_PATH}/kolla.yml``, set the following:
+In ``$KAYOBE_CONFIG_PATH/kolla.yml``, set the following:
 
 .. code-block:: yaml
 

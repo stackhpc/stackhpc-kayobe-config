@@ -23,6 +23,6 @@ hosts:
 
 .. code-block:: console
 
-   mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
-   cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/post.d
+   mkdir -p $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/post.d
+   cd $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/post.d
    ln -s ../../../ansible/swap.yml 10-swap.yml
