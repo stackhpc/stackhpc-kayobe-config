@@ -106,6 +106,10 @@ To update an existing certificate, for example when it has reached expiration,
 change the value of ``secrets_kolla_external_tls_cert``, in the same order as
 above. Run the following command:
 
+.. warning::
+
+   Services can be briefly unavailable during reconfiguring HAProxy.
+
 .. code-block:: console
 
    kayobe overcloud service reconfigure --kolla-tags haproxy
