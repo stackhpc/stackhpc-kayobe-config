@@ -304,9 +304,10 @@ does not exist, it will generate the following certificates in ``{{ kayobe_env_c
    * root-ca.key  root-ca.pem
 
 
-It is also possible to use externally generated certificates for
-wazuh-dashboard. Customise the ``dashboard_node_name`` variable so that you can
-use a separate certificate and key for this service e.g:
+It is also possible to use externally generated certificates for 
+wazuh-dashboard and wazuh-indexer. Customise the ``dashboard_node_name`` 
+or ``indexer_node_name`` variable, respectively, so that you can use a 
+separate certificate and key for this service e.g:
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-manager
@@ -318,10 +319,15 @@ You will need to create two files matching the following pattern:
 - ``{{ dashboard_node_name }}-key.pem`` for the private key
 - ``{{ dashboard_node_name }}.pem`` for the certificate
 
-In order to utilise externally generated certificates, you must first deploy Wazuh Ansible as normal in order to generate the aforementioned certificates; this is because it is unlikely that every Wazuh service will be getting its own custom certificate, especially the ``root`` and ``admin`` certificates. Therefore the ``<...>/wazuh/wazuh-certificates`` directory cannot be manually created as this will result in the Wazuh playbook and ``wazuh-cert-tool.sh`` not generating the remaining non custom certificates. 
-Custom certificates for Wazuh ``indexer`` may be also be added in a similar way as Wazuh ``dashboard`` by changing the ``indexer_node_name`` such that it's going to match the custom certificate's name.
-Once the certificates have been generated a number of steps are required, depending on which set of custom certificates are required to be added or substituted. Regardless, you must ``SSH`` into the ``infra VM`` in which the Wazuh services have been deployed to and, with admin privileges, remove any of the certificates from ``/etc/wazuh-{dashboard | indexer}/certs/`` which are due to be replaced with custom ones. Following this, return to the ``seed`` VM and drop the custom new ``pem`` certificates into ``$KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/`` if
-using a kayobe environment, or ``$KAYOBE_CONFIG_PATH/wazuh/wazuh-certificates/`` if not. Finally, rerun the Wazuh Ansible playbook and now the custom certificates should be copied over to their respective directories in the ``infra VM``.
+In order to use externally generated certificates, you must first deploy Wazuh Ansible as normal in order to generate the base certificates. 
+This is because Wazuh will require to deploy with some sort of certificates, as well as, not every Wazuh service needing a custom external certificate; 
+for example the ``root`` and ``admin`` certificates. Therefore the ``<...>/wazuh/wazuh-certificates`` directory must be created and populated by ``wazuh-cert-tool.sh``, which it won't do if the ``<...>/wazuh/wazuh-certificates`` directory already exists.
+
+Once the Wazuh generated certificates have been made, the desired custom external certificates need to be added in. 
+To do so, must ``SSH`` into the ``infra VM`` which Wazuh services have been deployed to and, with ``sudo`` privileges, 
+remove any of the 'base' certificates from ``/etc/wazuh-{dashboard | indexer}/certs/`` which are being replaced with custom ones. 
+After this, return to the ``seed`` VM and drop the custom new ``pem`` certificates into ``$KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/`` if using a kayobe environment, or ``$KAYOBE_CONFIG_PATH/wazuh/wazuh-certificates/`` if not. 
+Finally, rerun the Wazuh Ansible playbook and now the custom certificates should be copied over to their respective directories in the ``infra VM``.
 
 Following this, the ``sudo systemctl status`` for the three Wazuh services should be checked to make sure they are up and running with no errors. Additionally, testing ``sudo filebeat test output`` and trying to ``curl`` the service's IP will also signify if the certificates are working correctly.
 
@@ -334,10 +340,13 @@ Example OpenSSL rune to convert to PKCS#8:
 
 .. note::
 
-    If you find that your Wazuh playbook isn't generating some of the non custom certificates,
-    namely the ``indexer`` or ``dashboard`` certificates, it is likely that they aren't being 
-    templated correctly in ``wazuh-cert-tool.sh`` and this could be due to a few reasons but
-    the variable used to templated into ``wazuh-cert-tool.sh`` is:
+    If you find that your Wazuh playbook isn't generating some of the non custom 'base' certificates,
+    such as the ``indexer`` or ``dashboard`` certificates, it is likely that those services aren't being 
+    templated correctly into the ``wazuh-cert-tool.sh`` which then creates the certificates. 
+    Therefore it is likely that a variable in ``$KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-manager`` 
+    is not matching the corresponding variable used to template ``wazuh-cert-tool.sh``.  
+
+    Below is the template for generating ``wazuh-cert-tool.sh``; make sure all the ``"{{ variables }}"`` have been defined:
 
     .. code-block:: bash
 
