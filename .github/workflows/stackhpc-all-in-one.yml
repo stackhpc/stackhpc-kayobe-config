@@ -214,22 +214,12 @@ jobs:
       - name: Write Terraform network config
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-networks.yml
-
-          admin_oc_net_name: admin
-          admin_cidr: "{{ access_cidr.value }}"
-          admin_allocation_pool_start: 0.0.0.0
-          admin_allocation_pool_end: 0.0.0.0
-          admin_gateway: "{{ access_gw.value }}"
-          admin_bootproto: dhcp
-          admin_ips:
+          admin_oc_net_name: ethernet
+          ethernet_cidr: "{{ access_cidr.value }}"
+          ethernet_allocation_pool_start: 0.0.0.0
+          ethernet_allocation_pool_end: 0.0.0.0
+          ethernet_ips:
             controller0: "{{ access_ip_v4.value }}"
-          admin_zone: admin
-          EOF
-
-      - name: Write Terraform network interface config
-        run: |
-          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/controllers/tf-network-interfaces
-          admin_interface: "{{ access_interface.value }}"
           EOF
 
       - name: Write all-in-one scenario config
