@@ -2,10 +2,8 @@
 Ironic
 ======
 
-Experimental documentation
-==========================
-
-This documentation is still WIP and is subject to change.
+.. warning::
+  This page is a work in progress, and is subject to change.
 
 Ironic networking
 =================
