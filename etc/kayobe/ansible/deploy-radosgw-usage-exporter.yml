@@ -42,10 +42,10 @@
           OS_CACERT: "{{ '/etc/ssl/certs/ca-certificates.crt' if os_distribution == 'ubuntu' else '/etc/pki/tls/certs/ca-bundle.crt' }}"
       when: stackhpc_enable_radosgw_usage_exporter
 
-    - name: Check ec2 credential for admin
+    - name: Check ec2 credential for ceph_rgw
       command: >
         {{ venv }}/bin/openstack
-        ec2 credentials list --user admin
+        ec2 credentials list --user ceph_rgw
         --format json
       environment: "{{ openstack_auth_env }}"
       register: credential_check
@@ -58,7 +58,7 @@
     - name: Create ec2 credential if there's none
       command: >
         {{ venv }}/bin/openstack
-        ec2 credentials create --user admin
+        ec2 credentials create --user ceph_rgw --project service
         --format json
       environment: "{{ openstack_auth_env }}"
       delegate_to: "{{ groups['controllers'][0] }}"
@@ -69,10 +69,10 @@
         - stackhpc_enable_radosgw_usage_exporter
         - "{{ credential_check.stdout == [] }}"
 
-    - name: Query ec2 credential for admin
+    - name: Query ec2 credential for ceph_rgw
       command: >
         {{ venv }}/bin/openstack
-        ec2 credentials list --user admin
+        ec2 credentials list --user ceph_rgw
         --format json
       environment: "{{ openstack_auth_env }}"
       delegate_to: "{{ groups['controllers'][0] }}"
