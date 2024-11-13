@@ -120,7 +120,7 @@
             ec2: "{{ credential.stdout | from_json | first }}"
           become: true
 
-        - name: Ensure the exporter to use certificate
+        - name: Ensure that the internal TLS certificate is trusted by the exporter
           when: stackhpc_radosgw_usage_exporter_cacert | length > 0
           block:
             - name: Create radosgw-usage-exporter directory
