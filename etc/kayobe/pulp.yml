@@ -42,8 +42,8 @@ stackhpc_release_pulp_domain: "ark.stackhpc.com"
 stackhpc_release_pulp_url: "{{ stackhpc_release_pulp_scheme }}://{{ stackhpc_release_pulp_domain }}"
 
 # Credentials used to access the StackHPC Pulp service.
-stackhpc_release_pulp_username:
-stackhpc_release_pulp_password:
+stackhpc_release_pulp_username: graphcore
+stackhpc_release_pulp_password: "{{ secrets_stackhpc_release_pulp_password }}"
 
 # Content URL of the StackHPC Pulp service.
 stackhpc_release_pulp_content_url: "{{ stackhpc_release_pulp_url }}/pulp/content"
@@ -56,7 +56,7 @@ stackhpc_release_pulp_content_url_with_auth: "{{ stackhpc_release_pulp_scheme }}
 # Sync all repositories required for building Kolla images from the
 # StackHPC Ark Pulp service to local Pulp.
 # NOTE: Only RPM repositories are supported.
-stackhpc_pulp_sync_for_local_container_build: false
+stackhpc_pulp_sync_for_local_container_build: true
 
 ###############################################################################
 # Debs
@@ -252,7 +252,7 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   - name: RabbitMQ - Server - RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/noarch/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
     distribution_name: "rhel9-rabbitmq-server-"
     base_path: "rabbitmq/rabbitmq-server/el/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
@@ -344,7 +344,7 @@ stackhpc_pulp_rpm_repos:
 
   # Additional RHEL 9 repositories
   - name: TreasureData 5 for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
     distribution_name: "rhel-9-treasuredata-5-"
     base_path: "treasuredata/5/redhat/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
