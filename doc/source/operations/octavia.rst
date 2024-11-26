@@ -60,7 +60,7 @@ as:
   
      4.1. Set ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``.
 
-#. Run ``kayobe overcloud service configure``.
+#. Run ``kayobe overcloud service reconfigure``.
 
 By default Octavia will deploy an Amphora (a single Ubuntu VM running HAProxy) per load balancing service.
 Consequently, if using Amphora, this default behaviour should be changed to make them highly available so that
