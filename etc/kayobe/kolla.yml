@@ -346,6 +346,11 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-opensearch-datasource
   ironic_inspector_header: |
     ADD additions-archive /
+  nova_base_footer: |
+    {% raw %}
+    RUN {{ macros.upper_constraints_version_change('cryptography', '42.*', '43.0.3') }}
+    RUN {{ macros.upper_constraints_version_change('eventlet', '0.35.*', '0.36.1') }}
+    {% endraw %}
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
