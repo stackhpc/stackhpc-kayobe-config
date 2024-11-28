@@ -23,6 +23,13 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-22.04
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           path: src/kayobe-config
@@ -31,15 +38,8 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
-          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
         working-directory: src/kayobe-config
-
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
 
       - name: Setup networking
         run: |
@@ -63,7 +63,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Bootstrap the control host
         run: |

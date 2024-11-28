@@ -1,0 +1,73 @@
+---
+- name: Build OFED packages
+  become: true
+  hosts: ofed-builder
+  gather_facts: false
+  tasks:
+    - name: Check whether noexec is enabled for /var/tmp
+      ansible.builtin.lineinfile:
+        path: "/etc/fstab"
+        regexp: "noexec"
+        state: absent
+      changed_when: false
+      check_mode: true
+      register: result
+      failed_when: result.found
+
+    - name: Install package dependencies
+      ansible.builtin.dnf:
+        name:
+          - kpartx
+          - perl
+          - rpm-build
+          - automake
+          - patch
+          - kernel
+          - kernel-devel
+          - autoconf
+          - pciutils
+          - kernel-modules-extra
+          - kernel-rpm-macros
+          - lsof
+          - libtool
+          - tk
+          - gcc-gfortran
+          - tcl
+          - createrepo
+          - cmake-filesystem
+          - libnl3-devel
+          - python3-devel
+        state: latest
+        update_cache: true
+
+    - name: Add DOCA host repository package
+      ansible.builtin.dnf:
+        name: https://developer.nvidia.com/downloads/networking/secure/doca-sdk/DOCA_2.8/doca-host-2.8.0-204000_{{ stackhpc_pulp_doca_ofed_version }}_rhel9{{ stackhpc_pulp_repo_rocky_9_minor_version }}.x86_64.rpm
+        disable_gpg_check: true
+
+    - name: Install DOCA extra packages
+      ansible.builtin.dnf:
+        name: doca-extra
+
+    - name: Create build directory
+      ansible.builtin.file:
+        path: /home/cloud-user/ofed
+        state: directory
+        mode: 0777
+
+    - name: Set build directory
+      ansible.builtin.replace:
+        path: /opt/mellanox/doca/tools/doca-kernel-support
+        regexp: 'TMP_DIR=\$1'
+        replace: 'TMP_DIR=/home/cloud-user/ofed'
+
+    - name: Build OFED kernel modules
+      ansible.builtin.shell:
+        cmd: |
+          /opt/mellanox/doca/tools/doca-kernel-support
+
+    - name: Download OFED userspace packages
+      ansible.builtin.dnf:
+        name: doca-ofed-userspace
+        download_only: true
+        download_dir: /home/cloud-user/ofed

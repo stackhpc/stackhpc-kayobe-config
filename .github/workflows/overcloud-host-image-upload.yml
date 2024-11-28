@@ -34,6 +34,13 @@ jobs:
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
       - name: Install package dependencies
         run: |
           sudo apt update
@@ -47,14 +54,7 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
-          echo "openstack_release=${BRANCH}" | sed "s|stable/||" >> $GITHUB_OUTPUT
-
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
       - name: Install Kayobe
         run: |
@@ -63,7 +63,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Bootstrap the control host
         run: |
@@ -80,7 +80,7 @@ jobs:
       - name: Install OpenStack client
         run: |
           source venvs/kayobe/bin/activate &&
-          pip install python-openstackclient -c https://opendev.org/openstack/requirements/raw/branch/stable/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
+          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
 
       - name: Output Rocky Linux 9 image tag
         id: rocky_9_image_tag

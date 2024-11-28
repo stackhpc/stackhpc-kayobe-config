@@ -1,6 +1,6 @@
-================================================
-StackHPC Kayobe Configuration (Work in progress)
-================================================
+=============================
+StackHPC Kayobe Configuration
+=============================
 
 This repository provides a base Kayobe configuration for the Caracal release
 of StackHPC OpenStack.

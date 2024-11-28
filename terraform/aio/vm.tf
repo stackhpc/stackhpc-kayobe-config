@@ -35,7 +35,12 @@ variable "aio_vm_subnet" {
 
 variable "aio_vm_volume_size" {
   type = number
-  default = 35
+  default = 50
+}
+
+variable "aio_vm_tags" {
+  type = list(string)
+  default = []
 }
 
 locals {
@@ -69,6 +74,8 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     destination_type      = "volume"
     delete_on_termination = true
   }
+
+  tags = var.aio_vm_tags
 }
 
 # Wait for the instance to be accessible via SSH before progressing.

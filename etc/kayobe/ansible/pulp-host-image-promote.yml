@@ -19,6 +19,9 @@
         name: "{{ repository_name }}_{{ promotion_tag }}"
         base_path: "{{ base_path }}/{{ promotion_tag }}"
       register: distribution_details
+      until: distribution_details is success
+      retries: 3
+      delay: 5
 
     - name: Fail if the image does not exist
       fail:
@@ -34,6 +37,10 @@
         base_path: "{{ base_path }}/{{ promotion_tag }}"
         content_guard: release
         state: present
+      register: content_guard_result
+      until: content_guard_result is success
+      retries: 3
+      delay: 5
 
     - name: Print version tag and os
       debug:

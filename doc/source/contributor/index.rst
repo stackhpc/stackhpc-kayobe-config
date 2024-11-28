@@ -11,3 +11,6 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
    release-notes
    environments/index
    package-updates
+   pre-commit
+   ofed
+   testing-ci-automation

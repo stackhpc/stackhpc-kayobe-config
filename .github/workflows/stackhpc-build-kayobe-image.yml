@@ -8,7 +8,7 @@ on:
   push:
     branches:
       # NOTE(upgrade): Reference only the current release branch here.
-      - stackhpc/2023.1
+      - stackhpc/2024.1
 
   workflow_call:
     inputs:
@@ -42,7 +42,7 @@ jobs:
   build-kayobe-image:
     name: Build kayobe image
     if: inputs.if || github.repository == 'stackhpc/stackhpc-kayobe-config' && github.event_name == 'push'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
@@ -98,3 +98,25 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Send message to Slack via Workflow Builder
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "channel-id": "${{ env.SLACK_CHANNEL_ID }}",
+              "inputs": "${{ env.INPUTS }}",
+              "message": "${{ env.MESSAGE }}",
+              "results-url": "${{ env.RESULTS_URL }}",
+              "workflow-url": "${{ env.WORKFLOW_URL }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # #release-train-alerts
+          SLACK_CHANNEL_ID: C03B28HRP53
+          INPUTS: >-
+            branch: ${{ github.ref_name }}
+          MESSAGE: "SKC Build Kayobe Image workflow failed :sob:"
+          RESULTS_URL: "N/A"
+          WORKFLOW_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        if: failure() && github.event_name == 'push'

@@ -33,6 +33,8 @@ apt_config:
 apt_keys:
   - url: "https://download.docker.com/linux/ubuntu/gpg"
     filename: docker.asc
+  - url: "https://download.ceph.com/keys/release.asc"
+    filename: ceph.asc
 
 # A list of Apt repositories. Each item is a dict with the following keys:
 # * types: whitespace-separated list of repository types, e.g. deb or deb-src
@@ -52,20 +54,35 @@ stackhpc_apt_repositories:
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
     architecture: amd64
+    required: true
   - url: "{{ stackhpc_repo_ubuntu_jammy_security_url }}"
     suites: "{{ ansible_facts.distribution_release }}-security"
     components: main restricted universe multiverse
     architecture: amd64
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_url }}"
-    suites: "{{ ansible_facts.distribution_release }}"
+    required: true
+  - url: "{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_url }}"
+    suites: "pulp"
+    components: upload
+    architecture: amd64
+    trusted: yes
+    required: true
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_jammy_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
     components: stable
     signed_by: docker.asc
     architecture: amd64
+    required: true
+  - url: "{{ stackhpc_repo_ceph_reef_debian_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
+    components: main
+    signed_by: ceph.asc
+    architecture: amd64
+    required: true
 
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
 # are deployed.
-apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names else [] }}"
+apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if stackhpc_repos_enabled | bool else [] }}"
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
@@ -73,7 +90,7 @@ apt_repositories: "{{ stackhpc_apt_repositories if 'overcloud' in group_names el
 # Do not disable the default apt configuration for non-overcloud hosts. This
 # can result in errors if apt reconfiguration is performed before local
 # repository mirrors are deployed.
-apt_disable_sources_list: "{{ 'overcloud' in group_names }}"
+apt_disable_sources_list: "{{ stackhpc_repos_enabled | bool }}"
 
 # Apt auth configuration for accessing the package repository mirror.
 stackhpc_apt_auth:
@@ -86,10 +103,10 @@ stackhpc_apt_auth:
 # * machine: 'machine' entry in the auth file
 # * login: 'login' entry in the auth file
 # * password: 'password' entry in the auth file
-# * filename: Name of a file in which to store the auth configuration. The
-#   extension should be '.conf'.
+# * filename: Name of a file in /etc/apt/auth.conf.d in which to store
+#   the auth configuration. The extension should be ``.conf``.
 # Default is an empty list.
-apt_auth: "{{ stackhpc_apt_auth if 'overcloud' in group_names and stackhpc_repo_mirror_username is truthy else [] }}"
+apt_auth: "{{ stackhpc_apt_auth if stackhpc_repos_enabled | bool and stackhpc_repo_mirror_username is truthy else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

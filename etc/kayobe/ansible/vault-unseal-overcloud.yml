@@ -28,6 +28,9 @@
     - import_role:
         name: stackhpc.hashicorp.vault_unseal
       vars:
-        # NOTE: Need to unseal each backend, so don't use the VIP
-        vault_api_addr: "http://localhost:8200"
+        vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
+        vault_unseal_token: "{{ vault_keys.root_token }}"
+        vault_unseal_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
         vault_unseal_keys: "{{ vault_keys.keys_base64 }}"
+      environment:
+        https_proxy: ''

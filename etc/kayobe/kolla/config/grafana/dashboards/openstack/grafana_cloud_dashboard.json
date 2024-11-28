@@ -25,7 +25,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2084495,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -66,7 +65,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 2.4,
+        "w": 4.8,
         "x": 0,
         "y": 1
       },
@@ -86,7 +85,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "10.1.5",
       "repeat": "flavors",
       "repeatDirection": "h",
       "targets": [
@@ -96,7 +95,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "openstack_free_capacity_by_flavor_total{flavor_name=~\"$flavors\"}",
+          "expr": "round(avg_over_time(openstack_free_capacity_by_flavor_total{flavor_name=~\"$flavors\"}[30m]), 1)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -424,6 +423,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -465,6 +465,7 @@
         "y": 17
       },
       "id": 5,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -489,7 +490,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "openstack_project_usage{placement_resource=\"MEMORY_MB\"}",
+          "expr": "avg_over_time(openstack_project_usage{placement_resource=\"MEMORY_MB\"}[30m])",
           "legendFormat": "{{project_name}}",
           "range": true,
           "refId": "A"
@@ -522,6 +523,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -552,7 +554,7 @@
               }
             ]
           },
-          "unit": "decmbytes"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -563,6 +565,7 @@
         "y": 17
       },
       "id": 16,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -587,7 +590,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "openstack_project_usage{placement_resource=\"VCPU\"}",
+          "expr": "avg_over_time(openstack_project_usage{placement_resource=\"VCPU\"}[30m])",
           "legendFormat": "VCPU {{project_name}}",
           "range": true,
           "refId": "A"
@@ -598,7 +601,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "openstack_project_usage{placement_resource=\"PCPU\"}",
+          "expr": "avg_over_time(openstack_project_usage{placement_resource=\"PCPU\"}[30m])",
           "hide": false,
           "legendFormat": "PCPU {{project_name}}",
           "range": true,
@@ -646,6 +649,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineStyle": {
               "fill": "solid"
@@ -689,6 +693,7 @@
         "y": 26
       },
       "id": 6,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -715,15 +720,15 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "openstack_free_capacity_hypervisor_by_flavor{flavor_name=~\"$flavors\"}",
+          "expr": "avg_over_time(openstack_free_capacity_hypervisor_by_flavor{flavor_name=~\"$flavors\"}[30m])",
           "format": "time_series",
           "instant": false,
           "legendFormat": "{{flavor_name}} on {{hypervisor}}",
           "range": true,
-          "refId": "Avaliable Capacity on Hypervisors"
+          "refId": "Available Capacity on Hypervisors"
         }
       ],
-      "title": "Avaliable Capacity for $flavors",
+      "title": "Available Capacity for $flavors",
       "type": "timeseries"
     },
     {
@@ -750,6 +755,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -791,6 +797,7 @@
         "y": 26
       },
       "id": 4,
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [
@@ -814,8 +821,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "builder",
-          "expr": "openstack_hypervisor_placement_allocatable_capacity{resource=\"MEMORY_MB\"} - on(hypervisor) openstack_hypervisor_placement_allocated{resource=\"MEMORY_MB\"}",
+          "editorMode": "code",
+          "expr": "avg_over_time(openstack_hypervisor_placement_allocatable_capacity{resource=\"MEMORY_MB\"}[30m]) - on(hypervisor) avg_over_time(openstack_hypervisor_placement_allocated{resource=\"MEMORY_MB\"}[30m])",
           "legendFormat": "{{hypervisor}}",
           "range": true,
           "refId": "A"
@@ -885,7 +892,7 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {},

@@ -25,4 +25,4 @@ ansible-galaxy collection install -p ansible/collections -r requirements.yml
 source $BASE_PATH/src/kayobe-config/etc/kolla/public-openrc.sh
 
 # Run script to configure openstack cloud
-tools/openstack-config 
+tools/openstack-config

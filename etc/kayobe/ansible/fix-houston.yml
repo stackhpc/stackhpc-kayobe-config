@@ -1,0 +1,44 @@
+---
+# When OVS HW offloading is enabled - typically in conjunction with VF-LAG and ASAP^2
+# the DMESG log reports frequent errors on the internal OVS Bridge interface:
+# "tc mirred to Houston: device bond0-ovs is down".
+# This interface is down by default. The errors are mitigated by bringing the interface up.
+# For further context, see:
+# https://bugs.launchpad.net/charm-neutron-openvswitch/+bug/1899364
+# https://patchwork.kernel.org/project/netdevbpf/patch/c2ef23da1d9a4eb62f4e7b7c4540f9bafb553c15.1658420239.git.dcaratti@redhat.com/
+# To deploy this playbook, use the following commands:
+# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fix-houston.yml
+# Enable with Kayobe Hooks by running:
+# mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-service-deploy/post.d
+# cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-service-deploy/post.d
+# ln -s ../../../ansible/fix-houston.yml 90-fix-houston.yml
+
+- name: Create Systemd Unit to workaround 'tc mirred to Houston' error
+  hosts: network,compute
+  become: yes
+
+  tasks:
+    - name: Include kolla-ansible host vars
+      include_vars: "{{ kolla_config_path }}/inventory/overcloud/host_vars/{{ inventory_hostname }}"
+
+    - name: Create systemd service for -ovs network interface
+      template:
+        src: fix-houston-interface.service.j2
+        dest: "/etc/systemd/system/fix-houston-{{ item }}.service"
+      loop: "{{ neutron_bridge_name.split(',') }}"
+      vars:
+        interface_name: "{{ item }}"
+      when: neutron_bridge_name | length > 0
+      notify: reload systemd
+
+    - name: Enable and start systemd service for -ovs network interface
+      systemd:
+        name: "fix-houston-{{ item }}"
+        enabled: yes
+        state: started
+      when: neutron_bridge_name | length > 0
+      loop: "{{ neutron_bridge_name.split(',') }}"
+
+  handlers:
+    - name: reload systemd
+      command: systemctl daemon-reload

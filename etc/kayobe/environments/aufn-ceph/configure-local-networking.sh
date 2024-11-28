@@ -43,7 +43,7 @@ if ! sudo ip l show brcloud >/dev/null 2>&1; then
     sudo ip l set brcloud up
 fi
 
-# On CentOS 8, bridges without a port are DOWN, which causes network
+# On Rocky Linux, bridges without a port are DOWN, which causes network
 # configuration to fail. Add a dummy interface and plug it into the bridge.
 for i in mgmt prov cloud; do
     if ! sudo ip l show dummy-$i >/dev/null 2>&1; then

@@ -21,22 +21,25 @@
 - name: Find OVN DB DB Leader
   hosts: "{{ ovn_nb_db_group | default('controllers') }}"
   tasks:
-    - name: Find the OVN NB DB leader
-      ansible.builtin.command: docker exec ovn_nb_db ovn-nbctl get-connection
-      changed_when: false
-      failed_when: false
-      register: ovn_check_result
-      check_mode: false
+    - name: Find OVN DB Leader
+      when: kolla_enable_ovn | bool
+      block:
+        - name: Find the OVN NB DB leader
+          ansible.builtin.command: docker exec ovn_nb_db ovn-nbctl get-connection
+          changed_when: false
+          failed_when: false
+          register: ovn_check_result
+          check_mode: false
 
-    - name: Group hosts by leader/follower role
-      ansible.builtin.group_by:
-        key: "ovn_nb_{{ 'leader' if ovn_check_result.rc == 0 else 'follower' }}"
-      changed_when: false
+        - name: Group hosts by leader/follower role
+          ansible.builtin.group_by:
+            key: "ovn_nb_{{ 'leader' if ovn_check_result.rc == 0 else 'follower' }}"
+          changed_when: false
 
-    - name: Assert one leader exists
-      ansible.builtin.assert:
-        that:
-          - groups['ovn_nb_leader'] | default([]) | length == 1
+        - name: Assert one leader exists
+          ansible.builtin.assert:
+            that:
+              - groups['ovn_nb_leader'] | default([]) | length == 1
 
 - name: Fix OVN chassis priorities
   hosts: ovn_nb_leader

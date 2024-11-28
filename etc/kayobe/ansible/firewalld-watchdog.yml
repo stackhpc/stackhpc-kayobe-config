@@ -1,0 +1,69 @@
+---
+# This playbook can be applied in advance of rolling out a firewall
+# configuration. It sets up a timer that disables the firewalld service after a
+# period of time (default 600s). It should be used as follows:
+# 1. Enable firewalld-watchdog
+#    kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts>
+# 2. Apply firewall config
+#    kayobe <group> host configure -l <hosts> -t network,firewall
+# 3. Disable watchdog
+#    kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts> -e firewalld_watchdog_state=absent
+# If the firewall changes result in being locked out of the system, the
+# watchdog will disable the firewall after the timeout.
+# Remember to disable the watchdog, otherwise the firewall will be disabled!
+
+- name: Create a systemd timer to stop firewalld
+  hosts: seed:seed-hypervisor:overcloud:infra-vms
+  tags:
+    - firewalld-watchdog
+  vars:
+    # Watchdog state: present or absent.
+    firewalld_watchdog_state: present
+    # Watchdog timeout in seconds.
+    firewalld_watchdog_timeout_s: 600
+  become: true
+  tasks:
+    - when: firewalld_watchdog_state == 'present'
+      block:
+        - name: Create firewalld-watchdog service unit file
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/firewalld-watchdog.service
+            content: |
+              [Unit]
+              Description=Firewalld watchdog service
+
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/bin/systemctl stop firewalld
+          register: service_result
+
+        - name: Create firewalld-watchdog timer unit file
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/firewalld-watchdog.timer
+            content: |
+              [Unit]
+              Description=Firewalld watchdog timer
+
+              [Timer]
+              OnActiveSec={{ firewalld_watchdog_timeout_s }}
+              Unit=firewalld-watchdog.service
+
+              [Install]
+              WantedBy=timers.target
+          register: timer_result
+
+    - name: Enable or disable firewalld-watchdog timer
+      ansible.builtin.systemd_service:
+        name: firewalld-watchdog.timer
+        daemon_reload: "{{ service_result is changed or timer_result is changed }}"
+        enabled: false
+        state: "{{ 'started' if firewalld_watchdog_state == 'present' else 'stopped' }}"
+
+    - name: Remove firewalld-watchdog unit files
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}"
+        state: absent
+      loop:
+        - firewalld-watchdog.service
+        - firewalld-watchdog.timer
+      when: firewalld_watchdog_state == 'absent'

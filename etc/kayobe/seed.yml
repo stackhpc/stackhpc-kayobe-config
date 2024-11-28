@@ -36,25 +36,23 @@
 ###############################################################################
 # Seed node LVM configuration.
 
-# List of seed volume groups. See mrlesmithjr.manage-lvm role for format.
+# List of seed volume groups. See mrlesmithjr.manage_lvm role for format.
 #seed_lvm_groups:
 
-# Default list of seed volume groups. See mrlesmithjr.manage-lvm role for
+# Default list of seed volume groups. See mrlesmithjr.manage_lvm role for
 # format.
 #seed_lvm_groups_default:
 
-# Additional list of seed volume groups. See mrlesmithjr.manage-lvm role for
+# Additional list of seed volume groups. See mrlesmithjr.manage_lvm role for
 # format.
 #seed_lvm_groups_extra:
 
 # Whether a 'data' LVM volume group should exist on the seed. By default this
-# contains a 'docker-volumes' logical volume for Docker volume storage. It will
-# also be used for Docker container and image storage if
-# 'docker_storage_driver' is set to 'devicemapper'. Default is true if
-# 'docker_storage_driver' is set to 'devicemapper', or false otherwise.
+# contains a 'docker-volumes' logical volume for Docker volume storage.
+# Default is false.
 #seed_lvm_group_data_enabled:
 
-# Seed LVM volume group for data. See mrlesmithjr.manage-lvm role for format.
+# Seed LVM volume group for data. See mrlesmithjr.manage_lvm role for format.
 #seed_lvm_group_data:
 
 # List of disks for use by seed LVM data volume group. Default to an invalid
@@ -106,7 +104,7 @@ seed_pulp_container:
     image: pulp/pulp
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
-    tag: "3.24.0"
+    tag: "3.43.1"
     network_mode: host
     # Override deploy_containers_defaults.init == true to ensure
     # s6-overlay-suexec starts as pid 1
@@ -137,6 +135,22 @@ seed_squid_container:
       - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
       - /var/log/squid:/var/log/squid
 
+# Seed container running redfish exporter.
+# https://github.com/jenningsloy318/redfish_exporter
+# This can be be used for monitoring servers in bifrost.
+seed_redfish_exporter_container_enabled: "{{ stackhpc_enable_redfish_exporter }}"
+
+seed_redfish_exporter_container:
+  redfish_exporter:
+    image: ghcr.io/stackhpc/redfish-exporter
+    pre: "{{ kayobe_config_path }}/containers/redfish_exporter/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/redfish_exporter/post.yml"
+    tag: "v1.0.2"
+    network_mode: host
+    command: ./main --config.file /redfish_exporter.yml
+    volumes: "/opt/kayobe/containers/redfish_exporter/redfish_exporter.yml:/redfish_exporter.yml:ro"
+    restart_policy: unless-stopped
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -148,9 +162,14 @@ seed_squid_container:
 seed_containers: >-
   {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
         | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_redfish_exporter_container if seed_redfish_exporter_container_enabled | bool else {})
         | combine(seed_extra_containers) }}
 
 seed_extra_containers: {}
+
+# Whether to attempt a basic authentication login to a registry when
+# deploying seed containers
+seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabled | bool }}"
 
 ###############################################################################
 # Seed node firewalld configuration.

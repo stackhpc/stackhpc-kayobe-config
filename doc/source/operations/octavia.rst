@@ -2,6 +2,8 @@
 Octavia
 =======
 
+.. _Amphora image:
+
 Building and rotating amphora images
 ====================================
 

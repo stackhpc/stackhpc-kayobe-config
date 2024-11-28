@@ -1,12 +1,12 @@
 ---
 - name: Upload and create a distribution for an image
-  hosts: localhost
+  hosts: seed
   vars:
     remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
     remote_pulp_username: "{{ stackhpc_image_repository_username }}"
     remote_pulp_password: "{{ stackhpc_image_repository_password }}"
     repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
-    base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    pulp_base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
   tasks:
     - name: Print image tag
       debug:
@@ -25,6 +25,10 @@
         password: "{{ remote_pulp_password }}"
         file: "{{ found_files.files[0].path }}"
         state: present
+      register: upload_result
+      until: upload_result is success
+      retries: 3
+      delay: 60
 
     - name: Get sha256 hash
       ansible.builtin.stat:
@@ -40,6 +44,10 @@
         sha256: "{{ file_stats.stat.checksum }}"
         relative_path: "{{ found_files.files[0].path | basename }}"
         state: present
+      register: file_content_result
+      until: file_content_result is success
+      retries: 3
+      delay: 5
 
     - name: Ensure file repo exists
       pulp.squeezer.file_repository:
@@ -48,6 +56,10 @@
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}"
         state: present
+      register: file_repo_result
+      until: file_repo_result is success
+      retries: 3
+      delay: 5
 
     - name: Add content to file repo
       pulp.squeezer.file_repository_content:
@@ -58,6 +70,10 @@
         present_content:
           - relative_path: "{{ found_files.files[0].path | basename }}"
             sha256: "{{ file_stats.stat.checksum }}"
+      register: file_repo_content_result
+      until: file_repo_content_result is success
+      retries: 3
+      delay: 5
 
     - name: Create a new publication to point to this version
       pulp.squeezer.file_publication:
@@ -67,6 +83,9 @@
         repository: "{{ repository_name }}"
         state: present
       register: publication_details
+      until: publication_details is success
+      retries: 3
+      delay: 5
 
     - name: Update distribution for latest version
       pulp.squeezer.file_distribution:
@@ -74,11 +93,14 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}_latest"
-        base_path: "{{ base_path }}/latest"
+        base_path: "{{ pulp_base_path }}/latest"
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
       register: latest_distribution_details
+      until: latest_distribution_details is success
+      retries: 3
+      delay: 5
 
     - name: Create distribution for given version
       pulp.squeezer.file_distribution:
@@ -86,35 +108,39 @@
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
         name: "{{ repository_name }}_{{ host_image_tag }}"
-        base_path: "{{ base_path }}/{{ host_image_tag }}"
+        base_path: "{{ pulp_base_path }}/{{ host_image_tag }}"
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
       when: latest_distribution_details.changed
+      register: distribution_result
+      until: distribution_result is success
+      retries: 3
+      delay: 5
 
     - name: Update new images file with versioned path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
         {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
 
     - name: Update new images file with latest path
       lineinfile:
         path: /tmp/updated_images.txt
-        line: "{{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 
     - name: Print versioned path
       debug:
-        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
         {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 
     - name: Print latest path
       debug:
-        msg: "New latest path: {{ remote_pulp_url }}/pulp/content/{{ base_path }}/\
+        msg: "New latest path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 

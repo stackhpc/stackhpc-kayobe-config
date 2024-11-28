@@ -12,6 +12,13 @@
         state: present
       become: true
 
+    - name: Ensure the cron/crond service is running
+      service:
+        name: "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'crond' }}"
+        state: started
+        enabled: true
+      become: true
+
     - name: Copy smartmon.sh and nvmemon.sh from scripts folder
       copy:
         src: "scripts/{{ item }}"
