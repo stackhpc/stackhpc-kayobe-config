@@ -66,13 +66,13 @@ jobs:
 
       # Generate a tag to apply to all built overcloud host images.
       - name: Generate overcloud host image tag
-        id: image_tag
+        id: host_image_tag
         run: |
-          echo "image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+          echo "host_image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Display overcloud host image tag
         run: |
-          echo "${{ steps.image_tag.outputs.image_tag }}"
+          echo "${{ steps.host_image_tag.outputs.host_image_tag }}"
 
       - name: Install Kayobe
         run: |
@@ -241,7 +241,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
           -e image_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e image_tag=${{ steps.image_tag.outputs.image_tag }} \
+          -e host_image_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
@@ -255,7 +255,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.image_tag.outputs.image_tag }}
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -293,7 +293,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
           -e image_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
-          -e image_tag=${{ steps.image_tag.outputs.image_tag }} \
+          -e host_image_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
         env:
@@ -307,7 +307,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
-          -e image_name=overcloud-ubuntu-jammy-${{ steps.image_tag.outputs.image_tag }}
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
