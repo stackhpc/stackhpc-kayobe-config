@@ -10,7 +10,7 @@
   tasks:
     - name: Print image tag
       debug:
-        msg: "Image tag: {{ host_image_tag }}"
+        msg: "Image tag: {{ image_tag }}"
 
     - name: Get filename
       find:
@@ -107,8 +107,8 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ repository_name }}_{{ host_image_tag }}"
-        base_path: "{{ pulp_base_path }}/{{ host_image_tag }}"
+        name: "{{ repository_name }}_{{ image_tag }}"
+        base_path: "{{ pulp_base_path }}/{{ image_tag }}"
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
@@ -122,7 +122,7 @@
       lineinfile:
         path: /tmp/updated_images.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+        {{ image_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
 
     - name: Update new images file with latest path
@@ -135,7 +135,7 @@
     - name: Print versioned path
       debug:
         msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+        {{ image_tag }}/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 
     - name: Print latest path
@@ -146,5 +146,5 @@
 
     - name: Print version tag
       debug:
-        msg: "New tag: {{ host_image_tag }}"
+        msg: "New tag: {{ image_tag }}"
       when: latest_distribution_details.changed
