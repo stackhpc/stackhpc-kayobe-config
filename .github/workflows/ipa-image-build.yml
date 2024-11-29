@@ -174,7 +174,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure -e seed_bootstrap_user=ubuntu
+          kayobe seed host configure -e seed_bootstrap_user=ubuntu --skip-tags network
 
       - name: Install dependencies
         run: |
@@ -189,7 +189,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed service deploy --kolla-tags bifrost --tags bifrost -ke include_dhcp_server=false
+          kayobe seed service deploy --kolla-tags bifrost --tags kolla-bifrost
 
       - name: Create bifrost_httpboot Docker volume
         run: |
