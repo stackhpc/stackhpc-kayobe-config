@@ -1,0 +1,100 @@
+---
+name: Promote IPA image
+on:
+  workflow_dispatch:
+    inputs:
+      rocky9:
+        description: Promote Rocky Linux 9
+        type: boolean
+        default: true
+      ubuntu-jammy:
+        description: Promote Ubuntu 22.04 Jammy
+        type: boolean
+        default: true
+      image_tag:
+        description: Tag to promote
+        type: string
+        required: true
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  ipa-image-promote:
+    name: Promote IPA image
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+
+      - name: Setup networking
+        run: |
+          if ! ip l show breth1 >/dev/null 2>&1; then
+              sudo ip l add breth1 type bridge
+          fi
+          sudo ip l set breth1 up
+          if ! ip a show breth1 | grep 192.168.33.3/24; then
+              sudo ip a add 192.168.33.3/24 dev breth1
+          fi
+          if ! ip l show dummy1 >/dev/null 2>&1; then
+              sudo ip l add dummy1 type dummy
+          fi
+          sudo ip l set dummy1 up
+          sudo ip l set dummy1 master breth1
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Promote Rocky Linux 9 IPA image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
+          -e artifact_type="ipa" \
+          -e os_distribution='rocky' \
+          -e os_release='9'
+        env:
+          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9
+
+      - name: Promote Ubuntu Jammy 22.04 IPA image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
+          -e artifact_type="ipa" \
+          -e os_distribution='ubuntu' \
+          -e os_release='jammy'
+        env:
+          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
