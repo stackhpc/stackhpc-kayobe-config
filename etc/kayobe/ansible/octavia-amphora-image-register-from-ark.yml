@@ -1,0 +1,117 @@
+---
+- name: Octavia credentials precheck
+  gather_facts: yes
+  hosts: localhost
+  tasks:
+    - name: Fail if not using octavia user and service project
+      fail:
+        msg: >-
+          Source the octavia-openrc.sh file before executing this playbook
+      when: >-
+        lookup('env', 'OS_USERNAME') != 'octavia' or
+        lookup('env', 'OS_PROJECT_NAME') != 'service'
+
+- name: Download Amphora image from Ark
+  ansible.builtin.import_playbook: pulp-amphora-image-download.yml
+  when: download_from_ark | default(true) | bool
+
+- name: Register an Octavia Amphora image in Glance from Ark
+  gather_facts: yes
+  hosts: localhost
+  vars:
+    venv: "{{ virtualenv_path }}/octavia-amphora"
+    image_path: "/tmp/amphora-x64-haproxy.qcow2"
+  tasks:
+    - name: Get image checksum
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      stat:
+        path: "{{ image_path }}"
+        checksum_algorithm: md5
+      changed_when: false
+      register: image_checksum
+      delegate_to: "{{ groups['controllers'][0] }}"
+      become: true
+
+    - name: Assert that Amphora image exists
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      assert:
+        that: image_checksum.stat.exists
+        fail_msg: |
+          The amphora image: {{ image_path }}
+          does not exist. Did you download the image?
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - name: Ensure packages are installed
+      become: true
+      vars:
+        required_packages:
+          - python3-dev
+          - gcc
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      package:
+        name: "{{ required_packages }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - name: Set up openstack virtualenv
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      pip:
+        virtualenv: "{{ venv }}"
+        virtualenv_command: python3 -m venv
+        name:
+          - openstacksdk
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if openstacksdk_upper_constraints_file %}-c {{ openstacksdk_upper_constraints_file }}{% endif %}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - name: Query Octavia Amphora image
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      os_image_info:
+        auth_type: password
+        auth: "{{ openstack_auth }}"
+        ca_cert: "{{ openstack_cacert }}"
+        interface: "{{ openstack_interface }}"
+        image: amphora-x64-haproxy
+      register: image_info
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - name: Ensure old Octavia Amphora image is renamed
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      shell:
+        cmd: >-
+          {{ venv }}/bin/openstack image set amphora-x64-haproxy --name amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}
+      when:
+        - image_info.images | length != 0
+        - image_info.images[0].checksum != image_checksum.stat.checksum
+      changed_when: true
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+
+    - name: Ensure new Octavia Amphora image is registered
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+      os_image:
+        auth_type: password
+        auth: "{{ openstack_auth }}"
+        ca_cert: "{{ openstack_cacert }}"
+        interface: "{{ openstack_interface }}"
+        name: amphora-x64-haproxy
+        tags: ["amphora"]
+        container_format: bare
+        disk_format: qcow2
+        is_public: no
+        filename: "{{ image_path }}"
+        properties:
+          hw_architecture: x86_64
+          hw_rng_model: virtio
+      when: image_info.images | length == 0 or (image_info.images | length != 0 and image_info.images[0].checksum != image_checksum.stat.checksum)
+      become: true
+      delegate_to: "{{ groups['controllers'][0] }}"

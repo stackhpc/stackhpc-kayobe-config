@@ -3,6 +3,7 @@
   hosts: "{{ amphora_builder_group | default('seed') }}"
   vars:
     amphora_dib_upper_constraints_file: "{{ pip_upper_constraints_file }}"
+    amphora_image_dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
   tasks:
     - name: Install EPEL
       package:
@@ -15,21 +16,22 @@
     - name: Ensure packages are installed
       become: true
       vars:
+        packages_common:
+          - debootstrap
+          - git
+          - python3-venv
+          - python3-diskimage-builder
         packages_for_os_family:
           RedHat:
-            - debootstrap
             - qemu-img
-            - git
             - e2fsprogs
             - policycoreutils-python-utils
             - yum-utils
           Debian:
-            - debootstrap
             - qemu-utils
-            - git
             - kpartx
       package:
-        name: "{{ packages_for_os_family[ansible_facts.os_family] }}"
+        name: "{{ packages_common + packages_for_os_family[ansible_facts.os_family] }}"
 
     - name: Create a temporary directory
       tempfile:
@@ -40,7 +42,6 @@
         - name: Check whether the image cache directory exists
           stat:
             path: "{{ image_cache_path }}"
-            get_md5: False
             get_checksum: False
             mime: False
           register: image_cache_stat
@@ -88,14 +89,14 @@
 
         - name: Create the Amphora image
           shell:
-            cmd: "source {{ venv_path }}/bin/activate && ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1"
+            cmd: ". {{ venv_path }}/bin/activate && ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1"
             chdir: "{{ src_path }}/diskimage-create"
           changed_when: true
 
         - name: Copy image to image store
           copy:
             src: "{{ src_path }}/diskimage-create/amphora-x64-haproxy.qcow2"
-            dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
+            dest: "{{ amphora_image_dest }}"
             remote_src: true
       always:
         - name: Remove temporary files

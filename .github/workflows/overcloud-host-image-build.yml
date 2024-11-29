@@ -1,16 +1,7 @@
 ---
-name: Build overcloud host images
+name: Build Amphora image
 on:
   workflow_dispatch:
-    inputs:
-      rocky9:
-        description: Build Rocky Linux 9
-        type: boolean
-        default: true
-      ubuntu-jammy:
-        description: Build Ubuntu 22.04 Jammy
-        type: boolean
-        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -27,17 +18,11 @@ env:
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
   overcloud-host-image-build:
-    name: Build overcloud host images
+    name: Build Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
-      - name: Validate inputs
-        run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
-            echo "At least one distribution must be selected"
-            exit 1
-          fi
 
       - name: Install Package
         uses: ConorMacBride/install-package@main
@@ -62,10 +47,11 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
       # Generate a tag to apply to all built overcloud host images.
-      - name: Generate overcloud host image tag
+      - name: Generate Amphora image tag
         id: image_tag
         run: |
           echo "image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
@@ -106,7 +92,7 @@ jobs:
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
-          aio_vm_name = "skc-host-image-builder"
+          aio_vm_name = "skc-amphora-image-builder"
           # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
           aio_vm_image = "Ubuntu-22.04"
@@ -202,142 +188,67 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Create bifrost_httpboot Docker volume
+      - name: Create amphora image output directory
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "sudo mkdir -p /var/lib/docker/volumes/bifrost_httpboot/_data" --show-output
+          kayobe seed host command run \
+          --command "mkdir -p /opt/kayobe/images/amphora" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Build a Rocky Linux 9 overcloud host image
-        id: build_rocky_9
-        continue-on-error: true
+      - name: Build Octavia Amphora image
+        id: build_amphora
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e stackhpc_overcloud_dib_name=overcloud-rocky-9
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/octavia-amphora-image-build.yml -e amphora_image_dest=/opt/kayobe/images/amphora/amphora-x64-haproxy.qcow2
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky9
 
       - name: Show last error logs
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout" --show-output
+          kayobe seed host command run --command "tail -200 /var/log/octavia-amphora-image-build.log" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_rocky_9.outcome == 'failure'
+        if: steps.build_amphora.outcome == 'failure'
 
-      - name: Upload Rocky Linux 9 overcloud host image to Ark
+      - name: Upload Octavia Amphora image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_path=/opt/kayobe/images/amphora \
+          -e artifact_tag=${{ steps.image_tag.outputs.image_tag }} \
           -e file_regex="*.qcow2" \
-          -e os_distribution="rocky" \
-          -e os_release="9"
+          -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
+          -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
+        if: steps.build_amphora.outcome == 'success'
 
-      - name: Upload Rocky Linux 9 overcloud host image to Dev Cloud
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.image_tag.outputs.image_tag }}
-        env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
-
-      - name: Build an Ubuntu Jammy 22.04 overcloud host image
-        id: build_ubuntu_jammy
+      - name: Copy logback
         continue-on-error: true
         run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild \
-          -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
-          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-jammy
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy
-
-      - name: Show last error logs
-        continue-on-error: true
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout" --show-output
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ubuntu_jammy.outcome == 'failure'
-
-      - name: Upload Ubuntu Jammy 22.04 overcloud host image to Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
-          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
-          -e file_regex="*.qcow2" \
-          -e os_distribution="ubuntu" \
-          -e os_release="jammy"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
-
-      - name: Upload Ubuntu Jammy overcloud host image to Dev Cloud
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
-          -e image_name=overcloud-ubuntu-jammy-${{ steps.image_tag.outputs.image_tag }}
-        env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
-
-      - name: Copy logs back
-        continue-on-error: true
-        run: |
-          mkdir logs
-          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
-          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/tmp/updated_images.txt ./logs/ || true
+          mkdir artifact
+          scp stack@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/var/log/octavia-amphora-image-build.log ./artifact
         if: always()
 
       - name: Fail if any overcloud host image builds failed
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_rocky_9.outcome == 'failure' ||
-            steps.build_ubuntu_jammy.outcome == 'failure'
+        if: steps.build_amphora.outcome == 'failure'
 
-      - name: Upload logs artifact
+      - name: Upload logs & image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Build logs
-          path: ./logs
+          name: amphora-image-build-log
+          path: ./artifact
         if: always()
 
       - name: Destroy

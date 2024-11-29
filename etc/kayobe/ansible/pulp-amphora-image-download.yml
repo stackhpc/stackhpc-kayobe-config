@@ -1,0 +1,36 @@
+---
+- name: Download an amphora image from Ark
+  hosts: controllers[0]
+  vars:
+    # This var is an edited version of stackhpc_overcloud_host_image_url
+    # without the auth credentials in it. Auth is handled by username and
+    # password in the get_url task of this playbook
+    stackhpc_overcloud_host_image_url_no_auth: "{{ stackhpc_release_pulp_content_url }}/amphora/\
+      {{ openstack_release }}/\
+      {{ stackhpc_amphora_image_version }}/\
+      amphora-x64-haproxy.qcow2"
+    download_destination: /tmp/amphora-x64-haproxy.qcow2
+
+  tasks:
+    - name: Print image information
+      debug:
+        msg: |
+          Image tag: {{ stackhpc_amphora_image_version }}
+
+    # TODO: Add checksum support
+    - name: Download image artifact
+      get_url:
+        url: "{{ stackhpc_overcloud_host_image_url_no_auth }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        force_basic_auth: true
+        unredirected_headers:
+          - "Authorization"
+        dest: "{{ download_destination }}"
+        mode: "0644"
+        owner: stack
+        group: stack
+      register: image_download_result
+      until: image_download_result.status_code >= 200 and image_download_result.status_code <= 399
+      retries: 3
+      delay: 60
