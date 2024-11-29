@@ -7,6 +7,7 @@
     remote_pulp_password: "{{ stackhpc_image_repository_password }}"
     repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
     pulp_base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    file_extension: '*.qcow2'
   tasks:
     - name: Print image tag
       debug:
@@ -15,7 +16,7 @@
     - name: Get filename
       find:
         paths: "{{ image_path }}"
-        patterns: '*.qcow2'
+        patterns: "{{ file_extension }}"
       register: found_files
 
     - name: Upload an artifact
