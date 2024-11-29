@@ -84,21 +84,33 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
+      - name: Output image tag
+        id: image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_ubuntu_jammy_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: ${{ github.workspace }}/src/kayobe-config
+
+      # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
+      - name: Output image name
+        id: image_name
+        run: |
+          echo image_name=overcloud-ubuntu-jammy-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
+
       - name: Generate terraform.tfvars
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
-          aio_vm_name = "skc-host-image-builder"
-          # Must be an Ubuntu Jammy host to successfully build all images
-          # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Ubuntu-22.04"
+          aio_vm_name = "skc-ipa-image-builder"
+          aio_vm_image = "${{ env.VM_IMAGE }}"
           aio_vm_flavor = "en1.medium"
           aio_vm_network = "stackhpc-ci"
           aio_vm_subnet = "stackhpc-ci"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
 
       - name: Terraform Plan
         run: terraform plan
@@ -170,11 +182,25 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
+      - name: Growpart
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml \
+          -e growroot_group="seed" \
+          -e seed_bootstrap_user="ubuntu"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
       - name: Configure the seed host (Builder VM)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure -e seed_bootstrap_user=ubuntu --skip-tags network
+          kayobe seed host configure \
+          -e seed_bootstrap_user=ubuntu \
+          --skip-tags network,apt,docker,docker-registry
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Install dependencies
         run: |
@@ -185,29 +211,27 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Deploy Bifrost (Builder VM)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed service deploy --kolla-tags bifrost --tags kolla-bifrost
-
-      - name: Create bifrost_httpboot Docker volume
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "sudo mkdir -p /var/lib/docker/volumes/bifrost_httpboot/_data" --show-output
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-
       - name: Build an Ironic Python Agent (IPA) image
         id: build_ipa
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed deployment image build --force-rebuild
+          kayobe overcloud deployment image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy" \
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ipa.outcome == 'failure'
 
       - name: Upload IPA kernel image to Ark
         run: |
@@ -215,11 +239,12 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
-          -e image_path=/etc/kolla/ipa.kernel \
-          -e repository_name="ipa-{{ openstack_release }}" \
-          -e pulp_base_path="ipa/{{ openstack_release }}" \
+          -e image_path=/opt/kayobe/images/ipa \
+          -e image_name=ipa \
           -e image_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
-          -e file_extension='ipa.*'
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy" \
+          -e file_extension='kernel'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: steps.build_ipa.outcome == 'success'
@@ -230,14 +255,28 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
-          -e image_path=/etc/kolla/ipa.initramfs \
-          -e repository_name="ipa-{{ openstack_release }}" \
-          -e pulp_base_path="ipa/{{ openstack_release }}" \
+          -e image_path=/opt/kayobe/images/ipa \
+          -e image_name=ipa \
           -e image_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
-          -e file_extension='ipa.*'
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy" \
+          -e file_extension='initramfs'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: steps.build_ipa.outcome == 'success'
+
+      - name: Copy logs back
+        continue-on-error: true
+        run: |
+          mkdir logs
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
+        if: always()
+
+      - name: Upload logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build logs
+          path: ./logs
 
       - name: Fail if the IPA image build failed
         run: |
