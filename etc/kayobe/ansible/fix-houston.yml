@@ -20,6 +20,7 @@
   tasks:
     - name: Include kolla-ansible host vars
       ansible.builtin.include_vars: "{{ kolla_config_path }}/inventory/overcloud/host_vars/{{ inventory_hostname }}"
+
     - name: Create systemd service for -ovs network interface
       ansible.builtin.template:
         src: fix-houston-interface.service.j2
@@ -31,7 +32,7 @@
       notify: reload systemd
 
     - name: Enable and start systemd service for -ovs network interface
-      ansible.builtin.systemd:  # noqa command-instead-of-module
+      ansible.builtin.systemd:
         name: fix-houston-{{ item }}
         enabled: true
         state: started

@@ -31,7 +31,7 @@
       register: inspection
 
     - name: Ensure the {{ container_name }} container is running
-      ansible.builtin.command: systemctl start kolla-{{ container_name }}-container.service
+      ansible.builtin.command: systemctl start kolla-{{ container_name }}-container.service  # noqa command-instead-of-module
       when: inspection.stdout == 'false'
 
     - name: Wait for the {{ container_name }} container to reach state 'Running'
@@ -48,12 +48,16 @@
 
     - name: Stop app
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl stop_app'
+
     - name: Force reset app
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl force_reset'
+
     - name: Start app
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'
+
     - name: Wait for all nodes to join the cluster
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ groups['controllers'] | length }}'
+
 - name: Restart OpenStack services
   hosts: controllers:compute
   become: true
