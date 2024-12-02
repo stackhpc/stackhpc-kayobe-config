@@ -1,3 +1,5 @@
+.. _stackhpc_release_train:
+
 ======================
 StackHPC Release Train
 ======================

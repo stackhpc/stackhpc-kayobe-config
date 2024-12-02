@@ -1,0 +1,151 @@
+---
+- name: Deploy RADOS gateway usage exporter
+  hosts: monitoring
+  gather_facts: false
+  tags: radosgw_usage_exporter
+  vars:
+    venv: "{{ virtualenv_path }}/openstack"
+  tasks:
+    - name: Deploy RADOS gateway usage exporter
+      when: stackhpc_enable_radosgw_usage_exporter
+      block:
+        - name: Set up openstack cli virtualenv
+          ansible.builtin.pip:
+            virtualenv: "{{ venv }}"
+            virtualenv_command: "/usr/bin/python3 -m venv"
+            name:
+              - python-openstackclient
+            state: latest
+            extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+          run_once: true
+          delegate_to: "{{ groups['controllers'][0] }}"
+          vars:
+            ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+        - name: Read admin-openrc credential file
+          ansible.builtin.command:
+            cmd: "cat {{ lookup('ansible.builtin.env', 'KOLLA_CONFIG_PATH') }}/admin-openrc.sh"
+          delegate_to: localhost
+          register: credential
+          changed_when: false
+
+        - name: Set facts for admin credentials
+          ansible.builtin.set_fact:
+            openstack_auth_env:
+              OS_PROJECT_DOMAIN_NAME: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_USER_DOMAIN_NAME: "{{ credential.stdout_lines | select('match', '.*OS_USER_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_PROJECT_NAME: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_USERNAME: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_PASSWORD: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_AUTH_URL: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_INTERFACE: "{{ credential.stdout_lines | select('match', '.*OS_INTERFACE*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_IDENTITY_API_VERSION: "{{ credential.stdout_lines | select('match', '.*OS_IDENTITY_API_VERSION*.') | first | split('=') | last | replace(\"'\", '') }}"
+              OS_CACERT: "{{ '/etc/ssl/certs/ca-certificates.crt' if os_distribution == 'ubuntu' else '/etc/pki/tls/certs/ca-bundle.crt' }}"
+
+        - name: Check ec2 credential for ceph_rgw
+          ansible.builtin.command: >
+            {{ venv }}/bin/openstack
+            ec2 credentials list --user ceph_rgw
+            --format json
+          environment: "{{ openstack_auth_env }}"
+          register: credential_check
+          delegate_to: "{{ groups['controllers'][0] }}"
+          changed_when: false
+          vars:
+            ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+          run_once: true
+
+        - name: Create ec2 credential if there's none
+          ansible.builtin.command: >
+            {{ venv }}/bin/openstack
+            ec2 credentials create --user ceph_rgw --project service
+            --format json
+          environment: "{{ openstack_auth_env }}"
+          delegate_to: "{{ groups['controllers'][0] }}"
+          changed_when: true
+          vars:
+            ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+          run_once: true
+          when: credential_check.stdout == []
+
+        - name: Query ec2 credential for ceph_rgw
+          ansible.builtin.command: >
+            {{ venv }}/bin/openstack
+            ec2 credentials list --user ceph_rgw
+            --format json
+          environment: "{{ openstack_auth_env }}"
+          delegate_to: "{{ groups['controllers'][0] }}"
+          changed_when: false
+          vars:
+            ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+          register: credential
+          run_once: true
+
+        - name: Get object storage endpoint
+          ansible.builtin.command: >
+            {{ venv }}/bin/openstack
+            endpoint list --service object-store --interface internal
+            --format json
+          environment: "{{ openstack_auth_env }}"
+          delegate_to: "{{ groups['controllers'][0] }}"
+          changed_when: false
+          vars:
+            ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+          register: endpoint
+          run_once: true
+
+        - name: Process object storage endpoint
+          ansible.builtin.set_fact:
+            radosgw_server: "{{ scheme + '://' + hostname + ':' + radosgw_port }}"
+          vars:
+            swift: "{{ endpoint.stdout | from_json | first }}"
+            hostname: "{{ swift.URL | urlsplit('hostname') }}"
+            scheme: "{{ swift.URL | urlsplit('scheme') }}"
+            radosgw_port: "{{ swift.URL | urlsplit('port') }}"
+          run_once: true
+
+        - name: Ensure radosgw_usage_exporter container is running
+          community.docker.docker_container:
+            name: radosgw_usage_exporter
+            image: ghcr.io/stackhpc/radosgw_usage_exporter:v0.1.1
+            network_mode: host
+            env:
+              RADOSGW_SERVER: "{{ radosgw_server }}"
+              ADMIN_ENTRY: admin
+              ACCESS_KEY: "{{ ec2.Access }}"
+              SECRET_KEY: "{{ ec2.Secret }}"
+              VIRTUAL_PORT: "{{ stackhpc_radosgw_usage_exporter_port | string }}"
+            entrypoint: "{{ ['python', '-u', './radosgw_usage_exporter.py', '--insecure'] if not stackhpc_radosgw_usage_exporter_verify else omit }}"
+          vars:
+            ec2: "{{ credential.stdout | from_json | first }}"
+          become: true
+
+        - name: Ensure that the internal TLS certificate is trusted by the exporter
+          when: stackhpc_radosgw_usage_exporter_cacert | length > 0
+          block:
+            - name: Create radosgw-usage-exporter directory
+              ansible.builtin.file:
+                path: /opt/kayobe/radosgw-usage-exporter/
+                state: directory
+                mode: 0755
+
+            - name: Copy CA certificate to RADOS gateway usage exporter nodes
+              ansible.builtin.copy:
+                src: "{{ stackhpc_radosgw_usage_exporter_cacert }}"
+                dest: "/opt/kayobe/radosgw-usage-exporter/{{ stackhpc_radosgw_usage_exporter_cacert | basename }}"
+                mode: 0644
+              register: copy_to_node_result
+
+            - name: Copy CA certificate to RADOS gateway usage exporter container
+              community.docker.docker_container_copy_into:
+                container: radosgw_usage_exporter
+                path: "{{ copy_to_node_result.dest }}"
+                container_path: "/usr/local/share/ca-certificates/{{ copy_to_node_result.dest | basename }}"
+              become: true
+
+            - name: Update CA certificate of RADOS gateway usage exporter container
+              community.docker.docker_container_exec:
+                container: radosgw_usage_exporter
+                command: update-ca-certificates
+                user: root
+              become: true

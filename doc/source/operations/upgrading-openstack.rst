@@ -121,6 +121,13 @@ to ``default``. Whilst this does not have any negative impact on services
 that utilise Redis it will feature prominently in any preview of the overcloud
 configuration.
 
+AvailabilityZoneFilter removal
+------------------------------
+
+Support for the ``AvailabilityZoneFilter`` filter has been dropped in Nova.
+Remove it from any Nova config files before upgrading. It will cause errors in
+Caracal and halt the Nova scheduler.
+
 Known issues
 ============
 
@@ -136,6 +143,31 @@ Known issues
   the ``--root-dev-only`` option from ``/boot/efi/EFI/rocky/grub.cfg`` after
   applying package updates. This will happen automatically as a post hook when
   running the ``kayobe overcloud host package update`` command.
+
+* After upgrading OpenSearch to the latest 2023.1 container image, we have seen
+  cluster routing allocation be disabled on some systems. See bug for details:
+  https://bugs.launchpad.net/kolla-ansible/+bug/2085943.
+  This will cause the "Perform a flush" handler to fail during the 2024.1
+  OpenSearch upgrade. To workaround this, you can run the following PUT request
+  to enable allocation again:
+
+  .. code-block:: console
+
+     curl -X PUT "https://<kolla-vip>:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d '{ "transient" : { "cluster.routing.allocation.enable" : "all" } } '
+
+* Cinder database migrations fail during the upgrade process when the
+  ``use_quota`` column is set to ``NULL``, which can be the case on deleted
+  volumes and snapshots if OpenStack has been in operation for several
+  releases. See `Launchpad bug 2070475
+  <https://bugs.launchpad.net/cinder/+bug/2070475>`__ for details. Until the
+  `database migrations are fixed
+  <https://review.opendev.org/c/openstack/cinder/+/923635>`__, the data can be
+  fixed with the following MySQL queries:
+
+  .. code-block:: mysql
+
+     UPDATE volumes SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
+     UPDATE snapshots SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
 
 Security baseline
 =================
@@ -189,9 +221,13 @@ to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
 should not cause an API outage (though it should still be considered "at
 risk").
 
-Some errors have been observed in testing when the upgrades are perfomed
+Some errors have been observed in testing when the upgrades are performed
 back-to-back. A 200s delay eliminates this issue. On particularly large or slow
 deployments, consider increasing this timeout.
+
+Additionally errors have been observed at sites with OVS networking where after
+the upgrade, tenant networking is broken and requires a reset of RabbitMQ. This
+can be done by running the rabbitmq-reset playbook.
 
 .. code-block:: bash
 
@@ -413,9 +449,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
-container images.
+New :ref:`stackhpc_release_train` content should be synced to the local Pulp
+server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:
 
@@ -932,17 +967,27 @@ would be applied:
    kayobe overcloud host configure --check --diff
 
 When ready to apply the changes, it may be advisable to do so in batches, or at
-least start with a small number of hosts.:
+least start with a small number of hosts:
 
 .. code-block:: console
 
    kayobe overcloud host configure --limit <host>
 
-Alternatively, to apply the configuration to all hosts:
 
-.. code-block:: console
+.. warning::
 
-   kayobe overcloud host configure
+   Take extra care when configuring Ceph hosts. Set the hosts to maintenance
+   mode before reconfiguring them, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host configure --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
 
 .. _building_ironic_deployment_images:
 
