@@ -110,7 +110,7 @@ The ``neutron_dns_domain`` must end with a period ``.`` e.g. ``example.com.``.
 The domain set should be something that is not use anywhere else such as
 ``internal.compute.example.com.``
 
-The Neuron DNS integration can be disabled by setting
+The Neutron DNS integration can be disabled by setting
 ``neutron_dns_integration: false`` in ``kolla/globals.yml``
 
 Redis Default User
