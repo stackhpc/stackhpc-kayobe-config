@@ -9,7 +9,6 @@
       when:
         - groups["wazuh-manager"] | length > 0
 
-      # Certificates generation
       block:
         - name: Fail if using old path for Wazuh certificates
           ansible.builtin.fail:
@@ -35,6 +34,7 @@
             that: local_custom_certs_path is not defined
             fail_msg: The variable, `local_custom_certs_path`, is no longer used. Please remove this variable.
 
+# Certificates generation
 - name: Apply Wazuh indexer role
   hosts: localhost
   roles:
