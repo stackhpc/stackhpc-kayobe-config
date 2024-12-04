@@ -326,7 +326,8 @@ jobs:
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_ipa.outcome == 'failure'
+        if: steps.build_rocky_9_ipa.outcome == 'failure' ||
+            steps.build_ubuntu_jammy_ipa.outcome == 'failure'
 
       - name: Destroy
         run: terraform destroy -auto-approve
