@@ -213,12 +213,12 @@ stackhpc_pulp_distribution_deb_production: >-
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
 # Rocky 9 minor version number. Supported values: 1, 2, 3, 4. Default is 4
-stackhpc_pulp_repo_rocky_9_minor_version: 4
+stackhpc_pulp_repo_rocky_9_minor_version: 3
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
 stackhpc_pulp_repo_rocky_9_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_baseos_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
-stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_extras_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_4_extras_version') }}"
 stackhpc_pulp_repo_rocky_9_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_crb_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
 stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_highavailability_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
 
@@ -271,7 +271,7 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
   - name: Rocky Linux 9 - Extras
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.4/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
     distribution_name: "rocky-9-extras-"
     base_path: "rocky/9/extras/x86_64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
