@@ -1,21 +1,21 @@
 ---
-- name: Upload and create a distribution for an image
+- name: Upload and create a distribution for an artifact
   hosts: seed
   vars:
     remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
-    remote_pulp_username: "{{ stackhpc_image_repository_username }}"
-    remote_pulp_password: "{{ stackhpc_image_repository_password }}"
-    repository_name: "kayobe-images-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
-    pulp_base_path: "kayobe-images/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    remote_pulp_username: "{{ stackhpc_release_pulp_username }}"
+    remote_pulp_password: "{{ stackhpc_release_pulp_password }}"
+    repository_name: "{{ artifact_type }}-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    pulp_base_path: "{{ artifact_type }}/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
   tasks:
-    - name: Print image tag
+    - name: Print artifact tag
       debug:
-        msg: "Image tag: {{ host_image_tag }}"
+        msg: "artifact tag: {{ artifact_tag }}"
 
     - name: Get filename
       find:
-        paths: "{{ image_path }}"
-        patterns: '*.qcow2'
+        paths: "{{ artifact_path }}"
+        patterns: "{{ file_regex }}"
       register: found_files
 
     - name: Upload an artifact
@@ -107,8 +107,8 @@
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
-        name: "{{ repository_name }}_{{ host_image_tag }}"
-        base_path: "{{ pulp_base_path }}/{{ host_image_tag }}"
+        name: "{{ repository_name }}_{{ artifact_tag }}"
+        base_path: "{{ pulp_base_path }}/{{ artifact_tag }}"
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
@@ -118,16 +118,16 @@
       retries: 3
       delay: 5
 
-    - name: Update new images file with versioned path
+    - name: Update new artifacts file with versioned path
       lineinfile:
-        path: /tmp/updated_images.txt
+        path: /tmp/updated_artifacts.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+        {{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
 
-    - name: Update new images file with latest path
+    - name: Update new artifacts file with latest path
       lineinfile:
-        path: /tmp/updated_images.txt
+        path: /tmp/updated_artifacts.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
         latest/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
@@ -135,7 +135,7 @@
     - name: Print versioned path
       debug:
         msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ host_image_tag }}/{{ found_files.files[0].path | basename }}"
+        {{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
       when: latest_distribution_details.changed
 
     - name: Print latest path
@@ -146,5 +146,5 @@
 
     - name: Print version tag
       debug:
-        msg: "New tag: {{ host_image_tag }}"
+        msg: "New tag: {{ artifact_tag }}"
       when: latest_distribution_details.changed
