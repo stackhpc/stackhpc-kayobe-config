@@ -2,6 +2,15 @@
 name: Build IPA images
 on:
   workflow_dispatch:
+    inputs:
+      rocky9:
+        description: Build Rocky Linux 9
+        type: boolean
+        default: true
+      ubuntu-jammy:
+        description: Build Ubuntu 22.04 Jammy
+        type: boolean
+        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -188,8 +197,8 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Build an Ironic Python Agent (IPA) image
-        id: build_ipa
+      - name: Build a Ubuntu 22.04 Jammy IPA image
+        id: build_ubuntu_jammy_ipa
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
@@ -200,6 +209,7 @@ jobs:
           -e ipa_build_dib_env_extra='{"DISTRO_NAME": "ubuntu"}'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
 
       - name: Show last error logs
         continue-on-error: true
@@ -209,9 +219,9 @@ jobs:
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ipa.outcome == 'failure'
+        if: steps.build_ubuntu_jammy_ipa.outcome == 'failure'
 
-      - name: Upload IPA kernel image to Ark
+      - name: Upload Ubuntu 22.04 Jammy IPA kernel image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -225,9 +235,9 @@ jobs:
           -e file_regex='*.kernel'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ipa.outcome == 'success'
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy_ipa.outcome == 'success'
 
-      - name: Upload IPA ramdisk image to Ark
+      - name: Upload Ubuntu 22.04 Jammy IPA ramdisk image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -241,7 +251,63 @@ jobs:
           -e file_regex='*.initramfs'
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ipa.outcome == 'success'
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy_ipa.outcome == 'success'
+
+      - name: Build a Rocky 9 IPA image
+        id: build_rocky_9_ipa
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud deployment image build --force-rebuild \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e ipa_build_dib_env_extra='{"DISTRO_NAME": "rocky"}'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_rocky_9_ipa.outcome == 'failure'
+
+      - name: Upload Rocky 9 IPA kernel image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_name=ipa \
+          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e file_regex='*.kernel'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9 && steps.build_rocky_9_ipa.outcome == 'success'
+
+      - name: Upload Rocky 9 IPA ramdisk image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_name=ipa \
+          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e file_regex='*.initramfs'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.rocky9 && steps.build_rocky_9_ipa.outcome == 'success'
 
       - name: Copy logs back
         continue-on-error: true
