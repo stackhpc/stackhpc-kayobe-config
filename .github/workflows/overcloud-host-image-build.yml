@@ -239,9 +239,11 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
-          -e image_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e host_image_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
+          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
@@ -291,9 +293,11 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-upload.yml \
-          -e image_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
-          -e host_image_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
+          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
         env:
