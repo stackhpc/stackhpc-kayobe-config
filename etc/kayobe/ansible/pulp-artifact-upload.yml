@@ -36,6 +36,22 @@
         checksum_algorithm: sha256
       register: file_stats
 
+    - name: Create checksum file
+      ansible.builtin.copy:
+        content: "{{ file_stats.stat.checksum }}"
+
+    - name: Upload checksum artifact
+      pulp.squeezer.artifact:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        file: "{{ file_stats.stat.checksum }}"
+        state: present
+      register: upload_result
+      until: upload_result is success
+      retries: 3
+      delay: 5
+
     - name: Create file content from artifact
       pulp.squeezer.file_content:
         pulp_url: "{{ remote_pulp_url }}"

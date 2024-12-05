@@ -1,0 +1,49 @@
+---
+- name: Upload and deploy IPA image
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Download image artifact
+      ansible.builtin.get_url:
+        url: "{{ stackhpc_release_pulp_content_url }}/{{ stackhpc_ipa_image_url_suffix }}/{{ item }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        force_basic_auth: true
+        unredirected_headers:
+          - "Authorization"
+        dest: "/tmp/{{ item }}"
+        mode: "0644"
+      loop:
+        - "ipa.kernel"
+        - "ipa.initramfs"
+      retries: 3
+      delay: 60
+
+    - name: Upload kernel image
+      openstack.cloud.image:
+        name: "ipa.vmlinux"
+        disk_format: aki
+        container_format: aki
+        state: present
+        filename: /tmp/ipa.kernel
+      register: kernel
+
+    - name: Upload ramdisk image
+      openstack.cloud.image:
+        name: "ipa.initramfs"
+        disk_format: aki
+        container_format: aki
+        state: present
+        filename: /tmp/ipa.initramfs
+      register: ramdisk
+
+    - name: Write kernel and ramdisk UUIDs to config
+      ansible.builtin.copy:
+        content: |-
+         "{{ dict|combine(ipa_uuids) | to_nice_yaml }}"
+        dest: "{{ ipa_image_config_path }}"
+      vars:
+        ipa_image_config_path: "{{ kayobe_config_env_path }}/ipa-image-ids.yml"
+        ipa_uuids:
+          stackhpc_ipa_image_kernel_uuid: "{{ kernel.id }}"
+          stackhpc_ipa_image_ramdisk_uuid: "{{ ramdisk.id }}"
