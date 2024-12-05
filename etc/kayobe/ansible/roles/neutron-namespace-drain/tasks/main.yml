@@ -1,0 +1,19 @@
+---
+- name: "Setup OpenStack venv"
+  import_tasks: setup.yml
+
+- name: "Drain L3 agents"
+  import_tasks: drain-l3.yml
+  when: maintenance | bool
+
+- name: "Enable L3 agent"
+  import_tasks: enable-l3.yml
+  when: not maintenance | bool
+
+- name: "Drain DHCP agents"
+  import_tasks: drain-dhcp.yml
+  when: maintenance | bool and drain_dhcp_agents | bool
+
+- name: "Add DHCP agents"
+  import_tasks: add-dhcp.yml
+  when: not maintenance | bool and drain_dhcp_agents | bool

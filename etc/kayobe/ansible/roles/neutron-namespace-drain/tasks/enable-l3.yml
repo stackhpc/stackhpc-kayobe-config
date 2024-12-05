@@ -1,0 +1,24 @@
+---
+- name: Query source SRC_L3_ID
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent list --host {{ neutron_drain_host }}
+    --agent-type l3 -f value -c ID
+  register: SRC_L3_ID
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+- name: Set fact containing SRC_L3_ID
+  set_fact:
+    L3_SRC_ID: "{{ SRC_L3_ID.stdout }}"
+
+- name: Enable L3 agent
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent set "{{ L3_SRC_ID }}" --enable
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"

@@ -1063,6 +1063,12 @@ This will block the upgrade, but may be overridden by setting
 ``etc/kayobe/kolla/globals.yml`` or
 ``etc/kayobe/environments/<env>/kolla/globals.yml``.
 
+Depending on the networking architecture of your cloud, the steps used
+to upgrade the containerised services will differ.
+
+OVN
+^^^
+
 To upgrade the containerised control plane services:
 
 .. code-block:: console
@@ -1075,6 +1081,65 @@ scope of the upgrade:
 .. code-block:: console
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
+
+OVS (w/ Dedicated network nodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You should first stop the Octavia health manager to prevent alerts during
+the service upgrade.
+
+.. code-block:: console
+
+   kayobe overcloud host command run --command "docker stop octavia_health_manager" --limit controllers --become
+
+Upgrade the control plane services
+
+.. code-block:: console
+
+   kayobe overcloud serivce upgrade --kolla-limit controllers
+
+To ensure L3 reliability during the upgrade, we will need to manually drain
+the network nodes of all agents, and upgrade the nodes sequentially.
+
+Kolla credentials will need to be activated before running the neutron-namespace-drain
+role.
+
+.. code-block:: console
+
+   source $KOLLA_CONFIG_PATH/public-openrc.sh
+
+You should substitute <network0> with the first network node to be drained, To set
+the node for maintenance and begin draining the agents:
+
+.. code-block:: console
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_drain_host=<network0> -e maintenance=true -e drain_dhcp_agents=true
+
+You can monitor the L3/DHCP agents being drained from the node by running:
+
+.. code-block:: console
+   
+   ssh -t <network0> watch ip netns ls
+
+Once all agents have been drained, you can upgrade the containerised services
+on the network node.
+
+.. code-block:: console
+
+   kayobe overcloud service upgrade --kolla-limit <network0>
+
+Following the service upgrade, the agents can be restored on the node by disabling maintenance:
+   
+.. code-block:: console
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_drain_host=<network0> -e maintenance=false -e drain_dhcp_agents=true
+
+The above steps should be repeated for the remaining network nodes, once all network nodes have been upgraded
+the remaining containerised services can be upgraded:
+
+.. code-block:: console
+
+   kayobe overcloud service upgrade --kolla-tags common,nova,prometheus,openvswitch,neutron --skip-prechecks  -kl controllers,compute --limit controllers,compute
 
 Updating the Octavia Amphora Image
 ----------------------------------

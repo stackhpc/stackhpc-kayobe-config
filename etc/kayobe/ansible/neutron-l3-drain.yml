@@ -1,0 +1,23 @@
+---
+- name: Drain neutron of l3 agents and dhcp agents
+  hosts: localhost
+  gather_facts: true
+  tags:
+    - neutron-l3-drain
+  vars:
+    maintenance: false
+    drain_ctrl1: false
+    drain_ctrl2: false
+    drain_ctrl3: false
+  tasks:
+    - import_role:
+        name: neutron-namespace-drain
+        tasks_from: main.yml
+      when: drain_ctrl1 | bool or drain_ctrl2 | bool or drain_ctrl3 | bool or neutron_drain_host is defined
+    - name: "Print Info"
+      debug:
+        msg:
+          - "{{ neutron_drain_host }} is read for maintenance"
+          - "rerun this play book with -e maintenance=false to re-add"
+          - "routers"
+      when: maintenance | bool

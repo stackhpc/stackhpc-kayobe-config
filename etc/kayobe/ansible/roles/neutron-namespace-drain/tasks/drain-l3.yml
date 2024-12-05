@@ -1,0 +1,90 @@
+---
+- name: Query source SRC_L3_ID
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent list --host {{ neutron_drain_host }}
+    --agent-type l3 -f value -c ID
+  register: SRC_L3_ID
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+- name: Set fact containing SRC_L3_ID
+  set_fact:
+    L3_SRC_ID: "{{ SRC_L3_ID.stdout }}"
+
+- name: Get Router IDs
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    router list --agent {{ L3_SRC_ID }} -f value -c ID
+  register: router_ids
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+- name: Set Router IDs
+  set_fact:
+    ROUTER_IDS: "{{ router_ids.stdout_lines }}"
+
+- name: Add agents to router
+  include_tasks: add-new-l3.yml
+  when: ROUTER_IDS | length > 0
+
+- name: Remove router
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent remove router {{ L3_SRC_ID }} {{ item }} --l3
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+  with_items:
+    - "{{ ROUTER_IDS }}"
+
+- name: Wait for no more routers to be attached to the host
+  block:
+    - name: Retry count
+      set_fact:
+        retry_count: "{{ 0 if retry_count is undefined or retry_count == 'reset' else retry_count | int + 1 }}"
+        max_retries: 20
+
+    - name: Verify routers exist
+      command: >
+        {{ neutron_drain_venv }}/bin/openstack router list --agent {{ L3_SRC_ID }} -f value -c ID
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ neutron_drain_host }}"
+      register: agent_status
+      vars:
+        ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+    - name: Fail if routers still attached
+      fail:
+        msg: a Router is still attached to agent "{{ L3_SRC_ID }}"
+      when: agent_status.stdout | length > 0
+
+    - name: Reset retry count after success
+      set_fact:
+        retry_count: reset
+  rescue:
+    - fail:
+        msg: |
+          Maximum retries waiting for routers to be detached reached
+      when: retry_count | int == max_retries
+
+    - name: Reset retry counter if max retries reached (exit loop)
+      set_fact:
+        retry_count: reset
+      failed_when: retry_count == 'reset'
+      when: retry_count | int >= max_retries | int
+
+- name: Disable L3 agent
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent set "{{ L3_SRC_ID }}" --disable
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  when: agent_status.stdout | length == 0
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"

@@ -1,0 +1,31 @@
+---
+
+- name: Ensure the latest version of pip is installed
+  pip:
+    name:
+      - pip
+    state: latest
+    virtualenv: "{{ neutron_drain_venv }}"
+    virtualenv_command: "{{ neutron_drain_venv_python }} -m venv"
+  run_once: true
+  become: true
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    # NOTE: Without this, the delegate ansible_host variable will not
+    # be respected when using delegate_to.
+    ansible_host: "{{ neutron_drain_host }}"
+
+- name: Set up openstack cli virtualenv
+  pip:
+    virtualenv: "{{ neutron_drain_venv }}"
+    name:
+      - python-openstackclient
+    state: latest
+    extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+  run_once: true
+  become: true
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    # NOTE: Without this, the delegate ansible_host variable will not
+    # be respected when using delegate_to.
+    ansible_host: "{{ neutron_drain_host }}"

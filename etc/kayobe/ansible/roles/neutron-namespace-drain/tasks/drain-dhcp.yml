@@ -1,0 +1,87 @@
+---
+- name: Query source SRC_DHCP_ID
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent list --host {{ neutron_drain_host }}
+    --agent-type dhcp -f value -c ID
+  register: SRC_DHCP_ID
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+- name: Set fact containing SRC_DHCP_ID
+  set_fact:
+    DHCP_SRC_ID: "{{ SRC_DHCP_ID.stdout }}"
+
+- name: Get DHCP agent network IDs
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+     network list --agent {{ DHCP_SRC_ID }} -f value -c ID
+  register: dhcp_agent_ids
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+
+- name: Set DHCP agent network IDs
+  set_fact:
+    DHCP_AGENT_IDS: "{{ dhcp_agent_ids.stdout_lines }}"
+
+- name: Remove DHCP agent
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent remove network {{ DHCP_SRC_ID }} {{ item }} --dhcp
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+  with_items:
+    - "{{ DHCP_AGENT_IDS }}"
+
+- name: Wait for no more dhcp agents to be attached to the host
+  block:
+    - name: Retry count
+      set_fact:
+        retry_count: "{{ 0 if retry_count is undefined or retry_count == 'reset' else retry_count | int + 1 }}"
+        max_retries: 20
+
+    - name: Verify dhcp agents exist
+      command: >
+        {{ neutron_drain_venv }}/bin/openstack
+        network list --agent {{ DHCP_SRC_ID }} -f value -c ID
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ neutron_drain_host }}"
+      vars:
+        ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+      register: agent_status
+
+    - name: Fail if DHCP agent still attached
+      fail:
+        msg: a DHCP agent is still attached to "{{ L3_SRC_ID }}"
+      when: agent_status.stdout | length > 0
+
+    - name: Reset retry count after success
+      set_fact:
+        retry_count: reset
+  rescue:
+    - fail:
+        msg: |
+          Maximum retries waiting for DHCP agents to be detached reached
+      when: retry_count | int == max_retries
+
+    - name: Reset retry counter if max retries reached (exit loop)
+      set_fact:
+        retry_count: reset
+      failed_when: retry_count == 'reset'
+      when: retry_count | int >= max_retries | int
+
+- name: Disable DHCP agent
+  command: >
+    {{ neutron_drain_venv }}/bin/openstack
+    network agent set "{{ DHCP_SRC_ID }}" --disable
+  environment: "{{ openstack_auth_env }}"
+  delegate_to: "{{ neutron_drain_host }}"
+  vars:
+    ansible_host: "{{ hostvars[neutron_drain_host].ansible_host }}"
+  when: agent_status.stdout | length == 0
