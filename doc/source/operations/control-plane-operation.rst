@@ -81,12 +81,6 @@ Then, create another silence to match ``hostname=<hostname>`` (this is
 required because, for the OpenStack exporter, the instance is the host running
 the monitoring service rather than the host being monitored).
 
-.. note::
-
-   After creating the silence, you may get redirected to a 404 page. This is a
-   `known issue <https://github.com/prometheus/alertmanager/issues/1377>`__
-   when running several Alertmanager instances behind HAProxy.
-
 Control Plane Shutdown Procedure
 ================================
 
@@ -353,8 +347,7 @@ Deploying to a Specific Hypervisor
 ----------------------------------
 
 To test creating an instance on a specific hypervisor, *as an admin-level user*
-you can specify the hypervisor name as part of an extended availability zone
-description.
+you can specify the hypervisor name.
 
 To see the list of hypervisor names:
 

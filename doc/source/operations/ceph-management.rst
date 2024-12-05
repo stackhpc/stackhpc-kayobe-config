@@ -120,7 +120,7 @@ Ceph can report details about failed OSDs by running:
    sudo cephadm shell
    ceph health detail
 
-.. note ::
+.. note::
 
    Remember to run ceph/rbd commands from within ``cephadm shell``
    (preferred method) or after installing Ceph client. Details in the
