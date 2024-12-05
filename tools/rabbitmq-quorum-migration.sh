@@ -2,7 +2,8 @@
 
 set -ex
 
-RABBITMQ_SERVICES_TO_RESTART=barbican,blazar,cinder,cloudkitty,designate,heat,ironic,keystone,magnum,manila,neutron,nova,octavia
+RABBITMQ_CRITICAL_SERVICES_TO_RESTART=keystone,neutron
+RABBITMQ_SERVICES_TO_RESTART=barbican,blazar,cinder,cloudkitty,designate,heat,ironic,magnum,manila,nova,octavia
 RABBITMQ_CONTAINER_NAME=rabbitmq
 
 if [[ ! $KAYOBE_CONFIG_PATH ]]; then
@@ -30,6 +31,7 @@ fi
 # Generate new config, stop services using rabbit, and reset rabbit state
 kayobe overcloud service configuration generate --node-config-dir /etc/kolla --kolla-skip-tags rabbitmq-ha-precheck
 kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_SERVICES_TO_RESTART
+kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_CRITICAL_SERVICES_TO_RESTART
 kayobe kolla ansible run rabbitmq-reset-state
 
 if [[ ! "$1" = "--skip-checks" ]]; then
@@ -47,6 +49,7 @@ if [[ ! "$1" = "--skip-checks" ]]; then
 fi
 
 # Redeploy with quorum queues enabled
+kayobe kolla ansible run deploy-containers -kt $RABBITMQ_CRITICAL_SERVICES_TO_RESTART
 kayobe kolla ansible run deploy-containers -kt $RABBITMQ_SERVICES_TO_RESTART
 
 if [[ ! "$1" = "--skip-checks" ]]; then
