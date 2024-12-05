@@ -1,7 +1,7 @@
 # Generate inputs for the reusable multinode.yml workflow.
 # The test scenario is randomly selected.
 # The inputs are printed to stdout in GitHub step output key=value format.
-
+# testo
 from dataclasses import dataclass
 import random
 import typing as t
