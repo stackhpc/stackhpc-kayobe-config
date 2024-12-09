@@ -37,27 +37,11 @@
         checksum_algorithm: sha256
       register: file_stats
 
-    - name: debug
-      debug:
-        msg: "{{ file_stats.stat.checksum }}"
-
     - name: Write checksum to file
       ansible.builtin.copy:
         content: "{{ file_stats.stat.checksum }}"
         dest: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
       when: upload_checksum
-
-    - name: debugg
-      debug:
-        msg: "{{ found_files.files[0].path | basename }}.sha256"
-
-    - name: debuggg
-      command: cat /tmp/{{ found_files.files[0].path | basename }}.sha256
-      register: test_output
-
-    - name: debugggg
-      debug:
-        msg: "{{ test_output.stdout }}"
 
     - name: Get sha256 hash for checksum
       ansible.builtin.stat:
