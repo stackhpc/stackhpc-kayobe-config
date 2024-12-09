@@ -21,3 +21,4 @@ the various features provided.
    magnum-capi
    ci-cd
    cloudkitty
+   ipa
