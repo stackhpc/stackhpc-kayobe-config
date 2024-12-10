@@ -232,7 +232,7 @@ stackhpc_ceph_firewalld_rules_template:
         state: enabled
       - service: ceph-mon
         network: "{{ storage_net_name }}"
-        state: "{{ 'enabled' if 'mons' in group_names else 'disabled' }}"
+        state: "{{ 'enabled' if ('mons' in group_names or 'osds' in group_names) else 'disabled' }}"
       - port: "{{ stackhpc_ceph_firewalld_radosgw_port }}/tcp"
         network: "{{ storage_net_name }}"
         state: "{{ 'enabled' if 'rgws' in group_names else 'disabled' }}"
