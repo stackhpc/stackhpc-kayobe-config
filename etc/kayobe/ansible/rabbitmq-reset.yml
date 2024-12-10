@@ -67,8 +67,10 @@
   tasks:
     # The following services use RabbitMQ.
     - name: Restart OpenStack services
-      ansible.builtin.shell: >-
-        set -o pipefail &&
-        systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
-        awk '{ print $1 }' |
-        xargs systemctl restart
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          awk '{ print $1 }' |
+          xargs systemctl restart
+        executable: "/bin/bash"
