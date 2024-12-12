@@ -1,0 +1,29 @@
+---
+- name: Copy CA certificate and update trust
+  hosts: overcloud:seed:seed-hypervisor
+  become: true
+  vars:
+    cert_path: "{{ kayobe_env_config_path }}/vault/OS-TLS-ROOT.pem"
+
+  tasks:
+    - name: Copy certificate on RedHat family systems (Rocky, RHEL, CentOS)
+      copy:
+        src: "{{ cert_path }}"
+        dest: "/etc/pki/ca-trust/source/anchors/OS-TLS-ROOT.pem"
+        mode: "0644"
+      when: ansible_facts.os_family == 'RedHat'
+
+    - name: Update CA trust on RedHat family systems
+      command: "update-ca-trust"
+      when: ansible_facts.os_family == 'RedHat'
+
+    - name: Copy certificate on Debian family systems (Ubuntu, Debian)
+      copy:
+        src: "{{ cert_path }}"
+        dest: "/usr/local/share/ca-certificates/OS-TLS-ROOT.crt"
+        mode: "0644"
+      when: ansible_facts.os_family == 'Debian'
+
+    - name: Update CA trust on Debian family systems
+      command: "update-ca-certificates"
+      when: ansible_facts.os_family == 'Debian'

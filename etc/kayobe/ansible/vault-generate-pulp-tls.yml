@@ -1,0 +1,53 @@
+---
+- name: Generate TLS certificate for pulp
+  hosts: controllers
+  run_once: true
+  vars:
+    vault_api_addr: "https://{{ internal_net_name | net_ip(groups['controllers'][0]) }}:8200"
+    vault_intermediate_ca_name: "OS-TLS-INT"
+  tasks:
+    - name: Include Vault keys
+      include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
+        name: vault_keys
+
+    - name: Issue a certificate for pulp TLS
+      hashivault_pki_cert_issue:
+        url: "{{ vault_api_addr }}"
+        ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        token: "{{ vault_keys.root_token }}"
+        mount_point: "{{ vault_intermediate_ca_name }}"
+        role: "{{ overcloud_vault_pki_internal_tls_role_name }}"
+        common_name: ""
+        verify: false
+        extra_params:
+          ip_sans: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
+      register: pulp_cert
+      environment:
+        https_proxy: ''
+
+    - name: Ensure pulp certificates directory exists
+      file:
+        path: "{{ kayobe_env_config_path }}/pulp/certificates"
+        state: directory
+      delegate_to: localhost
+
+    - name: Copy pulp TLS certificate (including intermediate)
+      no_log: true
+      copy:
+        dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.crt"
+        content: |
+          {{ pulp_cert.data.certificate }}
+          {{ pulp_cert.data.issuing_ca }}
+        mode: 0600
+      delegate_to: localhost
+
+    - name: Copy pulp private key
+      no_log: true
+      copy:
+        dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.key"
+        content: "{{ pulp_cert.data.private_key }}"
+        mode: 0600
+      delegate_to: localhost
+
+- import_playbook: copy-ca-to-hosts.yml
