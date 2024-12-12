@@ -11,5 +11,14 @@ groups:
     annotations:
       summary: "{{ $labels.service }} at {{ $labels.hostname }} is down"
       description: "OpenStack service {{ $labels.service }} at {{ $labels.hostname }} is down"
-
+- name: Routers
+  rules:
+    - alert: OpenStackRouterDown
+      expr: count by (router_id) (openstack_neutron_l3_agent_of_router{ha_state="active"}) != 1
+      for: 1m
+      labels:
+        severity: alert
+      annotations:
+        summary: "The router {{ $labels.router_id }} is not active on eactly one agent"
+        description: "The router {{ $labels.router_id }} should be active on exactly one agent. It can either active on multiple agents or not active at all."
 {% endraw %}
