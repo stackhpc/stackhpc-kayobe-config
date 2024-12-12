@@ -7,17 +7,18 @@ Ironic Python Agent (IPA)
 Release Train IPA
 =================
 
-StackHPC provides built Ironic Python Agent (IPA) images in Release Train
+StackHPC provides prebuilt Ironic Python Agent (IPA) images in Release Train
 through Ark.
 
-These images are built in a CI using a Kayobe workflow :kayobe-doc:
-`Kayobe documentation <configuration/reference/ironic-python-agent.html>`
-and are configured in this repository.
+These images are built in CI using a GitHub workflow and are configured in this
+repository. See  :kayobe-doc: `Kayobe documentation
+<configuration/reference/ironic-python-agent.html>` for more details on IPA.
 
-Release Train IPA is used by Bifrost and Overcloud Ironic by default in
-StackHPC Kayobe Configuration, and is pulled in to Inspector when running
-``kayobe seed service deploy`` for Bifrost or ``kayobe overcloud post configure``
-for Ironic. This behaviour can be disabled in `stackhpc-ipa-images.yml`:
+Release Train IPA images are used by Bifrost and Overcloud Ironic by default in
+the StackHPC Kayobe Configuration, and are pulled in to the Ironic Inspector
+when running ``kayobe seed service deploy`` for Bifrost or ``kayobe overcloud
+post configure`` for Overcloud Ironic. This behaviour can be disabled in
+`stackhpc-ipa-images.yml`:
 
 .. code-block:: yaml
 
