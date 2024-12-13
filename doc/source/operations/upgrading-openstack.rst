@@ -52,7 +52,44 @@ driver. Instructions for enabling the driver can be found `here
 <../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
 using Heat, and disable the service.
 
-TODO: guide for disabling Heat
+After the upgrade (so that alerts don't fire) you can remove Heat with the
+following:
+
+.. code-block:: console
+
+   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api.cfg" -l network -b
+   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api-cfn.cfg" -l network -b
+
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[0] -b
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[1] -b
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[2] -b
+
+   kayobe overcloud host command run --command "systemctl stop kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
+   kayobe overcloud host command run --command "systemctl disable kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api_cfn-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_engine-container.service" -l controllers -b
+
+   kayobe overcloud host command run --command "docker rm heat_api heat_api_cfn heat_engine" -l controllers
+
+   kayobe overcloud host command run --command "rm -rf /etc/kolla/heat-api /etc/kolla/heat-api-cfn /etc/kolla/heat-engine" --limit controllers -b
+
+Then from the OpenStack CLI:
+
+.. code-block:: console
+
+   openstack service delete heat
+   openstack user delete heat
+   openstack domain set --disable heat_user_domain
+   openstack domain delete heat_user_domain
+
+You can drop the ``heat`` database too, unless you want to keep historical content.
+
+.. code-block:: console
+
+   docker exec -it mariadb mysql -u root -p
+   Enter the database password when prompted.
+   drop database heat;
 
 Designate sink disabled by default
 ----------------------------------
