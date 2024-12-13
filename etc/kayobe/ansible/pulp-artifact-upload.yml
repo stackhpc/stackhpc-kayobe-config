@@ -7,6 +7,7 @@
     remote_pulp_password: "{{ stackhpc_release_pulp_password }}"
     repository_name: "{{ artifact_type }}-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
     pulp_base_path: "{{ artifact_type }}/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    upload_checksum: false
   tasks:
     - name: Print artifact tag
       debug:
@@ -36,6 +37,31 @@
         checksum_algorithm: sha256
       register: file_stats
 
+    - name: Write checksum to file
+      ansible.builtin.copy:
+        content: "{{ file_stats.stat.checksum }}"
+        dest: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+      when: upload_checksum
+
+    - name: Get sha256 hash for checksum
+      ansible.builtin.stat:
+        path: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+        checksum_algorithm: sha256
+      register: checksum_stats
+
+    - name: Upload checksum artifact
+      pulp.squeezer.artifact:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        file: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+        state: present
+      register: checksum_upload_result
+      until: checksum_upload_result is success
+      retries: 3
+      delay: 60
+      when: upload_checksum
+
     - name: Create file content from artifact
       pulp.squeezer.file_content:
         pulp_url: "{{ remote_pulp_url }}"
@@ -48,6 +74,20 @@
       until: file_content_result is success
       retries: 3
       delay: 5
+
+    - name: Create checksum content from artifact
+      pulp.squeezer.file_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        sha256: "{{ checksum_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}.sha256"
+        state: present
+      register: checksum_content_result
+      until: checksum_content_result is success
+      retries: 3
+      delay: 5
+      when: upload_checksum
 
     - name: Ensure file repo exists
       pulp.squeezer.file_repository:
@@ -74,6 +114,21 @@
       until: file_repo_content_result is success
       retries: 3
       delay: 5
+
+    - name: Add checksum content to file repo
+      pulp.squeezer.file_repository_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ repository_name }}"
+        present_content:
+          - relative_path: "{{ found_files.files[0].path | basename }}.sha256"
+            sha256: "{{ checksum_stats.stat.checksum }}"
+      register: checksum_repo_content_result
+      until: checksum_repo_content_result is success
+      retries: 3
+      delay: 5
+      when: upload_checksum
 
     - name: Create a new publication to point to this version
       pulp.squeezer.file_publication:
