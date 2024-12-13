@@ -42,13 +42,17 @@
             - { name: pip }
             - { name: setuptools }
 
-        - name: Ensure required Python packages are installed
+        - name: Ensure required individual Python packages are installed
           ansible.builtin.pip:
             name:
               - "{{ repo_tmpdir.path }}"
-              - "-r {{ repo_tmpdir.path }}/requirements.txt"
               - pytest-html
               - pytest-timeout
+            virtualenv: "{{ sot_venv }}"
+
+        - name: Ensure Python requirements file packages are installed
+          ansible.builtin.pip:
+            requirements: "{{ repo_tmpdir.path }}/requirements.txt"
             virtualenv: "{{ sot_venv }}"
 
         - name: Include Kolla Ansible passwords
