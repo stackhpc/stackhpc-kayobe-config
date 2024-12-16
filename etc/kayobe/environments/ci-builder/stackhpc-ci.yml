@@ -96,3 +96,13 @@ stackhpc_docker_registry_password: !vault |
 # Username and password of the overcloud host image repository.
 stackhpc_release_pulp_username: "{{ stackhpc_docker_registry_username }}"
 stackhpc_release_pulp_password: "{{ stackhpc_docker_registry_password }}"
+
+# Build during IPA builder workflow
+ipa_build_images: true
+ipa_build_dib_env_extra:
+  DISTRO_NAME: "{{ ipa_ci_builder_distribution | default('ubuntu') }}"
+
+# Ensure Ark repos are disabled during CI runs, this is due to
+# builder being a member of the 'overcloud' group for IPA builds.
+stackhpc_repos_enabled: false
+enable_docker_repo: true
