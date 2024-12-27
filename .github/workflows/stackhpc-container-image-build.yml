@@ -171,17 +171,6 @@ jobs:
           localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
           EOF
 
-      # See etc/kayobe/ansible/roles/pulp_auth_proxy/README.md for details.
-      # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
-      # runner and dind containers.
-      - name: Deploy an authenticating package repository mirror proxy
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-
       - name: Create build logs output directory
         run: mkdir image-build-logs
 
@@ -192,7 +181,9 @@ jobs:
           args="${{ inputs.regexes }}"
           args="$args -e kolla_base_distro=${{ matrix.distro }}"
           args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
-          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+          # runner and dind containers.
+          args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
