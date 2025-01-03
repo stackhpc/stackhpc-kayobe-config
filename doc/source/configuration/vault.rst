@@ -105,6 +105,63 @@ Setup Vault HA on the overcloud hosts
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud-vault-keys.json
 
+Rotating Vault certificate on the overcloud hosts
+-------------------------------------------------
+
+The certificate for the overcloud vaults has an expiry time of one year. While
+the cloud won't break if this expires, it will need rotating before new
+certificates can be generated for internal PKI. If a vault becomes sealed, it
+cannot be unsealed with an expired certificate.
+
+1. Delete the old certificate:
+
+   .. code-block::
+
+      rm $KAYOBE_CONFIG_PATH/vault/overcloud.crt
+
+   Or if environments are being used
+
+   .. code-block::
+
+      rm $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.crt
+
+2. Generate a new certificate (and key):
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-deploy-seed.yml
+
+3. Encrypt generated key with ansible-vault (use proper location of vault password file)
+
+   .. code-block::
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/overcloud.key
+
+   Or if environments are being used
+
+   .. code-block::
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud.key
+
+4. Copy the new certificate to the overcloud hosts. Note, if the old
+   certificate has expired this will fail on the unseal step.
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-deploy-overcloud.yml
+
+5. Restart the containers to use the new certificate:
+
+   .. code-block::
+
+      kayobe overcloud host command run --command "docker restart vault" -l controllers
+
+6. If sealed, unseal the vault:
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-unseal-overcloud.yml
+
 Certificates generation
 =======================
 
