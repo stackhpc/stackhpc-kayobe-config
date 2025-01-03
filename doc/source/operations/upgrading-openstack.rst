@@ -82,6 +82,8 @@ Then from the OpenStack CLI:
    openstack user delete heat
    openstack domain set --disable heat_user_domain
    openstack domain delete heat_user_domain
+   openstack endpoint list --service heat -c ID -f value | xargs openstack endpoint delete
+   openstack endpoint list --service heat-cfn -c ID -f value | xargs openstack endpoint delete
 
 You can drop the ``heat`` database too, unless you want to keep historical content.
 
