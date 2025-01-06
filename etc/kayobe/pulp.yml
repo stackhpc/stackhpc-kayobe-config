@@ -212,8 +212,8 @@ stackhpc_pulp_distribution_deb_production: >-
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
-# Rocky 9 minor version number. Supported values: 1, 2, 3, 4. Default is 4
-stackhpc_pulp_repo_rocky_9_minor_version: 4
+# Rocky 9 minor version number. Supported values: 1, 2, 3, 4, 5. Default is 5
+stackhpc_pulp_repo_rocky_9_minor_version: 5
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
@@ -252,7 +252,7 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   - name: RabbitMQ - Server - RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/noarch/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
     distribution_name: "rhel9-rabbitmq-server-"
     base_path: "rabbitmq/rabbitmq-server/el/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
@@ -344,7 +344,7 @@ stackhpc_pulp_rpm_repos:
 
   # Additional RHEL 9 repositories
   - name: TreasureData 5 for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/4/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
     distribution_name: "rhel-9-treasuredata-5-"
     base_path: "treasuredata/5/redhat/9/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
