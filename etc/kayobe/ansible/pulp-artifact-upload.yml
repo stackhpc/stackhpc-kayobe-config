@@ -186,12 +186,12 @@
       ansible.builtin.lineinfile:
         path: /tmp/updated_artifacts.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/latest/{{ found_files.files[0].path | basename }}"
-      when: latest_distribution_details.changed
+      listen: Latest distribution details changed
 
     - name: Print versioned path
       ansible.builtin.debug:
         msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
-      when: latest_distribution_details.changed
+      listen: Latest distribution details changed
 
     - name: Print latest path
       ansible.builtin.debug:
@@ -201,4 +201,4 @@
     - name: Print version tag
       ansible.builtin.debug:
         msg: "New tag: {{ artifact_tag }}"
-      when: latest_distribution_details.changed
+      listen: Latest distribution details changed
