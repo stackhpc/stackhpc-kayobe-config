@@ -76,7 +76,7 @@ jobs:
           pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v2
 
       - name: Initialise terraform
         run: terraform init
@@ -206,7 +206,8 @@ jobs:
           kayobe overcloud deployment image build --force-rebuild \
           -e os_distribution="ubuntu" \
           -e os_release="jammy" \
-          -e ipa_ci_builder_distribution="ubuntu"
+          -e ipa_ci_builder_distribution="ubuntu" \
+          -e ipa_ci_builder_release="jammy"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy
@@ -264,7 +265,8 @@ jobs:
           kayobe overcloud deployment image build --force-rebuild \
           -e os_distribution="rocky" \
           -e os_release="9" \
-          -e ipa_ci_builder_distribution="rocky"
+          -e ipa_ci_builder_distribution="rocky" \
+          -e ipa_ci_builder_release="9"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9
