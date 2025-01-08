@@ -142,23 +142,6 @@
       retries: 3
       delay: 5
 
-    - name: Update distribution for latest version
-      pulp.squeezer.file_distribution:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        name: "{{ repository_name }}_latest"
-        base_path: "{{ pulp_base_path }}/latest"
-        publication: "{{ publication_details.publication.pulp_href }}"
-        content_guard: development
-        state: present
-      register: latest_distribution_details
-      until: latest_distribution_details is success
-      retries: 3
-      delay: 5
-      notify: Latest distribution details changed
-
-  handlers:
     - name: Create distribution for given version
       pulp.squeezer.file_distribution:
         pulp_url: "{{ remote_pulp_url }}"
@@ -169,7 +152,6 @@
         publication: "{{ publication_details.publication.pulp_href }}"
         content_guard: development
         state: present
-      listen: Latest distribution details changed
       register: distribution_result
       until: distribution_result is success
       retries: 3
@@ -180,25 +162,11 @@
         path: /tmp/updated_artifacts.txt
         line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
-      listen: Latest distribution details changed
-
-    - name: Update new artifacts file with latest path
-      ansible.builtin.lineinfile:
-        path: /tmp/updated_artifacts.txt
-        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/latest/{{ found_files.files[0].path | basename }}"
-      listen: Latest distribution details changed
 
     - name: Print versioned path
       ansible.builtin.debug:
         msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
-      listen: Latest distribution details changed
-
-    - name: Print latest path
-      ansible.builtin.debug:
-        msg: "New latest path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/latest/{{ found_files.files[0].path | basename }}"
-      listen: Latest distribution details changed
 
     - name: Print version tag
       ansible.builtin.debug:
         msg: "New tag: {{ artifact_tag }}"
-      listen: Latest distribution details changed
