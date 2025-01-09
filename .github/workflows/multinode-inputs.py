@@ -26,7 +26,7 @@ class Scenario:
     openstack_release: OpenStackRelease
     os_release: OSRelease
     neutron_plugin: str
-    upgrade: bool
+    upgrade: str
 
 
 ROCKY_9 = OSRelease("rocky", "9", "cloud-user")
@@ -50,7 +50,7 @@ def random_scenario() -> Scenario:
     openstack_release = random.choice(OPENSTACK_RELEASES)
     os_release = random.choice(openstack_release.os_releases)
     neutron_plugin = random.choice(NEUTRON_PLUGINS)
-    upgrade = random.random() > 0.6
+    upgrade = 'major' if random.random() > 0.6 else 'none'
     return Scenario(openstack_release, os_release, neutron_plugin, upgrade)
 
 
@@ -62,7 +62,7 @@ def generate_inputs(scenario: Scenario) -> t.Dict[str, str]:
         "os_release": scenario.os_release.release,
         "ssh_username": scenario.os_release.ssh_username,
         "neutron_plugin": scenario.neutron_plugin,
-        "upgrade": str(scenario.upgrade).lower(),
+        "upgrade": scenario.upgrade,
         "stackhpc_kayobe_config_version": branch,
         "stackhpc_kayobe_config_previous_version": previous_branch,
     }
