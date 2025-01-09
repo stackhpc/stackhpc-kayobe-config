@@ -102,20 +102,6 @@
       notify:
         - Restart wazuh
 
-    - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
-      blockinfile:
-        path: "/var/ossec/etc/ossec.conf"
-        state: present
-        owner: root
-        group: ossec
-        block: |
-          HTTPS_PROXY={{ http_proxy_url }}
-          HTTP_PROXY={{ http_proxy_url }}
-        backup: yes
-      when: http_proxy_url is defined
-      notify:
-        - Restart wazuh
-
     - name: Add JVM proxy settings to wazuh-indexer
       blockinfile:
         path: "/etc/wazuh-indexer/jvm.options"
