@@ -23,7 +23,8 @@
     firewalld_watchdog_timeout_s: 600
   become: true
   tasks:
-    - when: firewalld_watchdog_state == 'present'
+    - name: Ensure watchdog is present
+      when: firewalld_watchdog_state == 'present'
       block:
         - name: Create firewalld-watchdog service unit file
           ansible.builtin.copy:
@@ -61,7 +62,7 @@
 
     - name: Remove firewalld-watchdog unit files
       ansible.builtin.file:
-        path: "/etc/systemd/system/{{ item }}"
+        path: /etc/systemd/system/{{ item }}
         state: absent
       loop:
         - firewalld-watchdog.service

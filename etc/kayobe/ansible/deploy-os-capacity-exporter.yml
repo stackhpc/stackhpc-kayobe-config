@@ -22,8 +22,10 @@
       register: openrc_file_stat
       run_once: true
 
-    - block:
-        - name: Create os-capacity directory
+    - name: If admin-openrc.sh exists, deploy os-capacity exporter
+      when: stackhpc_enable_os_capacity and openrc_file_stat.stat.exists
+      block:
+        - name: Ensure os-capacity directory exists
           ansible.builtin.file:
             path: /opt/kayobe/os-capacity/
             state: directory
@@ -37,12 +39,12 @@
 
         - name: Set facts for admin credentials
           ansible.builtin.set_fact:
-            stackhpc_os_capacity_auth_url: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\",'') }}"
-            stackhpc_os_capacity_project_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-            stackhpc_os_capacity_domain_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-            stackhpc_os_capacity_openstack_region_name: "{{ credential.stdout_lines | select('match', '.*OS_REGION_NAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-            stackhpc_os_capacity_username: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\",'') }}"
-            stackhpc_os_capacity_password: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\",'') }}"
+            stackhpc_os_capacity_auth_url: "{{ credential.stdout_lines | select('match', '.*OS_AUTH_URL*.') | first | split('=') | last | replace(\"'\", '') }}"
+            stackhpc_os_capacity_project_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+            stackhpc_os_capacity_domain_name: "{{ credential.stdout_lines | select('match', '.*OS_PROJECT_DOMAIN_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+            stackhpc_os_capacity_openstack_region_name: "{{ credential.stdout_lines | select('match', '.*OS_REGION_NAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+            stackhpc_os_capacity_username: "{{ credential.stdout_lines | select('match', '.*OS_USERNAME*.') | first | split('=') | last | replace(\"'\", '') }}"
+            stackhpc_os_capacity_password: "{{ credential.stdout_lines | select('match', '.*OS_PASSWORD*.') | first | split('=') | last | replace(\"'\", '') }}"
 
         - name: Template clouds.yml
           ansible.builtin.template:
@@ -72,4 +74,3 @@
             restart: "{{ clouds_yaml_result is changed or cacert_result is changed }}"
             restart_policy: unless-stopped
           become: true
-      when: stackhpc_enable_os_capacity and openrc_file_stat.stat.exists

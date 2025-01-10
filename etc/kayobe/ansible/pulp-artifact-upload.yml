@@ -10,11 +10,11 @@
     upload_checksum: false
   tasks:
     - name: Print artifact tag
-      debug:
+      ansible.builtin.debug:
         msg: "artifact tag: {{ artifact_tag }}"
 
     - name: Get filename
-      find:
+      ansible.builtin.find:
         paths: "{{ artifact_path }}"
         patterns: "{{ file_regex }}"
       register: found_files
@@ -158,17 +158,15 @@
       delay: 5
 
     - name: Update new artifacts file with versioned path
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /tmp/updated_artifacts.txt
-        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
+        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
         create: true
 
     - name: Print versioned path
-      debug:
-        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/\
-        {{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
+      ansible.builtin.debug:
+        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
 
     - name: Print version tag
-      debug:
+      ansible.builtin.debug:
         msg: "New tag: {{ artifact_tag }}"
