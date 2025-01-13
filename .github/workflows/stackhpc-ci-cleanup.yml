@@ -81,7 +81,7 @@ jobs:
           result=0
           changes_before=$(date -Imin -d -12hours)
           for status in ACTIVE BUILD ERROR SHUTOFF; do
-              for instance in $(openstack server list --tags skc-multinode-periodic --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
+              for instance in $(openstack server list --tags gh-actions-multinode --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
                   echo "Cleaning up $status instance $instance"
                   openstack server show $instance
                   if ! openstack server delete $instance; then
