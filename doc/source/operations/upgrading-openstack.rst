@@ -52,7 +52,46 @@ driver. Instructions for enabling the driver can be found `here
 <../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
 using Heat, and disable the service.
 
-TODO: guide for disabling Heat
+After the upgrade (so that alerts don't fire) you can remove Heat with the
+following:
+
+.. code-block:: console
+
+   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api.cfg" -l network -b
+   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api-cfn.cfg" -l network -b
+
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[0] -b
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[1] -b
+   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[2] -b
+
+   kayobe overcloud host command run --command "systemctl stop kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
+   kayobe overcloud host command run --command "systemctl disable kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api_cfn-container.service" -l controllers -b
+   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_engine-container.service" -l controllers -b
+
+   kayobe overcloud host command run --command "docker rm heat_api heat_api_cfn heat_engine" -l controllers
+
+   kayobe overcloud host command run --command "rm -rf /etc/kolla/heat-api /etc/kolla/heat-api-cfn /etc/kolla/heat-engine" --limit controllers -b
+
+Then from the OpenStack CLI:
+
+.. code-block:: console
+
+   openstack service delete heat
+   openstack user delete heat
+   openstack domain set --disable heat_user_domain
+   openstack domain delete heat_user_domain
+   openstack endpoint list --service heat -c ID -f value | xargs openstack endpoint delete
+   openstack endpoint list --service heat-cfn -c ID -f value | xargs openstack endpoint delete
+
+You can drop the ``heat`` database too, unless you want to keep historical content.
+
+.. code-block:: console
+
+   docker exec -it mariadb mysql -u root -p
+   Enter the database password when prompted.
+   drop database heat;
 
 Designate sink disabled by default
 ----------------------------------
@@ -110,22 +149,64 @@ The ``neutron_dns_domain`` must end with a period ``.`` e.g. ``example.com.``.
 The domain set should be something that is not use anywhere else such as
 ``internal.compute.example.com.``
 
-The Neuron DNS integration can be disabled by setting
+The Neutron DNS integration can be disabled by setting
 ``neutron_dns_integration: false`` in ``kolla/globals.yml``
+
+Redis Default User
+------------------
+
+The ``redis_connection_string`` has changed the username used from ``admin``
+to ``default``. Whilst this does not have any negative impact on services
+that utilise Redis it will feature prominently in any preview of the overcloud
+configuration.
+
+AvailabilityZoneFilter removal
+------------------------------
+
+Support for the ``AvailabilityZoneFilter`` filter has been dropped in Nova.
+Remove it from any Nova config files before upgrading. It will cause errors in
+Caracal and halt the Nova scheduler.
 
 Known issues
 ============
 
-* OVN breaks on Rocky 9 deployments where hostnames are FQDNs.
-  Before upgrading, you must make sure no compute or controller nodes have any
-  ``.`` characters in their hostnames. Run the command below to check:
+* Due to an incorrect default value NGS will attempt to use v3alpha for the api
+  path when communicating with etcd3. This isn't possible as in Caracal etcd is
+  running a newer version that has dropped support for v3alpha. You can work
+  around this in custom config, see the SMS PR for an example:
+  https://github.com/stackhpc/smslab-kayobe-config/pull/354
 
-  .. code-block:: bash
+* Due to a `security-related change in the GRUB package on Rocky Linux 9
+  <https://access.redhat.com/security/cve/CVE-2023-4001>`__, the operating
+  system can become unbootable (boot will stop at a ``grub>`` prompt). Remove
+  the ``--root-dev-only`` option from ``/boot/efi/EFI/rocky/grub.cfg`` after
+  applying package updates. This will happen automatically as a post hook when
+  running the ``kayobe overcloud host package update`` command.
 
-     kayobe overcloud host command run --command "grep -v \'\.\' /etc/hostname" --show-output
+* After upgrading OpenSearch to the latest 2023.1 container image, we have seen
+  cluster routing allocation be disabled on some systems. See bug for details:
+  https://bugs.launchpad.net/kolla-ansible/+bug/2085943.
+  This will cause the "Perform a flush" handler to fail during the 2024.1
+  OpenSearch upgrade. To workaround this, you can run the following PUT request
+  to enable allocation again:
 
-  There is currently no known fix for this issue aside from reprovisioning. A
-  patch will be developed soon.
+  .. code-block:: console
+
+     curl -X PUT "https://<kolla-vip>:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d '{ "transient" : { "cluster.routing.allocation.enable" : "all" } } '
+
+* Cinder database migrations fail during the upgrade process when the
+  ``use_quota`` column is set to ``NULL``, which can be the case on deleted
+  volumes and snapshots if OpenStack has been in operation for several
+  releases. See `Launchpad bug 2070475
+  <https://bugs.launchpad.net/cinder/+bug/2070475>`__ for details. Until the
+  `database migrations are fixed
+  <https://review.opendev.org/c/openstack/cinder/+/923635>`__, the data can be
+  fixed with the following MySQL queries:
+
+  .. code-block:: mysql
+
+     UPDATE volumes SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
+     UPDATE snapshots SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
 
 Security baseline
 =================
@@ -179,10 +260,19 @@ to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
 should not cause an API outage (though it should still be considered "at
 risk").
 
+Some errors have been observed in testing when the upgrades are performed
+back-to-back. A 200s delay eliminates this issue. On particularly large or slow
+deployments, consider increasing this timeout.
+
+Additionally errors have been observed at sites with OVS networking where after
+the upgrade, tenant networking is broken and requires a reset of RabbitMQ. This
+can be done by running the rabbitmq-reset playbook.
+
 .. code-block:: bash
 
    kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
    kayobe kolla ansible run "rabbitmq-upgrade 3.12"
+   sleep 200
    kayobe kolla ansible run "rabbitmq-upgrade 3.13"
 
 RabbitMQ quorum queues
@@ -398,9 +488,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>` content should be
-synced to the local Pulp server. This includes host packages (Deb/RPM) and
-container images.
+New :ref:`stackhpc_release_train` content should be synced to the local Pulp
+server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:
 
@@ -486,7 +575,7 @@ Save the old configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /etc/kolla --output-dir ~/kolla-diff/old --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 Generate the new configuration to a tmpdir.
 
@@ -498,7 +587,7 @@ Save the new configuration locally.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration save --node-config-dir /tmp/kolla --output-dir ~/kolla-diff/new --limit controllers[0],compute[0],storage[0] --exclude ironic-agent.initramfs,ironic-agent.kernel
 
 The old and new configuration will be saved to ``~/kolla-diff/old`` and
 ``~/kolla-diff/new`` respectively on the Ansible control host.
@@ -855,6 +944,15 @@ To update all eligible packages, use ``*``, escaping if necessary:
 
    kayobe overcloud host package update --packages "*" --limit <host>
 
+.. note::
+
+   Due to a `security-related change in the GRUB package on Rocky Linux 9
+   <https://access.redhat.com/security/cve/CVE-2023-4001>`__, the operating
+   system can become unbootable (boot will stop at a ``grub>`` prompt). Remove
+   the ``--root-dev-only`` option from ``/boot/efi/EFI/rocky/grub.cfg`` after
+   applying package updates. This will happen automatically as a post hook when
+   running the ``kayobe overcloud host package update`` command.
+
 If the kernel has been upgraded, reboot the host or batch of hosts to pick up
 the change:
 
@@ -908,17 +1006,27 @@ would be applied:
    kayobe overcloud host configure --check --diff
 
 When ready to apply the changes, it may be advisable to do so in batches, or at
-least start with a small number of hosts.:
+least start with a small number of hosts:
 
 .. code-block:: console
 
    kayobe overcloud host configure --limit <host>
 
-Alternatively, to apply the configuration to all hosts:
 
-.. code-block:: console
+.. warning::
 
-   kayobe overcloud host configure
+   Take extra care when configuring Ceph hosts. Set the hosts to maintenance
+   mode before reconfiguring them, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host configure --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
 
 .. _building_ironic_deployment_images:
 

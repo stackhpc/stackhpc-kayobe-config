@@ -8,13 +8,13 @@
     # python interpreter.
     ansible_python_interpreter: /usr/bin/python3
     # Work around no known_hosts entry on first boot.
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no
   tasks:
     - name: Ensure hosts are reachable
       ansible.builtin.wait_for_connection:
 
     - name: Ensure `hosts` file contains pulp and API entries
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: /etc/hosts
         marker: "# {mark} Kayobe entries"
         block: |

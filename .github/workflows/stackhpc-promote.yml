@@ -43,3 +43,25 @@ jobs:
       - name: Display link to container image promotion workflows
         run: |
           echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
+
+      - name: Send message to Slack via Workflow Builder
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "channel-id": "${{ env.SLACK_CHANNEL_ID }}",
+              "inputs": "${{ env.INPUTS }}",
+              "message": "${{ env.MESSAGE }}",
+              "results-url": "${{ env.RESULTS_URL }}",
+              "workflow-url": "${{ env.WORKFLOW_URL }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # #release-train-alerts
+          SLACK_CHANNEL_ID: C03B28HRP53
+          INPUTS: >-
+            branch: ${{ github.ref_name }}
+          MESSAGE: "SKC promote workflow failed :sob:"
+          RESULTS_URL: "N/A"
+          WORKFLOW_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        if: failure()

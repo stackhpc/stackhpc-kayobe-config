@@ -132,7 +132,7 @@ The most common variables to override are:
 - ``TEMPEST_CONCURRENCY`` - The maximum number of tests to run in parallel at
   one time. Higher values are faster but increase the risk of timeouts. 1-2 is
   safest in CI/Tenks/Multinode/AIO etc. 8-32 is typical in production. Default
-  value is 2.
+  value is 16.
 - ``KAYOBE_AUTOMATION_TEMPEST_LOADLIST``: the filename of a load list in the
   ``load-lists`` directory. Default value is ``default`` (symlink to refstack).
 - ``KAYOBE_AUTOMATION_TEMPEST_SKIPLIST``: the filename of a load list in the
