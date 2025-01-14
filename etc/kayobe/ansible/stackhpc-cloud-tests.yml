@@ -1,33 +1,33 @@
 ---
-- name: Run StackHPC OpenStack tests
+- name: Run StackHPC Cloud tests
   hosts: tempest_runner
   tags:
-    - stackhpc-openstack-tests
+    - stackhpc-cloud-tests
   vars:
-    sot_venv: "{{ virtualenv_path }}/sot-venv"
-    sot_repo: https://github.com/stackhpc/stackhpc-openstack-tests
-    sot_version: v0.0.1
-    sot_timeout: 30
-    results_path_local: "{{ lookup('env', 'HOME') }}/sot-results"
+    sct_venv: "{{ virtualenv_path }}/sct-venv"
+    sct_repo: https://github.com/stackhpc/stackhpc-cloud-tests
+    sct_version: v0.2.0
+    sct_timeout: 30
+    results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
   tasks:
-    - name: Stackhpc OpenStack tests
+    - name: Stackhpc Cloud tests
       block:
         - name: Create a temporary directory for tests repo
           ansible.builtin.tempfile:
             state: directory
-            suffix: sot-repo
+            suffix: sct-repo
           register: repo_tmpdir
 
         - name: Create a temporary directory for results
           ansible.builtin.tempfile:
             state: directory
-            suffix: sot-results
+            suffix: sct-results
           register: results_tmpdir
 
-        - name: Clone the StackHPC OpenStack tests repository
+        - name: Clone the StackHPC Cloud tests repository
           ansible.builtin.git:
-            repo: "{{ sot_repo }}"
-            version: "{{ sot_version }}"
+            repo: "{{ sct_repo }}"
+            version: "{{ sct_version }}"
             dest: "{{ repo_tmpdir.path }}"
             depth: 1
             single_branch: true
@@ -36,7 +36,7 @@
           ansible.builtin.pip:
             name: "{{ item.name }}"
             state: latest
-            virtualenv: "{{ sot_venv }}"
+            virtualenv: "{{ sct_venv }}"
             virtualenv_command: python3 -m venv
           with_items:
             - { name: pip }
@@ -48,47 +48,47 @@
               - "{{ repo_tmpdir.path }}"
               - pytest-html
               - pytest-timeout
-            virtualenv: "{{ sot_venv }}"
+            virtualenv: "{{ sct_venv }}"
 
         - name: Ensure Python requirements file packages are installed
           ansible.builtin.pip:
             requirements: "{{ repo_tmpdir.path }}/requirements.txt"
-            virtualenv: "{{ sot_venv }}"
+            virtualenv: "{{ sct_venv }}"
 
         - name: Include Kolla Ansible passwords
           ansible.builtin.include_vars:
             file: "{{ kayobe_env_config_path }}/kolla/passwords.yml"
             name: kolla_passwords
 
-        - name: Run StackHPC OpenStack tests
+        - name: Run StackHPC Cloud tests
           ansible.builtin.command:
             cmd: >
-              {{ sot_venv }}/bin/py.test
-              --html={{ results_tmpdir.path }}/stackhpc-openstack-tests.html
+              {{ sct_venv }}/bin/py.test
+              --html={{ results_tmpdir.path }}/stackhpc-cloud-tests.html
               --self-contained-html
-              --pyargs stackhpc_openstack_tests
-              --timeout {{ sot_timeout }}
+              --pyargs stackhpc_cloud_tests
+              --timeout {{ sct_timeout }}
               -vv
           environment:
-            OPENSEARCH_HOSTS: "{{ sot_opensearch_hosts }}"
-            OPENSEARCH_PORT: "{{ sot_opensearch_port }}"
-            OPENSEARCH_TLS: "{{ sot_opensearch_tls }}"
-            PROMETHEUS_URL: "{{ sot_prometheus_url }}"
-            PROMETHEUS_USERNAME: "{{ sot_prometheus_username }}"
-            PROMETHEUS_PASSWORD: "{{ sot_prometheus_password }}"
+            OPENSEARCH_HOSTS: "{{ sct_opensearch_hosts }}"
+            OPENSEARCH_PORT: "{{ sct_opensearch_port }}"
+            OPENSEARCH_TLS: "{{ sct_opensearch_tls }}"
+            PROMETHEUS_URL: "{{ sct_prometheus_url }}"
+            PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
+            PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
             kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
-            sot_opensearch_hosts: "{{ kolla_internal_fqdn }}"
-            sot_opensearch_port: 9200
-            sot_opensearch_tls: false
-            sot_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
-            sot_prometheus_username: admin
-            sot_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+            sct_opensearch_hosts: "{{ kolla_internal_fqdn }}"
+            sct_opensearch_port: 9200
+            sct_opensearch_tls: false
+            sct_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
+            sct_prometheus_username: admin
+            sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
       always:
         - name: Fetch results
           ansible.builtin.fetch:
-            src: "{{ results_tmpdir.path }}/stackhpc-openstack-tests.html"
+            src: "{{ results_tmpdir.path }}/stackhpc-cloud-tests.html"
             dest: "{{ results_path_local }}/"
             flat: true
 
