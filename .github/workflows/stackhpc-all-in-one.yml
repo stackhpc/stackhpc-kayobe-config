@@ -59,7 +59,7 @@ on:
         description: Whether to perform an upgrade
         type: boolean
         default: false
-      openstack-tests-version:
+      openstack_tests_version:
         description: Git version of https://github.com/stackhpc/stackhpc-openstack-tests to use for testing
         type: string
         default: v0.0.1
@@ -452,7 +452,7 @@ jobs:
             -v $(pwd)/sot-results:/stack/sot-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml -e sot_version=${{ inputs.openstack-tests-version }}'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml -e sot_version=${{ inputs.openstack_tests_version }}'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
