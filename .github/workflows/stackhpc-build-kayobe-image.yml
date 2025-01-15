@@ -29,6 +29,9 @@ on:
         description: Whether to run the workflow (workaround for required status checks issue)
         type: boolean
         default: true
+      repository:
+        type: string
+        default: ${{ github.repository }}
     outputs:
       kayobe_image:
         description: Reference of Kayobe image that was built
@@ -53,6 +56,7 @@ jobs:
       - name: Checkout kayobe config
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.repository }}
           submodules: true
 
       - name: Log in to the Container registry
