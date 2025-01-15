@@ -40,15 +40,6 @@
       register: doca_kernel_repo
       changed_when: false
 
-    - name: Unpackage kernel repo
-      ansible.builtin.shell:
-        cmd: "rpm2cpio {{ doca_kernel_repo.stdout }} | cpio -idmv -D {{ doca_extract_path }}"
-
-    - name: Find extracted kernel packages
-      ansible.builtin.shell:
-        cmd: 'find {{ doca_extract_path }}/usr/share/doca-host-*/Modules/$(uname -r)/*.rpm'
-      register: doca_kernel_packages
-  
     - name: Create Pulp repository for DOCA kernel modules
       pulp.squeezer.rpm_repository:
         pulp_url: "{{ stackhpc_release_pulp_url }}"
@@ -67,7 +58,7 @@
           --repository '{{ doca_modules_repo_name }}' \
           --file {{ item }} \
           --no-publish \
-      with_items: "{{ doca_kernel_packages.stdout_lines }}"
+      with_items: "{{ doca_kernel_repo.stdout_lines }}"
 
     - name: Create Pulp publication for OFED
       pulp.squeezer.rpm_publication:
