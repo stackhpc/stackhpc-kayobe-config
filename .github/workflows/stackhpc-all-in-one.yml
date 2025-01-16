@@ -63,10 +63,18 @@ on:
         description: Git version of https://github.com/stackhpc/stackhpc-cloud-tests to use for testing
         type: string
         default: main
+      called_from_external:
+        description: Set if using the workflow from an external repository
+        type: boolean
+        default: false
       repository:
         description: SKC repository to checkout (convenience for CI)
         type: string
         default: ${{ github.repository }}
+      external_ref_override:
+        description: Git ref to checkout, only used if called_from_external is true
+        type: string
+        default: ${{ github.ref }}
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -103,7 +111,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repository }}
-          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || github.ref }}
+          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || inputs.called_from_external && inputs.external_ref_override || github.ref }}
           submodules: true
 
       - name: Output Kayobe image
