@@ -59,6 +59,18 @@ on:
         description: Whether to perform an upgrade
         type: boolean
         default: false
+      stackhpc_cloud_tests_version:
+        description: Git version of https://github.com/stackhpc/stackhpc-cloud-tests to use for testing
+        type: string
+        default: main
+      repository:
+        description: SKC repository to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.repository }}
+      github_ref:
+        description: Git ref to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.ref }}
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -94,7 +106,8 @@ jobs:
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || github.ref }}
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || inputs.github_ref }}
           submodules: true
 
       - name: Output Kayobe image
@@ -367,6 +380,8 @@ jobs:
       - name: Checkout current release config
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.github_ref }}
           submodules: true
           clean: false
         if: inputs.upgrade
@@ -448,7 +463,7 @@ jobs:
             -v $(pwd)/sot-results:/stack/sot-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml' -e sot_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
