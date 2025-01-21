@@ -130,6 +130,11 @@
       changed_when: false
       retries: 2
 
+    - name: Correct permissions on alerts manifest
+      ansible.builtin.file:
+        path: "/usr/share/filebeat/module/wazuh/alerts/manifest.yml"
+        mode: "go-w"
+
   handlers:
     - name: Restart wazuh
       ansible.builtin.service:

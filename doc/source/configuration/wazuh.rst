@@ -336,11 +336,6 @@ rulesets. However, you may find you want to add more. This can be achieved via
 SKC supports this automatically, just add the policy file from this PR to
 ``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies``.
 
-Currently, Wazuh does not ship with a CIS benchmark for Rocky 9. You can find
-the in-development policy here: https://github.com/wazuh/wazuh/pull/17810 To
-include this in your deployment, simply copy it to
-``{{ kayobe_env_config_path }}/wazuh/custom_sca_policies/cis_rocky_linux_9.yml``.
-
 .. _Deploy:
 
 Deploy
@@ -354,11 +349,11 @@ If you are using the wazuh generated certificates,
 this will result in the creation of some certificates and keys (in case of custom certs adjust path to it).
 Encrypt the keys (and remember to commit to git):
 
-``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key``
+``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*.key $KAYOBE_CONFIG_PATH/environments/<environment>/wazuh/wazuh-certificates/*-key.pem``
 
 If using the kayobe environments feature, otherwise:
 
-``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key``
+``ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*.key $KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/certs/*-key.pem``
 
 .. _wazuh-verification:
 
