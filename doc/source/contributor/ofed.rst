@@ -5,7 +5,7 @@ OFED
 Warning: Experimental workflow subject to change
 
 The Nvidia DOCA framework is distributed as part of StackHPC Release Train for OFED driver support,
-this repository is synced into Ark as part of the Release Train worfkflows, however to ensure 
+this repository is synced into Ark as part of the Release Train worfkflows, however to ensure
 compatibility with Release Train packages, we are required to build OFED modules with support for
 the latest Release Train kernel.
 
@@ -59,7 +59,7 @@ Pre-requisites
 * The bootloader has been configured to use the latest kernel (reset-bls-entries.yml)
 
 * Ensure repositories have been templated by setting:
-  
+
   .. code-block:: yaml
 
     dnf_install_doca: true
