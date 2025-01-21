@@ -5,12 +5,14 @@ CI/CD
 Concepts
 ========
 
-The CI/CD system developed for managing Kayobe based OpenStack clouds is composed of three main components; workflows, runners and kayobe automation.
+The CI/CD system developed for managing Kayobe based OpenStack clouds is composed of four main components; workflows, runners, OpenBao and kayobe automation.
 Firstly, the workflows are files which describe a series of tasks to be performed in relation to the deployed cloud.
 These workflows are executed on request, on schedule or in response to an event such as a pull request being opened.
 The workflows are designed to carry out various day-to-day activites such as; running Tempest tests, configuring running services or displaying the change to configuration files if a pull request is merged.
 Secondly, in order for the workflows to run against a cloud we would need private runners present within the cloud positioned in such a way they can reach the internal network and public API.
 Deployment of private runners is supported by all major providers with the use of community developed Ansible roles.
+Thirdly, OpenBao is used to store secrets on the same virtual machine the runners are hosted within.
+This provides a secure way of storing secrets and variables which can be accessed by the runners when executing workflows and ensures that secrets never have to leave the cloud.
 Finally, due to the requirement that we support various different platforms tooling in the form of `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ was developed.
 This tooling is not tied to any single CI/CD platform as all tasks are a series of shell script and Ansible playbooks which are designed to run in a purpose build kayobe container.
 This is complemented by the use of an Ansible collection known as `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ which aims to provide users with a quick and easy way of customising all workflows to fit within a customer's cloud.
@@ -41,6 +43,12 @@ Runners are purpose built services tied to a particular service vendor such as G
 These services will listen for jobs which have been tagged appropriately and dispatched to these specific runners.
 The runners will need to be deployed using existing roles and playbooks whereby the binary/package is downloaded and registered using a special token.
 In some deployments runner hosts can be shared between environments however this is not always true and dedicated hosts will need to be used for each environment you intend to deploy kayobe automation within.
+
+OpenBao
+-------
+
+OpenBao is recommended when deploying kayobe automation to achieve a simple and secure way of storing secrets.
+OpenBao can easily be configured to hold the secrets for all environments and only permit access to the runners which require them utilising different authorisation mechanisms such as GitLab's JWT (JSON Web Token).
 
 GitHub Actions
 =================
@@ -180,4 +188,196 @@ Sometimes the kayobe docker image must be rebuilt the reasons for this include b
     * Update Kayobe
     * Update kolla-ansible
     * UID/GID collision when deploying workflows to a new environment
+    * Prior to deployment of new a OpenStack release
+
+GitLab Pipelines
+================
+
+To enable CI/CD where GitLab Pipelines is used please follow the steps described below starting with the deployment of the runners.
+
+Runner Deployment
+-----------------
+
+1. Identify a suitable host for hosting the runners.
+    Ideally an infra-vm would be deployed to allow for easily compartmentalising the runners from the rest of the environment.
+    8 VCPUs and 16GB of RAM is recommended for the guest machine however this may need to be adjusted for larger deployments.
+    Whether the host is in an infra-vm or not it will need access to the :code:`admin_network` or :code:`provision_oc_network`, :code:`public_network` and the :code:`pulp registry` on the seed.
+    The steps will assume that an infra-vm will be used for the purpose of hosting the runners.
+
+2. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` to define the host(s) that will host the runners.
+
+.. code-block:: ini
+
+    [github-runners]
+    gitlab-runner-01
+
+4. Provide all the relevant Kayobe :code:`group_vars` for :code:`gitlab-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/gitlab-runners`
+    * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
+    * `network-interfaces`
+
+5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
+   Below is an example of how GitLab runners can be configured for deployment.
+   In this example we have two runners, one for production and one for staging and will both be deployed on the same host.
+   This might not be possible for all deployments as multiple environments may require different runners as no single runner can serve all environments.
+   Note a GitLab runner can run multiple jobs concurrently so deploying a single runner per environment is recommended.
+   
+.. code-block:: yaml
+
+    ---
+    gitlab_runner_coordinator_url: "https://gitlab.example.com"
+    gitlab_runner_runners:
+      - name: "Kayobe Automation Runner [Production] #1"
+          executor: docker
+          docker_image: 'alpine'
+          token: "{{ secrets_gitlab_production_runner_token }}"
+          env_vars:
+            - "GIT_CONFIG_COUNT=1"
+            - "GIT_CONFIG_KEY_0=safe.directory"
+            - "GIT_CONFIG_VALUE_0=*"
+          tags:
+            - kayobe
+            - openstack
+            - production
+          docker_volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "/opt/.docker/config.json:/root/.docker/config.json:ro"
+            - "/cache"
+          extra_configs:
+          runners.docker:
+            network_mode: host
+      - name: "Kayobe Automation Runner [Staging] #1"
+          executor: docker
+          docker_image: 'alpine'
+          token: "{{ secrets_gitlab_staging_runner_token }}"
+          env_vars:
+            - "GIT_CONFIG_COUNT=1"
+            - "GIT_CONFIG_KEY_0=safe.directory"
+            - "GIT_CONFIG_VALUE_0=*"
+          tags:
+            - kayobe
+            - openstack
+            - staging
+          docker_volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "/opt/.docker/config.json:/root/.docker/config.json:ro"
+            - "/cache"
+          extra_configs:
+          runners.docker:
+            network_mode: host
+
+6. Obtain a runner token for each runner that is required for deployment.
+    This token can be obtained by visiting the GitLab project -> Settings -> CI/CD -> Runners -> New project runner -> Complete the form and copy the token.
+    Once the token has been obtained, add it to :code:`secrets.yml` under :code:`secrets_gitlab_production_runner_token` and :code:`secrets_gitlab_staging_runner_token`
+
+7. Deploy the infra-vm
+
+.. code-block:: bash
+
+    kayobe infra vm provision --limit gitlab-runner-01
+
+8. Perform a host configure against the infra-vm
+
+.. code-block:: bash
+
+    kayobe infra vm host configure --limit gitlab-runner-01
+
+9. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-gitlab-runner.yml`
+
+10. Check runners have registered properly by visiting the repository's :code:`CI/CD` tab -> :code:`Runners`
+
+11. The contents of :code:`/opt/.docker/config.json` on the runner should be added to GitLab CI/CD settings as a sercret variable.
+    This is required to allow the runners to pull images from the registry.
+    Visit the GitLab project -> Settings -> CI/CD -> Variables -> Add a new variable with the key :code:`DOCKER_CONFIG_JSON` and the value of the contents of :code:`/opt/.docker/config.json`
+
+OpenBao Deployment
+------------------
+
+OpenBao must be installed on the same host as the runners.
+If you have multiple environments that each have the own runners then OpenBao must be installed on each host.
+However, if you have a single host that is shared between environments then OpenBao only needs to be installed once and can be achieved by running the following playbook.
+
+.. code-block:: bash
+
+    kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-openbao-kayobe-automation.yml
+
+.. note::
+
+    If you are sharing OpenBao between environments then you will need to rerun the playbook under each environment to ensure that the correct secrets are available to the runners.
+    You may use :code:`--tags add_secrets` to skip the deployment within other environments.
+    For this to work you will need to copy :code:`vault/vault-automation-keys.json` from the first environment to the other environments in addition to copying the host definition of the gitlab runner add network IP.
+
+Once the above playbook has been applied you need to grab the root token from :code:`vault/vault-automation-keys.json` as you will need this to enable JWT support.
+This would also be an opportune time to encrypt the :code:`vault/vault-automation-keys.json` to protect the contents.
+
+In order to enable JWT support the following steps must be carried out within the openbao container on the runner host.
+
+1. SSH into the runner host
+
+2. Run :code:`sudo docker exec -it bao sh`
+
+3. Run :code:`export BAO_AUTH_ADDR=http://127.0.0.1:8200`
+
+4. Run :code:`bao login` and use root token
+
+5. Run the following to enable and configure JWT support
+
+.. note::
+
+    The following steps are an example and should be adapted to suit your deployment.
+    For example project_id within the gitlab role will need ID of the project that the runners are registered against.
+    This can acquired by visiting the project -> Settings -> General -> General project settings -> Project ID.
+
+.. code-block:: bash
+
+    bao auth enable jwt
+    bao policy write kayobe-automation - <<EOF
+    path "kayobe-automation/*" {
+      capabilities = [ "read" ]
+    }
+    EOF
+    bao write auth/jwt/role/gitlab - <<EOF
+    {
+      "role_type": "jwt",
+      "token_explicit_max_ttl": 60,
+      "user_claim": "user_email",
+      "bound_audiences": "http://127.0.0.1:8200",
+      "bound_claims": {
+        "project_id": "ADD_PROJECT_ID_HERE"
+      },
+      "policies": ["kayobe-automation"]
+    }
+    EOF
+    bao write auth/jwt/config \
+      jwks_url="https://gitlab.example.com/oauth/discovery/keys" \
+      bound_issuer="https://gitlab.example.com" \
+
+GitLab Pipelines
+----------------
+
+1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
+Following the instructions in the documentation will allow you to customise the workflows to fit within your deployment.
+For example disabling jobs that might not be relevant such as physical network configuration or overcloud host provision in clouds where this is absent.
+Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors. 
+
+2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-gitlab-pipelines.yml`
+
+3. Commit and push all newly generated pipelines found under root of the repository.
+
+Things to consider
+==================
+
+- Adjust General Pipeline settings by visiting the project -> Settings -> CI/CD -> General pipelines
+  - Disable :code:`Public Pipelines`
+  - Disable :code:`Auto-cancel redundant pipelines`
+  - Disable :code:`Prevent outdated deployment jobs`
+  - Increase :code:`Timeout` to :code:`12h`
+
+- Disable Auto DevOps in the GitLab project settings by visiting the project -> Settings -> CI/CD -> Auto DevOps -> Disable Auto DevOps
+
+Sometimes the kayobe docker image must be rebuilt the reasons for this include but are not limited to the following;
+
+    * Change :code:`$KAYOBE_CONFIG_PATH/ansible/requirements.yml`
+    * Change to requirements.txt
+    * Update Kayobe
+    * Update kolla-ansible
     * Prior to deployment of new a OpenStack release
