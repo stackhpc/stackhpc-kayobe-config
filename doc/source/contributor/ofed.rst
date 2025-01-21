@@ -58,6 +58,12 @@ Pre-requisites
 
 * The bootloader has been configured to use the latest kernel (reset-bls-entries.yml)
 
+* Ensure repositories have been templated by setting:
+  
+  .. code-block:: yaml
+
+    dnf_install_doca: true
+
 install-doca
 ------------
 
