@@ -6,15 +6,20 @@ Concepts
 ========
 
 The CI/CD system developed for managing Kayobe based OpenStack clouds is composed of four main components; workflows, runners, OpenBao and kayobe automation.
+
 Firstly, the workflows are files which describe a series of tasks to be performed in relation to the deployed cloud.
 These workflows are executed on request, on schedule or in response to an event such as a pull request being opened.
+
 The workflows are designed to carry out various day-to-day activites such as; running Tempest tests, configuring running services or displaying the change to configuration files if a pull request is merged.
 Secondly, in order for the workflows to run against a cloud we would need private runners present within the cloud positioned in such a way they can reach the internal network and public API.
 Deployment of private runners is supported by all major providers with the use of community developed Ansible roles.
+
 Thirdly, OpenBao is used to store secrets on the same virtual machine the runners are hosted within.
 This provides a secure way of storing secrets and variables which can be accessed by the runners when executing workflows and ensures that secrets never have to leave the cloud.
+
 Finally, due to the requirement that we support various different platforms tooling in the form of `Kayobe automation <https://github.com/stackhpc/kayobe-automation/>`__ was developed.
 This tooling is not tied to any single CI/CD platform as all tasks are a series of shell script and Ansible playbooks which are designed to run in a purpose build kayobe container.
+
 This is complemented by the use of an Ansible collection known as `stackhpc.kayobe_workflows <https://github.com/stackhpc/ansible-collection-kayobe-workflows/>`__ which aims to provide users with a quick and easy way of customising all workflows to fit within a customer's cloud.
 
 Currently we support the creation and deployment of workflows for GitHub with Gitlab support being actively worked upon.
@@ -315,7 +320,7 @@ In order to enable JWT support the following steps must be carried out within th
 
 2. Run :code:`sudo docker exec -it bao sh`
 
-3. Run :code:`export BAO_AUTH_ADDR=http://127.0.0.1:8200`
+3. Run :code:`export BAO_ADDR=http://127.0.0.1:8200`
 
 4. Run :code:`bao login` and use root token
 
@@ -349,7 +354,7 @@ In order to enable JWT support the following steps must be carried out within th
     EOF
     bao write auth/jwt/config \
       jwks_url="https://gitlab.example.com/oauth/discovery/keys" \
-      bound_issuer="https://gitlab.example.com" \
+      bound_issuer="https://gitlab.example.com"
 
 GitLab Pipelines
 ----------------
@@ -374,7 +379,7 @@ Things to consider
 
 - Disable Auto DevOps in the GitLab project settings by visiting the project -> Settings -> CI/CD -> Auto DevOps -> Disable Auto DevOps
 
-Sometimes the kayobe docker image must be rebuilt the reasons for this include but are not limited to the following;
+Sometimes the kayobe docker image must be rebuilt. The reasons for this include but are not limited to the following;
 
     * Change :code:`$KAYOBE_CONFIG_PATH/ansible/requirements.yml`
     * Change to requirements.txt
