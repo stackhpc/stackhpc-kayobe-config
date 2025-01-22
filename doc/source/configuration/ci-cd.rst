@@ -220,7 +220,7 @@ Runner Deployment
    In this example we have two runners, one for production and one for staging and will both be deployed on the same host.
    This might not be possible for all deployments as multiple environments may require different runners as no single runner can serve all environments.
    Note a GitLab runner can run multiple jobs concurrently so deploying a single runner per environment is recommended.
-   
+
 .. code-block:: yaml
 
     ---
@@ -357,7 +357,7 @@ GitLab Pipelines
 1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
 Following the instructions in the documentation will allow you to customise the workflows to fit within your deployment.
 For example disabling jobs that might not be relevant such as physical network configuration or overcloud host provision in clouds where this is absent.
-Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors. 
+Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors.
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-gitlab-pipelines.yml`
 
