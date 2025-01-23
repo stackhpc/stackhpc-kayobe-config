@@ -453,17 +453,17 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
-      - name: StackHPC OpenStack tests
-        id: stackhpc-openstack-tests
+      - name: StackHPC Cloud tests
+        id: stackhpc-cloud-tests
         continue-on-error: true
         run: |
-          mkdir -p sot-results
+          mkdir -p sct-results
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v $(pwd)/sot-results:/stack/sot-results \
+            -v $(pwd)/sct-results:/stack/sct-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml' -e sot_version=${{ inputs.stackhpc_cloud_tests_version }}
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-cloud-tests.yml' -e sot_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -488,19 +488,19 @@ jobs:
           path: |
             diagnostics/
             tempest-artifacts/
-            sot-results/
-        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-openstack-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
+            sct-results/
+        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
       - name: Fail if any Tempest tests failed
         run: |
           test $(wc -l < tempest-artifacts/failed-tests) -lt 1
 
-      - name: Fail if any StackHPC OpenStack tests failed
+      - name: Fail if any StackHPC Cloud tests failed
         run: |
-          echo "Some StackHPC OpenStack tests failed."
-          echo "See HTML results artifact (sot-results) for details."
+          echo "Some StackHPC Cloud tests failed."
+          echo "See HTML results artifact (sct-results) for details."
           exit 1
-        if: steps.stackhpc-openstack-tests.outcome == 'failure'
+        if: steps.stackhpc-cloud-tests.outcome == 'failure'
 
       - name: Destroy
         run: terraform destroy -auto-approve
