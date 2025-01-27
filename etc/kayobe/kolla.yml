@@ -342,12 +342,6 @@ kolla_build_blocks:
         && grafana-cli plugins install grafana-opensearch-datasource
   ironic_inspector_header: |
     ADD additions-archive /
-  magnum_base_footer: |
-    RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | head -n -1 | bash
-    {% raw %}
-    {% set magnum_capi_packages = ['magnum-capi-helm==1.1.0'] %}
-    RUN {{ macros.install_pip(magnum_capi_packages | customizable("pip_packages")) }}
-    {% endraw %}
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -360,6 +354,9 @@ kolla_build_customizations_common:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
+  magnum_base_pip_packages_override:
+    - /magnum[osprofiler]
+    - magnum-capi-helm==1.2.0
   neutron_server_packages_append:
     - python3-libvirt
     - python3-ethtool
