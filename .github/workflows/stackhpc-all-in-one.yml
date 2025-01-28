@@ -80,13 +80,18 @@ on:
         required: true
       OS_APPLICATION_CREDENTIAL_SECRET:
         required: true
-
+  workflow_dispatch:
+    inputs:
+      runner:
+        required: false
+        description: 'Runner name'
+        default: 'arc-skc-aio-runner'
 jobs:
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: [arc-skc-aio-runner, "${{ inputs.runner_var }}"]
+    runs-on: ${{ inputs.runner }}
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
@@ -96,6 +101,7 @@ jobs:
       PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2023.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
       PREVIOUS_BRANCH: stackhpc/2023.1
+      
     steps:
       - name: Install Package
         uses: ConorMacBride/install-package@main
