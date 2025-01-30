@@ -13,7 +13,7 @@ jobs:
   # would skip the workflow entirely, and would prevent us from making the
   # aio jobs required to pass (a skip counts as a pass).
   check-changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     permissions:
       pull-requests: read
     name: Check changed files
@@ -60,43 +60,6 @@ jobs:
         run: pip install tox
       - name: Run Tox ${{ matrix.environment }} 🧪
         run: tox -e ${{ matrix.environment }}
-
-  lint:
-    runs-on: ubuntu-22.04
-    permissions: {}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # NOTE(upgrade): Keep these in sync with Kayobe's supported Ansible and Python versions (see release notes).
-          - ansible: "2.16"
-            python: "3.12"
-          - ansible: "2.15"
-            python: "3.10"
-    name: Ansible ${{ matrix.ansible }} lint with Python ${{ matrix.python }}
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    steps:
-      - name: GitHub Checkout 🛎
-        uses: actions/checkout@v4
-
-      - name: Setup Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-
-      - name: Install dependencies 📦
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible-core==${{ matrix.ansible }}.* ansible-lint -r requirements.txt
-
-      - name: Install Ansible Galaxy collections and roles
-        run: |
-          ansible-galaxy collection install -r etc/kayobe/ansible/requirements.yml
-          ansible-galaxy role install -r etc/kayobe/ansible/requirements.yml
-
-      - name: Linting code 🧪
-        run: |
-          ansible-lint -v --force-color etc/kayobe/ansible/.
 
   # A skipped job is treated as success when used as a required status check.
   # The registered required status checks refer to the name of the job in the

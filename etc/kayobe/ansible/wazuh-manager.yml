@@ -5,13 +5,9 @@
   tags:
     - prechecks
   tasks:
-    - name: Generate certificates
-      when:
-        - groups["wazuh-manager"] | length > 0
-
-      block:
+    - block:
         - name: Fail if using old path for Wazuh certificates
-          ansible.builtin.fail:
+          fail:
             msg: >-
               The path used for Wazuh SSL certificates was changed in a previous release. The certificates
               were found in the wrong location. Please move all files and directories in
@@ -21,7 +17,7 @@
             - (playbook_dir ~ '/wazuh/certificates') is exists
 
         - name: Fail if using old path for custom certificates
-          ansible.builtin.fail:
+          fail:
             msg: >-
               Wazuh custom SSL certificates have been merged with regular certificates. The certificates
               were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
@@ -30,56 +26,52 @@
             - (playbook_dir ~ '/wazuh/custom_certificates') is exists
 
         - name: Check that removed variable, local_custom_certs_path, is not set
-          ansible.builtin.assert:
+          assert:
             that: local_custom_certs_path is not defined
-            fail_msg: The variable, `local_custom_certs_path`, is no longer used. Please remove this variable.
+            fail_msg: "The variable, `local_custom_certs_path`, is no longer used. Please remove this variable."
+      when:
+        - groups["wazuh-manager"] | length > 0
 
 # Certificates generation
-- name: Apply Wazuh indexer role
-  hosts: localhost
+- hosts: localhost
   roles:
-    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
       perform_installation: false
-  become: false
+  become: no
   tags:
     - generate-certs
 # Single node
-- name: Install Wazuh manager
-  hosts: wazuh-manager
-  become: true
+- hosts: wazuh-manager
+  become: yes
   become_user: root
   roles:
-    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
-    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager
-    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss
-    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss"
+    - role: "{{ playbook_dir }}/roles/wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard"
   post_tasks:
-    - name: Use custom SCA policies
-      notify:
-        - Restart wazuh
-
-      block:
+    - block:
         - name: Check if custom SCA policies directory exists
-          ansible.builtin.stat:
+          stat:
             path: "{{ local_custom_sca_policies_path }}"
           register: custom_sca_policies_folder
           delegate_to: localhost
-          become: false
+          become: no
 
         - name: Gather list of custom SCA policies
-          ansible.builtin.find:
+          find:
             paths: "{{ local_custom_sca_policies_path }}"
-            patterns: "*.yml"
+            patterns: '*.yml'
           delegate_to: localhost
           register: custom_sca_policies
           when: custom_sca_policies_folder.stat.exists
-          become: false
+          become: no
 
         - name: Copy custom SCA policy files to Wazuh manager
-          ansible.builtin.copy:
+          copy:
             # Note the trailing slash to copy directory contents
             src: "{{ local_custom_sca_policies_path }}/"
-            dest: /var/ossec/etc/shared/default/
+            dest: "/var/ossec/etc/shared/default/"
             owner: wazuh
             group: wazuh
           when:
@@ -87,13 +79,13 @@
             - custom_sca_policies.files | length > 0
 
         - name: Add custom policy definition(s) to the shared Agent config
-          ansible.builtin.blockinfile:
-            path: /var/ossec/etc/shared/default/agent.conf
+          blockinfile:
+            path: "/var/ossec/etc/shared/default/agent.conf"
             state: present
             owner: wazuh
             group: wazuh
             marker: "{mark} ANSIBLE MANAGED BLOCK Custom SCA Policies"
-            insertafter: <!-- Shared agent configuration here -->
+            insertafter: "<!-- Shared agent configuration here -->"
             block: |
               {% filter indent(width=2, first=true) %}
               <sca>
@@ -107,10 +99,12 @@
           when:
             - custom_sca_policies_folder.stat.exists
             - custom_sca_policies.files | length > 0
+      notify:
+        - Restart wazuh
 
     - name: Add JVM proxy settings to wazuh-indexer
-      ansible.builtin.blockinfile:
-        path: /etc/wazuh-indexer/jvm.options
+      blockinfile:
+        path: "/etc/wazuh-indexer/jvm.options"
         state: present
         owner: root
         group: wazuh
@@ -120,28 +114,23 @@
           -Dhttp.proxyPort={{ http_proxy_url | urlsplit('port') }}
           -Dhttps.proxyHost={{ http_proxy_url | urlsplit('hostname') }}
           -Dhttps.proxyPort={{ http_proxy_url | urlsplit('port') }}
-        backup: true
+        backup: yes
       when: http_proxy_url is defined
       notify:
         - Restart wazuh-indexer
 
     - name: Perform health check against filebeat
-      ansible.builtin.command: filebeat test output
+      command: filebeat test output
       changed_when: false
       retries: 2
 
-    - name: Correct permissions on alerts manifest
-      ansible.builtin.file:
-        path: "/usr/share/filebeat/module/wazuh/alerts/manifest.yml"
-        mode: "go-w"
-
   handlers:
     - name: Restart wazuh
-      ansible.builtin.service:
+      service:
         name: wazuh-manager
         state: restarted
 
     - name: Restart wazuh-indexer
-      ansible.builtin.service:
+      service:
         name: wazuh-indexer
         state: restarted

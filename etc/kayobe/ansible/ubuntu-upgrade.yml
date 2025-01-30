@@ -8,7 +8,7 @@
     reboot_timeout_s: "{{ 20 * 60 }}"
   tasks:
     - name: Assert that hosts are running Ubuntu Focal
-      ansible.builtin.assert:
+      assert:
         that:
           - ansible_facts.distribution == 'Ubuntu'
           - ansible_facts.distribution_major_version == '20'
@@ -20,41 +20,41 @@
           os_distribution is set to ubuntu.
 
     - name: Ensure apt packages are up to date
-      ansible.builtin.apt:
+      apt:
         update_cache: true
-        upgrade: true
+        upgrade: yes
       become: true
 
     - name: Ensure do-release-upgrade is installed
-      ansible.builtin.package:
+      package:
         name: ubuntu-release-upgrader-core
         state: latest
       become: true
 
     - name: Check whether a reboot is required
-      ansible.builtin.stat:
+      stat:
         path: /var/run/reboot-required
       register: file_status
 
     - name: Reboot to apply updates
-      ansible.builtin.reboot:
+      reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
         search_paths:
           # Systems running molly-guard hang waiting for confirmation before rebooting without this.
-          - /lib/molly-guard
+          - "/lib/molly-guard"
           # Default list:
-          - /sbin
-          - /bin
-          - /usr/sbin
-          - /usr/bin
-          - /usr/local/sbin
+          - "/sbin"
+          - "/bin"
+          - "/usr/sbin"
+          - "/usr/bin"
+          - "/usr/local/sbin"
       become: true
       when: file_status.stat.exists
 
     # NOTE: We cannot use apt_repository here because definitions must exist within the standard repos.list
     - name: Ensure Jammy repo definitions exist in sources.list
-      ansible.builtin.blockinfile:
+      blockinfile:
         path: /etc/apt/sources.list
         block: |
           deb {{ stackhpc_repo_ubuntu_jammy_url }} jammy main restricted universe multiverse
@@ -64,12 +64,12 @@
       become: true
 
     - name: Do release upgrade
-      ansible.builtin.command: do-release-upgrade -f DistUpgradeViewNonInteractive
+      command: do-release-upgrade -f DistUpgradeViewNonInteractive
       become: true
 
     - name: Ensure old venvs do not exist
-      ansible.builtin.file:
-        path: /opt/kayobe/venvs/{{ item }}
+      file:
+        path: "/opt/kayobe/venvs/{{ item }}"
         state: absent
       loop:
         - kayobe
@@ -94,31 +94,31 @@
     reboot_timeout_s: "{{ 20 * 60 }}"
   tasks:
     - name: Ensure Jammy repo definitions do not exist in sources.list
-      ansible.builtin.blockinfile:
+      blockinfile:
         path: /etc/apt/sources.list
         state: absent
       become: true
 
     - name: Ensure Kolla Ansible Docker repo definition does not exist
-      ansible.builtin.file:
+      file:
         path: /etc/apt/sources.list.d/docker.list
         state: absent
       become: true
       when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
 
     - name: Reboot and wait
-      ansible.builtin.reboot:
+      reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
         connect_timeout: 600
         search_paths:
           # Systems running molly-guard hang waiting for confirmation before rebooting without this.
-          - /lib/molly-guard
+          - "/lib/molly-guard"
           # Default list:
-          - /sbin
-          - /bin
-          - /usr/sbin
-          - /usr/bin
-          - /usr/local/sbin
+          - "/sbin"
+          - "/bin"
+          - "/usr/sbin"
+          - "/usr/bin"
+          - "/usr/local/sbin"
       become: true
 
     - name: Update distribution facts
@@ -127,7 +127,7 @@
         gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
     - name: Assert that hosts are now using Ubuntu 22
-      ansible.builtin.assert:
+      assert:
         that:
           - ansible_facts.distribution_major_version == '22'
           - ansible_facts.distribution_release == 'jammy'

@@ -1,12 +1,12 @@
 ---
 - name: Register an Octavia Amphora image in Glance
-  gather_facts: true
+  gather_facts: yes
   hosts: "{{ amphora_builder_group | default('seed') }}"
   vars:
     venv: "{{ virtualenv_path }}/octavia-amphora"
   tasks:
     - name: Fail if not using octavia user and service project
-      ansible.builtin.fail:
+      fail:
         msg: >-
           Source the octavia-openrc.sh file before executing this playbook
       when: >-
@@ -14,21 +14,21 @@
         lookup('env', 'OS_PROJECT_NAME') != 'service'
 
     - name: Get image checksum
-      ansible.builtin.stat:
+      stat:
         path: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
         checksum_algorithm: md5
       changed_when: false
       register: image_checksum
 
     - name: Assert that Amphora image exists
-      ansible.builtin.assert:
+      assert:
         that: image_checksum.stat.exists
         fail_msg: |
           The amphora image: {{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2
           does not exist. Did you build the image?
 
     - name: Set up openstack virtualenv
-      ansible.builtin.pip:
+      pip:
         virtualenv: "{{ venv }}"
         virtualenv_command: python3 -m venv
         name:
@@ -40,7 +40,7 @@
     - name: Query Octavia Amphora image
       vars:
         ansible_python_interpreter: "{{ venv }}/bin/python"
-      openstack.cloud.image_info:
+      os_image_info:
         auth_type: password
         auth: "{{ openstack_auth }}"
         ca_cert: "{{ openstack_cacert }}"
@@ -51,7 +51,7 @@
     - name: Ensure Octavia Amphora image is renamed
       vars:
         ansible_python_interpreter: "{{ venv }}/bin/python"
-      ansible.builtin.command:
+      shell:
         cmd: >-
           {{ venv }}/bin/openstack image set amphora-x64-haproxy --name amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}
       when:
@@ -63,7 +63,7 @@
     - name: Ensure Octavia Amphora image is registered
       vars:
         ansible_python_interpreter: "{{ venv }}/bin/python"
-      openstack.cloud.image:
+      os_image:
         auth_type: password
         auth: "{{ openstack_auth }}"
         ca_cert: "{{ openstack_cacert }}"
@@ -71,7 +71,7 @@
         name: amphora-x64-haproxy
         container_format: bare
         disk_format: qcow2
-        is_public: false
+        is_public: no
         filename: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
         properties:
           hw_architecture: x86_64
@@ -80,7 +80,7 @@
     # FIXME: Use 'tags' parameter of os_image module available from
     # openstack.cloud.image 1.5.0.
     - name: Ensure Octavia Amphora image is tagged
-      ansible.builtin.command:
+      shell:
         cmd: >-
           {{ venv }}/bin/openstack image set amphora-x64-haproxy --tag amphora
       environment: "{{ openstack_auth_env }}"

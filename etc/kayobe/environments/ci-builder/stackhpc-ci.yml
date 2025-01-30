@@ -15,16 +15,14 @@ kolla_enable_cloudkitty: true
 kolla_enable_designate: true
 kolla_enable_etcd: true
 kolla_enable_grafana: true
-kolla_enable_heat: true
 kolla_enable_influxdb: true
 kolla_enable_ironic: true
 kolla_enable_letsencrypt: true
 kolla_enable_magnum: true
 kolla_enable_manila: true
 kolla_enable_mariabackup: true
-kolla_enable_neutron_bgp_dragent: true
-kolla_enable_neutron_mlnx: true
 kolla_enable_neutron_sriov: true
+kolla_enable_neutron_mlnx: true
 kolla_enable_octavia: true
 kolla_enable_opensearch: true
 kolla_enable_prometheus: true
@@ -49,21 +47,20 @@ stackhpc_repo_mirror_password: !vault |
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
-stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
-stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+stackhpc_repo_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rabbitmq_erlang_version }}"
+stackhpc_repo_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rabbitmq_server_version }}"
 stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
 stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
 stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: ""
 stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
 stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
-stackhpc_repo_ceph_reef_debian_version: "{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
-stackhpc_repo_centos_stream_9_openstack_caracal_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
+stackhpc_repo_centos_stream_9_openstack_antelope_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_antelope_version }}"
 stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
-stackhpc_repo_centos_stream_9_storage_ceph_reef_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_quincy_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_quincy_version }}"
 stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
-stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
-stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
+stackhpc_repo_rhel_9_treasuredata_4_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_4_version }}"
+stackhpc_repo_rhel_9_mariadb_10_6_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_6_version }}"
 stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
 stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_epel_9_version }}"
 stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
@@ -95,16 +92,5 @@ stackhpc_docker_registry_password: !vault |
   3664
 
 # Username and password of the overcloud host image repository.
-stackhpc_release_pulp_username: "{{ stackhpc_docker_registry_username }}"
-stackhpc_release_pulp_password: "{{ stackhpc_docker_registry_password }}"
-
-# Build during IPA builder workflow
-ipa_build_images: true
-ipa_build_dib_env_extra:
-  DISTRO_NAME: "{{ ipa_ci_builder_distribution | default('ubuntu') }}"
-  DIB_RELEASE: "{{ ipa_ci_builder_release | default('jammy') }}"
-
-# Ensure Ark repos are disabled during CI runs, this is due to
-# builder being a member of the 'overcloud' group for IPA builds.
-stackhpc_repos_enabled: false
-enable_docker_repo: true
+stackhpc_image_repository_username: "{{ stackhpc_docker_registry_username }}"
+stackhpc_image_repository_password: "{{ stackhpc_docker_registry_password }}"

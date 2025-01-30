@@ -41,6 +41,13 @@ jobs:
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
         working-directory: src/kayobe-config
 
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v4
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          path: src/kayobe
+
       - name: Setup networking
         run: |
           if ! ip l show breth1 >/dev/null 2>&1; then
@@ -63,7 +70,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install -r ../src/kayobe-config/requirements.txt
+          pip install ../src/kayobe
 
       - name: Bootstrap the control host
         run: |
@@ -76,12 +83,12 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
-          -e artifact_type="kayobe-images" \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-rocky-linux-9' \
           -e os_distribution='rocky' \
           -e os_release='9'
         env:
-          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9
 
@@ -90,11 +97,11 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
-          -e artifact_type="kayobe-images" \
+          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
+          -e image_path='/opt/kayobe/images/overcloud-ubuntu-jammy' \
           -e os_distribution='ubuntu' \
           -e os_release='jammy'
         env:
-          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy

@@ -11,8 +11,7 @@
   vars:
     diagnostics_path_local: "{{ lookup('env', 'PWD') }}/diagnostics"
   tasks:
-    - name: Run diagnostics
-      block:
+    - block:
         - name: Create a temporary directory for diagnostics
           ansible.builtin.tempfile:
             state: directory
@@ -38,7 +37,7 @@
             src: "{{ diagnostics_tmpdir.path }}/"
             dest: "{{ diagnostics_path_local }}/{{ inventory_hostname }}"
             mode: pull
-            archive: false
+            archive: no
             recursive: true
             copy_links: true
             verify_host: true

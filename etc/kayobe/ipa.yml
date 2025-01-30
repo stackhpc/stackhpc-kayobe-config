@@ -24,8 +24,7 @@
 
 # List of default Diskimage Builder (DIB) elements to use when building IPA
 # images. Default is ["centos", "enable-serial-console",
-# "ironic-python-agent-ramdisk"] when os_distribution is "rocky", and
-# ["ubuntu", "enable-serial-console", "ironic-python-agent-ramdisk"] otherwise.
+# "ironic-python-agent-ramdisk"].
 #ipa_build_dib_elements_default:
 
 # List of additional Diskimage Builder (DIB) elements to use when building IPA
@@ -52,16 +51,15 @@ ipa_build_dib_elements_extra:
 #ipa_build_dib_env:
 
 # List of default git repositories containing Diskimage Builder (DIB) elements.
-# See stackhpc.openstack.os_images role for usage.
-# Default is one item for IPA builder.
+# See stackhpc.os-images role for usage. Default is one item for IPA builder.
 #ipa_build_dib_git_elements_default:
 
 # List of additional git repositories containing Diskimage Builder (DIB)
-# elements. See stackhpc.openstack.os_images role for usage. Default is empty.
+# elements. See stackhpc.os-images role for usage. Default is empty.
 #ipa_build_dib_git_elements_extra:
 
 # List of git repositories containing Diskimage Builder (DIB) elements. See
-# stackhpc.openstack.os_images role for usage. Default is a combination of
+# stackhpc.os-images role for usage. Default is a combination of
 # ipa_build_dib_git_elements_default and ipa_build_dib_git_elements_extra.
 #ipa_build_dib_git_elements:
 
@@ -87,7 +85,7 @@ ipa_build_dib_elements_extra:
 #ipa_images_kernel_name:
 
 # URL of Ironic deployment kernel image to download.
-ipa_kernel_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.kernel') if stackhpc_ipa_image_overcloud_enabled | bool }}"
+#ipa_kernel_upstream_url:
 
 # URL of checksum of Ironic deployment kernel image.
 #ipa_kernel_checksum_url:
@@ -99,20 +97,13 @@ ipa_kernel_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.kernel') if stackhp
 #ipa_images_ramdisk_name:
 
 # URL of Ironic deployment ramdisk image to download.
-ipa_ramdisk_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.initramfs') if stackhpc_ipa_image_overcloud_enabled | bool }}"
+#ipa_ramdisk_upstream_url:
 
 # URL of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_url:
 
 # Algorithm of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_algorithm:
-
-# IPA download parameters
-image_download_url_username: "{{ stackhpc_release_pulp_username }}"
-image_download_url_password: "{{ stackhpc_release_pulp_password }}"
-image_download_force_basic_auth: true
-image_download_unredirected_headers:
-  - Authorization
 
 ###############################################################################
 # Ironic Python Agent (IPA) deployment configuration.
@@ -126,7 +117,7 @@ image_download_unredirected_headers:
 #ipa_collectors_default:
 
 # List of additional inspection collectors to run.
-ipa_collectors_extra: "{{ ['dmi-decode', 'extra-hardware', 'numa-topology'] if ipa_build_images or stackhpc_ipa_image_overcloud_enabled else [] }}"
+ipa_collectors_extra: "{{ ['dmi-decode', 'extra-hardware', 'numa-topology'] if ipa_build_images else [] }}"
 
 # List of inspection collectors to run.
 #ipa_collectors:

@@ -14,27 +14,28 @@
     container_hotfix_command: ""
     container_hotfix_files: []
     container_hotfix_container_regex: ""
-    container_hotfix_restart_containers: false
-    container_hotfix_become: false
+    container_hotfix_restart_containers: False
+    container_hotfix_become: False
   tasks:
     - name: Ensure inputs are valid
-      ansible.builtin.fail:
-        msg: Invalid input. Container list cannot be empty. Either container_hotfix_command or container_hotfix_files must be populated.
+      fail:
+        msg: "Invalid input. Container list cannot be empty. Either container_hotfix_command or container_hotfix_files must be populated."
       when:
-        - container_hotfix_container_regex == "" or container_hotfix_command == "" and container_hotfix_files == []
+        - container_hotfix_container_regex == "" or
+          container_hotfix_command == "" and container_hotfix_files == []
 
     - name: Get list of containers to hotfix
-      ansible.builtin.command: '{{ kolla_container_engine | default("docker") }} ps --format {% raw %}"{{ .Names }}"{% endraw %}'
+      command: '{{ kolla_container_engine | default("docker")}} ps --format {% raw %}"{{.Names}}"{% endraw %}'
       register: host_containers
 
     - name: Set fact for containers list
-      ansible.builtin.set_fact:
+      set_fact:
         containers_list: "{{ host_containers.stdout }}"
 
     - name: Fail if no containers match given regex
       vars:
         hotfix_containers: "{{ containers_list | split('\n') | regex_search(container_hotfix_container_regex) }}"
-      ansible.builtin.fail:
+      fail:
         msg: "No containers matched. Please check your regex. Containers running on host: {{ host_containers.stdout_lines }}"
       when: hotfix_containers == ""
 
@@ -46,14 +47,14 @@
     - name: Ensure container hotfix file(s) exist on host
       ansible.builtin.copy:
         src: "{{ item.src }}"
-        dest: /tmp/hotfix-files/{{ index }}
+        dest: "/tmp/hotfix-files/{{ index }}"
       loop: "{{ container_hotfix_files }}"
       loop_control:
         index_var: index
       when: container_hotfix_files != []
 
     - name: Apply hotfix
-      ansible.builtin.include_tasks: run-container-hotfix.yml
+      include_tasks: run-container-hotfix.yml
       loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
       loop_control:
         loop_var: hotfix_container
@@ -64,6 +65,6 @@
         state: absent
 
     - name: Restart containers if requested
-      ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} restart {{ item }}"
+      command: "{{ kolla_container_engine | default('docker')}} restart {{ item }}"
       loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
       when: container_hotfix_restart_containers

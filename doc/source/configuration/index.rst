@@ -11,6 +11,7 @@ the various features provided.
    release-train
    host-images
    lvm
+   swap
    cephadm
    monitoring
    vault
@@ -21,4 +22,3 @@ the various features provided.
    magnum-capi
    ci-cd
    cloudkitty
-   ipa

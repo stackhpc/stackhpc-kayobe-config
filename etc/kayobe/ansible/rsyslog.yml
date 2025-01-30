@@ -8,29 +8,29 @@
 
 - name: Configure rsyslog to forward messages
   hosts: "{{ rsyslog_group | default('overcloud') }}"
-  become: true
+  become: yes
 
   tasks:
-    - name: Ensure rsyslog is installed
-      ansible.builtin.package:
-        name: rsyslog
-        state: present
+   - name: Ensure rsyslog is installed
+     package:
+      name: rsyslog
+      state: present
 
-    - name: Ensure rsyslog is started and enabled
-      ansible.builtin.systemd:
-        state: started
-        enabled: true
-        name: rsyslog
+   - name: Ensure rsyslog is started and enabled
+     systemd:
+      state: started
+      enabled: yes
+      name: rsyslog
 
-    - name: Update rsyslog configuration
-      ansible.builtin.lineinfile:
-        path: /etc/rsyslog.conf
-        insertafter: ^#*.* @@remote-host:514
-        line: "*.* @{{ internal_net_name | net_ip }}:5140"
-      notify: Restart rsyslog
+   - name: Update rsyslog configuration
+     lineinfile:
+      path: /etc/rsyslog.conf
+      insertafter: "^#*.* @@remote-host:514"
+      line: "*.* @{{ internal_net_name | net_ip }}:5140"
+     register: rsyslog_config
 
-  handlers:
-    - name: Restart rsyslog
-      ansible.builtin.systemd:
-        state: restarted
-        name: rsyslog
+   - name: Restart rsyslog
+     systemd:
+      state: restarted
+      name: rsyslog
+     when: rsyslog_config.changed

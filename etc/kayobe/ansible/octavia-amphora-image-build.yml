@@ -5,7 +5,7 @@
     amphora_dib_upper_constraints_file: "{{ pip_upper_constraints_file }}"
   tasks:
     - name: Install EPEL
-      ansible.builtin.package:
+      package:
         name: epel-release
       become: true
       when:
@@ -28,25 +28,25 @@
             - qemu-utils
             - git
             - kpartx
-      ansible.builtin.package:
+      package:
         name: "{{ packages_for_os_family[ansible_facts.os_family] }}"
 
     - name: Create a temporary directory
-      ansible.builtin.tempfile:
+      tempfile:
         state: directory
       register: tempfile_result
 
-    - name: Build Amphora image
-      block:
+    - block:
         - name: Check whether the image cache directory exists
-          ansible.builtin.stat:
+          stat:
             path: "{{ image_cache_path }}"
-            get_checksum: false
-            mime: false
+            get_md5: False
+            get_checksum: False
+            mime: False
           register: image_cache_stat
 
         - name: Ensure the image cache directory exists
-          ansible.builtin.file:
+          file:
             path: "{{ image_cache_path }}"
             state: directory
             owner: "{{ ansible_facts.user_uid }}"
@@ -59,27 +59,27 @@
         - name: Set path facts
           vars:
             work_path: "{{ tempfile_result.path }}"
-          ansible.builtin.set_fact:
+          set_fact:
             src_path: "{{ work_path }}/octavia"
             venv_path: "{{ work_path }}/venv"
             work_path: "{{ work_path }}"
 
         - name: Clone Octavia source code
-          ansible.builtin.git:
+          git:
             depth: 1
             dest: "{{ src_path }}"
-            repo: https://opendev.org/openstack/octavia
+            repo: "https://opendev.org/openstack/octavia"
             version: "{{ openstack_branch }}"
 
         - name: Install diskimage-builder in a virtual environment
-          ansible.builtin.pip:
+          pip:
             name: diskimage-builder
             extra_args: "{% if amphora_dib_upper_constraints_file %}-c {{ amphora_dib_upper_constraints_file }}{% endif %}"
             virtualenv: "{{ venv_path }}"
-            virtualenv_command: python3.{{ ansible_facts.python.version.minor }} -m venv
+            virtualenv_command: "python3.{{ ansible_facts.python.version.minor }} -m venv"
 
         - name: Create build log file (/var/log/octavia-amphora-image-build.log)
-          ansible.builtin.file:
+          file:
             path: /var/log/octavia-amphora-image-build.log
             state: touch
             owner: "{{ ansible_facts.user_uid }}"
@@ -87,20 +87,18 @@
           become: true
 
         - name: Create the Amphora image
-          ansible.builtin.shell:
-            cmd: >-
-              source {{ venv_path }}/bin/activate &&
-              ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1
+          shell:
+            cmd: "source {{ venv_path }}/bin/activate && ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1"
             chdir: "{{ src_path }}/diskimage-create"
           changed_when: true
 
         - name: Copy image to image store
-          ansible.builtin.copy:
+          copy:
             src: "{{ src_path }}/diskimage-create/amphora-x64-haproxy.qcow2"
             dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
             remote_src: true
       always:
         - name: Remove temporary files
-          ansible.builtin.file:
+          file:
             path: "{{ work_path }}"
             state: absent

@@ -1,6 +1,8 @@
-====
-Ceph
-====
+.. _cephadm-kayobe:
+
+================
+Cephadm & Kayobe
+================
 
 This section describes how to use the Cephadm integration included in StackHPC
 Kayobe configuration to deploy Ceph.
@@ -19,6 +21,8 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
+-  https://docs.ceph.com/en/quincy/cephadm/index.html
+-  https://docs.ceph.com/en/quincy/
 -  https://docs.ceph.com/en/reef/cephadm/index.html
 -  https://docs.ceph.com/en/reef/
 -  https://github.com/stackhpc/ansible-collection-cephadm

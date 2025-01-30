@@ -1,10 +1,9 @@
 ---
-- name: Install and set up smartmon-tools
-  hosts: overcloud
+- hosts: overcloud
 
   tasks:
     - name: Ensure smartmontools, jq, nvme-cli and cron/cronie are installed
-      ansible.builtin.package:
+      package:
         name:
           - smartmontools
           - nvme-cli
@@ -14,42 +13,39 @@
       become: true
 
     - name: Ensure the cron/crond service is running
-      ansible.builtin.service:
+      service:
         name: "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'crond' }}"
         state: started
         enabled: true
       become: true
 
     - name: Copy smartmon.sh and nvmemon.sh from scripts folder
-      ansible.builtin.copy:
-        src: scripts/{{ item }}
+      copy:
+        src: "scripts/{{ item }}"
         dest: /usr/local/bin/
-        owner: root
-        group: root
-        mode: "0700"
+        owner: 'root'
+        group: 'root'
+        mode: '0700'
       loop:
         - smartmon.sh
         - nvmemon.sh
-      become: true
+      become: yes
 
     - name: Set PATH Variable for cron
-      ansible.builtin.cron:
+      cron:
         name: PATH
         user: root
-        env: true
+        env: yes
         job: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      become: true
+      become: yes
 
     - name: Schedule cronjob to run both scripts every 5 minutes and save output to file
-      ansible.builtin.cron:
-        name: SMART metrics for drive monitoring using {{ item }}
+      cron:
+        name: "SMART metrics for drive monitoring using {{ item }}"
         user: root
         minute: "*/5"
-        job: >-
-          umask 0022 && /usr/local/bin/{{ item }}.sh >
-          /var/lib/docker/volumes/textfile/_data/{{ item }}.prom.temp &&
-          mv -f /var/lib/docker/volumes/textfile/_data/{{ item }}.prom.temp /var/lib/docker/volumes/textfile/_data/{{ item }}.prom
+        job: "/usr/local/bin/{{ item }}.sh > /var/lib/docker/volumes/textfile/_data/{{ item }}.prom.temp && mv -f /var/lib/docker/volumes/textfile/_data/{{ item }}.prom.temp /var/lib/docker/volumes/textfile/_data/{{ item }}.prom"
       loop:
         - smartmon
         - nvmemon
-      become: true
+      become: yes

@@ -3,11 +3,11 @@
   hosts: controllers
   run_once: true
   vars:
-    vault_api_addr: https://{{ internal_net_name | net_ip }}:8200
-    vault_intermediate_ca_name: OS-TLS-INT
+    vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
+    vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
     - name: Include Vault keys
-      ansible.builtin.include_vars:
+      include_vars:
         file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
         name: vault_keys
 
@@ -23,34 +23,34 @@
           ip_sans: "{{ kolla_internal_vip_address }}"
       register: internal_cert
       environment:
-        https_proxy: ""
+        https_proxy: ''
 
     - name: Ensure certificates directory exists
-      ansible.builtin.file:
+      file:
         path: "{{ kayobe_env_config_path }}/kolla/certificates"
         state: directory
       delegate_to: localhost
 
     - name: Ensure CA certificates directory exists
-      ansible.builtin.file:
+      file:
         path: "{{ kayobe_env_config_path }}/kolla/certificates/ca"
         state: directory
       delegate_to: localhost
 
     - name: Copy internal API PEM bundle
       no_log: true
-      ansible.builtin.copy:
+      copy:
         dest: "{{ kayobe_env_config_path }}/kolla/certificates/haproxy-internal.pem"
         content: |
           {{ internal_cert.data.certificate }}
           {{ internal_cert.data.issuing_ca }}
           {{ internal_cert.data.private_key }}
-        mode: "0600"
+        mode: 0600
       delegate_to: localhost
 
     - name: Copy root CA
-      ansible.builtin.copy:
+      copy:
         src: "{{ kayobe_env_config_path }}/vault/OS-TLS-ROOT.pem"
         dest: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
-        mode: "0600"
+        mode: 0600
       delegate_to: localhost
