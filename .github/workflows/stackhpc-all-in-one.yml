@@ -7,6 +7,11 @@ name: All in one
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        type: string
+        description: 'Runner name'
+        default: 'arc-skc-aio-runner'
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -86,7 +91,7 @@ jobs:
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: arc-skc-aio-runner
+    runs-on: ${{ inputs.runner }}
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
