@@ -78,7 +78,7 @@ jobs:
       - name: Generate clouds.yaml
         run: |
           cat << EOF > clouds.yaml
-          ${{ secrets.CLOUDS_YAML }}
+          ${{ secrets.CLOUDS_YAML_SMS }}
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
@@ -100,9 +100,9 @@ jobs:
           ssh_username = "cloud-user"
           aio_vm_name = "skc-ofed-builder"
           aio_vm_image = "${{ env.VM_IMAGE }}"
-          aio_vm_flavor = "en1.medium"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_flavor = "general.v1.small"
+          aio_vm_network = "magnum"
+          aio_vm_subnet = "magnum-subnet"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -114,8 +114,8 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: "openstack"
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
       - name: Terraform Apply
         run: |
@@ -134,8 +134,8 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: "openstack"
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
       - name: Get Terraform outputs
         id: tf_outputs
@@ -249,6 +249,6 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
         if: always()
