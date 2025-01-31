@@ -14,11 +14,11 @@ on:
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
-      CLOUDS_YAML:
+      CLOUDS_YAML_SMS:
         required: true
-      OS_APPLICATION_CREDENTIAL_ID:
+      OS_APPLICATION_CREDENTIAL_ID_SMS:
         required: true
-      OS_APPLICATION_CREDENTIAL_SECRET:
+      OS_APPLICATION_CREDENTIAL_SECRET_SMS:
         required: true
 
 env:
@@ -97,7 +97,7 @@ jobs:
       - name: Generate clouds.yaml
         run: |
           cat << EOF > clouds.yaml
-          ${{ secrets.CLOUDS_YAML }}
+          ${{ secrets.CLOUDS_YAML_SMS }}
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
@@ -110,9 +110,9 @@ jobs:
           # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
           aio_vm_image = "Ubuntu-22.04"
-          aio_vm_flavor = "en1.medium"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_flavor = "general.v1.small"
+          aio_vm_network = "magnum"
+          aio_vm_subnet = "magnum-subnet"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -122,8 +122,8 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: "openstack"
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
       - name: Terraform Apply
         run: |
@@ -142,8 +142,8 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: "openstack"
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
       - name: Get Terraform outputs
         id: tf_outputs
@@ -259,9 +259,9 @@ jobs:
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
           -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          CLOUDS_YAML_SMS: ${{ secrets.CLOUDS_YAML_SMS }}
+          OS_APPLICATION_CREDENTIAL_ID_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
@@ -313,9 +313,9 @@ jobs:
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
           -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
         env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          CLOUDS_YAML_SMS: ${{ secrets.CLOUDS_YAML_SMS }}
+          OS_APPLICATION_CREDENTIAL_ID_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Copy logs back
@@ -345,6 +345,6 @@ jobs:
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+          OS_APPLICATION_CREDENTIAL_ID_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
+          OS_APPLICATION_CREDENTIAL_SECRET_SMS: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
         if: always()
