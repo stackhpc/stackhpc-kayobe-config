@@ -7,8 +7,8 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
-      ubuntu-jammy:
-        description: Build Ubuntu 22.04 Jammy
+      ubuntu-noble:
+        description: Build Ubuntu 24.04 Noble
         type: boolean
         default: true
     secrets:
@@ -99,7 +99,7 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "skc-ipa-image-builder"
-          aio_vm_image = "Ubuntu-22.04"
+          aio_vm_image = "Ubuntu-24.04"
           aio_vm_flavor = "en1.large"
           aio_vm_network = "stackhpc-ci"
           aio_vm_subnet = "stackhpc-ci"
@@ -197,20 +197,20 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
-      - name: Build a Ubuntu 22.04 Jammy IPA image
-        id: build_ubuntu_jammy_ipa
+      - name: Build a Ubuntu 24.04 Noble IPA image
+        id: build_ubuntu_noble_ipa
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud deployment image build --force-rebuild \
           -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
+          -e os_release="noble" \
           -e ipa_ci_builder_distribution="ubuntu" \
-          -e ipa_ci_builder_release="jammy"
+          -e ipa_ci_builder_release="noble"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy
+        if: inputs.ubuntu-noble
 
       - name: Show last error logs
         continue-on-error: true
@@ -220,9 +220,9 @@ jobs:
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: steps.build_ubuntu_jammy_ipa.outcome == 'failure'
+        if: steps.build_ubuntu_noble_ipa.outcome == 'failure'
 
-      - name: Upload Ubuntu 22.04 Jammy IPA kernel image to Ark
+      - name: Upload Ubuntu 24.04 Noble IPA kernel image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -232,14 +232,14 @@ jobs:
           -e artifact_type=ipa-images \
           -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
           -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
+          -e os_release="noble" \
           -e file_regex='*.kernel' \
           -e upload_checksum=true
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy_ipa.outcome == 'success'
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
 
-      - name: Upload Ubuntu 22.04 Jammy IPA ramdisk image to Ark
+      - name: Upload Ubuntu 24.04 Noble IPA ramdisk image to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -249,12 +249,12 @@ jobs:
           -e artifact_type=ipa-images \
           -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
           -e os_distribution="ubuntu" \
-          -e os_release="jammy" \
+          -e os_release="noble" \
           -e file_regex='*.initramfs' \
           -e upload_checksum=true
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy_ipa.outcome == 'success'
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
 
       - name: Build a Rocky 9 IPA image
         id: build_rocky_9_ipa
@@ -333,7 +333,7 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_rocky_9_ipa.outcome == 'failure' ||
-            steps.build_ubuntu_jammy_ipa.outcome == 'failure'
+            steps.build_ubuntu_noble_ipa.outcome == 'failure'
 
       - name: Destroy
         run: terraform destroy -auto-approve

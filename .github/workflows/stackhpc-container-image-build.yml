@@ -23,8 +23,8 @@ on:
         type: boolean
         required: false
         default: true
-      ubuntu-jammy:
-        description: Build Ubuntu Jammy 22.04 images?
+      ubuntu-noble:
+        description: Build Ubuntu Noble 24.04 images?
         type: boolean
         required: false
         default: true
@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -91,7 +91,7 @@ jobs:
             echo -n "$comma\"rocky\"" >> $GITHUB_OUTPUT
             comma=", "
           fi
-          if [[ ${{ inputs.ubuntu-jammy }} == 'true' ]]; then
+          if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
             echo -n "$comma\"ubuntu\"" >> $GITHUB_OUTPUT
             comma=", "
           fi
@@ -160,7 +160,7 @@ jobs:
 
       - name: Get Kolla tag
         id: write-kolla-tag
-        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
+        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'noble' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
 
       - name: Configure localhost as a seed
         run: |
