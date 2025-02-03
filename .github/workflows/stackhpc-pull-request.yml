@@ -13,7 +13,7 @@ jobs:
   # # would skip the workflow entirely, and would prevent us from making the
   # # aio jobs required to pass (a skip counts as a pass).
   # check-changes:
-  #   runs-on: ubuntu-22.04
+  #   runs-on: ubuntu-24.04
   #   permissions:
   #     pull-requests: read
   #   name: Check changed files
@@ -34,7 +34,7 @@ jobs:
   #         filters: .github/path-filters.yml
 
   # tox:
-  #   runs-on: ubuntu-22.04
+  #   runs-on: ubuntu-24.04
   #   permissions: {}
   #   strategy:
   #     matrix:
@@ -62,7 +62,7 @@ jobs:
   #       run: tox -e ${{ matrix.environment }}
 
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions: {}
     strategy:
       fail-fast: false
@@ -127,8 +127,8 @@ jobs:
   #   secrets: inherit
   #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  # all-in-one-ubuntu-jammy-ovs:
-  #   name: aio (Ubuntu Jammy OVS)
+  # all-in-one-ubuntu-noble-ovs:
+  #   name: aio (Ubuntu Noble OVS)
   #   needs:
   #     - check-changes
   #     - build-kayobe-image
@@ -136,7 +136,7 @@ jobs:
   #   with:
   #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
   #     os_distribution: ubuntu
-  #     os_release: jammy
+  #     os_release: noble
   #     ssh_username: ubuntu
   #     neutron_plugin: ovs
   #     OS_CLOUD: openstack
@@ -144,8 +144,8 @@ jobs:
   #   secrets: inherit
   #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  # all-in-one-ubuntu-jammy-ovn:
-  #   name: aio (Ubuntu Jammy OVN)
+  # all-in-one-ubuntu-noble-ovn:
+  #   name: aio (Ubuntu Noble OVN)
   #   needs:
   #     - check-changes
   #     - build-kayobe-image
@@ -153,7 +153,7 @@ jobs:
   #   with:
   #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
   #     os_distribution: ubuntu
-  #     os_release: jammy
+  #     os_release: noble
   #     ssh_username: ubuntu
   #     neutron_plugin: ovn
   #     OS_CLOUD: openstack
@@ -195,10 +195,10 @@ jobs:
   #   secrets: inherit
   #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  # # Test two upgrade scenarios: Ubuntu Jammy OVS and Rocky 9 OVN.
+  # Test two upgrade scenarios: Ubuntu Noble OVS and Rocky 9 OVN.
 
-  # all-in-one-upgrade-ubuntu-jammy-ovs:
-  #   name: aio upgrade (Ubuntu Jammy OVS)
+  # all-in-one-upgrade-ubuntu-noble-ovs:
+  #   name: aio upgrade (Ubuntu Noble OVS)
   #   needs:
   #     - check-changes
   #     - build-kayobe-image
@@ -206,7 +206,7 @@ jobs:
   #   with:
   #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
   #     os_distribution: ubuntu
-  #     os_release: jammy
+  #     os_release: noble
   #     ssh_username: ubuntu
   #     neutron_plugin: ovs
   #     OS_CLOUD: openstack

@@ -240,19 +240,19 @@ stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
 # the certificate provided by the upstream repo will not match the proxy's IP.
 stackhpc_ubuntu_repo_prefix: "deb {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}[trusted=yes] {% endif %}"
 
-# List of base repositories for Ubuntu Jammy.
-stackhpc_ubuntu_jammy_base_repos:
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
+# List of base repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
 
-# List of UCA repositories for Ubuntu Jammy.
-stackhpc_ubuntu_jammy_uca_repos:
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release_codename }} main"
+# List of UCA repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_uca_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} noble-updates/{{ openstack_release_codename }} main"
 
-# List of repositories for Ubuntu Jammy.
-stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
+# List of repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
 
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
@@ -280,7 +280,7 @@ kolla_build_blocks:
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
     {% endif %}
-    {% for repo in stackhpc_ubuntu_jammy_base_repos %}
+    {% for repo in stackhpc_ubuntu_noble_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
@@ -309,7 +309,7 @@ kolla_build_blocks:
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% for repo in stackhpc_ubuntu_jammy_repos %}
+    {% for repo in stackhpc_ubuntu_noble_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
