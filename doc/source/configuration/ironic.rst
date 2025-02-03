@@ -46,7 +46,7 @@ The cleaning network will also require a Neutron allocation pool.
 OpenStack Config
 ================
 
-Overcloud Ironic will be deployed with a listening TFTP server on the
+Overcloud Ironic is deployed with a listening TFTP server on the
 control plane which will provide baremetal nodes that PXE boot with the
 Ironic Python Agent (IPA) kernel and ramdisk. Since the TFTP server is
 listening exclusively on the internal API network it's neccessary for a
@@ -55,13 +55,13 @@ API network, we can achieve this is by defining a Neutron router using
 `OpenStack Config <https://github.com/stackhpc/openstack-config>`.
 
 It not necessary to define the provision and cleaning networks in this
-configuration as they will be generated during
+configuration as this is generated during
 
 .. code-block:: console
 
   kayobe overcloud post configure
 
-The openstack config file could resemble the network, subnet and router
+The OpenStack config file could resemble the network, subnet and router
 configuration shown below:
 
 .. code-block:: yaml
@@ -129,10 +129,10 @@ configuring the baremetal-compute inventory.
 Enabling conntrack (ML2/OVS only)
 =================================
 
-Conntrack_helper will be required when UEFI booting on a cloud with ML2/OVS
+Conntrack_helper is required when UEFI booting on a cloud with ML2/OVS
 and using the iptables firewall_driver, otherwise TFTP traffic is dropped due
 to it being UDP. You will need to define some extension drivers in ``neutron.yml``
-to ensure conntrack is enabled in neutron server.
+to ensure conntrack is enabled in Neutron server.
 
 .. code-block:: yaml
 
@@ -141,7 +141,7 @@ to ensure conntrack is enabled in neutron server.
     conntrack_helper
     dns_domain_ports
 
-The neutron l3 agent also requires conntrack to be set as an extension in
+The Neutron l3 agent also requires conntrack to be set as an extension in
 ``kolla/config/neutron/l3_agent.ini``
 
 .. code-block:: ini
@@ -149,12 +149,12 @@ The neutron l3 agent also requires conntrack to be set as an extension in
   [agent]
   extensions = conntrack_helper
 
-It is also required to load the conntrack kernel module ``nf_nat_tftp``,
-``nf_conntrack`` and ``nf_conntrack_tftp`` on network nodes. You can load these
-modules using modprobe or define these in /etc/module-load.
+The conntrack kernel modules ``nf_nat_tftp``, ``nf_conntrack``,
+and ``nf_conntrack_tftp`` are also required on network nodes. You
+can load these modules using modprobe or define these in /etc/module-load.
 
-The Ironic neutron router will also need to be configured to use
-conntrack_helper.
+The Ironic Neutron router will also need to be configured to use
+``conntrack_helper``.
 
 .. code-block:: json
 
@@ -164,7 +164,7 @@ conntrack_helper.
     "helper": "tftp"
   }
 
-To add the conntrack_helper to the neutron router, you can use the openstack
+To add the conntrack_helper to the Neutron router, you can use the OpenStack
 CLI
 
 .. code-block:: console
@@ -180,15 +180,15 @@ Baremetal inventory
 
 The baremetal inventory is constructed with three different group types.
 The first group is the default baremetal compute group for Kayobe called
-[baremetal-compute] and will contain all baremetal nodes including tenant
-and hypervisor nodes. This group acts as a parent for all baremetal nodes
-and config that can be shared between all baremetal nodes will be defined
-here.
+``[baremetal-compute]`` and will contain all baremetal nodes including
+baremetal-compute (tenant) nodes and hypervisor nodes. This group acts as
+a parent for all baremetal nodes and config that is shared between all
+baremetal nodes is defined here.
 
 We will need to create a Kayobe group_vars file for the baremetal-compute
 group that contains all the variables we want to define for the group. We
 can put all these variables in the inventory in
-‘inventory/group_vars/baremetal-compute/ironic-vars’ The ironic_driver_info
+``‘inventory/group_vars/baremetal-compute/ironic-vars’`` The ironic_driver_info
 template dict contains all variables to be templated into the driver_info
 property in Ironic. This includes the BMC address, username, password,
 IPA configuration etc. We also currently define the ironic_driver here as
@@ -214,13 +214,13 @@ all nodes currently use the Redfish driver.
     ironic_redfish_password: "{{ inspector_redfish_password }}"
     ironic_capabilities: "boot_option:local,boot_mode:uefi"
 
-The second group type will be the hardware type that a baremetal node belongs
-to, These variables will be in the inventory too in ‘inventory/group_vars/
+The second group type is the hardware type that a baremetal node belongs
+to, These variables are in the inventory in ‘inventory/group_vars/
 baremetal-<YOUR_BAREMETAL_HARDWARE_TYPE>’
 
 Specific variables to the hardware type include the resource_class which is
 used to associate the hardware type to the flavour in Nova we defined earlier
-in Openstack Config.
+in OpenStack Config.
 
 .. code-block:: yaml
 
@@ -228,7 +228,7 @@ in Openstack Config.
     ironic_redfish_system_id: "example_system_id"
     ironic_redfish_verify_ca: "{{ inspector_rule_var_redfish_verify_ca }}"
 
-The third group type will be the rack where the node is installed. This is the
+The third group type is the rack where the node is installed. This is the
 group in which the rack specific networking configuration is defined here and
 where the BMC address is entered as a host variable for each baremetal node.
 Nodes can now be entered directly into the hosts file as part of this group.
@@ -262,34 +262,34 @@ invoking the Kayobe commmand
 
 .. code-block:: console
 
-  (kayobe) $ kayobe baremetal compute register
+  kayobe baremetal compute register
 
 All nodes that were not defined in Ironic previously should’ve been enrolled
 following this playbook and should now be in ‘manageable’ state if Ironic was
 able to reach the BMC of the node. We will need to inspect the baremetal nodes
 to gather information about their hardware to prepare for deployment. Kayobe
-provides an inspection workflow and can be run using:
+provides an inspection command and can be run using:
 
 .. code-block:: console
 
-  (kayobe) $ kayobe baremetal compute inspect
+  kayobe baremetal compute inspect
 
 Inspection would require PXE booting the nodes into IPA. If the nodes were able
 to PXE boot properly they would now be in ‘manageable’ state again. If an error
 developed during PXE booting, the nodes will now be in ‘inspect failed’ state
 and issues preventing the node from booting or returning introspection data
 will need to be resolved before continuing. If the nodes did inspect properly,
-they can be cleaned and made available to Nova by running the provide workflow.
+they can be cleaned and made available to Nova by running the provide command.
 
 .. code-block:: console
 
-  (kayobe) $ kayobe baremetal compute provide
+  kayobe baremetal compute provide
 
 Baremetal hypervisors
 =====================
 
 Nodes that will not be dedicated as baremetal tenant nodes can be converted
-into hypervisors as required. StackHPC Kayobe configuration provides a workflow
+into hypervisors as required. StackHPC Kayobe configuration provides a command
 to provision baremetal tenants with the purpose of converted these nodes to
 hypervisors. To begin the process of converting nodes we will need to define a
 child group of the rack which will contain baremetal nodes dedicated to compute
@@ -314,10 +314,10 @@ hosts.
   rack1-compute
 
 The rack1-compute group as shown above is also associated with the Kayobe
-compute group in order for Kayobe to run the compute Kolla workflows on these
-nodes during service deployment.
+compute group in order for Kayobe to deploy compute services during Kolla
+service deployment.
 
-You will also need to setup the Kayobe network configuration for the rack1
+You will also need to set up the Kayobe network configuration for the rack1
 group. In networks.yml you should create an admin network for the rack1 group,
 this should consist of the correct CIDR for the rack being deployed.
 The configuration should resemble below in networks.yml:
@@ -328,7 +328,7 @@ The configuration should resemble below in networks.yml:
   physical_rack1_admin_oc_net_gateway: “172.16.208.129”
   physical_rack1_admin_net_defroute: true
 
-You will also need to configure a neutron network for racks to deploy instances
+You will also need to configure a Neutron network for racks to deploy instances
 on, we can configure this in openstack-config as before. We will need to define
 this network and associate a subnet for it for each rack we want to enroll in
 Ironic.
@@ -356,8 +356,8 @@ Ironic.
     allocation_pool_end: "172.16.208.130"
 
 The subnet configuration largely resembles the Kayobe network configuration,
-however we do not need to define an allocation pool or enable dhcp as we will
-be associating neutron ports with our hypervisor instances per IP address to
+however we do not need to define an allocation pool or enable DHCP as we will
+be associating Neutron ports with our hypervisor instances per IP address to
 ensure they match up properly.
 
 Now we should ensure the network interfaces are properly configured for the
@@ -379,9 +379,9 @@ for rack1 and the kayobe internal API network and be defined in the group_vars.
   internal_net_interface: "br0.{{ internal_net_vlan }}"
 
 We should also ensure some variables are configured properly for our group,
-such as the hypervisor image. These variables can be defined anywhere in
-group_vars, we can place them in the ironic-vars file we used before for
-baremetal node registration.
+such as the hypervisor image. These variables can be defined in group_vars,
+we can place them in the ironic-vars file we used before for baremetal node
+registration.
 
 .. code-block:: yaml
 
@@ -397,7 +397,7 @@ baremetal node registration.
     project_name: "{{ lookup('env', 'OS_PROJECT_NAME') }}"
 
 With these variables defined we can now begin deploying the baremetal nodes as
-instances, to begin we invoke the deploy-baremetal-instance ansible playbook.
+instances, to begin we invoke the deploy-baremetal-instance Ansible playbook.
 
 .. code-block:: console
 
@@ -418,48 +418,43 @@ Neutron port configured with the address of the baremetal node admin network.
 The baremetal hypervisors will then be imaged and deployed associated with that
 Neutron port. You should ensure that all nodes are correctly associated with
 the right baremetal instance, you can do this by running a baremetal node show
-on any given hypervisor node and comparing the server uuid to the metadata on
+on any given hypervisor node and comparing the server UUID to the metadata on
 the Nova instance.
 
 Once the nodes are deployed, we can use Kayobe to configure them as compute
-hosts, running kayobe overcloud host configure on these nodes will ensure that
-all networking, package and various other host configurations are setup
+hosts. More information about Kayobe host configuration is available in the
+:kayobe-doc: `upstream Kayobe documentation <configuration/reference/hosts.html>`.
 
 .. code-block:: console
 
   kayobe overcloud host configure --limit baremetal-<YOUR_BAREMETAL_HARDWARE_TYPE>
 
 Following host configuration we can begin deploying OpenStack services to the
-baremetal hypervisors by invoking kayobe overcloud service deploy. Nova
-services will be deployed to the baremetal hosts.
-
-.. code-block:: console
-
-  kayobe overcloud service deploy --kolla-limit baremetal-<YOUR_BAREMETAL_HARDWARE_TYPE>
+baremetal hypervisors by invoking `kayobe overcloud service deploy`.
 
 Un-enrolling hypervisors
 ========================
 
 To convert baremetal hypervisors into regular baremetal compute instances you
-will need to drain the hypervisor of all running compute instances, you should
-first invoke the nova-compute-disable playbook to ensure all Nova services on
+will need to drain the hypervisor of all running compute instances, First invoke
+the ``nova-compute-disable.yml`` Ansible playbook to ensure all Nova services on
 the baremetal node are disabled and compute instances will not be allocated to
 this node.
 
 .. code-block:: console
 
-  (kayobe) $ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-disable.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-disable.yml
 
 Now the Nova services are disabled you should also ensure any existing compute
 instances are moved elsewhere by invoking the nova-compute-drain playbook
 
 .. code-block:: console
 
-  (kayobe) $ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-drain.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-drain.yml
 
-Now the node has no instances allocated to it you can delete the instance using
-the OpenStack CLI and the node will be moved back to ``available`` state.
+Now the node has no instances allocated to it you can delete the baremetal instance
+using the OpenStack CLI and the node is moved back to ``available`` state.
 
 .. code-block:: console
 
-  (os-venv) $ openstack server delete ...
+  openstack server delete ...
