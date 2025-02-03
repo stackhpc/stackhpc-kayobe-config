@@ -11,6 +11,13 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -29,8 +36,8 @@ jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: sms
-    runs-on: arc-skc-host-image-builder-runner-sms
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ vars.RUNS_ON_TARGET_IMAGE_BUILDER }}
     permissions: {}
     steps:
       - name: Validate inputs
