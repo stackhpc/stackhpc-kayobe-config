@@ -29,6 +29,7 @@ jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: sms
     runs-on: arc-skc-host-image-builder-runner-sms
     permissions: {}
     steps:
@@ -109,10 +110,10 @@ jobs:
           aio_vm_name = "skc-host-image-builder"
           # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Ubuntu-22.04"
-          aio_vm_flavor = "general.v1.small"
-          aio_vm_network = "magnum"
-          aio_vm_subnet = "magnum-subnet"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -121,7 +122,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
@@ -141,7 +142,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 

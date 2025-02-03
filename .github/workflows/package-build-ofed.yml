@@ -25,6 +25,7 @@ jobs:
   overcloud-ofed-packages:
     name: Build OFED packages
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: sms
     runs-on: arc-skc-host-image-builder-runner-sms
     permissions: {}
     steps:
@@ -113,7 +114,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
@@ -133,7 +134,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_SMS }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_SMS }}
 
