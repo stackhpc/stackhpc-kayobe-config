@@ -48,7 +48,7 @@ Known issues
 Security baseline
 =================
 
-As part of the Caracal release we are looking to improve the security
+As part of the Master release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
 been done, they should be completed before the upgrade begins.
 
@@ -84,61 +84,13 @@ suggestions:
 * Update the deployment to use the latest |previous_release| images and
   configuration.
 
-RabbitMQ SLURP upgrade
+Ubuntu Noble migration
 ----------------------
 
-.. note::
-   The upgrade is reliant on recent changes. Make sure you have updated to
-   the latest version of kolla ansible and deployed the latest kolla containers
-   before proceeding.
-
-Because this is a SLURP upgrade, RabbitMQ must be upgraded manually from 3.11,
-to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
-should not cause an API outage (though it should still be considered "at
-risk").
-
-Some errors have been observed in testing when the upgrades are performed
-back-to-back. A 200s delay eliminates this issue. On particularly large or slow
-deployments, consider increasing this timeout.
-
-Additionally errors have been observed at sites with OVS networking where after
-the upgrade, tenant networking is broken and requires a reset of RabbitMQ. This
-can be done by running the rabbitmq-reset playbook.
-
-.. code-block:: bash
-
-   kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
-   kayobe kolla ansible run "rabbitmq-upgrade 3.12"
-   sleep 200
-   kayobe kolla ansible run "rabbitmq-upgrade 3.13"
-
-RabbitMQ quorum queues
-----------------------
-
-In Caracal, quorum queues are enabled by default for RabbitMQ. This is
-different to Antelope which used HA queues. Before upgrading to Caracal, it is
-strongly recommended that you migrate from HA to quorum queues. The migration
-is automated using a script.
-
-.. warning::
-   This migration will stop all services using RabbitMQ and cause an
-   extended API outage while queues are migrated. It should only be
-   performed in a pre-agreed maintenance window.
-
-Set the following variables in your kolla globals file (i.e.
-``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
-``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
-
-.. code-block:: yaml
-
-      om_enable_rabbitmq_high_availability: false
-      om_enable_rabbitmq_quorum_queues: true
-
-Then execute the migration script:
-
-.. code-block:: bash
-
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
+Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
+must be migrated to Ubuntu 24.04 before upgrading OpenStack services. The
+upgrade process is currently a work in progress.
+.. TODO: Add link to another page describing how to migrate
 
 Preparation
 ===========
