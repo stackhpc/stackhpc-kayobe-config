@@ -35,10 +35,44 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-.. TODO Add notable changes
+RabbitMQ 4.0
+------------
 
-Placeholder
------------
+RabbitMQ is being upgraded to 4.0 in Epoxy. Existing transient queues must be
+migrated on Caracal prior to upgrading.
+
+.. TODO(mattcrees): Add link to docs when they exist
+
+stackhpc.linux collection
+-------------------------
+
+The ``stackhpc.linux`` collection version has been bumped to 1.3.0. Note this
+version uses systemd to activate virtual functions. This change is restricted
+to the ``stackhpc.linux.sriov`` role, which is not used by Kayobe. If a custom
+playbook uses this role, you can retain existing behaviour by setting
+``sriov_numvfs_driver`` to ``udev``.
+
+Neutron driver defaults  
+-----------------------
+
+The default Neutron ML2 type drivers and tenant network types now use
+``geneve`` instead of ``vxlan`` when OVN is enabled. This affects the
+``kolla_neutron_ml2_type_drivers`` and
+``kolla_neutron_ml2_tenant_network_types`` variables.
+
+Custom inspector_keep_ports
+---------------------------
+
+If you have customized ``inspector_keep_ports``, ensure it is set to one of:
+``all``, ``present``, or ``added``. If you are relying on the previous
+behaviour you should set ironic_keep_ports to present.
+
+Seed/Infra VM boot firmware
+---------------------------
+
+The default boot firmware for Seed and Infra VMs has changed from ``bios`` to
+``efi``. Set ``infra_vm_boot_firmware`` and ``seed_vm_boot_firmware`` to bios
+to retain existing behaviour.
 
 Known issues
 ============
