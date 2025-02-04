@@ -246,6 +246,11 @@ suggestions:
 * Check Grafana dashboards.
 * Update the deployment to use the latest |previous_release| images and
   configuration.
+* If your customer has overriden any policies, check to see if they need
+  updating to align with new defaults. These will be written to files
+  ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
+  generally be found in the documentation of each project. For example, Nova
+  policy: https://docs.openstack.org/nova/latest/configuration/policy.html
 
 RabbitMQ SLURP upgrade
 ----------------------
