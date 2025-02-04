@@ -51,18 +51,36 @@ default.
 Install process
 ===============
 
-Pre-requisites
---------------
+Relase Train configuration
+--------------------------
 
-* Ensure the OFED hosts are upgraded with the latest packages in the point release.
+The DOCA kernel module repository will need to be synced to the local Pulp service. This can be enabled
+in `ofed.yml`:
 
-* The bootloader has been configured to use the latest kernel (reset-bls-entries.yml)
+.. code-block:: yaml
 
-* Ensure repositories have been templated by setting:
+  stackhpc_pulp_sync_ofed_modules: true
 
-  .. code-block:: yaml
+With kernel module syncing enabled, the local Pulp can be synced with Ark by running:
 
-    dnf_install_doca: true
+.. code-block:: console
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+
+DOCA repositories can be templated to hosts by running Kayobe host configure.
+
+.. code-block:: console
+
+  kayobe overcloud host configure -t dnf
+
+StackHPC DOCA kernel modules will require the latest kernel version available in Ark for
+the current Rocky minor version. You should ensure that packages are up to date by running
+a package update, which can also be limited to hosts in the `mlnx` group.
+
+.. code-block:: console
+
+  kayobe overcloud host package update --packages "*" --limit mlnx
 
 install-doca
 ------------
