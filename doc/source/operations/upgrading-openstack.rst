@@ -1082,8 +1082,8 @@ scope of the upgrade:
 
    kayobe overcloud service upgrade --tags config --kolla-tags keystone
 
-OVS (w/ Dedicated network nodes)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OVS
+^^^
 
 You should first stop the Octavia health manager to prevent alerts during
 the service upgrade.
@@ -1092,11 +1092,18 @@ the service upgrade.
 
    kayobe overcloud host command run --command "docker stop octavia_health_manager" --limit controllers --become
 
-Upgrade the control plane services
+For dedicated network nodes, upgrade the control plane services:
 
 .. code-block:: console
 
    kayobe overcloud serivce upgrade --kolla-limit controllers
+
+For converged network nodes, you should specify the service limit to only
+upgrade the Neutron API service.
+
+.. code-block:: console
+
+   kayobe overcloud serivce upgrade --kolla-limit controllers -ke neutron_service_limit=neutron-server
 
 To ensure L3 reliability during the upgrade, we will need to manually drain
 the network nodes of all agents, and upgrade the nodes sequentially.
@@ -1113,7 +1120,7 @@ the node for maintenance and begin draining the agents:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_drain_host=<network0> -e maintenance=true -e drain_dhcp_agents=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_namespace_drain_host=<network0> -e maintenance=true -e neutron_namespace_drain_dhcp_agents=true
 
 You can monitor the L3/DHCP agents being drained from the node by running:
 
@@ -1122,17 +1129,24 @@ You can monitor the L3/DHCP agents being drained from the node by running:
    ssh -t <network0> watch ip netns ls
 
 Once all agents have been drained, you can upgrade the containerised services
-on the network node.
+on the network node. For dedicated network nodes run:
 
 .. code-block:: console
 
    kayobe overcloud service upgrade --kolla-limit <network0>
 
+Converged network nodes will require specifying the the service limit for the Neutron
+agents.
+
+.. code-block:: console
+
+   kayobe overcloud service upgrade --kolla-limit <network0> -ke neutron_service_limit='neutron-openvswitch-agent,neutron-dhcp-agent,neutron-l3-agent,neutron-metadata-agent,ironic-neutron-agent'
+
 Following the service upgrade, the agents can be restored on the node by disabling maintenance:
    
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_drain_host=<network0> -e maintenance=false -e drain_dhcp_agents=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_namespace_drain_host=<network0> -e maintenance=false -e neutron_namespace_drain_dhcp_agents=true
 
 The above steps should be repeated for the remaining network nodes, once all network nodes have been upgraded
 the remaining containerised services can be upgraded:

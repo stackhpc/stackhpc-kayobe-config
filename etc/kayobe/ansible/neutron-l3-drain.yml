@@ -6,18 +6,18 @@
     - neutron-l3-drain
   vars:
     maintenance: false
-    drain_ctrl1: false
-    drain_ctrl2: false
-    drain_ctrl3: false
+    neutron_namespace_drain_ctrl1: false
+    neutron_namespace_drain_ctrl2: false
+    neutron_namespace_drain_ctrl3: false
   tasks:
     - import_role:
-        name: neutron-namespace-drain
+        name: stackhpc.openstack_ops.neutron_namespace_drain
         tasks_from: main.yml
-      when: drain_ctrl1 | bool or drain_ctrl2 | bool or drain_ctrl3 | bool or neutron_drain_host is defined
+      when: neutron_namespace_drain_ctrl1 | bool or neutron_namespace_drain_ctrl2 | bool or neutron_namespace_drain_ctrl3 | bool or neutron_namespace_drain_host is defined
     - name: "Print Info"
       debug:
         msg:
-          - "{{ neutron_drain_host }} is read for maintenance"
+          - "{{ neutron_namespace_drain_host }} is read for maintenance"
           - "rerun this play book with -e maintenance=false to re-add"
           - "routers"
       when: maintenance | bool
