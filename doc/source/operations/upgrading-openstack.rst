@@ -1103,7 +1103,7 @@ upgrade the Neutron API service.
 
 .. code-block:: console
 
-   kayobe overcloud serivce upgrade --kolla-limit controllers -ke neutron_service_limit=neutron-server
+   kayobe overcloud service upgrade --kolla-limit controllers -ke neutron_service_limit=neutron-server
 
 To ensure L3 reliability during the upgrade, we will need to manually drain
 the network nodes of all agents, and upgrade the nodes sequentially.
