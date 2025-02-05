@@ -5,7 +5,7 @@ Multinode Test Environment
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Caracal. Proceed with caution.
+    Master. Proceed with caution.
 
 The ``ci-multinode`` environment provides a Kayobe configuration for multi-node
 clouds to be used for test and development purposes. It is designed to be used
