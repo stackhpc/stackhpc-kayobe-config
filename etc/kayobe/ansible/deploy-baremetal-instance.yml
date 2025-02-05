@@ -58,7 +58,7 @@
         - '"HTTP 404" not in node_show.stderr'
         - '"available" in node_show_json.provision_state'
       block:
-        - name: Configure network for baremetal instance
+        - name: Create port
           openstack.cloud.port:
             state: present
             name: "{{ inventory_hostname }}"
@@ -68,14 +68,14 @@
               - ip_address: "{{ ansible_host }}"
             vnic_type: baremetal
           delegate_to: localhost
-          register: port
+          register: osport
 
         - name: Deploy hypervisor image
           openstack.cloud.server:
             state: present
             name: "{{ inventory_hostname }}"
             nics:
-              - port-id: "{{ port.port.id }}"
+              - port-id: "{{ osport.port.id }}"
             auth: "{{ auth }}"
             availability_zone: "{{ availability_zone }}::{{ node_show_json.uuid }}"
             image: "{{ hypervisor_image }}"
