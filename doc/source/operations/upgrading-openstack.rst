@@ -74,6 +74,14 @@ The default boot firmware for Seed and Infra VMs has changed from ``bios`` to
 ``efi``. Set ``infra_vm_boot_firmware`` and ``seed_vm_boot_firmware`` to bios
 to retain existing behaviour.
 
+Prometheus MSteams
+------------------
+
+The ``prometheus-msteams`` integration in Kolla Ansible has been removed, users
+should switch to the `native
+<https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
+Prometheus Teams integration.
+
 Known issues
 ============
 
