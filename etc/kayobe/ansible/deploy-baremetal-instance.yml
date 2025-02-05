@@ -17,14 +17,9 @@
       delegate_to: localhost
 
     - block:
-        - name: Slurp network allocations
-          ansible.builtin.slurp:
-            path: "{{ network_allocation_path }}"
-          register: net_alc
-
         - name: Read network allocations
           ansible.builtin.set_fact:
-            net_alc_yaml: "{{ net_alc['content'] | b64decode | from_yaml }}"
+            net_alc_yaml: "{{ admin_oc_net_ips }}"
 
         - name: Write node IP address to allocations
           ansible.builtin.set_fact:
