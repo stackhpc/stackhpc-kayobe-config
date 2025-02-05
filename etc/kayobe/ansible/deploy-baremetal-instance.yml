@@ -9,14 +9,16 @@
     network_allocation_path: "{{ kayobe_env_config_path }}/network-allocation.yml"
   tasks:
     - name: Show baremetal node
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
       register: node_show
       failed_when: false
       changed_when: false
       delegate_to: localhost
 
-    - block:
+    - name: Update network allocations
+      when: '"HTTP 404" not in node_show.stderr'
+      block:
         - name: Read network allocations
           ansible.builtin.set_fact:
             net_alc_yaml: "{{ admin_oc_net_ips }}"
@@ -31,8 +33,6 @@
           ansible.builtin.copy:
             content: "{{ new_net_alc | to_nice_yaml(indent=2) }}"
             dest: "{{ network_allocation_path }}"
-      when:
-        - '"HTTP 404" not in node_show.stderr'
 
 - name: Deploy baremetal compute nodes as hypervisors
   hosts: compute
@@ -40,7 +40,7 @@
   connection: local
   tasks:
     - name: Show baremetal node
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
       register: node_show
       failed_when: false
@@ -53,8 +53,12 @@
       failed_when: false
       changed_when: false
 
-    - block:
-        - name: Create port
+    - name: Deploy baremetal instance
+      when:
+        - '"HTTP 404" not in node_show.stderr'
+        - '"available" in node_show_json.provision_state'
+      block:
+        - name: Configure network for baremetal instance
           openstack.cloud.port:
             state: present
             name: "{{ inventory_hostname }}"
@@ -83,6 +87,3 @@
               ironic_node: "{{ inventory_hostname }}"
           delegate_to: localhost
           register: server
-      when:
-        - '"HTTP 404" not in node_show.stderr'
-        - '"available" in node_show_json.provision_state'
