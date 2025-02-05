@@ -1125,7 +1125,7 @@ the node for maintenance and begin draining the agents:
 You can monitor the L3/DHCP agents being drained from the node by running:
 
 .. code-block:: console
-   
+
    ssh -t <network0> watch ip netns ls
 
 Once all agents have been drained, you can upgrade the containerised services
@@ -1143,7 +1143,7 @@ agents.
    kayobe overcloud service upgrade --kolla-limit <network0> -ke neutron_service_limit='neutron-openvswitch-agent,neutron-dhcp-agent,neutron-l3-agent,neutron-metadata-agent,ironic-neutron-agent'
 
 Following the service upgrade, the agents can be restored on the node by disabling maintenance:
-   
+
 .. code-block:: console
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/neutron-l3-drain.yml -e neutron_namespace_drain_host=<network0> -e maintenance=false -e neutron_namespace_drain_dhcp_agents=true
