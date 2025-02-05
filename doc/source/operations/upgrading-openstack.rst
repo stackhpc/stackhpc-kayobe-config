@@ -1096,7 +1096,7 @@ For dedicated network nodes, upgrade the control plane services:
 
 .. code-block:: console
 
-   kayobe overcloud serivce upgrade --kolla-limit controllers
+   kayobe overcloud service upgrade --kolla-limit controllers
 
 For converged network nodes, you should specify the service limit to only
 upgrade the Neutron API service.
