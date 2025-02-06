@@ -49,7 +49,7 @@ This behavior can be overridden manually:
 
 Wherever possible, Magnum deployments should be migrated to the CAPI Helm
 driver. Instructions for enabling the driver can be found `here
-<../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
+<../configuration/magnum-capi.html>`_. Enable the driver, recreate any clusters
 using Heat, and disable the service.
 
 After the upgrade (so that alerts don't fire) you can remove Heat with the
@@ -219,7 +219,7 @@ been done, they should be completed before the upgrade begins.
 
    * Enable `host firewalling <TODO>`_
 
-* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.rst>`_
+* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.html>`_
 * Enable TLS on the :kayobe-doc:`public API network
   <configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`
 * Enable TLS on the `internal API network <../configuration/vault.html>`_
