@@ -18,6 +18,13 @@ on:
         options:
           - SMS Lab
           - Leafcloud
+      cpu-platform-architecture:
+        description: Select the image's build architecture
+        type: choice
+        default: x86
+        options:
+          - x86
+          - aarch64
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -32,6 +39,7 @@ env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  overcloud_dib_architechture: ${{ inputs.cpu-platform-architecture == 'x86' && 'amd64' || 'arm64' }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -256,7 +264,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type="kayobe-images/{{ inputs.cpu-platform-architecture }}" \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
           -e os_release="9"
@@ -272,6 +280,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
           -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e cpu-platform=${{ env.overcloud_dib_architechture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -324,7 +333,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type="kayobe-images/{{ inputs.cpu-platform-architecture }}" \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
@@ -340,6 +349,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
           -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e cpu-platform=${{ env.overcloud_dib_architechture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
