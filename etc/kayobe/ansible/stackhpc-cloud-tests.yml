@@ -25,6 +25,8 @@
             suffix: sct-repo
           register: repo_tmpdir
 
+        - debug: var=repo_tmpdir
+
         - name: Create a temporary directory for results
           ansible.builtin.tempfile:
             state: directory
@@ -52,7 +54,6 @@
         - name: Ensure required individual Python packages are installed
           ansible.builtin.pip:
             name:
-              - "{{ repo_tmpdir.path }}"
               - pytest-html
               - pytest-timeout
             virtualenv: "{{ sct_venv }}"
@@ -67,6 +68,14 @@
             file: "{{ kayobe_env_config_path }}/kolla/passwords.yml"
             name: kolla_passwords
 
+        - name: Print CWD
+          ansible.builtin.command:
+            cmd: >
+              /usr/bin/pwd
+          register: debug_working_dir
+
+        - debug: var=debug_working_dir
+
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
         - name: Run StackHPC Cloud monitoring tests
@@ -75,11 +84,10 @@
               {{ sct_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/monitoring.html
               --self-contained-html
-              --pyargs stackhpc_cloud_tests
               --timeout {{ sct_timeout }}
               -rfEx
               -vv
-          #    -k monitoring
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
           environment:
             GRAFANA_URL: "{{ sct_grafana_url }}"
             GRAFANA_USERNAME: "{{ sct_grafana_username }}"
@@ -125,10 +133,9 @@
               {{ sct_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
               --self-contained-html
-              --pyargs stackhpc_cloud_tests
               --timeout {{ sct_timeout }}
               -vv
-          #    -k monitoring
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
           environment:
             DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
             DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
