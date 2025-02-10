@@ -126,15 +126,15 @@
         # and allow us to execute all tests from a single host.
         # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
         - name: Run StackHPC Cloud host tests
-          ansible.builtin.shell:
-            cmd: |
+          ansible.builtin.command:
+            cmd: >
               {{ sct_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
               --self-contained-html
               --timeout {{ sct_timeout }}
               -vv
-              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host";
-              chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
+            #  chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           environment:
             DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
             DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
@@ -149,6 +149,11 @@
           register: host_results
           when: "'overcloud' in group_names"
           # Some checks may need root hence we chmod the resulting html for reading
+          become: true
+        # Host test results will be owned by root and unreadable - fix this
+        - name: Make StackHPC Cloud host test results readable
+          ansible.builtin.command:
+            cmd: chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           become: true
 
       always:
