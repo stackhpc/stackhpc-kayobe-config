@@ -90,7 +90,16 @@
             label: "{{ item.path }}"
 
         # MORE DEBUG TO REMOVE
-        - name: get commit of of parent repository                                  
+        - name: Get status of SCT checkout
+          ansible.builtin.command:
+            cmd: git status
+            chdir: "{{ repo_tmpdir.path }}"
+          register: git_status
+        - debug:
+            msg: "Status: {{git_status.stdout}}"
+
+        # MORE DEBUG TO REMOVE
+        - name: Get log of SCT checkout
           ansible.builtin.command:
             cmd: git log
             chdir: "{{ repo_tmpdir.path }}"
