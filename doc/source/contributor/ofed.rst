@@ -54,7 +54,7 @@ Install process
 Release Train configuration
 ---------------------------
 
-The DOCA kernel module repository will need to be synced to the local Pulp service. This can be enabled
+DOCA repositories will need to be synced to the local Pulp service. This can be enabled
 in ``ofed.yml``:
 
 .. code-block:: yaml
