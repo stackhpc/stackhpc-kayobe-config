@@ -8,7 +8,7 @@
     sct_repo: https://github.com/stackhpc/stackhpc-cloud-tests
     # FIXME: Pin version for testing, remove before merge
     # Comment - trigger SCT workflow on push
-    sct_version: "docker-selinux"
+    sct_version: "opensearch-dashboards-grafana"
     sct_timeout: 30
     results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
   tasks:
@@ -88,6 +88,15 @@
             - "{{ contents.files }}"
           loop_control:
             label: "{{ item.path }}"
+
+        # MORE DEBUG TO REMOVE
+        - name: get commit of of parent repository                                  
+          ansible.builtin.command:
+            cmd: git log
+            chdir: "{{ repo_tmpdir.path }}"
+          register: git_log                                    
+        - debug:
+            msg: "Log: {{git_log.stdout}}"
 
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
