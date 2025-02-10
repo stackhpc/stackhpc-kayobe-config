@@ -25,8 +25,6 @@
             suffix: sct-repo
           register: repo_tmpdir
 
-        - debug: var=repo_tmpdir
-
         - name: Create a temporary directory for results
           ansible.builtin.tempfile:
             state: directory
@@ -74,7 +72,22 @@
               /usr/bin/pwd
           register: debug_working_dir
 
-        - debug: var=debug_working_dir
+        # REMOVE!!
+        # Why does the runner fail to find the tests???
+        - name: Capture contents of the SCT repo
+          ansible.builtin.find:
+            path: "{{ repo_tmpdir.path }}"
+            file_type: "directory"
+            recurse: true
+            excludes: "{{ repo_tmpdir.path }}/.git"
+          register: contents
+        - name: Print the contents of the SCT repo
+          debug:
+            msg: "{{ item.path }}"
+          with_items:
+            - "{{ contents.files }}"
+          loop_control:
+            label: "{{ item.path }}"
 
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
