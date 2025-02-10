@@ -43,9 +43,9 @@ modules in `/usr/share/doca-host-<doca-version>/Modules/<kernel-version>/` on th
 push-ofed
 ---------
 
-As mentioned above, the DOCA repository is synced into the `doca` repository in Ark. This workflow
-will upload the ``doca-kernel-repo`` RPM to a separate repository named `doca-modules`. The version
-for this repository is set in `pulp-repo-versions.yml` and is disabled for local pulp syncs by
+As mentioned above, the DOCA repository is synced into the ``doca`` repository in Ark. This workflow
+will upload the ``doca-kernel-repo`` RPM to a separate repository named ``doca-modules``. The version
+for this repository is set in ``pulp-repo-versions.yml`` and is disabled for local pulp syncs by
 default.
 
 Install process
