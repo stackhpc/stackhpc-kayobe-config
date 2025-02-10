@@ -38,7 +38,7 @@ for the module build.
 
 The build script will output a ``doca-kernel-repo`` RPM which contains all kernel modules built
 as part of the workflow. When this RPM is installed, the repofile is created pointing to the
-modules in `/usr/share/doca-host-<doca-version>/Modules/<kernel-version>/` on the host.
+modules in ``/usr/share/doca-host-<doca-version>/Modules/<kernel-version>/`` on the host.
 
 push-ofed
 ---------
@@ -76,7 +76,7 @@ DOCA repositories can be templated to hosts by running Kayobe host configure.
 
 StackHPC DOCA kernel modules will require the latest kernel version available in Ark for
 the current Rocky minor version. You should ensure that packages are up to date by running
-a package update, which can also be limited to hosts in the `mlnx` group.
+a package update, which can also be limited to hosts in the ``mlnx`` group.
 
 .. code-block:: console
 
@@ -85,7 +85,7 @@ a package update, which can also be limited to hosts in the `mlnx` group.
 install-doca
 ------------
 
-A playbook is provided to install DOCA on hosts in the `mlnx` group. Ensure this group
+A playbook is provided to install DOCA on hosts in the ``mlnx`` group. Ensure this group
 is configured to include the hosts you wish to install DOCA on. To run the install
 playbook:
 
