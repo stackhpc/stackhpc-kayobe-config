@@ -6,9 +6,11 @@
   vars:
     sct_venv: "{{ virtualenv_path }}/sct-venv"
     sct_repo: https://github.com/stackhpc/stackhpc-cloud-tests
-    # FIXME: Pin version for testing, remove before merge
-    # Comment - trigger SCT workflow on push
-    sct_version: "opensearch-dashboards-grafana"
+    # Define the version of SCT used for testing, the github workflow overrides this with
+    # stackhpc_cloud_tests_version so this is only used if running "locally".
+    sct_version: "main"
+    # TODO: REMOVE THIS
+    sct_version_override: "docker-selinux"
     sct_timeout: 30
     results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
   tasks:
@@ -34,10 +36,10 @@
         - name: Clone the StackHPC Cloud tests repository
           ansible.builtin.git:
             repo: "{{ sct_repo }}"
-            version: "{{ sct_version }}"
+            version: "{{ sct_version_override }}"
             dest: "{{ repo_tmpdir.path }}"
-            #depth: 1
-            #single_branch: true
+            depth: 1
+            single_branch: true
 
         - name: Ensure the latest versions of pip and setuptools are installed # noqa package-latest
           ansible.builtin.pip:
