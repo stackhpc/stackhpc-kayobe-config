@@ -74,41 +74,6 @@
               /usr/bin/pwd
           register: debug_working_dir
 
-        # REMOVE!!
-        # Why does the runner fail to find the tests???
-        - name: Capture contents of the SCT repo
-          ansible.builtin.find:
-            path: "{{ repo_tmpdir.path }}"
-            file_type: "directory"
-            recurse: true
-            excludes: "{{ repo_tmpdir.path }}/.git"
-          register: contents
-        - name: Print the contents of the SCT repo
-          debug:
-            msg: "{{ item.path }}"
-          with_items:
-            - "{{ contents.files }}"
-          loop_control:
-            label: "{{ item.path }}"
-
-        # MORE DEBUG TO REMOVE
-        - name: Get status of SCT checkout
-          ansible.builtin.command:
-            cmd: git status
-            chdir: "{{ repo_tmpdir.path }}"
-          register: git_status
-        - debug:
-            msg: "Status: {{git_status.stdout}}"
-
-        # MORE DEBUG TO REMOVE
-        - name: Get log of SCT checkout
-          ansible.builtin.command:
-            cmd: git log
-            chdir: "{{ repo_tmpdir.path }}"
-          register: git_log                                    
-        - debug:
-            msg: "Log: {{git_log.stdout}}"
-
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
         - name: Run StackHPC Cloud monitoring tests
@@ -161,14 +126,15 @@
         # and allow us to execute all tests from a single host.
         # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
         - name: Run StackHPC Cloud host tests
-          ansible.builtin.command:
-            cmd: >
+          ansible.builtin.shell:
+            cmd: |
               {{ sct_venv }}/bin/py.test
               --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
               --self-contained-html
               --timeout {{ sct_timeout }}
               -vv
-              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host";
+              chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           environment:
             DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
             DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
@@ -182,6 +148,9 @@
           failed_when: host_results.rc not in [0, 1]
           register: host_results
           when: "'overcloud' in group_names"
+          # Some checks may need root hence we chmod the resulting html for reading
+          become: true
+
       always:
         - name: Synchronize results
           ansible.posix.synchronize:
