@@ -7,11 +7,11 @@ name: All in one
 on:
   workflow_call:
     inputs:
-      runner:
+      runner_env:
         required: false
         type: string
-        description: 'Runner name'
-        default: 'arc-skc-aio-runner'
+        description: 'Runner environment'
+        default: 'SMS Lab'
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -71,11 +71,18 @@ on:
         required: true
 
 jobs:
+  runner-preqs:
+    uses: ./.github/workflows/runs-on-preq.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-preqs.outputs.runner_name_aio }}
+    needs:
+      - runner-preqs
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio

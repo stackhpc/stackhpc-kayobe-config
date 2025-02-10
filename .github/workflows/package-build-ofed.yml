@@ -29,11 +29,17 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
+  runner-preqs:
+    uses: ./.github/workflows/runs-on-preq.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   overcloud-ofed-packages:
     name: Build OFED packages
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     environment: ${{ inputs.runner_env }}
-    runs-on: ${{ vars.RUNS_ON_TARGET_IMAGE_BUILDER }}
+    runs-on: ${{ needs.runner-preqs.outputs.runner_name_image_build }}
+    needs:
+      - runner-preqs
     permissions: {}
     steps:
       - name: Install Package
