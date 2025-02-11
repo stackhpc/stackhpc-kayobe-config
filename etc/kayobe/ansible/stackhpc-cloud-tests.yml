@@ -10,7 +10,8 @@
     # stackhpc_cloud_tests_version so this is only used if running "locally".
     sct_version: "main"
     # TODO: REMOVE THIS
-    sct_version_override: "docker-selinux"
+    #sct_version_override: "docker-selinux"
+    sct_version_override: "prometheus-alerts"
     sct_timeout: 30
     results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
   tasks:
@@ -76,6 +77,10 @@
 
         # Monitoring tests should run once, executed on the host in the
         # tempest_runner group.
+        - name: Check for StackHPC Cloud monitoring tests
+          ansible.builtin.stat:
+            path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
+          register: stackhpc_cloud_monitoring_tests
         - name: Run StackHPC Cloud monitoring tests
           ansible.builtin.command:
             cmd: >
@@ -118,13 +123,17 @@
             sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
           failed_when: monitoring_results.rc not in [0, 1]
           register: monitoring_results
-          when: "'tempest_runner' in group_names"
+          when: "'tempest_runner' in group_names and stackhpc_cloud_monitoring_tests.stat.exists"
 
         # Host tests should run on every host in the overcloud group.
         # TODO: Use TestInfra's native Ansible or SSH connection plugins for
         # remote test execution? That would place all results in a single file
         # and allow us to execute all tests from a single host.
         # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
+        - name: Check for StackHPC Cloud monitoring tests
+          ansible.builtin.stat:
+            path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
+          register: stackhpc_cloud_host_tests
         - name: Run StackHPC Cloud host tests
           ansible.builtin.command:
             cmd: >
@@ -147,14 +156,15 @@
             sct_selinux_state: "{{ selinux_state }}"
           failed_when: host_results.rc not in [0, 1]
           register: host_results
-          when: "'overcloud' in group_names"
           # Some host checks may need to run as root
           become: true
+          when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
         # Host test results will be owned by root - we need to read and delete them
         - name: Change permissions on SCT host test results
           ansible.builtin.command:
             cmd: chmod 666 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           become: true
+          when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
 
       always:
         - name: Synchronize results
