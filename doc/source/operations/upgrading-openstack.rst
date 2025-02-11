@@ -167,6 +167,15 @@ Support for the ``AvailabilityZoneFilter`` filter has been dropped in Nova.
 Remove it from any Nova config files before upgrading. It will cause errors in
 Caracal and halt the Nova scheduler.
 
+Keystone LDAP TLS configuration
+-------------------------------
+
+Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
+if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
+authentication will fail if this configuration is absent. See `upstream
+Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
+for more details.
+
 Known issues
 ============
 
