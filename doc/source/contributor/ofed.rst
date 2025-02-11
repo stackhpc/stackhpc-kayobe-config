@@ -89,11 +89,12 @@ to be reset before rebooting.
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reset-bls-entires.yml -e reset_bls_host=mlnx
 
-The hosts can now be rebooted to use the latest kernel:
+The hosts can now be rebooted to use the latest kernel, a rolling reboot may be applicable
+here to reduce distruptions. See the `package updates documentation <package-updates>`.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit mlnx
 
 install-doca
 ------------
