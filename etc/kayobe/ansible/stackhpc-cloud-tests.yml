@@ -148,12 +148,12 @@
           failed_when: host_results.rc not in [0, 1]
           register: host_results
           when: "'overcloud' in group_names"
-          # Some checks may need root hence we chmod the resulting html for reading
+          # Some host checks may need to run as root
           become: true
-        # Host test results will be owned by root and unreadable - fix this
-        - name: Make StackHPC Cloud host test results readable
+        # Host test results will be owned by root - we need to read and delete them
+        - name: Change permissions on SCT host test results
           ansible.builtin.command:
-            cmd: chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
+            cmd: chmod 666 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           become: true
 
       always:
