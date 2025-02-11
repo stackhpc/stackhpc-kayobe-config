@@ -59,7 +59,7 @@ in ``ofed.yml``:
 
 .. code-block:: yaml
 
-  stackhpc_pulp_sync_ofed_modules: true
+  stackhpc_pulp_sync_ofed: true
 
 With kernel module syncing enabled, the local Pulp can be synced with Ark by running:
 
