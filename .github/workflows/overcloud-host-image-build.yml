@@ -264,7 +264,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
-      - name: Upload Rocky Linux 9 overcloud host image to Dev Cloud
+      - name: Upload Rocky Linux 9 overcloud host image to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -276,6 +276,20 @@ jobs:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
+
+      - name: Upload Rocky Linux 9 overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
@@ -318,7 +332,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
-      - name: Upload Ubuntu Jammy overcloud host image to Dev Cloud
+      - name: Upload Ubuntu Jammy overcloud host image to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -330,6 +344,20 @@ jobs:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Copy logs back
