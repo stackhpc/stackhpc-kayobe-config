@@ -54,12 +54,12 @@ Install process
 Release Train configuration
 ---------------------------
 
-DOCA repositories will need to be synced to the local Pulp service. This can be enabled
-in ``ofed.yml``:
+DOCA repositories will need to be synced to the local Pulp service, ensure that DOCA RPM repositories are
+enabled by setting:
 
 .. code-block:: yaml
 
-  stackhpc_pulp_sync_ofed: true
+  dnf_install_doca: true
 
 With kernel module syncing enabled, the local Pulp can be synced with Ark by running:
 
