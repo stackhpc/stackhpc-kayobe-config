@@ -14,6 +14,11 @@ on:
         description: Whether to run the workflow (workaround for required status checks issue)
         type: boolean
         default: true
+      runner_env:
+        required: false
+        type: string
+        description: 'Runner environment'
+        default: 'SMS Lab'
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -21,11 +26,18 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
+  runner-preqs:
+    uses: ./.github/workflows/runs-on-preq.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+
   check-tags:
     name: Check container image tags
     if: ${{ inputs.if && ! cancelled() }}
-    environment: SMS Lab
-    runs-on: ${{ vars.RUNS_ON_TARGET_AIO }}
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-preqs.outputs.runner_name_aio }}
+    needs:
+      - runner-preqs
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
