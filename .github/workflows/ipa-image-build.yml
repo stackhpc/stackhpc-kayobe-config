@@ -118,7 +118,7 @@ jobs:
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
           aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
-          aio_vm_volume_size = 100
+          aio_vm_volume_size = "${{ vars.HOST_IMAGE_BUILD_VOLUME }}"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
@@ -207,7 +207,7 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run \
-          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
+          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv && sudo apt-get -y install btrfs-tools" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
