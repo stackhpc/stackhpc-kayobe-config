@@ -213,7 +213,7 @@ Runner Deployment
 
 .. code-block:: ini
 
-    [github-runners]
+    [gitlab-runners]
     gitlab-runner-01
 
 4. Provide all the relevant Kayobe :code:`group_vars` for :code:`gitlab-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/gitlab-runners`
@@ -292,7 +292,7 @@ Runner Deployment
 
 11. The contents of :code:`/opt/.docker/config.json` on the runner should be added to GitLab CI/CD settings as a sercret variable.
     This is required to allow the runners to pull images from the registry.
-    Visit the GitLab project -> Settings -> CI/CD -> Variables -> Add a new variable with the key :code:`DOCKER_CONFIG_JSON` and the value of the contents of :code:`/opt/.docker/config.json`
+    Visit the GitLab project -> Settings -> CI/CD -> Variables -> Add a new variable with the key :code:`DOCKER_AUTH_CONFIG` and the value of the contents of :code:`/opt/.docker/config.json`
 
 OpenBao Deployment
 ------------------
@@ -309,10 +309,10 @@ However, if you have a single host that is shared between environments then Open
 
     If you are sharing OpenBao between environments then you will need to rerun the playbook under each environment to ensure that the correct secrets are available to the runners.
     You may use :code:`--tags add_secrets` to skip the deployment within other environments.
-    For this to work you will need to copy :code:`vault/vault-automation-keys.json` from the first environment to the other environments in addition to copying the host definition of the gitlab runner add network IP.
+    For this to work you will need to copy :code:`vault/kayobe-automation-keys.json` from the first environment to the other environments in addition to copying the host definition of the gitlab runner add network IP.
 
-Once the above playbook has been applied you need to grab the root token from :code:`vault/vault-automation-keys.json` as you will need this to enable JWT support.
-This would also be an opportune time to encrypt the :code:`vault/vault-automation-keys.json` to protect the contents.
+Once the above playbook has been applied you need to grab the root token from :code:`vault/kayobe-automation-keys.json` as you will need this to enable JWT support.
+This would also be an opportune time to encrypt the :code:`vault/kayobe-automation-keys.json` to protect the contents.
 
 In order to enable JWT support the following steps must be carried out within the openbao container on the runner host.
 

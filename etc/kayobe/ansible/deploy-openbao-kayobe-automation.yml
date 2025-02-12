@@ -26,6 +26,11 @@
         state: directory
       become: true
 
+    - name: Ensure vault directory exists in environment
+      ansible.builtin.file:
+        path: {{ kayobe_env_config_path }}/vault
+        state: directory
+      become: true
     - name: Import OpenBao role
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.openbao
