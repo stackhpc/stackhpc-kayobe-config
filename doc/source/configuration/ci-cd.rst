@@ -219,6 +219,7 @@ Runner Deployment
 4. Provide all the relevant Kayobe :code:`group_vars` for :code:`gitlab-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/gitlab-runners`
     * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
     * `network-interfaces`
+    * `allocated IPs`
 
 5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
    Below is an example of how GitLab runners can be configured for deployment.
@@ -271,7 +272,7 @@ Runner Deployment
             network_mode: host
 
 6. Obtain a runner token for each runner that is required for deployment.
-    This token can be obtained by visiting the GitLab project -> Settings -> CI/CD -> Runners -> New project runner -> Complete the form and copy the token.
+    This token can be obtained by visiting the GitLab project -> Settings -> CI/CD -> Runners -> New project runner -> Complete the form including any tags used by the runners such as kayobe, openstack and environment_name.
     Once the token has been obtained, add it to :code:`secrets.yml` under :code:`secrets_gitlab_production_runner_token` and :code:`secrets_gitlab_staging_runner_token`
 
 7. Deploy the infra-vm
@@ -290,7 +291,7 @@ Runner Deployment
 
 10. Check runners have registered properly by visiting the repository's :code:`CI/CD` tab -> :code:`Runners`
 
-11. The contents of :code:`/opt/.docker/config.json` on the runner should be added to GitLab CI/CD settings as a sercret variable.
+11. The contents of :code:`/opt/.docker/config.json` on the runner should be added to GitLab CI/CD settings as a sercret variable if GitLab version permits otherwise variable is fine.
     This is required to allow the runners to pull images from the registry.
     Visit the GitLab project -> Settings -> CI/CD -> Variables -> Add a new variable with the key :code:`DOCKER_AUTH_CONFIG` and the value of the contents of :code:`/opt/.docker/config.json`
 
@@ -313,6 +314,10 @@ However, if you have a single host that is shared between environments then Open
 
 Once the above playbook has been applied you need to grab the root token from :code:`vault/kayobe-automation-keys.json` as you will need this to enable JWT support.
 This would also be an opportune time to encrypt the :code:`vault/kayobe-automation-keys.json` to protect the contents.
+
+.. code-block:: bash
+
+    ansible-vault encrypt vault/kayobe-automation-keys.json --vault-password-file ~/.vault.password
 
 In order to enable JWT support the following steps must be carried out within the openbao container on the runner host.
 
@@ -362,6 +367,7 @@ GitLab Pipelines
 1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
 Following the instructions in the documentation will allow you to customise the workflows to fit within your deployment.
 For example disabling jobs that might not be relevant such as physical network configuration or overcloud host provision in clouds where this is absent.
+If using multiple environments ensure that :code:`gitlab_kayobe_environments` is updated to reflect all environments present in the deployment.
 Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors.
 
 2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-gitlab-pipelines.yml`

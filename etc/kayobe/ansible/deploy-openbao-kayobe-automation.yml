@@ -28,9 +28,10 @@
 
     - name: Ensure vault directory exists in environment
       ansible.builtin.file:
-        path: {{ kayobe_env_config_path }}/vault
+        path: "{{ kayobe_env_config_path }}/vault"
         state: directory
       become: true
+
     - name: Import OpenBao role
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.openbao
@@ -75,3 +76,4 @@
           kayobe_automation_ssh_private_key: "{{ lookup('ansible.builtin.file', '{{ ssh_private_key_path }}') }}"
           kayobe_public_openrc: "{{ lookup('ansible.builtin.file', '{{ kolla_config_path }}/public-openrc.sh') }}"
       tags: add_secrets
+
