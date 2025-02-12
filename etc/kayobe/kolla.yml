@@ -349,9 +349,13 @@ kolla_build_customizations_common:
     - python3-libvirt
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
-    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
+    - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
 
 kolla_build_customizations_rocky:
+  base_centos_yum_repo_packages_append:
+    - centos-release-ceph-squid
+  base_centos_yum_repo_packages_remove:
+    - centos-release-ceph-reef
   kolla_toolbox_packages_remove:
     - openvswitch
   kolla_toolbox_packages_append:
