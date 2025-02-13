@@ -54,14 +54,10 @@ Install process
 Release Train configuration
 ---------------------------
 
-DOCA repositories will need to be synced to the local Pulp service, ensure that DOCA RPM repositories are
-enabled by setting:
-
-.. code-block:: yaml
-
-  dnf_install_doca: true
-
-With kernel module syncing enabled, the local Pulp can be synced with Ark by running:
+DOCA repositories will need to be synced to the local Pulp service, Ensure the DOCA
+hosts added to the ``mlnx`` group before running a package sync, if the group is not
+empty DOCA will be synced into the local Pulp. The local Pulp can be synced with Ark
+by running:
 
 .. code-block:: console
 
