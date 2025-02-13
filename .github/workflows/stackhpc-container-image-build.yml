@@ -108,15 +108,15 @@ jobs:
         run: |
           echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
 
-  runner-preqs:
-    uses: ./.github/workflows/runs-on-preq.yml
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
     with:
       runner_env: ${{ inputs.runner_env }}
 
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: ${{ needs.runner-preqs.outputs.runner_name_container_image_build }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -124,7 +124,7 @@ jobs:
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
     needs:
       - generate-tag
-      - runner-preqs
+      - runner-selection
     steps:
       - name: Install package dependencies
         run: |

@@ -26,8 +26,8 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
-  runner-preqs:
-    uses: ./.github/workflows/runs-on-preq.yml
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
     with:
       runner_env: ${{ inputs.runner_env }}
 
@@ -35,9 +35,9 @@ jobs:
     name: Check container image tags
     if: ${{ inputs.if && ! cancelled() }}
     environment: ${{ inputs.runner_env }}
-    runs-on: ${{ needs.runner-preqs.outputs.runner_name_aio }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
     needs:
-      - runner-preqs
+      - runner-selection
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio

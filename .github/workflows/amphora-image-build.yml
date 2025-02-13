@@ -25,17 +25,17 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
-  runner-preqs:
-    uses: ./.github/workflows/runs-on-preq.yml
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
     with:
       runner_env: ${{ inputs.runner_env }}
   amphora-image-build:
     name: Build Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     environment: ${{ inputs.runner_env }}
-    runs-on: ${{ needs.runner-preqs.outputs.runner_name_image_build }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
-      - runner-preqs
+      - runner-selection
     permissions: {}
     steps:
 
