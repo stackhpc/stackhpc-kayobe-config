@@ -11,6 +11,13 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -26,10 +33,17 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
+  runner-preqs:
+    uses: ./.github/workflows/runs-on-preq.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   overcloud-host-image-build:
     name: Build overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-host-image-builder-runner
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-preqs.outputs.runner_name_image_build }}
+    needs:
+      - runner-preqs
     permissions: {}
     steps:
       - name: Validate inputs
@@ -109,10 +123,10 @@ jobs:
           aio_vm_name = "skc-host-image-builder"
           # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Ubuntu-22.04"
-          aio_vm_flavor = "en1.medium"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -121,7 +135,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -141,7 +155,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -250,7 +264,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
-      - name: Upload Rocky Linux 9 overcloud host image to Dev Cloud
+      - name: Upload Rocky Linux 9 overcloud host image to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -262,6 +276,20 @@ jobs:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
+
+      - name: Upload Rocky Linux 9 overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Build an Ubuntu Jammy 22.04 overcloud host image
@@ -304,7 +332,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
-      - name: Upload Ubuntu Jammy overcloud host image to Dev Cloud
+      - name: Upload Ubuntu Jammy overcloud host image to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -316,6 +344,20 @@ jobs:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Copy logs back
