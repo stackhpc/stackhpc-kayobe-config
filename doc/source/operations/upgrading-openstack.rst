@@ -106,6 +106,25 @@ the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
    # targets being templated during deployment.
    stackhpc_enable_os_capacity: false
 
+Prometheus blackbox exporter endpoints
+--------------------------------------
+
+Endpoints for the blackbox exporter are now templated in the kolla-ansible
+group vars for the cloud. This means that the
+``prometheus_blackbox_exporter_endpoints`` variable can be removed from the
+environment's ``kolla/globals.yml`` file (if applicable) and the endpoints will
+fallback to the ones templated in the group vars. Additional endpoints may be
+added through the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
+For example:
+
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
+
+   prometheus_blackbox_exporter_endpoints_kayobe:
+      - endpoints:
+         - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
+      enabled: "{{ seed_pulp_container_enabled | bool }}"
+
 Known issues
 ============
 
