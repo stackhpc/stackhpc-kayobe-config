@@ -229,6 +229,8 @@ def get_openstack_release() -> str:
         key, value = line.split("=")
         if key.strip() == "defaultbranch":
             value = value.strip()
+            if value == "master":
+                return value
             for prefix in ("stable/", "unmaintained/"):
                 if value.startswith(prefix):
                     return value[len(prefix):]
