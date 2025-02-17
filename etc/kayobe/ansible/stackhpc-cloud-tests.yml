@@ -72,6 +72,7 @@
           ansible.builtin.stat:
             path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
           register: stackhpc_cloud_monitoring_tests
+
         - name: Run StackHPC Cloud monitoring tests
           ansible.builtin.command:
             cmd: >
@@ -121,10 +122,11 @@
         # remote test execution? That would place all results in a single file
         # and allow us to execute all tests from a single host.
         # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
-        - name: Check for StackHPC Cloud monitoring tests
+        - name: Check for StackHPC Cloud host tests
           ansible.builtin.stat:
             path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
           register: stackhpc_cloud_host_tests
+
         - name: Run StackHPC Cloud host tests
           ansible.builtin.command:
             cmd: >
@@ -134,7 +136,6 @@
               --timeout {{ sct_timeout }}
               -vv
               "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
-            #  chmod 644 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
           environment:
             DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
             DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
@@ -150,6 +151,7 @@
           # Some host checks may need to run as root
           become: true
           when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
+
         # Host test results will be owned by root - we need to read and delete them
         - name: Change permissions on SCT host test results
           ansible.builtin.command:
@@ -167,6 +169,7 @@
             recursive: true
             # For jump host
             use_ssh_args: true
+
         - name: Write a file containing failed test runs
           ansible.builtin.copy:
             content: |-
