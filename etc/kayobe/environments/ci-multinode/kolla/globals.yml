@@ -47,11 +47,6 @@ neutron_dns_domain: "{{ root_domain }}."
 # OpenSearch memory tuning
 opensearch_heap_size: 1g
 
-# Octavia load balancer configuration
-octavia_auto_configure: "no"
-octavia_provider_drivers: "{{ kolla_enable_ovn | ternary('ovn:OVN provider', 'amphora:Amphora provider') }}"
-octavia_provider_agents: "{{ kolla_enable_ovn | ternary('ovn', 'amphora_agent') }}"
-
 # Manila CephFS configuration
 manila_cephfs_filesystem_name: manila-cephfs
 
@@ -70,3 +65,21 @@ external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 
 # Test cinder cluster
 cinder_cluster_name: "stackhpc_test_cinder_cluster"
+
+# Octavia load balancer configuration
+octavia_network_interface: "{{ hostvars[groups['controllers'] | first].octavia_interface }}"
+
+octavia_amp_network:
+  name: lb-mgmt-net
+  provider_network_type: vlan
+  provider_physical_network: "physnet1"
+  provider_segmentation_id: 999
+  external: false
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "192.168.34.0/24"
+    allocation_pool_start: "192.168.34.10"
+    allocation_pool_end: "192.168.34.254"
+    no_gateway_ip: yes
+    enable_dhcp: yes
