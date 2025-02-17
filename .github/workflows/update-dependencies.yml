@@ -3,6 +3,9 @@ name: Update dependencies
 on:
   # Allow manual executions
   workflow_dispatch:
+  # Run nightly
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   propose_github_release_updates:
@@ -26,6 +29,9 @@ jobs:
             repo_path: ${{ github.workspace }}/src/kayobe
             path: ${{ github.workspace }}/src/kayobe-config/requirements.txt
             repository: stackhpc/kayobe
+    permissions:
+      contents: write
+      pull-requests: write
     name: ${{ matrix.key }}
     steps:
       - name: Checkout
@@ -67,3 +73,20 @@ jobs:
         env:
           TAG: ${{ steps.latest_tag.outputs.latest_tag }}
           REQUIREMENTS: ${{ matrix.path }}
+
+      - name: Propose changes via PR if required
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+          path: ${{ github.workspace }}/src/kayobe-config
+          commit-message: >-
+            Bump ${{ matrix.key }} to ${{ steps.next.outputs.version }}
+          branch: update-dependency/${{ matrix.key }}
+          delete-branch: true
+          title: >-
+            Bump ${{ matrix.key }} to ${{ steps.next.outputs.version }}
+          body: >
+            This PR was created automatically to update
+            ${{ matrix.key }} to ${{ steps.next.outputs.version }}.
+          labels: |
+            stackhpc-ci
