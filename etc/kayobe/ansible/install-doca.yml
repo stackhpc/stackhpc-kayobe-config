@@ -1,0 +1,28 @@
+---
+- name: Install DOCA
+  become: true
+  hosts: mlnx
+  gather_facts: true
+  tasks:
+    - name: Get running kernel
+      ansible.builtin.command:
+        cmd: "uname -r"
+      register: kernel
+
+    - name: Install kernel repo
+      ansible.builtin.dnf:
+        name: doca-kernel-repo
+        state: latest
+        update_cache: true
+
+    - name: Ensure correct priority for DOCA modules
+      ansible.builtin.lineinfile:
+        line: "priority=-2"
+        insertafter: EOF
+        path: "/etc/yum.repos.d/doca-kernel-{{ kernel.stdout }}.repo"
+
+    - name: Install DOCA OFED
+      ansible.builtin.dnf:
+        name: doca-ofed
+        state: latest
+        update_cache: true
