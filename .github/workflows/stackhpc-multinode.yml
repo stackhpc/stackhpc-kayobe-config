@@ -7,6 +7,13 @@ name: Multinode
   workflow_dispatch:
     # NOTE: workflow_dispatch is limited to 10 inputs.
     inputs:
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
       multinode_name:
         description: Multinode cluster name
         type: string
@@ -56,8 +63,9 @@ name: Multinode
 jobs:
   multinode:
     name: Multinode
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.4.0
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@multi-runner-config
     with:
+      runner_env: ${{ inputs.runner_env }}
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.os_distribution }}
       os_release: ${{ inputs.os_distribution == 'rocky' && '9' || 'jammy' }}
