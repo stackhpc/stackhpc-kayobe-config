@@ -330,46 +330,6 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
-      - name: Upgrade to RabbitMQ 3.12
-        run: |
-          docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.12"
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        if: inputs.upgrade
-
-      - name: Upgrade to RabbitMQ 3.13
-        run: |
-          docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.13"
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        if: inputs.upgrade
-
-      - name: Change rabbit queues from HA to Quorum
-        run: |
-          sed -i -e 's/om_enable_rabbitmq_high_availability: true/om_enable_rabbitmq_high_availability: false/' \
-                 -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
-                 etc/kayobe/environments/ci-aio/kolla/globals.yml
-        if: inputs.upgrade
-
-      - name: Migrate RabbitMQ queues
-        run: |
-          docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/rabbitmq-quorum-migration.sh
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        if: inputs.upgrade
-
       # If testing upgrade, checkout the current release branch
       # Stash changes to tracked files, and set clean=false to avoid removing untracked files.
       # Revert changes to RabbitMQ Queue types to avoid a merge conflict
@@ -402,15 +362,13 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
-      # NOTE(Alex-Welsh): configure host with selinux_state=disabled, because
-      # Antelope images are not built as permissive
       - name: Host configure
         run: |
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -e selinux_state=disabled
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
@@ -422,20 +380,6 @@ jobs:
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-upgrade.sh
-        env:
-          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        if: inputs.upgrade
-
-      - name: Ensure we have IP on breth1 to reach the instances
-        # NOTE(wszumski): Whilst we don't need to create resources again, in some circumstances
-        # we can lose the IP address that allows us to connect to the instances. This playbook
-        # also fixes that issue.
-        run: |
-          docker run -t --rm \
-            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
-            ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
