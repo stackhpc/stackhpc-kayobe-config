@@ -32,17 +32,11 @@ jobs:
         uses: actions/checkout@v4
           path: ${{ github.workspace }}/src/kayobe-config
 
-      - name: Determine OpenStack release
-        id: openstack_release
-        run: |
-          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
-          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
-
       - name: Checkout the dependency repo
         uses: actions/checkout@v4
         with:
           repository: ${{ matrix.repository }}
-          ref: stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          ref: stackhpc/2024.1
           path: ${{ matrix.repo_path }}
 
       - name: Get latest tag
