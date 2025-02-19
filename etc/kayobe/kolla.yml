@@ -121,14 +121,6 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  bifrost-base:
-    type: git
-    location: https://github.com/stackhpc/bifrost.git
-    reference: stackhpc/{{ openstack_release }}
-  cloudkitty-base:
-    type: git
-    location: https://github.com/stackhpc/cloudkitty.git
-    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -148,20 +140,12 @@ kolla_sources:
     reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
-    location: https://github.com/stackhpc/networking-mlnx
-    reference: stackhpc/{{ openstack_release }}
+    location: https://opendev.org/x/networking-mlnx
+    reference: master
   nova-compute-plugin-networking-mlnx:
     type: git
-    location: https://github.com/stackhpc/networking-mlnx
-    reference: stackhpc/{{ openstack_release }}
-  octavia-base:
-    type: git
-    location: https://github.com/stackhpc/octavia.git
-    reference: stackhpc/{{ openstack_release }}
-  blazar-base:
-    type: git
-    location: https://github.com/stackhpc/blazar
-    reference: stackhpc/master
+    location: https://opendev.org/x/networking-mlnx
+    reference: master
 
 ###############################################################################
 # Kolla image build configuration.
@@ -183,12 +167,6 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
-  - url: "{{ stackhpc_repo_delorian_master_testing_url }}"
-    file: "DeLorean.repo"
-    tag: "delorean-master-testing"
-  - url: "{{ stackhpc_repo_delorian_master_build_deps_url }}"
-    file: "DeLorean.repo"
-    tag: "delorean-master-build-deps"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -371,9 +349,16 @@ kolla_build_customizations_common:
     - python3-libvirt
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
-    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
+    - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
 
 kolla_build_customizations_rocky:
+  base_centos_yum_repo_packages_append:
+    - centos-release-ceph-squid
+  base_centos_yum_repo_packages_remove:
+    - centos-release-ceph-reef
+  base_centos_yum_repos_to_disable_remove:
+    - centos-ceph-reef
+    - epel
   kolla_toolbox_packages_remove:
     - openvswitch
   kolla_toolbox_packages_append:

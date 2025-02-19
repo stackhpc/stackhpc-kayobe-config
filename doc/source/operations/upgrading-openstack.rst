@@ -52,7 +52,7 @@ to the ``stackhpc.linux.sriov`` role, which is not used by Kayobe. If a custom
 playbook uses this role, you can retain existing behaviour by setting
 ``sriov_numvfs_driver`` to ``udev``.
 
-Neutron driver defaults  
+Neutron driver defaults
 -----------------------
 
 The default Neutron ML2 type drivers and tenant network types now use

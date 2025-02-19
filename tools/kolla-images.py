@@ -99,7 +99,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 # List of supported base distributions and versions.
 SUPPORTED_BASE_DISTROS = [
     "rocky-9",
-    "ubuntu-jammy",
+    "ubuntu-noble",
 ]
 
 
@@ -229,6 +229,8 @@ def get_openstack_release() -> str:
         key, value = line.split("=")
         if key.strip() == "defaultbranch":
             value = value.strip()
+            if value == "master":
+                return value[:]
             for prefix in ("stable/", "unmaintained/"):
                 if value.startswith(prefix):
                     return value[len(prefix):]

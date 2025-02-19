@@ -42,7 +42,7 @@ jobs:
   build-kayobe-image:
     name: Build kayobe image
     if: inputs.if || github.repository == 'stackhpc/stackhpc-kayobe-config' && github.event_name == 'push'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
@@ -93,6 +93,7 @@ jobs:
              http_proxy=${{ inputs.http_proxy }}
              https_proxy=${{ inputs.https_proxy }}
              BASE_IMAGE=${{ inputs.base_image || 'rockylinux:9' }}
+             USE_PYTHON_312=true
              KAYOBE_USER_UID=1001
              KAYOBE_USER_GID=1001
           push: true
