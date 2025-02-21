@@ -377,6 +377,10 @@ Enable the required TLS variables in kayobe and kolla
 
 Pulp TLS with Vault
 ===================
+.. warning::
+
+   These steps are intended for enabling tls for pulp on an existing deployment as on a new deployment the overcloud vaults may not be up at this point.
+
 To enable tls for pulp using vault generated certificates, we first need to generate the certificates using vault and then configure the seed + seed-hypervisor + overcloud nodes to add the root CA to their trust.
 
 1. Run the playbook which will generate the certificates and add the root CA to the seed + seed-hypervisor + overcloud nodes
