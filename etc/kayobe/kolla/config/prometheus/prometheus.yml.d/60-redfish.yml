@@ -2,10 +2,34 @@
 ---
 {% if seed_redfish_exporter_container_enabled | bool %}
 scrape_configs:
-  - job_name: redfish-exporter-seed
+  - job_name: redfish-exporter
+    params:
+      collectlogs: ['false']
     metrics_path: /redfish
-    scrape_timeout: 120s
-    scrape_interval: {{ [8 * groups['redfish_exporter_targets'] | length, 120] | max }}s
+    scrape_timeout: 300s
+    scrape_interval: {{ [8 * groups['redfish_exporter_targets'] | length, 300] | max }}s
+    relabel_configs:
+     - source_labels: [__address__]
+       target_label: __param_target
+     - source_labels: [__param_target]
+       target_label: instance
+     - target_label: __address__
+       replacement: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:9610"
+    static_configs:
+{% for host in groups.get('redfish_exporter_targets', []) %}
+      - targets:
+          - '{{ hostvars[host]["redfish_exporter_target_address"] }}'
+        labels:
+          server: '{{ host }}'
+          env: "{{ kayobe_environment | default('openstack') }}"
+          group: "{{ hostvars[host]['redfish_exporter_scrape_group'] | default('overcloud') }}"
+{% endfor %}
+  - job_name: redfish-exporter-collectlog
+    params:
+      collectlogs: ['true']
+    metrics_path: /redfish
+    scrape_timeout: 1200s
+    scrape_interval: 3600s
     relabel_configs:
      - source_labels: [__address__]
        target_label: __param_target
