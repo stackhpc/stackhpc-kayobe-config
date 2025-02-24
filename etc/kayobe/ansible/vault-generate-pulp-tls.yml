@@ -7,11 +7,11 @@
     vault_intermediate_ca_name: "OS-TLS-INT"
   tasks:
     - name: Include Vault keys
-      include_vars:
+      ansible.builtin.include_vars:
         file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
         name: vault_keys
 
-    - name: Issue a certificate for pulp TLS
+    - name: Issue a certificate for pulp TLS  # noqa: fqcn
       hashivault_pki_cert_issue:
         url: "{{ vault_api_addr }}"
         ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
@@ -27,14 +27,14 @@
         https_proxy: ''
 
     - name: Ensure pulp certificates directory exists
-      file:
+      ansible.builtin.file:
         path: "{{ kayobe_env_config_path }}/pulp/certificates"
         state: directory
       delegate_to: localhost
 
     - name: Copy pulp TLS certificate (including intermediate)
       no_log: true
-      copy:
+      ansible.builtin.copy:
         dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.crt"
         content: |
           {{ pulp_cert.data.certificate }}
@@ -44,10 +44,11 @@
 
     - name: Copy pulp private key
       no_log: true
-      copy:
+      ansible.builtin.copy:
         dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.key"
         content: "{{ pulp_cert.data.private_key }}"
         mode: 0600
       delegate_to: localhost
 
-- import_playbook: copy-ca-to-hosts.yml
+- name: Copy CA to hosts playbook
+  import_playbook: copy-ca-to-hosts.yml

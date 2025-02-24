@@ -7,23 +7,23 @@
 
   tasks:
     - name: Copy certificate on RedHat family systems (Rocky, RHEL, CentOS)
-      copy:
+      ansible.builtin.copy:
         src: "{{ cert_path }}"
         dest: "/etc/pki/ca-trust/source/anchors/OS-TLS-ROOT.pem"
         mode: "0644"
       when: ansible_facts.os_family == 'RedHat'
 
     - name: Update CA trust on RedHat family systems
-      command: "update-ca-trust"
+      ansible.builtin.command: "update-ca-trust"
       when: ansible_facts.os_family == 'RedHat'
 
     - name: Copy certificate on Debian family systems (Ubuntu, Debian)
-      copy:
+      ansible.builtin.copy:
         src: "{{ cert_path }}"
         dest: "/usr/local/share/ca-certificates/OS-TLS-ROOT.crt"
         mode: "0644"
       when: ansible_facts.os_family == 'Debian'
 
     - name: Update CA trust on Debian family systems
-      command: "update-ca-certificates"
+      ansible.builtin.command: "update-ca-certificates"
       when: ansible_facts.os_family == 'Debian'
