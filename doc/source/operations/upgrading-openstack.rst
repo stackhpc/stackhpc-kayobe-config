@@ -1096,16 +1096,17 @@ For dedicated network nodes, upgrade the control plane services:
 
 .. code-block:: console
 
-   kayobe overcloud serivce upgrade --kolla-limit controllers
+   kayobe overcloud service upgrade --kolla-limit controllers
 
 For converged network nodes, you should specify the service limit to only
 upgrade the Neutron API service.
 
 .. code-block:: console
 
-   kayobe overcloud serivce upgrade --kolla-limit controllers -ke neutron_service_limit=neutron-server
+   kayobe overcloud service upgrade --kolla-limit controllers -ke neutron_service_limit=neutron-server
 
-To ensure L3 reliability during the upgrade, we will need to manually drain
+To ensure L3 reliability during the upgrade, we will need to sequentially drain
+and upgrade each network node by first disabling agents and then running a targeted upgrade.
 the network nodes of all agents, and upgrade the nodes sequentially.
 
 Kolla credentials will need to be activated before running the neutron-namespace-drain
