@@ -1140,7 +1140,7 @@ agents.
 
 .. code-block:: console
 
-   kayobe overcloud service upgrade --kolla-limit <network0> -ke neutron_service_limit='neutron-openvswitch-agent,neutron-dhcp-agent,neutron-l3-agent,neutron-metadata-agent,ironic-neutron-agent'
+   kayobe overcloud service upgrade --kolla-limit <network0> -kt neutron -ke neutron_service_limit='neutron-openvswitch-agent,neutron-dhcp-agent,neutron-l3-agent,neutron-metadata-agent,ironic-neutron-agent'
 
 Following the service upgrade, the agents can be restored on the node by disabling maintenance:
 
