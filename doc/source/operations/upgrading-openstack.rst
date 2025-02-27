@@ -1132,7 +1132,7 @@ scope of the upgrade:
 Updating the Octavia Amphora Image
 ----------------------------------
 
-If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+If using Octavia with the Amphora driver, you should :ref:`update the amphora
 image <Amphora image>`.
 
 Testing
