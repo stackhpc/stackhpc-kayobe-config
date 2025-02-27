@@ -176,6 +176,21 @@ authentication will fail if this configuration is absent. See `upstream
 Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
 for more details.
 
+OS Capacity exporter and dashboard enabled by default
+-----------------------------------------------------
+
+The OS Capacity exporter will automatically be deployed after the upgrade.
+During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
+will also be updated to use the exporter. If you want to disable this, change
+the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
+
+.. code-block:: yaml
+
+   # Whether the OpenStack Capacity exporter is enabled.
+   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
+   # targets being templated during deployment.
+   stackhpc_enable_os_capacity: false
+
 Known issues
 ============
 
