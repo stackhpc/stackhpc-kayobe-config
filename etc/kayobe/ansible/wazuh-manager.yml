@@ -102,19 +102,22 @@
       notify:
         - Restart wazuh
 
-    - name: Set http/s_proxy vars in ossec-init.conf for vulnerability detector
+    - name: Add JVM proxy settings to wazuh-indexer
       blockinfile:
-        path: "/var/ossec/etc/ossec.conf"
+        path: "/etc/wazuh-indexer/jvm.options"
         state: present
         owner: root
-        group: ossec
+        group: wazuh
+        marker: "# {mark} ANSIBLE MANAGED BLOCK JVM PROXY SETTINGS"
         block: |
-          HTTPS_PROXY={{ http_proxy_url }}
-          HTTP_PROXY={{ http_proxy_url }}
+          -Dhttp.proxyHost={{ http_proxy_url | urlsplit('hostname') }}
+          -Dhttp.proxyPort={{ http_proxy_url | urlsplit('port') }}
+          -Dhttps.proxyHost={{ http_proxy_url | urlsplit('hostname') }}
+          -Dhttps.proxyPort={{ http_proxy_url | urlsplit('port') }}
         backup: yes
       when: http_proxy_url is defined
       notify:
-        - Restart wazuh
+        - Restart wazuh-indexer
 
     - name: Perform health check against filebeat
       command: filebeat test output
@@ -125,4 +128,9 @@
     - name: Restart wazuh
       service:
         name: wazuh-manager
+        state: restarted
+
+    - name: Restart wazuh-indexer
+      service:
+        name: wazuh-indexer
         state: restarted

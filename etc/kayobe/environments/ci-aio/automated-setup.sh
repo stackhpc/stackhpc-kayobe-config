@@ -76,10 +76,6 @@ fi
 sudo ip l set dummy1 up
 sudo ip l set dummy1 master breth1
 
-if type apt; then
-    sudo cp /run/systemd/network/* /etc/systemd/network
-fi
-
 export KAYOBE_VAULT_PASSWORD=$(cat $BASE_PATH/vault-pw)
 pushd $BASE_PATH/src/kayobe-config
 source kayobe-env --environment ci-aio

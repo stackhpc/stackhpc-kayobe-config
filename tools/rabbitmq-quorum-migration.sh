@@ -13,7 +13,7 @@ fi
 
 if [[ ! "$1" = "--skip-checks" ]]; then
     # Fail if clocks are not synced
-    if ! kayobe overcloud host command run -l controllers -b --command "timedatectl status | grep 'synchronized: yes'"; then
+    if ! ( kayobe overcloud host command run -l controllers -b --command "timedatectl status | grep 'synchronized: yes'" ); then
         echo "Failed precheck: Time not synced on controllers"
         echo "Use 'timedatectl status' to check sync state"
         echo "Either wait for sync or use 'chronyc makestep'"
@@ -21,7 +21,7 @@ if [[ ! "$1" = "--skip-checks" ]]; then
     fi
     kayobe overcloud service configuration generate --node-config-dir /tmp/rabbit-migration --kolla-tags none
     # Fail if HA is set or quorum is not
-    if ! grep 'om_enable_rabbitmq_quorum_queues: true' $KOLLA_CONFIG_PATH/globals.yml || grep 'om_enable_rabbitmq_high_availability: true' $KOLLA_CONFIG_PATH/globals.yml; then
+    if ! ( grep 'om_enable_rabbitmq_quorum_queues: true' $KOLLA_CONFIG_PATH/globals.yml || grep 'om_enable_rabbitmq_high_availability: true' $KOLLA_CONFIG_PATH/globals.yml ); then
         echo "Failed precheck: om_enable_rabbitmq_quorum_queues must be enabled, om_enable_rabbitmq_high_availability must be disabled"
         exit 1
     fi
@@ -35,12 +35,12 @@ kayobe kolla ansible run rabbitmq-reset-state
 if [[ ! "$1" = "--skip-checks" ]]; then
     # Fail if any queues still exist
     sleep 20
-    if kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues name --silent | grep -v '^$'"; then
+    if ( kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues name --silent | grep -v '^$'" ); then
         echo "Failed check: RabbitMQ has not stopped properly, queues still exist"
         exit 1
     fi
     # Fail if any exchanges still exist (excluding those starting with 'amq.')
-    if kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_exchanges name --silent | grep -v '^$' | grep -v '^amq.'"; then
+    if ( kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_exchanges name --silent | grep -v '^$' | grep -v '^amq.'" ); then
         echo "Failed check: RabbitMQ has not stopped properly, exchanges still exist"
         exit 1
     fi
@@ -52,7 +52,7 @@ kayobe kolla ansible run deploy-containers -kt $RABBITMQ_SERVICES_TO_RESTART
 if [[ ! "$1" = "--skip-checks" ]]; then
     sleep 20
     # Assert that at least one quorum queue exists on each controller
-    if kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues type | grep quorum"; then
+    if ( kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues type | grep quorum" ); then
         echo "Queues migrated successfully" 
     else
         echo "Failed post-check: A controller does not have any quorum queues"

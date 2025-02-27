@@ -63,18 +63,20 @@ The following steps describe the process to test the new package and container r
 Creating the multinode environments
 -----------------------------------
 
-There is a comprehensive guide to setting up a multinode environment with Terraform, found here: https://github.com/stackhpc/terraform-kayobe-multinode. There are some things to note:
+The `Multinode deployment workflow <https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/stackhpc-multinode.yml>`_ can be used to automatically test changes.
+
+To manually test the changes, there is a comprehensive guide to set up a Multinode environment with Terraform, found here: https://github.com/stackhpc/terraform-kayobe-multinode. There are some things to note:
 
 * OVN is enabled by default, you should override it under ``etc/kayobe/environments/ci-multinode/kolla.yml kolla_enable_ovn: false`` for the OVS multinode environment.
 
-* Remember to set different vxlan_vnis for each.
+* Remember to set a different ``vxlan_vni`` for each.
 
-* Before starting any tests, run ``dnf distro-sync`` on each host to ensure you are using the same snapshots as in the release train. You can do this using the following commands:
+* Before starting any tests, run ``dnf distro-sync -y`` on each host to ensure you are using the same snapshots as in the release train. Option ``-y`` is used to prevent hosts hang waiting for the confirmation input. You can do this using the following commands:
 
    .. code-block:: console
 
-      kayobe seed host command run -b --command "dnf distro-sync"
-      kayobe overcloud host command run -b --command "dnf distro-sync"
+      kayobe seed host command run -b --command "dnf distro-sync -y"
+      kayobe overcloud host command run -b --command "dnf distro-sync -y"
 
 * This may have installed a new kernel version. If so, you will need to reboot the overcloud hosts. You can check the installed kernels and the currently running kernel with the following commands. If the latest listed version is not running, you will need to reboot.
 
@@ -85,7 +87,7 @@ There is a comprehensive guide to setting up a multinode environment with Terraf
 
    kayobe playbook run --limit seed,overcloud $KAYOBE_CONFIG_PATH/ansible/reboot.yml
 
-* The tempest tests run automatically at the end of deploy-openstack.sh. If you have the time, it is worth fixing any failing tests you can so that there is greater coverage for the package updates. (Also remember to propose these fixes in the relevant repos where applicable.)
+* The tempest tests run automatically at the end of the multinode deployment script. If you have the time, it is worth fixing any failing tests you can so that there is greater coverage for the package updates. (Also remember to propose these fixes in the relevant repos where applicable.)
 
 Upgrading host packages
 -----------------------
@@ -102,6 +104,7 @@ For Rocky Linux 9, bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
+   kayobe seed host configure -t dnf
    kayobe overcloud host configure -t dnf
 
 Install new packages:
@@ -112,22 +115,32 @@ Install new packages:
 
 Perform a rolling reboot of hosts:
 
+.. note::
+   In the Multinode environment, the seed-hypervisor cannot access control
+   plane instances with the Openstack client. To use Openstack client, connect
+   to the Seed instance via SSH first. For authentication, use scp to copy
+   ``public-openrc.sh`` to the Seed
+
 .. code-block:: console
 
-   export ANSIBLE_SERIAL=1
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit controllers
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[0]
+   # Check your hypervisor hostname
+   (seed) openstack hypervisor list
+
+   # Reboot controller instances and zeroth compute instance
+   (seed-hypervisor) export ANSIBLE_SERIAL=1
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit controllers
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[0]
 
    # Test live migration
-   openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname antelope-pkg-refresh-ovs-compute-02.novalocal --os-compute-api-version 2.74 server1
-   openstack server migrate --live-migration server1
-   watch openstack server show server1
+   (seed) openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname <Your Hypervisor Hostname> --os-compute-api-version 2.74 server1
+   (seed) openstack server migrate --live-migration server1
+   (seed) watch openstack server show server1
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[1]
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[1]
 
    # Try and migrate back
-   openstack server migrate --live-migration server1
-   watch openstack server show server1
+   (seed) openstack server migrate --live-migration server1
+   (seed) watch openstack server show server1
 
 Upgrading containers within a release
 -------------------------------------

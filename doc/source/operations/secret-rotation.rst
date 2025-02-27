@@ -104,8 +104,8 @@ Full method
 
 
 3. Navigate to the directory containing your ``passwords.yml`` file
-   (``kayobe-config/etc/kolla/passwords.yml`` OR
-   ``kayobe-config/etc/kayobe/environments/envname/kolla/passwords.yml``)
+   (``$KOLLA_CONFIG_PATH/passwords.yml`` OR
+   ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/passwords.yml``)
 
 4. Create a file called ``deletelist.txt`` and populate it with this content
    (including all whitespace):

@@ -12,7 +12,7 @@ With your kayobe environment activated, you can build a new amphora image with:
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-build.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-build.yml
 
 The resultant image is based on Ubuntu. By default the image will be built on the
 seed, but it is possible to change the group in the ansible inventory using the
@@ -29,7 +29,7 @@ You can then run the playbook to upload the image:
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-register.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-register.yml
 
 This will rename the old image by adding a timestamp suffix, before uploading a
 new image with the name, ``amphora-x64-haproxy``. Octavia should be configured

@@ -459,9 +459,8 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New `StackHPC Release Train <../configuration/release-train>`_ content should
-be synced to the local Pulp server. This includes host packages (Deb/RPM) and
-container images.
+New :ref:`stackhpc-release-train` content should be synced to the local Pulp
+server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:
 
@@ -969,17 +968,27 @@ would be applied:
    kayobe overcloud host configure --check --diff
 
 When ready to apply the changes, it may be advisable to do so in batches, or at
-least start with a small number of hosts.:
+least start with a small number of hosts:
 
 .. code-block:: console
 
    kayobe overcloud host configure --limit <host>
 
-Alternatively, to apply the configuration to all hosts:
 
-.. code-block:: console
+.. warning::
 
-   kayobe overcloud host configure
+   Take extra care when configuring Ceph hosts. Set the hosts to maintenance
+   mode before reconfiguring them, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host configure --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
 
 .. _building_ironic_deployment_images:
 

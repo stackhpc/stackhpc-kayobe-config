@@ -29,17 +29,21 @@ function rabbit_upgrade() {
 }
 
 function rabbit_migration() {
-    if ! kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues type | grep quorum"; then
+    if ! kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl list_queues type | grep quorum"; then
         # Set quorum flag, execute RabbitMQ queue migration script, unset quorum flag (to avoid git conflicts)
+        KOLLA_GLOBALS_PATH=$KAYOBE_CONFIG_PATH/kolla/globals.yml
+        if [[ $KAYOBE_ENVIRONMENT ]]; then
+            KOLLA_GLOBALS_PATH=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
+        fi
         sed -i -e 's/om_enable_rabbitmq_high_availability: true/om_enable_rabbitmq_high_availability: false/' \
                -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
-            $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
+            $KOLLA_GLOBALS_PATH
 
-        $KAYOBE_CONFIG_ROOT/tools/rabbitmq-quorum-migration.sh
+        $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
 
         sed -i -e 's/om_enable_rabbitmq_high_availability: false/om_enable_rabbitmq_high_availability: true/' \
                -e 's/om_enable_rabbitmq_quorum_queues: true/om_enable_rabbitmq_quorum_queues: false/' \
-            $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml
+            $KOLLA_GLOBALS_PATH
     fi
 }
 
