@@ -7,6 +7,11 @@ name: All in one
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        type: string
+        description: 'Runner name'
+        default: 'arc-skc-aio-runner'
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -59,6 +64,18 @@ on:
         description: Whether to perform an upgrade
         type: boolean
         default: false
+      stackhpc_cloud_tests_version:
+        description: Git version of https://github.com/stackhpc/stackhpc-cloud-tests to use for testing
+        type: string
+        default: main
+      repository:
+        description: SKC repository to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.repository }}
+      github_ref:
+        description: Git ref to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.ref }}
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -74,7 +91,7 @@ jobs:
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: arc-skc-aio-runner
+    runs-on: ${{ inputs.runner }}
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
@@ -94,7 +111,8 @@ jobs:
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || github.ref }}
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || inputs.github_ref }}
           submodules: true
 
       - name: Output Kayobe image
@@ -367,6 +385,8 @@ jobs:
       - name: Checkout current release config
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.github_ref }}
           submodules: true
           clean: false
         if: inputs.upgrade
@@ -438,17 +458,17 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
-      - name: StackHPC OpenStack tests
-        id: stackhpc-openstack-tests
+      - name: StackHPC Cloud tests
+        id: stackhpc-cloud-tests
         continue-on-error: true
         run: |
-          mkdir -p sot-results
+          mkdir -p sct-results
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v $(pwd)/sot-results:/stack/sot-results \
+            -v $(pwd)/sct-results:/stack/sct-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-cloud-tests.yml' -e sct_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -473,19 +493,23 @@ jobs:
           path: |
             diagnostics/
             tempest-artifacts/
-            sot-results/
-        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-openstack-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
+            sct-results/
+        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
-      - name: Fail if any Tempest tests failed
+      - name: Fail if any tests failed
         run: |
-          test $(wc -l < tempest-artifacts/failed-tests) -lt 1
-
-      - name: Fail if any StackHPC OpenStack tests failed
-        run: |
-          echo "Some StackHPC OpenStack tests failed."
-          echo "See HTML results artifact (sot-results) for details."
-          exit 1
-        if: steps.stackhpc-openstack-tests.outcome == 'failure'
+          rc=0
+          if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
+            echo "Some Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          if [[ $(wc -l < sct-results/failed-tests) -ne 0 ]]; then
+            echo "Some StackHPC Cloud tests failed."
+            echo "See HTML results artifact (sct-results) for details."
+            rc=1
+          fi
+          exit $rc
 
       - name: Destroy
         run: terraform destroy -auto-approve

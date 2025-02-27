@@ -30,7 +30,9 @@
 
 # List of additional Diskimage Builder (DIB) elements to use when building IPA
 # images. Default is none.
-#ipa_build_dib_elements_extra:
+ipa_build_dib_elements_extra:
+  - extra-hardware
+  - mellanox
 
 # List of Diskimage Builder (DIB) elements to use when building IPA images.
 # Default is combination of ipa_build_dib_elements_default and
@@ -85,7 +87,7 @@
 #ipa_images_kernel_name:
 
 # URL of Ironic deployment kernel image to download.
-#ipa_kernel_upstream_url:
+ipa_kernel_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.kernel') if stackhpc_ipa_image_overcloud_enabled | bool }}"
 
 # URL of checksum of Ironic deployment kernel image.
 #ipa_kernel_checksum_url:
@@ -97,13 +99,20 @@
 #ipa_images_ramdisk_name:
 
 # URL of Ironic deployment ramdisk image to download.
-#ipa_ramdisk_upstream_url:
+ipa_ramdisk_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.initramfs') if stackhpc_ipa_image_overcloud_enabled | bool }}"
 
 # URL of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_url:
 
 # Algorithm of checksum of Ironic deployment ramdisk image.
 #ipa_ramdisk_checksum_algorithm:
+
+# IPA download parameters
+image_download_url_username: "{{ stackhpc_release_pulp_username }}"
+image_download_url_password: "{{ stackhpc_release_pulp_password }}"
+image_download_force_basic_auth: true
+image_download_unredirected_headers:
+  - Authorization
 
 ###############################################################################
 # Ironic Python Agent (IPA) deployment configuration.
@@ -117,7 +126,7 @@
 #ipa_collectors_default:
 
 # List of additional inspection collectors to run.
-#ipa_collectors_extra:
+ipa_collectors_extra: "{{ ['dmi-decode', 'extra-hardware', 'numa-topology'] if ipa_build_images or stackhpc_ipa_image_overcloud_enabled else [] }}"
 
 # List of inspection collectors to run.
 #ipa_collectors:
@@ -135,7 +144,11 @@
 #ipa_kernel_options_default:
 
 # List of additional kernel parameters for Ironic python agent.
-#ipa_kernel_options_extra:
+ipa_kernel_options_extra:
+  # Useful until NTP is configured by default
+  - ipa-insecure=1
+  # Avoid disk benchmark failures on some NVMe drives
+  - nvme_core.multipath=N
 
 # List of kernel parameters for Ironic python agent.
 #ipa_kernel_options:

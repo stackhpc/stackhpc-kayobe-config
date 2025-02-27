@@ -86,7 +86,7 @@ Storage firewalld Configuration
    :caption: ``storage.yml``
 
    ###############################################################################
-   # storage node firewalld configuration.
+   # Storage node firewalld configuration.
 
    # Whether to install and enable firewalld.
    storage_firewalld_enabled: true
@@ -118,7 +118,7 @@ Monitoring firewalld Configuration
    :caption: ``monitoring.yml``
 
    ###############################################################################
-   # monitoring node firewalld configuration.
+   # Monitoring node firewalld configuration.
 
    # Whether to install and enable firewalld.
    monitoring_firewalld_enabled: true
@@ -182,7 +182,7 @@ Seed firewalld Configuration
    :caption: ``seed.yml``
 
    ###############################################################################
-   # seed node firewalld configuration.
+   # Seed node firewalld configuration.
 
    # Whether to install and enable firewalld.
    seed_firewalld_enabled: true
@@ -211,7 +211,7 @@ Seed Hypervisor firewalld Configuration
    :caption: ``seed_hypervisor.yml``
 
    ###############################################################################
-   # seed_hypervisor node firewalld configuration.
+   # Seed hypervisor node firewalld configuration.
 
    # Whether to install and enable firewalld.
    seed_hypervisor_firewalld_enabled: true

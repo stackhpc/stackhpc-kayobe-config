@@ -15,6 +15,13 @@ on:
         description: Kayobe environment to use
         type: string
         default: "ci-builder"
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -28,10 +35,17 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   overcloud-host-image-upload:
     name: Upload overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-host-image-builder-runner
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
     permissions: {}
     steps:
       - name: Validate inputs
@@ -80,7 +94,7 @@ jobs:
       - name: Install OpenStack client
         run: |
           source venvs/kayobe/bin/activate &&
-          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
+          pip install python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
 
       - name: Output Rocky Linux 9 image tag
         id: rocky_9_image_tag

@@ -15,13 +15,11 @@ scrape_configs:
        replacement: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:9610"
     static_configs:
 {% for host in groups.get('redfish_exporter_targets', []) %}
-{% if hostvars[host]["redfish_exporter_scrape_group"] | default('overcloud') == 'overcloud' %}
       - targets:
           - '{{ hostvars[host]["redfish_exporter_target_address"] }}'
         labels:
           server: '{{ host }}'
           env: "{{ kayobe_environment | default('openstack') }}"
           group: "{{ hostvars[host]['redfish_exporter_scrape_group'] | default('overcloud') }}"
-{% endif %}
 {% endfor %}
 {% endif %}

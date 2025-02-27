@@ -122,8 +122,8 @@ The workflow performs the following high-level steps:
    subnets, routers, etc.).
 #. If this is an upgrade job, upgrade the cloud under test to the target
    release.
-#. Run Tempest and `StackHPC OpenStack Tests
-   <https://github.com/stackhpc/stackhpc-openstack-tests>`_ to test the cloud.
+#. Run Tempest and `StackHPC Cloud Tests
+   <https://github.com/stackhpc/stackhpc-cloud-tests>`_ to test the cloud.
 #. Collect diagnostic information.
 #. Upload results as an artifact.
 #. Destroy the VM using Terraform.
@@ -345,12 +345,12 @@ The workflow performs the following high-level steps:
    previous OpenStack release is deployed.
 #. Register test resources in the cloud under test (images, flavors, networks,
    subnets, routers, etc.).
-#. Run Tempest and `StackHPC OpenStack Tests
-   <https://github.com/stackhpc/stackhpc-openstack-tests>`__ to test the cloud.
+#. Run Tempest and `StackHPC Cloud Tests
+   <https://github.com/stackhpc/stackhpc-cloud-tests>`__ to test the cloud.
 #. If this is an upgrade job, upgrade the cloud under test to the target
    release.
-#. Run Tempest and `StackHPC OpenStack Tests
-   <https://github.com/stackhpc/stackhpc-openstack-tests>`__ to test the cloud.
+#. Run Tempest and `StackHPC Cloud Tests
+   <https://github.com/stackhpc/stackhpc-cloud-tests>`__ to test the cloud.
 #. Collect diagnostic information.
 #. Upload results as an artifact.
 #. Destroy the VMs using Terraform.

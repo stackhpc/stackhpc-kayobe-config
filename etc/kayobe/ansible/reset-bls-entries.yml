@@ -11,7 +11,7 @@
     - reset-bls-entries
   tasks:
     - name: Get machine ID
-      command: cat /etc/machine-id
+      ansible.builtin.command: cat /etc/machine-id
       register: machine_id
       check_mode: false
 
@@ -25,15 +25,15 @@
     # We set force to false to avoid replacing an existing BLS entry with the
     # correct machine ID.
     - name: Rename entries with wrong machine ID
-      copy:
-        src: "/boot/loader/entries/{{ item }}"
-        dest: "/boot/loader/entries/{{ item | ansible.builtin.regex_replace('^[a-f0-9]*', machine_id.stdout) }}"
+      ansible.builtin.copy:
+        src: /boot/loader/entries/{{ item }}
+        dest: /boot/loader/entries/{{ item | ansible.builtin.regex_replace('^[a-f0-9]*', machine_id.stdout) }}
         force: false
         remote_src: true
       with_items: "{{ bls_entries.files | map(attribute='path') | reject('search', machine_id.stdout) | map('basename') }}"
 
     - name: Remove entries with wrong machine ID
-      file:
-        path: "/boot/loader/entries/{{ item }}"
+      ansible.builtin.file:
+        path: /boot/loader/entries/{{ item }}
         state: absent
       with_items: "{{ bls_entries.files | map(attribute='path') | reject('search', machine_id.stdout) | map('basename') }}"
