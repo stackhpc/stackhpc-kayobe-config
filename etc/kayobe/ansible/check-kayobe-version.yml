@@ -1,0 +1,42 @@
+---
+- name: Check kayobe version
+  hosts: localhost
+  gather_facts: false
+  vars:
+    requirements_path: "{{ kayobe_config_path }}/../../requirements.txt"
+  tasks:
+    - name: Get installed kayobe commit
+      ansible.builtin.shell:
+        cmd: pip freeze | grep kayobe | cut -d @ -f 3 -s
+      register: kayobe_git_commit
+
+    - name: Clone kayobe
+      ansible.builtin.git:
+        repo: https://github.com/stackhpc/kayobe.git
+        dest: /tmp/kayobe-git
+        version: stackhpc/{{ openstack_release }}
+
+    - name: Get tag from kayobe commit
+      ansible.builtin.command:
+        cmd: git describe --tags {{ kayobe_git_commit.stdout }}
+        chdir: /tmp/kayobe-git
+      register: kayobe_current_version
+
+    - name: Get latest Kayobe version
+      ansible.builtin.shell:
+        cmd: grep -o kayobe@stackhpc\/.*$ {{ requirements_path }} | cut -d @ -f 2
+      register: kayobe_latest_version
+
+    - name: Check installed kayobe version is the latest
+      ansible.builtin.assert:
+        that: "kayobe_latest_version.stdout in kayobe_current_version.stdout"
+        fail_msg: |
+          Kayobe must be updated to the latest version before continuing.
+
+          Current Kayobe version: {{ kayobe_current_version.stdout }}
+          Latest Kayobe version: {{ kayobe_latest_version.stdout }}
+
+          Recreate the Kayobe environment, or install the latest version
+          by running: pip install --force-reinstall -r {{ requirements_path }}
+        success_msg: |
+          Kayobe running at version: {{ kayobe_current_version.stdout }}
