@@ -19,8 +19,8 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/reef/cephadm/index.html
--  https://docs.ceph.com/en/reef/
+-  https://docs.ceph.com/en/squid/cephadm/index.html
+-  https://docs.ceph.com/en/squid/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration

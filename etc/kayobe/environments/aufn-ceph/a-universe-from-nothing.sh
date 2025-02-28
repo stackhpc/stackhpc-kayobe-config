@@ -10,8 +10,8 @@
 set -eu
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/2024.1
-KAYOBE_CONFIG_BRANCH=stackhpc/2024.1
+KAYOBE_BRANCH=stackhpc/master
+KAYOBE_CONFIG_BRANCH=stackhpc/master
 KAYOBE_ENVIRONMENT=aufn-ceph
 
 # Install git and tmux.

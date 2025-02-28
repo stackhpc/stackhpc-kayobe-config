@@ -7,11 +7,6 @@ name: All in one
 on:
   workflow_call:
     inputs:
-      runner:
-        required: false
-        type: string
-        description: 'Runner name'
-        default: 'arc-skc-aio-runner'
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -91,16 +86,16 @@ jobs:
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: ${{ inputs.runner }}
+    runs-on: arc-skc-aio-runner
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
-      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2023.1
+      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2024.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
-      PREVIOUS_BRANCH: stackhpc/2023.1
+      PREVIOUS_BRANCH: stackhpc/2024.1
     steps:
       - name: Install Package
         uses: ConorMacBride/install-package@main

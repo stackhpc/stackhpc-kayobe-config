@@ -2,12 +2,25 @@
 # Reset a broken RabbitMQ cluster.
 # Also restarts all OpenStack services using RabbitMQ.
 
+- name: Stop OpenStack services
+  hosts: controllers:compute:storage
+  become: true
+  gather_facts: false
+  tasks:
+    # The following services use RabbitMQ.
+    - name: Stop OpenStack services
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          awk '{ print $NF }' |
+          xargs systemctl stop
+        executable: "/bin/bash"
+
 - name: Reset RabbitMQ
   hosts: controllers
   become: true
   gather_facts: false
-  tags:
-    - rabbitmq-reset
   vars:
     container_name: rabbitmq
   tasks:
@@ -59,18 +72,21 @@
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ groups['controllers'] | length }}'
 
 - name: Restart OpenStack services
-  hosts: controllers:compute
+  hosts: controllers:compute:storage
   become: true
   gather_facts: false
-  tags:
-    - restart-openstack
   tasks:
+    - name: Clear shared memory
+      ansible.builtin.shell:
+        cmd: >
+          rm -rf /dev/shm/*_qmanager
+
     # The following services use RabbitMQ.
     - name: Restart OpenStack services
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail &&
           systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
-          awk '{ print $1 }' |
+          awk '{ print $NF }' |
           xargs systemctl restart
         executable: "/bin/bash"

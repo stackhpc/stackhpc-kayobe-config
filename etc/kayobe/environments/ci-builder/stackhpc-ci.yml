@@ -8,7 +8,6 @@ kolla_docker_namespace: stackhpc-dev
 # Kolla feature flag configuration.
 kolla_enable_barbican: true
 kolla_enable_blazar: true
-kolla_enable_caso: true
 kolla_enable_central_logging: true
 kolla_enable_cinder: true
 kolla_enable_cloudkitty: true
@@ -51,16 +50,13 @@ stackhpc_repo_mirror_password: !vault |
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
 stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
 stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
-stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
-stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
-stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: ""
+stackhpc_repo_ubuntu_noble_version: "{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
+stackhpc_repo_ubuntu_noble_security_version: "{{ stackhpc_pulp_repo_ubuntu_noble_security_version }}"
 stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
-stackhpc_repo_ceph_reef_debian_version: "{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
+stackhpc_repo_docker_ce_ubuntu_noble_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
-stackhpc_repo_centos_stream_9_openstack_caracal_version: "{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
 stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
-stackhpc_repo_centos_stream_9_storage_ceph_reef_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_squid_version: "{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_version }}"
 stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
 stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
 stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
@@ -102,7 +98,7 @@ stackhpc_release_pulp_password: "{{ stackhpc_docker_registry_password }}"
 ipa_build_images: true
 ipa_build_dib_env_extra:
   DISTRO_NAME: "{{ ipa_ci_builder_distribution | default('ubuntu') }}"
-  DIB_RELEASE: "{{ ipa_ci_builder_release | default('jammy') }}"
+  DIB_RELEASE: "{{ ipa_ci_builder_release | default('noble') }}"
 
 # Ensure Ark repos are disabled during CI runs, this is due to
 # builder being a member of the 'overcloud' group for IPA builds.

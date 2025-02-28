@@ -3,7 +3,6 @@
   hosts: "{{ amphora_builder_group | default('seed') }}"
   vars:
     amphora_dib_upper_constraints_file: "{{ pip_upper_constraints_file }}"
-    amphora_image_dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
   tasks:
     - name: Install EPEL
       ansible.builtin.package:
@@ -16,21 +15,21 @@
     - name: Ensure packages are installed
       become: true
       vars:
-        packages_common:
-          - debootstrap
-          - git
-          - python3-venv
         packages_for_os_family:
           RedHat:
+            - debootstrap
             - qemu-img
+            - git
             - e2fsprogs
             - policycoreutils-python-utils
             - yum-utils
           Debian:
+            - debootstrap
             - qemu-utils
+            - git
             - kpartx
       ansible.builtin.package:
-        name: "{{ packages_common + packages_for_os_family[ansible_facts.os_family] }}"
+        name: "{{ packages_for_os_family[ansible_facts.os_family] }}"
 
     - name: Create a temporary directory
       ansible.builtin.tempfile:
@@ -89,7 +88,6 @@
 
         - name: Create the Amphora image
           ansible.builtin.shell:
-            executable: /bin/bash
             cmd: >-
               source {{ venv_path }}/bin/activate &&
               ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1
@@ -99,7 +97,7 @@
         - name: Copy image to image store
           ansible.builtin.copy:
             src: "{{ src_path }}/diskimage-create/amphora-x64-haproxy.qcow2"
-            dest: "{{ amphora_image_dest }}"
+            dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
             remote_src: true
       always:
         - name: Remove temporary files

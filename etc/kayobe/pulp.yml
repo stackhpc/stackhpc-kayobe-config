@@ -62,7 +62,7 @@ stackhpc_pulp_sync_for_local_container_build: false
 # Debs
 
 # Whether to sync Ubuntu packages.
-stackhpc_pulp_sync_ubuntu_jammy: "{{ os_distribution == 'ubuntu' }}"
+stackhpc_pulp_sync_ubuntu_noble: "{{ os_distribution == 'ubuntu' }}"
 
 # Default configuration, which each element of stackhpc_pulp_deb_repos
 # is combined with
@@ -79,30 +79,22 @@ stackhpc_pulp_deb_repos_default_config:
 
 # Deb repositories
 stackhpc_pulp_deb_repos:
-  # Base Ubuntu Jammy repositories
-  - name: "Ubuntu jammy"
-    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy/{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
-    distribution_name: "ubuntu-jammy-"
-    base_path: "ubuntu/jammy/"
+  # Base Ubuntu Noble repositories
+  - name: "Ubuntu Noble"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/noble/{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
+    distribution_name: "ubuntu-noble-"
+    base_path: "ubuntu/noble/"
     components: "main restricted universe multiverse"
-    distributions: "jammy jammy-updates jammy-backports"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    distributions: "noble noble-updates noble-backports"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
-  - name: "Ubuntu jammy security"
-    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy-security/{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
-    distribution_name: "ubuntu-jammy-security-"
-    base_path: "ubuntu/jammy-security/"
+  - name: "Ubuntu Noble security"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/noble-security/{{ stackhpc_pulp_repo_ubuntu_noble_security_version }}"
+    distribution_name: "ubuntu-noble-security-"
+    base_path: "ubuntu/noble-security/"
     components: "main restricted universe multiverse"
-    distributions: "jammy-security"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  - name: "Ubuntu jammy CVE-2024-6387"
-    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-jammy-cve-2024-6387/"
-    distribution_name: "ubuntu-jammy-cve-2024-6387-"
-    base_path: "ubuntu-jammy-cve-2024-6387/"
-    components: "upload"
-    distributions: "pulp"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    distributions: "noble-security"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
   # Ubuntu Cloud Archive (UCA) repositories
   - name: "Ubuntu Cloud Archive"
@@ -110,25 +102,17 @@ stackhpc_pulp_deb_repos:
     distribution_name: "ubuntu-cloud-archive-"
     base_path: "ubuntu-cloud-archive/"
     components: "main"
-    distributions: "jammy-updates/{{ openstack_release_codename }}"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    distributions: "noble-updates/{{ openstack_release_codename }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
   # Third-party repositories
-  - name: "Docker CE for Ubuntu Jammy"
-    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-jammy/{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
-    distribution_name: "docker-ce-for-ubuntu-jammy-"
-    base_path: "docker-ce/ubuntu-jammy/"
-    distributions: "jammy"
+  - name: "Docker CE for Ubuntu Noble"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-noble/{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
+    distribution_name: "docker-ce-for-ubuntu-noble-"
+    base_path: "docker-ce/ubuntu-noble/"
+    distributions: "noble"
     components: "stable"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
-
-  - name: "Ceph Reef for Debian"
-    url: "{{ stackhpc_release_pulp_content_url }}/ceph/debian-reef/{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
-    distribution_name: "ceph-reef-debian-"
-    base_path: "ceph/debian-reef/"
-    distributions: "jammy"
-    components: "main"
-    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -212,7 +196,7 @@ stackhpc_pulp_distribution_deb_production: >-
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
-# Rocky 9 minor version number. Supported values: 1, 2, 3, 4, 5. Default is 5
+# Rocky 9 minor version number. Supported values: 5. Default is 5
 stackhpc_pulp_repo_rocky_9_minor_version: 5
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
@@ -301,22 +285,16 @@ stackhpc_pulp_rpm_repos:
     base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: CentOS Stream 9 - OpenStack Caracal
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-caracal/{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
-    distribution_name: "centos-stream-9-openstack-caracal-"
-    base_path: "centos/9-stream/cloud/x86_64/openstack-caracal/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
   - name: CentOS 9 - OpsTools - collectd
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
     distribution_name: "centos-9-opstools-collectd-"
     base_path: "centos/9-stream/opstools/x86_64/collectd-5/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: CentOS Stream 9 - Ceph Reef
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-reef/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
-    distribution_name: "centos-stream-9-ceph-reef-"
-    base_path: "centos/9-stream/storage/x86_64/ceph-reef/"
+  - name: CentOS Stream 9 - Ceph Squid
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_version }}"
+    distribution_name: "centos-stream-9-ceph-squid-"
+    base_path: "centos/9-stream/storage/x86_64/ceph-squid/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # EPEL 9 repository
@@ -525,7 +503,6 @@ stackhpc_pulp_images_kolla:
   - ovn-nb-db-server
   - ovn-northd
   - ovn-sb-db-server
-  - ovn-sb-db-relay
   - placement-api
   - prometheus-alertmanager
   - prometheus-blackbox-exporter
@@ -533,19 +510,19 @@ stackhpc_pulp_images_kolla:
   - prometheus-elasticsearch-exporter
   - prometheus-libvirt-exporter
   - prometheus-memcached-exporter
-  - prometheus-msteams
   - prometheus-mtail
   - prometheus-mysqld-exporter
   - prometheus-node-exporter
   - prometheus-openstack-exporter
   - prometheus-v2-server
+  - proxysql
   - rabbitmq
   - redis
   - redis-sentinel
 
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
-  ubuntu-jammy: []
+  ubuntu-noble: []
   rocky-9: []
 
 # Whitespace-separated list of regular expressions matching Kolla image names.

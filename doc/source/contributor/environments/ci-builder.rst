@@ -9,7 +9,7 @@ and pushed there once built.
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Caracal. Proceed with caution.
+    Master. Proceed with caution.
 
 In general it is preferable to use the `container image build CI workflow
 <https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/stackhpc-container-image-build.yml>`_

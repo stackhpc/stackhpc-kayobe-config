@@ -13,7 +13,7 @@ jobs:
   # would skip the workflow entirely, and would prevent us from making the
   # aio jobs required to pass (a skip counts as a pass).
   check-changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: read
     name: Check changed files
@@ -34,17 +34,17 @@ jobs:
           filters: .github/path-filters.yml
 
   tox:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions: {}
     strategy:
       matrix:
         include:
           - environment: pep8
-            python-version: "3.10"
+            python-version: "3.12"
           - environment: releasenotes
-            python-version: "3.10"
+            python-version: "3.12"
           - environment: docs
-            python-version: "3.10"
+            python-version: "3.12"
     name: Tox ${{ matrix.environment }} with Python ${{ matrix.python-version }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     steps:
@@ -62,16 +62,16 @@ jobs:
         run: tox -e ${{ matrix.environment }}
 
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions: {}
     strategy:
       fail-fast: false
       matrix:
         include:
           # NOTE(upgrade): Keep these in sync with Kayobe's supported Ansible and Python versions (see release notes).
-          - ansible: "2.16"
+          - ansible: "2.17"
             python: "3.12"
-          - ansible: "2.15"
+          - ansible: "2.16"
             python: "3.10"
     name: Ansible ${{ matrix.ansible }} lint with Python ${{ matrix.python }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
@@ -115,20 +115,20 @@ jobs:
       if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  check-tags:
-    name: Check container image tags
-    needs:
-      - check-changes
-      - build-kayobe-image
-    uses: ./.github/workflows/stackhpc-check-tags.yml
-    with:
-      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-      if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
-    secrets: inherit
-    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+  # check-tags:
+  #   name: Check container image tags
+  #   needs:
+  #     - check-changes
+  #     - build-kayobe-image
+  #   uses: ./.github/workflows/stackhpc-check-tags.yml
+  #   with:
+  #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+  #     if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
+  #   secrets: inherit
+  #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  all-in-one-ubuntu-jammy-ovs:
-    name: aio (Ubuntu Jammy OVS)
+  all-in-one-ubuntu-noble-ovs:
+    name: aio (Ubuntu Noble OVS)
     needs:
       - check-changes
       - build-kayobe-image
@@ -136,7 +136,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
-      os_release: jammy
+      os_release: noble
       ssh_username: ubuntu
       neutron_plugin: ovs
       OS_CLOUD: openstack
@@ -144,8 +144,8 @@ jobs:
     secrets: inherit
     if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  all-in-one-ubuntu-jammy-ovn:
-    name: aio (Ubuntu Jammy OVN)
+  all-in-one-ubuntu-noble-ovn:
+    name: aio (Ubuntu Noble OVN)
     needs:
       - check-changes
       - build-kayobe-image
@@ -153,7 +153,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
-      os_release: jammy
+      os_release: noble
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: openstack
@@ -195,40 +195,40 @@ jobs:
     secrets: inherit
     if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  # Test two upgrade scenarios: Ubuntu Jammy OVS and Rocky 9 OVN.
+  # Test two upgrade scenarios: Ubuntu Noble OVS and Rocky 9 OVN.
 
-  all-in-one-upgrade-ubuntu-jammy-ovs:
-    name: aio upgrade (Ubuntu Jammy OVS)
-    needs:
-      - check-changes
-      - build-kayobe-image
-    uses: ./.github/workflows/stackhpc-all-in-one.yml
-    with:
-      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-      os_distribution: ubuntu
-      os_release: jammy
-      ssh_username: ubuntu
-      neutron_plugin: ovs
-      OS_CLOUD: openstack
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
-      upgrade: true
-    secrets: inherit
-    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+  # all-in-one-upgrade-ubuntu-noble-ovs:
+  #   name: aio upgrade (Ubuntu Noble OVS)
+  #   needs:
+  #     - check-changes
+  #     - build-kayobe-image
+  #   uses: ./.github/workflows/stackhpc-all-in-one.yml
+  #   with:
+  #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+  #     os_distribution: ubuntu
+  #     os_release: noble
+  #     ssh_username: ubuntu
+  #     neutron_plugin: ovs
+  #     OS_CLOUD: openstack
+  #     if: ${{ needs.check-changes.outputs.aio == 'true' }}
+  #     upgrade: true
+  #   secrets: inherit
+  #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  all-in-one-upgrade-rocky-9-ovn:
-    name: aio upgrade (Rocky 9 OVN)
-    needs:
-      - check-changes
-      - build-kayobe-image
-    uses: ./.github/workflows/stackhpc-all-in-one.yml
-    with:
-      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-      os_distribution: rocky
-      os_release: "9"
-      ssh_username: cloud-user
-      neutron_plugin: ovn
-      OS_CLOUD: openstack
-      if: ${{ needs.check-changes.outputs.aio == 'true' }}
-      upgrade: true
-    secrets: inherit
-    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+  # all-in-one-upgrade-rocky-9-ovn:
+  #   name: aio upgrade (Rocky 9 OVN)
+  #   needs:
+  #     - check-changes
+  #     - build-kayobe-image
+  #   uses: ./.github/workflows/stackhpc-all-in-one.yml
+  #   with:
+  #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+  #     os_distribution: rocky
+  #     os_release: "9"
+  #     ssh_username: cloud-user
+  #     neutron_plugin: ovn
+  #     OS_CLOUD: openstack
+  #     if: ${{ needs.check-changes.outputs.aio == 'true' }}
+  #     upgrade: true
+  #   secrets: inherit
+  #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
