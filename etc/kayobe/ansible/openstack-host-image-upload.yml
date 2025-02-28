@@ -5,16 +5,15 @@
 - name: Upload an OS image to Glance
   hosts: seed
   vars:
-    local_image_path: /opt/kayobe/images/overcloud-{{ os_distribution }}-{{ os_release }}/overcloud-{{ os_distribution }}-{{ os_release }}.qcow2
-    image_name: overcloud-{{ os_distribution }}-{{ os_release }}
+    local_image_path: "/opt/kayobe/images/overcloud-{{ os_distribution }}-{{ os_release }}/overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
+    image_name: "overcloud-{{ os_distribution }}-{{ os_release }}"
   tasks:
-    - name: Upload image to Glance
-      block:
+    - block:
         - name: Write out clouds.yaml
-          ansible.builtin.copy:
+          copy:
             content: "{{ lookup('ansible.builtin.env', 'CLOUDS_YAML') }}"
             dest: clouds.yaml
-            mode: "0600"
+            mode: 0600
 
         - name: Write out secure.yaml
           no_log: true
@@ -25,13 +24,13 @@
                   auth:
                     application_credential_id: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_ID') }}"
                     application_credential_secret: "{{ lookup('ansible.builtin.env', 'OS_APPLICATION_CREDENTIAL_SECRET') }}"
-          ansible.builtin.copy:
+          copy:
             content: "{{ os_secrets | to_nice_yaml }}"
             dest: secure.yaml
-            mode: "0600"
+            mode: 0600
 
         - name: Ensure dependencies are installed
-          ansible.builtin.pip:
+          pip:
             name: openstacksdk
 
         - name: Upload an image to Glance
@@ -45,11 +44,11 @@
 
       always:
         - name: Remove clouds.yaml
-          ansible.builtin.file:
+          file:
             path: clouds.yaml
             state: absent
 
         - name: Remove secure.yaml
-          ansible.builtin.file:
+          file:
             path: secure.yaml
             state: absent

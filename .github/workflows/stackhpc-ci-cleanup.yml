@@ -11,10 +11,6 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
     permissions: {}
-    strategy:
-      matrix:
-        environment: [SMS Lab, Leafcloud]
-    environment: ${{ matrix.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,7 +52,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -76,27 +72,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-
-      - name: Clean up GH actions multinode instances over 12 hours old
-        run: |
-          result=0
-          changes_before=$(date -Imin -d -12hours)
-          for status in ACTIVE BUILD ERROR SHUTOFF; do
-              for instance in $(openstack server list --tags gh-actions-multinode --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
-                  echo "Cleaning up $status instance $instance"
-                  openstack server show $instance
-                  if ! openstack server delete $instance; then
-                      echo "Failed to delete $status instance $instance"
-                      result=1
-                  fi
-              done
-          done
-          exit $result
-        env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_CLOUD: openstack
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 

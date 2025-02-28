@@ -1,7 +1,7 @@
 ---
 - name: Drain a nova compute host of instances
   hosts: compute
-  gather_facts: true
+  gather_facts: yes
   tags:
     - nova-compute-drain
   vars:
@@ -9,9 +9,9 @@
     live_migration_fatal: true
   tasks:
     - name: Set up openstack cli virtualenv
-      ansible.builtin.pip:
+      pip:
         virtualenv: "{{ venv }}"
-        virtualenv_command: /usr/bin/python3 -m venv
+        virtualenv_command: "/usr/bin/python3 -m venv"
         name:
           - python-openstackclient
         state: latest
@@ -21,17 +21,9 @@
       vars:
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
 
-    - name: Migrate instances
-      delegate_to: "{{ groups['controllers'][0] }}"
-      environment: "{{ openstack_auth_env }}"
-      when:
-        - "'compute' in group_names"
-        - groups['compute'] | length > 1
-      vars:
-        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
-      block:
+    - block:
         - name: Query instances
-          ansible.builtin.command: >
+          command: >
             {{ venv }}/bin/openstack
             server list --host {{ ansible_facts.nodename }}
             --all-projects
@@ -40,7 +32,7 @@
           register: instances
 
         - name: Live migrate instances
-          ansible.builtin.command: >
+          command: >
             {{ venv }}/bin/openstack
             --os-compute-api-version 2.25
             server migrate
@@ -58,7 +50,7 @@
             - result is failed
 
         - name: Query instances
-          ansible.builtin.command: >
+          command: >
             {{ venv }}/bin/openstack
             server list --host {{ ansible_facts.nodename }}
             --all-projects
@@ -67,9 +59,17 @@
           register: instances
 
         - name: Fail if there are instances still on the host
-          ansible.builtin.fail:
+          fail:
             msg: >
               Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
           when:
             - live_migration_fatal | bool
             - instances.stdout | from_json | length > 0
+
+      delegate_to: "{{ groups['controllers'][0] }}"
+      environment: "{{ openstack_auth_env }}"
+      when:
+        - "'compute' in group_names"
+        - groups['compute'] | length > 1
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"

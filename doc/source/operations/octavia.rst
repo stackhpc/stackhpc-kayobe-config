@@ -4,12 +4,21 @@ Octavia
 
 .. _Amphora image:
 
-Updating amphora images
-=======================
+Building and rotating amphora images
+====================================
 
-StackHPC kayobe config contains utility playbooks to update and build the amphora images.
+StackHPC kayobe config contains utility playbooks to build and rotate the amphora images.
+With your kayobe environment activated, you can build a new amphora image with:
 
-To update the image, first activate an openrc file containing the credentials
+.. code-block:: console
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-build.yml
+
+The resultant image is based on Ubuntu. By default the image will be built on the
+seed, but it is possible to change the group in the ansible inventory using the
+``amphora_builder_group`` variable.
+
+To rotate the image, first activate an openrc file containing the credentials
 for the octavia service account, e.g:
 
 .. code-block:: console
@@ -20,51 +29,17 @@ You can then run the playbook to upload the image:
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-register.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-register.yml
 
-By default, this will download Amphora image corresponds to OpenStack release from
-StackHPC Release Train.
-Then it will rename the old image by adding a timestamp suffix, before uploading a
+This will rename the old image by adding a timestamp suffix, before uploading a
 new image with the name, ``amphora-x64-haproxy``. Octavia should be configured
 to discover the image by tag using the ``amp_image_tag`` config option. The
 images are tagged with ``amphora`` to match the kolla-ansible default for
 ``octavia_amp_image_tag``. This prevents you needing to reconfigure octavia
 when building new images.
 
-To rollback an image update, simply delete the newest image. The next newest image with
+To rollback an image update, simply delete the old image. The next newest image with
 a tag matching ``amp_image_tag`` will be selected.
-
-Building amphora images locally
-===============================
-
-You can also build Amphora images locally.
-With your kayobe environment activated, you can build a new amphora image with:
-
-.. code-block:: console
-
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-build.yml
-
-The resultant image is based on Ubuntu. By default the image will be built on the
-seed, but it is possible to change the group in the ansible inventory using the
-``amphora_builder_group`` variable.
-
-To register locally built image, set ``download_amphora_from_ark`` to ``false`` in
-``stackhpc.yml``
-
-.. code-block:: yaml
-  :caption: ``stackhpc.yml``
-
-  # Whether or not to download Octavia Amphora image from Ark. Default is true.
-  download_amphora_from_ark: false
-
-Then copy the image to your first controller host and run the image register playbook.
-The path to the image in the controller needs to be set as an extra variable.
-The default image path is ``/tmp/amphora-x64-haproxy.qcow2``.
-
-.. code-block:: console
-
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-register.yml -e image_path="<path-to-amphora-image>"
-
 
 Manually deleting broken load balancers
 =======================================

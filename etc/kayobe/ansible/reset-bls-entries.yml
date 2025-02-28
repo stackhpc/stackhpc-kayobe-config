@@ -5,13 +5,13 @@
 # https://opendev.org/openstack/diskimage-builder/src/branch/master/diskimage_builder/elements/rhel/post-install.d/03-reset-bls-entries
 
 - name: Reset BLS entries
-  hosts: "{{ reset_bls_host | default('overcloud') }}"
+  hosts: overcloud
   become: true
   tags:
     - reset-bls-entries
   tasks:
     - name: Get machine ID
-      ansible.builtin.command: cat /etc/machine-id
+      command: cat /etc/machine-id
       register: machine_id
       check_mode: false
 
@@ -25,15 +25,15 @@
     # We set force to false to avoid replacing an existing BLS entry with the
     # correct machine ID.
     - name: Rename entries with wrong machine ID
-      ansible.builtin.copy:
-        src: /boot/loader/entries/{{ item }}
-        dest: /boot/loader/entries/{{ item | ansible.builtin.regex_replace('^[a-f0-9]*', machine_id.stdout) }}
+      copy:
+        src: "/boot/loader/entries/{{ item }}"
+        dest: "/boot/loader/entries/{{ item | ansible.builtin.regex_replace('^[a-f0-9]*', machine_id.stdout) }}"
         force: false
         remote_src: true
       with_items: "{{ bls_entries.files | map(attribute='path') | reject('search', machine_id.stdout) | map('basename') }}"
 
     - name: Remove entries with wrong machine ID
-      ansible.builtin.file:
-        path: /boot/loader/entries/{{ item }}
+      file:
+        path: "/boot/loader/entries/{{ item }}"
         state: absent
       with_items: "{{ bls_entries.files | map(attribute='path') | reject('search', machine_id.stdout) | map('basename') }}"

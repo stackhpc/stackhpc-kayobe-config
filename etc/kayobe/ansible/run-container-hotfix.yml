@@ -1,25 +1,23 @@
 ---
-- name: Run container_hotfix
-  when: container_hotfix_files != []
-  block:
+- block:
     - name: Ensure any required directories exist in container(s)
-      ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} mkdir
-        -p {{ item.dest | dirname }}"
+      command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} mkdir -p {{ item.dest | dirname }}"
       loop: "{{ container_hotfix_files }}"
 
     - name: Copy file into container(s)
-      ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} cp /tmp/hotfix-files/{{ index }} {{ hotfix_container }}:{{ item.dest }}"
+      command: "{{ kolla_container_engine | default('docker') }} cp /tmp/hotfix-files/{{ index }} {{ hotfix_container }}:{{ item.dest }}"
       loop: "{{ container_hotfix_files }}"
       loop_control:
         index_var: index
 
     - name: Set mode for copied files
-      ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} chmod
-        {{ item.mode | default('400') }} {{ item.dest }}"
+      command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} chmod {{ item.mode | default('400') }} {{ item.dest }}"
       loop: "{{ container_hotfix_files }}"
       loop_control:
         index_var: index
 
+  when: container_hotfix_files != []
+
 - name: Run container_hotfix_command
-  ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} {{ container_hotfix_command }}"
+  command: "{{ kolla_container_engine | default('docker')}} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} {{ container_hotfix_command }}"
   when: container_hotfix_command

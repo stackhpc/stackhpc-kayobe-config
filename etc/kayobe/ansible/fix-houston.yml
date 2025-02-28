@@ -15,30 +15,30 @@
 
 - name: Create Systemd Unit to workaround 'tc mirred to Houston' error
   hosts: network,compute
-  become: true
+  become: yes
 
   tasks:
     - name: Include kolla-ansible host vars
-      ansible.builtin.include_vars: "{{ kolla_config_path }}/inventory/overcloud/host_vars/{{ inventory_hostname }}"
+      include_vars: "{{ kolla_config_path }}/inventory/overcloud/host_vars/{{ inventory_hostname }}"
 
     - name: Create systemd service for -ovs network interface
-      ansible.builtin.template:
+      template:
         src: fix-houston-interface.service.j2
-        dest: /etc/systemd/system/fix-houston-{{ item }}.service
+        dest: "/etc/systemd/system/fix-houston-{{ item }}.service"
       loop: "{{ neutron_bridge_name.split(',') }}"
       vars:
         interface_name: "{{ item }}"
       when: neutron_bridge_name | length > 0
-      notify: Reload systemd
+      notify: reload systemd
 
     - name: Enable and start systemd service for -ovs network interface
-      ansible.builtin.systemd:
-        name: fix-houston-{{ item }}
-        enabled: true
+      systemd:
+        name: "fix-houston-{{ item }}"
+        enabled: yes
         state: started
       when: neutron_bridge_name | length > 0
       loop: "{{ neutron_bridge_name.split(',') }}"
 
   handlers:
-    - name: Reload systemd
-      ansible.builtin.command: systemctl daemon-reload  # noqa command-instead-of-module
+    - name: reload systemd
+      command: systemctl daemon-reload

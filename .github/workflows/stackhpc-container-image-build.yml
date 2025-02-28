@@ -38,13 +38,6 @@ on:
         type: boolean
         required: false
         default: false
-      runner_env:
-        description: Which cloud to run on?
-        type: choice
-        default: SMS Lab
-        options:
-          - SMS Lab
-          - Leafcloud
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -108,15 +101,10 @@ jobs:
         run: |
           echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
 
-  runner-selection:
-    uses: ./.github/workflows/runner-selector.yml
-    with:
-      runner_env: ${{ inputs.runner_env }}
-
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
+    runs-on: arc-skc-container-image-builder-runner
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -124,7 +112,6 @@ jobs:
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
     needs:
       - generate-tag
-      - runner-selection
     steps:
       - name: Install package dependencies
         run: |
@@ -143,6 +130,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: src/kayobe-config
+
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v4
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
+          path: src/kayobe
 
       - name: Make sure dockerd is running and test Docker
         run: |
@@ -163,14 +157,14 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install -r ../src/kayobe-config/requirements.txt
+          pip install ../src/kayobe
 
       # Required for Pulp auth proxy deployment and Docker registry login.
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
           sudo pip install docker 'requests<2.32.0'
-
+      
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT

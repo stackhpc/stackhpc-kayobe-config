@@ -28,7 +28,9 @@
 # DIB image OS release. Default is {{ os_release }}.
 #kolla_bifrost_dib_os_release:
 
-# List of default DIB elements. Default is ["enable-serial-console", "vm"].
+# List of default DIB elements. Default is ["disable-selinux",
+# "enable-serial-console", "vm"] when os_distribution is "centos", or
+# ["enable-serial-console", "vm"] otherwise.
 #kolla_bifrost_dib_elements_default:
 
 # List of additional DIB elements. Default is none.
@@ -69,10 +71,6 @@
 # Default is none.
 #kolla_bifrost_deploy_image_rootfs:
 
-# Custom cloud-init user-data passed to deploy of the deployment image.
-# Default is an empty string.
-#kolla_bifrost_deploy_image_user_data_content:
-
 ###############################################################################
 # Ironic configuration.
 
@@ -108,12 +106,6 @@
 # Ironic inspector IPMI password to set.
 #kolla_bifrost_inspector_ipmi_password:
 
-# Ironic inspector Redfish username to set.
-#kolla_bifrost_inspector_redfish_username:
-
-# Ironic inspector Redfish password to set.
-#kolla_bifrost_inspector_redfish_password:
-
 # Ironic inspector network interface name on which to check for an LLDP switch
 # port description to use as the node's name.
 #kolla_bifrost_inspector_lldp_switch_port_interface:
@@ -135,7 +127,7 @@
 # Ironic Python Agent (IPA) configuration.
 
 # URL of Ironic Python Agent (IPA) kernel image.
-kolla_bifrost_ipa_kernel_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.kernel') if stackhpc_ipa_image_bifrost_enabled | bool }}"
+#kolla_bifrost_ipa_kernel_upstream_url:
 
 # URL of checksum of Ironic Python Agent (IPA) kernel image.
 #kolla_bifrost_ipa_kernel_checksum_url:
@@ -144,7 +136,7 @@ kolla_bifrost_ipa_kernel_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.kerne
 #kolla_bifrost_ipa_kernel_checksum_algorithm:
 
 # URL of Ironic Python Agent (IPA) ramdisk image.
-kolla_bifrost_ipa_ramdisk_upstream_url: "{{ (stackhpc_ipa_image_url + '/ipa.initramfs') if stackhpc_ipa_image_bifrost_enabled | bool }}"
+#kolla_bifrost_ipa_ramdisk_upstream_url:
 
 # URL of checksum of Ironic Python Agent (IPA) ramdisk image.
 #kolla_bifrost_ipa_ramdisk_checksum_url:

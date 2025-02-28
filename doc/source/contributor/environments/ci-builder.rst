@@ -6,11 +6,6 @@ The ``ci-builder`` Kayobe environment is used to build Kolla container images.
 Images are built using package repositories in the StackHPC Ark Pulp service,
 and pushed there once built.
 
-.. warning::
-
-    This guide was written for the Yoga release and has not been validated for
-    Caracal. Proceed with caution.
-
 In general it is preferable to use the `container image build CI workflow
 <https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/stackhpc-container-image-build.yml>`_
 to build container images, but this manual approach may be useful in some
@@ -67,6 +62,7 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    cd
    mkdir -p src
    pushd src
+   git clone https://github.com/stackhpc/kayobe.git -b |current_release_git_branch_name|
    git clone https://github.com/stackhpc/stackhpc-kayobe-config -b |current_release_git_branch_name| kayobe-config
    popd
 
@@ -80,7 +76,7 @@ Create a virtual environment and install Kayobe:
    python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
-   pip install -r ../src/kayobe-config/requirements.txt
+   pip install ../src/kayobe
    popd
 
 Add initial network configuration:

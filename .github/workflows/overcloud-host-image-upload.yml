@@ -15,13 +15,6 @@ on:
         description: Kayobe environment to use
         type: string
         default: "ci-builder"
-      runner_env:
-        description: Which cloud to run on?
-        type: choice
-        default: SMS Lab
-        options:
-          - SMS Lab
-          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -35,17 +28,10 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
-  runner-selection:
-    uses: ./.github/workflows/runner-selector.yml
-    with:
-      runner_env: ${{ inputs.runner_env }}
   overcloud-host-image-upload:
     name: Upload overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: ${{ inputs.runner_env }}
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
-    needs:
-      - runner-selection
+    runs-on: arc-skc-host-image-builder-runner
     permissions: {}
     steps:
       - name: Validate inputs
@@ -70,6 +56,13 @@ jobs:
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
 
+      - name: Clone StackHPC Kayobe repository
+        uses: actions/checkout@v4
+        with:
+          repository: stackhpc/kayobe
+          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          path: src/kayobe
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -77,7 +70,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install -r ../src/kayobe-config/requirements.txt
+          pip install ../src/kayobe
 
       - name: Bootstrap the control host
         run: |
