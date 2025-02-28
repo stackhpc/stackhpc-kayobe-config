@@ -1,4 +1,3 @@
-{% raw %}
 {
   "annotations": {
     "list": [
@@ -20,11 +19,12 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12403,
   "graphTooltip": 0,
-  "id": 30,
+  "id": 85,
   "links": [],
   "panels": [
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -78,6 +78,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "expr": "count(up{job=\"redfish-exporter\"} == 1)",
           "format": "table",
           "hide": false,
@@ -105,6 +106,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -134,6 +136,7 @@
         "y": 0
       },
       "id": 54,
+      "interval": "30m",
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -158,7 +161,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state == 1)",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -172,6 +176,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -225,7 +230,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state != 1)",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -239,6 +245,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -292,7 +299,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_chassis_health != 1)",
+          "editorMode": "code",
+          "expr": "count(redfish_chassis_health{group=\"$group\"} != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -306,6 +314,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -359,7 +368,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_logservices_entry_count{name=\"SEL Log Service\", severity!=\"OK\"} != 0)",
+          "editorMode": "code",
+          "expr": "count(redfish_logservices_entry_count{name=\"SEL Log Service\", severity!=\"OK\", group=\"$group\"} != 0)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -372,6 +382,570 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "dark-green",
+                  "index": 1,
+                  "text": "On"
+                },
+                "2": {
+                  "color": "dark-red",
+                  "index": 0,
+                  "text": "Off"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "instance"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "BMC"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://${__data.fields.instance}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Power state"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#73BF69",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "__name__"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "env"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resource"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "system_id"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "server"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://${__data.fields.instance}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "hostname"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 3
+      },
+      "id": 59,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Power state"
+          }
+        ]
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc(redfish_system_power_state{group=\"$group\"})",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Power states",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "index": 1,
+                  "text": "Healthy"
+                },
+                "2": {
+                  "index": 2,
+                  "text": "Unknown"
+                },
+                "3": {
+                  "index": 0,
+                  "text": "Unhealthy"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/__name__|chassis_id|Time|env|job|resource|instance/"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "unit",
+                "value": ""
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)"
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 2
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "server"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://${__data.fields.instance}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 3
+      },
+      "id": 61,
+      "interval": "",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Status"
+          }
+        ]
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sort(redfish_chassis_health{group=\"$group\"})",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Chassis status",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
       "collapsed": false,
       "datasource": {
         "type": "datasource",
@@ -381,7 +955,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 11
       },
       "id": 31,
       "panels": [],
@@ -399,6 +973,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -463,7 +1038,7 @@
         "h": 11,
         "w": 7,
         "x": 0,
-        "y": 4
+        "y": 12
       },
       "id": 36,
       "options": {
@@ -488,8 +1063,10 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(redfish_chassis_power_average_consumed_watts)",
+          "editorMode": "code",
+          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\"})",
           "legendFormat": "Rack power consumption",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -498,6 +1075,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -562,7 +1140,7 @@
         "h": 11,
         "w": 6,
         "x": 7,
-        "y": 4
+        "y": 12
       },
       "id": 44,
       "options": {
@@ -588,9 +1166,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(redfish_chassis_power_average_consumed_watts) by (env)",
+          "editorMode": "code",
+          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\"}) by (env)",
           "interval": "",
           "legendFormat": "{{ env }}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -599,6 +1179,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -663,7 +1244,7 @@
         "h": 11,
         "w": 6,
         "x": 13,
-        "y": 4
+        "y": 12
       },
       "id": 42,
       "options": {
@@ -688,10 +1269,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state == 1) by (env)",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
+          "range": true,
           "refId": "A"
         },
         {
@@ -699,10 +1282,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state == 2) by (env) * -1",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} == 2) by (env) * -1",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered down {{ env }}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -711,6 +1296,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -775,7 +1361,7 @@
         "h": 11,
         "w": 5,
         "x": 19,
-        "y": 4
+        "y": 12
       },
       "id": 43,
       "options": {
@@ -800,10 +1386,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state == 1) by (env)",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1) by (env)",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
+          "range": true,
           "refId": "A"
         },
         {
@@ -811,10 +1399,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_power_state == 2) by (env)",
+          "editorMode": "code",
+          "expr": "count(redfish_system_power_state{group=\"$group\"} == 2) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "Powered down {{ env }}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -889,7 +1479,7 @@
         "h": 11,
         "w": 7,
         "x": 0,
-        "y": 15
+        "y": 23
       },
       "id": 39,
       "interval": "5m",
@@ -917,7 +1507,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "max inlet {{ env }}",
@@ -1038,7 +1628,7 @@
         "h": 11,
         "w": 8,
         "x": 7,
-        "y": 15
+        "y": 23
       },
       "id": 40,
       "interval": "5m",
@@ -1066,7 +1656,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1186,7 +1776,7 @@
         "h": 11,
         "w": 9,
         "x": 15,
-        "y": 15
+        "y": 23
       },
       "id": 41,
       "interval": "5m",
@@ -1214,7 +1804,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.2.*Temp\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\"CPU2 Temp|.*CPU.2.*Temp\", group=\"$group\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1259,7 +1849,7 @@
         "h": 10,
         "w": 5,
         "x": 0,
-        "y": 26
+        "y": 34
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -1316,7 +1906,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\"}",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1376,7 +1966,7 @@
         "h": 10,
         "w": 6,
         "x": 5,
-        "y": 26
+        "y": 34
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -1435,7 +2025,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1497,7 +2087,7 @@
         "h": 10,
         "w": 6,
         "x": 11,
-        "y": 26
+        "y": 34
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -1556,7 +2146,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\", group=\"$group\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1594,6 +2184,7 @@
       },
       "dataFormat": "timeseries",
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -1617,7 +2208,7 @@
         "h": 10,
         "w": 5,
         "x": 18,
-        "y": 26
+        "y": 34
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -1673,11 +2264,13 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(redfish_chassis_fan_rpm_percentage) by (server) > 0",
+          "editorMode": "code",
+          "expr": "max(redfish_chassis_fan_rpm_percentage{group=\"$group\"}) by (server) > 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1764,7 +2357,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 36
+        "y": 44
       },
       "id": 47,
       "interval": "5m",
@@ -1792,7 +2385,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\"} or redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -1871,7 +2464,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 36
+        "y": 44
       },
       "id": 49,
       "interval": "1m",
@@ -1898,7 +2491,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"} != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -1919,7 +2512,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 54
       },
       "id": 29,
       "panels": [],
@@ -1964,7 +2557,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 47
+        "y": 55
       },
       "id": 19,
       "options": {
@@ -1990,7 +2583,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=\"$server\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{power_voltage}}",
@@ -2031,7 +2624,7 @@
         "h": 4,
         "w": 2,
         "x": 8,
-        "y": 47
+        "y": 55
       },
       "id": 24,
       "options": {
@@ -2097,7 +2690,7 @@
         "h": 4,
         "w": 2,
         "x": 10,
-        "y": 47
+        "y": 55
       },
       "id": 25,
       "options": {
@@ -2164,7 +2757,7 @@
         "h": 4,
         "w": 2,
         "x": 12,
-        "y": 47
+        "y": 55
       },
       "id": 26,
       "options": {
@@ -2231,7 +2824,7 @@
         "h": 4,
         "w": 2,
         "x": 14,
-        "y": 47
+        "y": 55
       },
       "id": 27,
       "options": {
@@ -2309,7 +2902,7 @@
         "h": 18,
         "w": 8,
         "x": 16,
-        "y": 47
+        "y": 55
       },
       "id": 17,
       "options": {
@@ -2333,7 +2926,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=~\"oscephpor01\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=~\"oscephpor01\"}[15m])) > 0",
+          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=\"$server\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=\"$server\"}[15m])) > 0",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2363,11 +2956,15 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [
             {
               "options": {
@@ -2411,15 +3008,15 @@
         "h": 4,
         "w": 3,
         "x": 0,
-        "y": 51
+        "y": 59
       },
       "id": 6,
       "maxDataPoints": 100,
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
@@ -2439,7 +3036,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "redfish_system_power_state{server=~\"$server\"}",
+          "editorMode": "code",
+          "expr": "redfish_system_power_state{server=\"$server\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -2509,7 +3107,7 @@
         "h": 4,
         "w": 5,
         "x": 3,
-        "y": 51
+        "y": 59
       },
       "id": 7,
       "maxDataPoints": 100,
@@ -2538,10 +3136,10 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_health{server=~\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_health{server=\"$server\"}",
           "format": "time_series",
           "instant": true,
-          "interval": "",
+          "interval": "30m",
           "legendFormat": "Chassis {{chassis_id}}",
           "refId": "A"
         }
@@ -2620,7 +3218,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 51
+        "y": 59
       },
       "id": 45,
       "options": {
@@ -2723,7 +3321,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 58
+        "y": 66
       },
       "id": 13,
       "options": {
@@ -2750,7 +3348,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\"}",
           "interval": "",
           "legendFormat": "{{power_voltage}}",
           "range": true,
@@ -2761,7 +3359,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -2789,22 +3387,88 @@
       {
         "current": {
           "selected": true,
-          "text": "oscomppor04",
-          "value": "oscomppor04"
+          "text": "production",
+          "value": "production"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(redfish_exporter_collector_duration_seconds, server)",
+        "definition": "label_values(redfish_exporter_collector_duration_seconds,env)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "env",
+        "multi": false,
+        "name": "env",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(redfish_exporter_collector_duration_seconds,env)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "compute",
+          "value": "compute"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(redfish_exporter_collector_duration_seconds{env=\"$env\"},group)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "group",
+        "multi": false,
+        "name": "group",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(redfish_exporter_collector_duration_seconds{env=\"$env\"},group)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "svn1-dr07-u10",
+          "value": "svn1-dr07-u10"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(redfish_exporter_collector_duration_seconds{group=\"$group\", env=\"$env\"},server)",
         "hide": 0,
         "includeAll": false,
         "label": "server",
         "multi": false,
         "name": "server",
         "options": [],
-        "query": "label_values(redfish_exporter_collector_duration_seconds, server)",
-        "refresh": 1,
+        "query": {
+          "qryType": 1,
+          "query": "label_values(redfish_exporter_collector_duration_seconds{group=\"$group\", env=\"$env\"},server)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -2816,7 +3480,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-12h",
     "to": "now-1m"
   },
   "timepicker": {
@@ -2836,8 +3500,7 @@
   },
   "timezone": "",
   "title": "Redfish exporter",
-  "uid": "b02mElQGX",
+  "uid": "redfish",
   "version": 2,
   "weekStart": ""
 }
-{% endraw %}
