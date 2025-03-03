@@ -8,17 +8,16 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  update_from_branch:
-    runs-on: ubuntu-22.04
+  update-from-branch:
+    name: Update dependencies
     strategy:
       matrix:
         include:
           - version: stackhpc/2023.1
           - version: stackhpc/2024.1
-    name: ${{ matrix.version }}
-    steps:
-      - name: Update dependencies
-        uses: ./.github/workflows/update-dependencies.yml
-        with:
-          openstack_version: ${{ matrix.version }}
-        secrets: inherit
+    uses: ./.github/workflows/update-dependencies.yml
+    with:
+      openstack_version: ${{ matrix.version }}
+    permissions:
+      contents: write
+      pull-requests: write
