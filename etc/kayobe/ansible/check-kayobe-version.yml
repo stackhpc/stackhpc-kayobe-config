@@ -1,24 +1,24 @@
 ---
-- name: Check kayobe version
+- name: Check Kayobe version
   tags: kayobe-version-check
   hosts: localhost
   gather_facts: false
   vars:
     requirements_path: "{{ kayobe_config_path }}/../../requirements.txt"
   tasks:
-    - name: Get installed kayobe commit
+    - name: Get installed Kayobe commit
       ansible.builtin.shell:
         cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3
         executable: /usr/bin/bash
       register: kayobe_git_commit
 
-    - name: Clone kayobe
+    - name: Clone Kayobe
       ansible.builtin.git:
         repo: https://github.com/stackhpc/kayobe.git
         dest: /tmp/kayobe-git
         version: stackhpc/{{ openstack_release }}
 
-    - name: Get tag from kayobe commit
+    - name: Get tag from Kayobe commit
       ansible.builtin.command:
         cmd: git describe --tags {{ kayobe_git_commit.stdout }}
         chdir: /tmp/kayobe-git
@@ -30,7 +30,7 @@
         executable: /usr/bin/bash
       register: kayobe_latest_version
 
-    - name: Check installed kayobe version is the latest
+    - name: Check installed Kayobe version is the latest
       ansible.builtin.assert:
         that: "kayobe_latest_version.stdout in kayobe_current_version.stdout"
         fail_msg: |
