@@ -1,5 +1,6 @@
 ---
 - name: Check kayobe version
+  tags: kayobe-version-check
   hosts: localhost
   gather_facts: false
   vars:
@@ -7,7 +8,7 @@
   tasks:
     - name: Get installed kayobe commit
       ansible.builtin.shell:
-        cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3 -s
+        cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3
         executable: /usr/bin/bash
       register: kayobe_git_commit
 
