@@ -99,7 +99,7 @@ All in one testing
 The ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow accepts
 various parameters, and the following are used to create a test matrix for PRs:
 
-  - Operating System (Rocky 9, Ubuntu Jammy)
+  - Operating System (Rocky 9, Ubuntu Noble)
   - Neutron plugin (OVS, OVN)
   - Upgrade or no upgrade
 
