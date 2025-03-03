@@ -82,6 +82,30 @@ should switch to the `native
 <https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
 Prometheus Teams integration.
 
+Keystone LDAP TLS configuration
+-------------------------------
+
+Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
+if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
+authentication will fail if this configuration is absent. See `upstream
+Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
+for more details.
+
+OS Capacity exporter and dashboard enabled by default
+-----------------------------------------------------
+
+The OS Capacity exporter will automatically be deployed after the upgrade.
+During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
+will also be updated to use the exporter. If you want to disable this, change
+the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
+
+.. code-block:: yaml
+
+   # Whether the OpenStack Capacity exporter is enabled.
+   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
+   # targets being templated during deployment.
+   stackhpc_enable_os_capacity: false
+
 Known issues
 ============
 
@@ -98,7 +122,7 @@ been done, they should be completed before the upgrade begins.
 
    * Enable `host firewalling <TODO>`_
 
-* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.rst>`_
+* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.html>`_
 * Enable TLS on the :kayobe-doc:`public API network
   <configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`
 * Enable TLS on the `internal API network <../configuration/vault.html>`_
@@ -125,6 +149,11 @@ suggestions:
 * Check Grafana dashboards.
 * Update the deployment to use the latest |previous_release| images and
   configuration.
+* If your customer has overriden any policies, check to see if they need
+  updating to align with new defaults. These will be written to files
+  ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
+  generally be found in the documentation of each project. For example, Nova
+  policy: https://docs.openstack.org/nova/latest/configuration/policy.html
 
 Ubuntu Noble migration
 ----------------------
@@ -949,7 +978,7 @@ scope of the upgrade:
 Updating the Octavia Amphora Image
 ----------------------------------
 
-If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+If using Octavia with the Amphora driver, you should :ref:`update the amphora
 image <Amphora image>`.
 
 Testing
