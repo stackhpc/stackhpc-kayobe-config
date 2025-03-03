@@ -7,7 +7,8 @@
   tasks:
     - name: Get installed kayobe commit
       ansible.builtin.shell:
-        cmd: pip freeze | grep kayobe | cut -d @ -f 3 -s
+        cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3 -s
+        executable: /usr/bin/bash
       register: kayobe_git_commit
 
     - name: Clone kayobe
@@ -24,7 +25,8 @@
 
     - name: Get latest Kayobe version
       ansible.builtin.shell:
-        cmd: grep -o kayobe@stackhpc\/.*$ {{ requirements_path }} | cut -d @ -f 2
+        cmd: set -o pipefail && grep -o kayobe@stackhpc\/.*$ {{ requirements_path }} | cut -d @ -f 2
+        executable: /usr/bin/bash
       register: kayobe_latest_version
 
     - name: Check installed kayobe version is the latest
