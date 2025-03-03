@@ -115,17 +115,17 @@ jobs:
       if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
-  # check-tags:
-  #   name: Check container image tags
-  #   needs:
-  #     - check-changes
-  #     - build-kayobe-image
-  #   uses: ./.github/workflows/stackhpc-check-tags.yml
-  #   with:
-  #     kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
-  #     if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
-  #   secrets: inherit
-  #   if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+  check-tags:
+    name: Check container image tags
+    needs:
+      - check-changes
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-check-tags.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      if: ${{ needs.check-changes.outputs.check-tags == 'true' }}
+    secrets: inherit
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
   all-in-one-ubuntu-noble-ovs:
     name: aio (Ubuntu Noble OVS)
