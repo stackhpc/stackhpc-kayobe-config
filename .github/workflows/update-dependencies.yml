@@ -1,11 +1,12 @@
 name: Update dependencies
 
 on:
-  # Allow manual executions
-  workflow_dispatch:
-  # Run nightly
-  schedule:
-    - cron: '0 0 * * *'
+  workflow_call:
+    inputs:
+      openstack_version:
+        description: OpenStack version
+        type: string
+        required: true
 
 jobs:
   propose_github_release_updates:
@@ -38,20 +39,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.openstack_version }}
           path: ${{ github.workspace }}/src/kayobe-config
-
-      - name: Determine OpenStack release
-        id: openstack_release
-        run: |
-          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
-          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
-        working-directory: ${{ github.workspace }}/src/kayobe-config
 
       - name: Checkout the dependency repo
         uses: actions/checkout@v4
         with:
           repository: ${{ matrix.repository }}
-          ref: stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
+          ref: stackhpc/${{ inputs.openstack_version }}
           fetch-tags: true
           path: ${{ github.workspace }}/src/${{ matrix.key }}
 
@@ -78,7 +73,7 @@ jobs:
           path: ${{ github.workspace }}/src/kayobe-config
           commit-message: >-
             Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
-          branch: update-dependency/${{ matrix.key }}
+          branch: update-dependency/${{ matrix.key }}/${{ inputs.openstack_version }}
           delete-branch: true
           title: >-
             Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
