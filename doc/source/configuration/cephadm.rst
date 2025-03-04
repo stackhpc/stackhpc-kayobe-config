@@ -349,7 +349,7 @@ RADOS Gateways
 
 RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
 documentation
-<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+<reference/storage/external-ceph-guide.html#radosgw>`.
 
 RADOS Gateways (RGWs) are defined with the following:
 
