@@ -204,8 +204,8 @@ Pools
 ~~~~~
 
 The following example pools should be sufficient to work with the
-default `external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+default :kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
@@ -232,8 +232,8 @@ Keys
 ~~~~
 
 The following example keys should be sufficient to work with the default
-`external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+:kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
