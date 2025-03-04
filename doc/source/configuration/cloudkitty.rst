@@ -8,8 +8,8 @@ Configuring in kayobe-config
 By default, CloudKitty uses Gnocchi and Ceilometer as the collector and fetcher
 backends. Unless the system has a specific reason not to, we recommend instead
 using Prometheus as the backend for both. The following instructions explain
-how to do this. Also, see the `Kolla Ansible docs on CloudKitty
-<https://docs.openstack.org/kolla-ansible/latest/reference/rating/cloudkitty-guide.html>`__
+how to do this. Also, see the :kolla-ansible-doc:`Kolla Ansible docs on CloudKitty
+<reference/rating/cloudkitty-guide.html>`
 for more details.
 
 Enable CloudKitty and disable InfluxDB, as we are using OpenSearch as the

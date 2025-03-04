@@ -118,7 +118,7 @@ Runner Deployment
     The repository permissions for a fine-grained personal access token should be; :code:`Actions: R/W, Administration: R/W, Metadata: R`
     Once the key has been obtained, add it to :code:`secrets.yml` under :code:`secrets_github_access_token`
 
-7. If the host is an actual Infra VM then please refer to upstream `Infrastructure VMs <https://docs.openstack.org/kayobe/latest/configuration/reference/infra-vms.html>`__ documentation for additional configuration and steps.
+7. If the host is an actual Infra VM then please refer to upstream :kayobe-doc:`Infrastructure VMs <configuration/reference/infra-vms.html>` documentation for additional configuration and steps.
 
 8. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-github-runner.yml`
 
