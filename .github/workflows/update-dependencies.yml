@@ -7,6 +7,10 @@ on:
         description: OpenStack version
         type: string
         required: true
+    openstack_codename:
+        description: OpenStack codename
+        type: string
+        required: true
 
 jobs:
   propose_github_release_updates:
@@ -80,3 +84,6 @@ jobs:
           body: >
             This PR was created automatically to update ${{ inputs.openstack_version }}
             ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}.
+          labels: |
+            stackhpc-ci
+            ${{ inputs.openstack_codename }}
