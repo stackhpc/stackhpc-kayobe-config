@@ -4,13 +4,13 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Get installed Kolla-Ansible commit
+    - name: Get current Kolla-Ansible tag
       ansible.builtin.command:
         cmd: git describe --tags
         chdir: "{{ lookup('ansible.builtin.env', 'KOLLA_SOURCE_PATH') }}"
       register: kolla_ansible_current_version
 
-    - name: Check installed Kolla-Ansible version is the latest
+    - name: Check installed Kolla-Ansible version is the expected version
       ansible.builtin.assert:
         that: "stackhpc_kolla_ansible_source_version in kolla_ansible_current_version.stdout"
         fail_msg: |
