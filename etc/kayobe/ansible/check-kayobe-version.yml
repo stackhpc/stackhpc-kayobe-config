@@ -26,6 +26,7 @@
             cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3
             executable: /usr/bin/bash
           register: kayobe_git_commit
+          failed_when: kayobe_git_commit.stdout == ""
 
         - name: Clone Kayobe
           ansible.builtin.git:
