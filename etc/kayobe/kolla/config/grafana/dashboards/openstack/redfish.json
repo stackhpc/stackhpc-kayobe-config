@@ -20,12 +20,12 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12403,
   "graphTooltip": 0,
-  "id": 85,
+  "id": 30,
   "links": [],
   "panels": [
     {
       "datasource": {
-        "default": false,
+	"default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -102,7 +102,7 @@
           "refId": "B"
         }
       ],
-      "title": "iDRAC Up",
+      "title": "Redfish Up",
       "type": "stat"
     },
     {
@@ -163,7 +163,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -232,7 +232,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} != 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -301,7 +301,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_chassis_health{group=\"$group\"} != 1)",
+          "expr": "count(redfish_chassis_health{group=\"$group\", job=\"redfish-exporter\" } != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -730,7 +730,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sort_desc(redfish_system_power_state{group=\"$group\"})",
+          "expr": "sort_desc(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"})",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -926,7 +926,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sort(redfish_chassis_health{group=\"$group\"})",
+          "expr": "sort(redfish_chassis_health{group=\"$group\", job=\"redfish-exporter\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1065,8 +1065,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\"})",
-          "legendFormat": "Rack power consumption",
+          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\", job=\"redfish-exporter\"})",
+          "legendFormat": "Total power consumption",
           "range": true,
           "refId": "A"
         }
@@ -1168,7 +1168,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\"}) by (env)",
+          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\", job=\"redfish-exporter\"}) by (env)",
           "interval": "",
           "legendFormat": "{{ env }}",
           "range": true,
@@ -1271,7 +1271,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1) by (env)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
@@ -1284,7 +1284,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} == 2) by (env) * -1",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 2) by (env) * -1",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered down {{ env }}",
@@ -1292,7 +1292,7 @@
           "refId": "B"
         }
       ],
-      "title": "Powered ON by Rack",
+      "title": "Powered ON",
       "type": "timeseries"
     },
     {
@@ -1388,7 +1388,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} == 1) by (env)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1) by (env)",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
@@ -1401,7 +1401,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\"} == 2) by (env)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 2) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "Powered down {{ env }}",
@@ -1409,7 +1409,7 @@
           "refId": "B"
         }
       ],
-      "title": "Powered OFF by Rack",
+      "title": "Powered OFF",
       "type": "timeseries"
     },
     {
@@ -1508,7 +1508,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "max inlet {{ env }}",
@@ -1657,7 +1657,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1805,7 +1805,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\"CPU2 Temp|.*CPU.2.*Temp\", group=\"$group\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\"CPU2 Temp|.*CPU.2.*Temp\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1907,7 +1907,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job=\"redfish-exporter\"}",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2026,7 +2026,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2147,7 +2147,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\", group=\"$group\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2266,7 +2266,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_fan_rpm_percentage{group=\"$group\"}) by (server) > 0",
+          "expr": "max(redfish_chassis_fan_rpm_percentage{group=\"$group\", job=\"redfish-exporter\"}) by (server) > 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2386,7 +2386,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\"} or redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\", job=\"redfish-exporter\"} or redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\", job=\"redfish-exporter\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\", job=\"redfish-exporter\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -2492,7 +2492,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -2584,7 +2584,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=\"$server\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=\"$server\", job=\"redfish-exporter\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{power_voltage}}",
@@ -2614,7 +2614,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
           }
@@ -2650,7 +2650,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_storage_drive_state{server=~\"$server\"} != 1) or vector(0)",
+          "expr": "count(redfish_system_storage_drive_state{server=~\"$server\", job=\"redfish-exporter\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2658,7 +2658,7 @@
           "refId": "A"
         }
       ],
-      "title": "Disk with errors",
+      "title": "Disks with errors",
       "type": "gauge"
     },
     {
@@ -2680,7 +2680,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
           }
@@ -2716,7 +2716,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_pcie_device_health_state{server=~\"$server\"} != 1) or vector(0)",
+          "expr": "count(redfish_system_pcie_device_health_state{server=~\"$server\", job=\"redfish-exporter\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2747,7 +2747,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
           }
@@ -2784,7 +2784,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_chassis_temperature_sensor_state{server=~\"$server\"} > 2) or vector(0)",
+          "expr": "count(redfish_chassis_temperature_sensor_state{server=~\"$server\", job=\"redfish-exporter\"} > 2) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2814,7 +2814,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
           }
@@ -2850,7 +2850,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_chassis_power_powersupply_health{server=~\"$server\"} > 1) or vector(0)",
+          "expr": "count(redfish_chassis_power_powersupply_health{server=~\"$server\", job=\"redfish-exporter\"} > 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2927,7 +2927,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=\"$server\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=\"$server\"}[15m])) > 0",
+          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job=\"redfish-exporter\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job=\"redfish-exporter\"}[15m])) > 0",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -3038,7 +3038,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_system_power_state{server=\"$server\"}",
+          "expr": "redfish_system_power_state{server=\"$server\", job=\"redfish-exporter\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -3137,7 +3137,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_health{server=\"$server\"}",
+          "expr": "redfish_chassis_health{server=\"$server\", job=\"redfish-exporter\"}",
           "format": "time_series",
           "instant": true,
           "interval": "30m",
@@ -3245,7 +3245,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "redfish_chassis_temperature_celsius{server=~\"$server\"}",
+          "expr": "redfish_chassis_temperature_celsius{server=~\"$server\", job=\"redfish-exporter\"}",
           "interval": "",
           "legendFormat": "{{sensor}}",
           "refId": "A"
@@ -3349,7 +3349,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\", job=\"redfish-exporter\"}",
           "interval": "",
           "legendFormat": "{{power_voltage}}",
           "range": true,
@@ -3481,7 +3481,7 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-15m",
     "to": "now-1m"
   },
   "timepicker": {
