@@ -5,6 +5,7 @@
   gather_facts: false
   tasks:
     - name: Check version
+      when: stackhpc_enable_kolla_check
       block:
         - name: Get current Kolla-Ansible tag
           ansible.builtin.command:
@@ -24,4 +25,3 @@
               Upgrade Kolla-Ansible by running: kayobe control host upgrade
             success_msg: |
               Kolla-Ansible running at version: {{ kolla_ansible_current_version.stdout }}
-      when: stackhpc_enable_kolla_check
