@@ -582,10 +582,11 @@ stackhpc_pulp_repository_container_repos_kolla_common:
 # List of Kolla container image repositories.
 stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
+  {%- set image_tags = lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tags') | from_yaml -%}
   {%- for image in stackhpc_pulp_images_kolla_filtered -%}
-  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro_and_version]-%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro_and_version] -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ image -%}
-  {%- set repo = {"name": image_repo} -%}
+  {%- set repo = {"name": image_repo, "include_tags": image_tags[image]} -%}
   {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
   {%- endif -%}
   {%- endfor -%}
