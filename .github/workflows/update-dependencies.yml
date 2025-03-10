@@ -54,6 +54,11 @@ jobs:
           fetch-tags: true
           path: ${{ github.workspace }}/src/${{ matrix.key }}
 
+      - name: Set author config
+        run: |
+          git config user.email "22933334+stackhpc-ci@users.noreply.github.com"
+          git config user.name "stackhpc-ci"
+
       - name: Get latest tag
         id: latest_tag
         run: |
@@ -78,11 +83,10 @@ jobs:
           path: ${{ github.workspace }}/src/kayobe-config
           commit-message: >-
             Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
-          author: stackhpc-ci <22933334+stackhpc-ci@users.noreply.github.com>
           branch: update-dependency/${{ matrix.key }}/${{ inputs.openstack_version }}
           delete-branch: true
           title: >-
-            Bump ${{ inputs.openstack_version }} ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
+            Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
           body: >
             This PR was created automatically to update ${{ inputs.openstack_version }}
             ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}.
