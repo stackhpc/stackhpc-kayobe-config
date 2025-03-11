@@ -42,6 +42,17 @@
             disk_format: qcow2
             state: present
             filename: "{{ local_image_path }}"
+            visibility: shared
+            register: image
+
+        - name: Ensure dependencies are installed
+          pip:
+            name: python-openstackclient
+            virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+
+        # Allow users in stackhpc-aufn to use these images.
+        - name: Add image to stackhpc-dev project
+          command: openstack image add project {{ image.image.id }} 3d279fd978df4b18b2174cf336f25c9b
 
       always:
         - name: Remove clouds.yaml
