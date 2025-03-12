@@ -26,38 +26,38 @@ as:
 
 #. Check ``octavia_net_interface`` is configured in ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/`` (often in ``controllers/network-interfaces.yml``).
 
-   - IF NOT CONFIGURED  
+   - IF NOT CONFIGURED
 
-     2.1. Check if a ``bond_interface`` has been configured, still within ``network-interfaces.yml``.  
+     2.1. Check if a ``bond_interface`` has been configured, still within ``network-interfaces.yml``.
 
-     2.2. Check whether other network interfaces, such as ``internal_interface``, are configured to use ``{{ bond_interface }}`` and/or ``{{ .._vlan }}``.  
-     
-     2.3. If they are, then ``octavia_net_interface: "{{ brbond0_interface }}.{{ octavia_net`` ± ``_vlan }}"``.  
+     2.2. Check whether other network interfaces, such as ``internal_interface``, are configured to use ``{{ bond_interface }}`` and/or ``{{ .._vlan }}``.
 
-   - IF CONFIGURED   
+     2.3. If they are, then ``octavia_net_interface: "{{ brbond0_interface }}.{{ octavia_net`` ± ``_vlan }}"``.
+
+   - IF CONFIGURED
 
      2.1. Continue to step 3.
 
-#. Check that the ``{{ .._net_.. }}`` network configured for ``octavia_net_interface`` exists in ``networks.yml``.  
+#. Check that the ``{{ .._net_.. }}`` network configured for ``octavia_net_interface`` exists in ``networks.yml``.
 
-   - IF NOT CONFIGURED  
+   - IF NOT CONFIGURED
 
-     3.1. Set ``octavia_net_name: octavia_net``.  
-     
-     3.2. Configure the Octavia network IP information, making sure to set ``octavia_net_vlan`` if using a VLAN.  
-   
-   - IF CONFIGURED  
-     
+     3.1. Set ``octavia_net_name: octavia_net``.
+
+     3.2. Configure the Octavia network IP information, making sure to set ``octavia_net_vlan`` if using a VLAN.
+
+   - IF CONFIGURED
+
      3.1. Continue to step 4.
 
-#. Dependencies if:  
+#. Dependencies if:
 
-   - USING VLAN  
+   - USING VLAN
 
-     4.1. Set ``kolla_enable_neutron_provider_networks: true`` in ``kolla.yml``.  
-   
-   - USING AMPHORA  
-  
+     4.1. Set ``kolla_enable_neutron_provider_networks: true`` in ``kolla.yml``.
+
+   - USING AMPHORA
+
      4.1. Set ``octavia_loadbalancer_topology: "ACTIVE_STANDBY"`` in ``${KAYOBE_CONFIG_PATH}/kolla/globals.yml``.
 
 #. Run ``kayobe overcloud service reconfigure``.
