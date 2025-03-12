@@ -20,12 +20,38 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 12403,
   "graphTooltip": 0,
-  "id": 30,
+  "id": 91,
   "links": [],
   "panels": [
     {
+      "collapsed": false,
       "datasource": {
-	"default": false,
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 31,
+      "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "grafana"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
@@ -52,7 +78,7 @@
         "h": 3,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 53,
       "options": {
@@ -80,7 +106,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(up{job=\"redfish-exporter\"} == 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -134,7 +160,7 @@
         "h": 3,
         "w": 4,
         "x": 4,
-        "y": 0
+        "y": 1
       },
       "id": 54,
       "interval": "30m",
@@ -163,7 +189,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} == 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -204,7 +230,7 @@
         "h": 3,
         "w": 4,
         "x": 8,
-        "y": 0
+        "y": 1
       },
       "id": 55,
       "options": {
@@ -232,7 +258,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} != 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -262,7 +288,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 1
               }
             ]
           }
@@ -273,7 +299,7 @@
         "h": 3,
         "w": 4,
         "x": 12,
-        "y": 0
+        "y": 1
       },
       "id": 56,
       "options": {
@@ -301,7 +327,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_chassis_health{group=\"$group\", job=\"redfish-exporter\" } != 1)",
+          "expr": "count(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\" } != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -311,75 +337,6 @@
         }
       ],
       "title": "Unhealthy Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "default": false,
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      },
-      "id": 57,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": true
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.2.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "count(redfish_logservices_entry_count{name=\"SEL Log Service\", severity!=\"OK\", group=\"$group\"} != 0)",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "title": "Nodes with SEL Logs",
       "type": "stat"
     },
     {
@@ -694,6 +651,18 @@
                 "id": "custom.align"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Power state"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 197
+              }
+            ]
           }
         ]
       },
@@ -701,7 +670,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "id": 59,
       "options": {
@@ -730,7 +699,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sort_desc(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"})",
+          "expr": "sort_desc(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"})",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -788,7 +757,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -846,7 +816,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "rgba(50, 172, 45, 0.97)"
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": null
                     },
                     {
                       "color": "#EAB839",
@@ -896,7 +867,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 3
+        "y": 4
       },
       "id": 61,
       "interval": "",
@@ -926,7 +897,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sort(redfish_chassis_health{group=\"$group\", job=\"redfish-exporter\"})",
+          "expr": "sort(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -947,117 +918,173 @@
       "type": "table"
     },
     {
-      "collapsed": false,
-      "datasource": {
-        "type": "datasource",
-        "uid": "grafana"
-      },
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 11
-      },
-      "id": 31,
-      "panels": [],
-      "targets": [
-        {
-          "datasource": {
-            "type": "datasource",
-            "uid": "grafana"
-          },
-          "refId": "A"
-        }
-      ],
-      "title": "Overview",
-      "type": "row"
-    },
-    {
       "datasource": {
         "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "inspect": false
           },
-          "links": [],
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "index": 1,
+                  "text": "Healthy"
+                },
+                "2": {
+                  "index": 2,
+                  "text": "Warning"
+                },
+                "3": {
+                  "index": 0,
+                  "text": "Critical"
+                }
+              },
+              "type": "value"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/__name__|chassis_id|Time|env|job|resource|instance/"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
               },
               {
-                "color": "red",
-                "value": 80
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.align"
               }
             ]
           },
-          "unit": "watt"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "unit",
+                "value": ""
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 2
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "server"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://${__data.fields.instance}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 11,
-        "w": 7,
+        "w": 12,
         "x": 0,
         "y": 12
       },
-      "id": 36,
+      "id": 62,
+      "interval": "",
       "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
           ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "show": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Status"
+          }
+        ]
       },
-      "pluginVersion": "7.1.5",
+      "pluginVersion": "11.2.0",
       "targets": [
         {
           "datasource": {
@@ -1065,14 +1092,45 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\", job=\"redfish-exporter\"})",
-          "legendFormat": "Total power consumption",
-          "range": true,
+          "expr": "max(last_over_time({__name__=~\"redfish_chassis_log_entry_severity_state|redfish_manager_log_entry_severity_state\", group=\"$group\"}[1h])) by (group, server, log_service_id, instance)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
-      "title": "Power Consumption",
-      "type": "timeseries"
+      "title": "Log severity summary",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Value": 4,
+              "group": 1,
+              "instance": 5,
+              "log_service_id": 3,
+              "server": 2
+            },
+            "renameByName": {
+              "Value": "Status",
+              "log_service_id": "Log Service",
+              "server": "Server"
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -1140,7 +1198,7 @@
       "gridPos": {
         "h": 11,
         "w": 6,
-        "x": 7,
+        "x": 12,
         "y": 12
       },
       "id": 44,
@@ -1168,14 +1226,14 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\", job=\"redfish-exporter\"}) by (env)",
+          "expr": "sum(redfish_chassis_power_average_consumed_watts{group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (env)",
           "interval": "",
           "legendFormat": "{{ env }}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Power Consumption",
+      "title": "Power consumption",
       "type": "timeseries"
     },
     {
@@ -1244,7 +1302,7 @@
       "gridPos": {
         "h": 11,
         "w": 6,
-        "x": 13,
+        "x": 18,
         "y": 12
       },
       "id": 42,
@@ -1271,7 +1329,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1) by (env)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} == 1) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "Powered up {{ env }}",
@@ -1284,7 +1342,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 2) by (env) * -1",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} == 2) by (env) * -1",
           "hide": true,
           "interval": "",
           "legendFormat": "Powered down {{ env }}",
@@ -1292,124 +1350,7 @@
           "refId": "B"
         }
       ],
-      "title": "Powered ON",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "default": false,
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "links": [],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 5,
-        "x": 19,
-        "y": 12
-      },
-      "id": 43,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "7.1.5",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 1) by (env)",
-          "hide": true,
-          "interval": "",
-          "legendFormat": "Powered up {{ env }}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job=\"redfish-exporter\"} == 2) by (env)",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Powered down {{ env }}",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Powered OFF",
+      "title": "Powered status",
       "type": "timeseries"
     },
     {
@@ -1508,7 +1449,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "max inlet {{ env }}",
@@ -1657,7 +1598,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1805,7 +1746,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\"CPU2 Temp|.*CPU.2.*Temp\", group=\"$group\", job=\"redfish-exporter\"}) by (env)",
+          "expr": "max(redfish_chassis_temperature_celsius{sensor=~\"CPU2 Temp|.*CPU.2.*Temp\", group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (env)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }}",
@@ -1848,7 +1789,7 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 5,
+        "w": 6,
         "x": 0,
         "y": 34
       },
@@ -1907,7 +1848,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp|.*Inlet.*\", group=\"$group\", job!=\"redfish-exporter-collectlog\"}",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1966,7 +1907,7 @@
       "gridPos": {
         "h": 10,
         "w": 6,
-        "x": 5,
+        "x": 6,
         "y": 34
       },
       "heatmap": {},
@@ -2026,7 +1967,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job!=\"redfish-exporter-collectlog\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2087,7 +2028,7 @@
       "gridPos": {
         "h": 10,
         "w": 6,
-        "x": 11,
+        "x": 12,
         "y": 34
       },
       "heatmap": {},
@@ -2147,7 +2088,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*2.*Temp\", group=\"$group\", job!=\"redfish-exporter-collectlog\"} != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2207,7 +2148,7 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 5,
+        "w": 6,
         "x": 18,
         "y": 34
       },
@@ -2266,7 +2207,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(redfish_chassis_fan_rpm_percentage{group=\"$group\", job=\"redfish-exporter\"}) by (server) > 0",
+          "expr": "max(redfish_chassis_fan_rpm_percentage{group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (server) > 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2341,8 +2282,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2386,7 +2326,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\", job=\"redfish-exporter\"} or redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\", job=\"redfish-exporter\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*Ambient.*Temp\", job!=\"redfish-exporter-collectlog\"} or redfish_chassis_temperature_celsius{sensor_id=~\".*InletTemp\", job!=\"redfish-exporter-collectlog\"} or redfish_chassis_temperature_celsius{sensor=~\".*Inlet.*\", job!=\"redfish-exporter-collectlog\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -2448,8 +2388,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2492,7 +2431,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job=\"redfish-exporter\"} != 0",
+          "expr": "redfish_chassis_temperature_celsius{sensor=~\".*CPU.*1.*Temp\", group=\"$group\", job!=\"redfish-exporter-collectlog\"} != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{ env }} {{ server }}",
@@ -2545,8 +2484,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2584,7 +2522,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=\"$server\", job!=\"redfish-exporter-collectlog\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "{{power_voltage}}",
@@ -2609,8 +2547,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2650,7 +2587,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_storage_drive_state{server=~\"$server\", job=\"redfish-exporter\"} != 1) or vector(0)",
+          "expr": "count(redfish_system_storage_drive_state{server=~\"$server\", job!=\"redfish-exporter-collectlog\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2675,8 +2612,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2716,7 +2652,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_system_pcie_device_health_state{server=~\"$server\", job=\"redfish-exporter\"} != 1) or vector(0)",
+          "expr": "count(redfish_system_pcie_device_health_state{server=~\"$server\", job!=\"redfish-exporter-collectlog\"} != 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2742,8 +2678,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2784,7 +2719,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_chassis_temperature_sensor_state{server=~\"$server\", job=\"redfish-exporter\"} > 2) or vector(0)",
+          "expr": "count(redfish_chassis_temperature_sensor_state{server=~\"$server\", job!=\"redfish-exporter-collectlog\"} > 2) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2809,8 +2744,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2850,7 +2784,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(redfish_chassis_power_powersupply_health{server=~\"$server\", job=\"redfish-exporter\"} > 1) or vector(0)",
+          "expr": "count(redfish_chassis_power_powersupply_health{server=~\"$server\", job!=\"redfish-exporter-collectlog\"} > 1) or vector(0)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2875,7 +2809,7 @@
           "custom": {
             "align": "auto",
             "cellOptions": {
-              "type": "color-text"
+              "type": "auto"
             },
             "inspect": false
           },
@@ -2886,18 +2820,32 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
-                "value": 70
+                "value": 80
               }
             ]
           },
           "unit": "degree"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temperature"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 18,
@@ -2916,7 +2864,13 @@
           ],
           "show": false
         },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Temperature"
+          }
+        ]
       },
       "pluginVersion": "11.2.0",
       "targets": [
@@ -2927,7 +2881,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job=\"redfish-exporter\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job=\"redfish-exporter\"}[15m])) > 0",
+          "expr": "sum by (sensor) (sum_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job!=\"redfish-exporter-collectlog\"}[15m])) / sum by (sensor) (count_over_time(redfish_chassis_temperature_celsius{server=\"$server\", job!=\"redfish-exporter-collectlog\"}[15m])) > 0",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2988,8 +2942,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a",
-                "value": null
+                "color": "#d44a3a"
               },
               {
                 "color": "#299c46",
@@ -3038,7 +2991,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_system_power_state{server=\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_system_power_state{server=\"$server\", job!=\"redfish-exporter-collectlog\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -3051,31 +3004,24 @@
     },
     {
       "datasource": {
-        "default": false,
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [
             {
               "options": {
                 "1": {
                   "text": "OK"
-                }
-              },
-              "type": "value"
-            },
-            {
-              "options": {
+                },
                 "2": {
                   "text": "WARNING"
-                }
-              },
-              "type": "value"
-            },
-            {
-              "options": {
+                },
                 "3": {
                   "text": "CRITICAL"
                 }
@@ -3087,8 +3033,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#299c46",
-                "value": null
+                "color": "#299c46"
               },
               {
                 "color": "#299c46",
@@ -3110,23 +3055,23 @@
         "x": 3,
         "y": 59
       },
-      "id": 7,
+      "id": 66,
       "maxDataPoints": 100,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "max"
           ],
-          "fields": "",
+          "fields": "/^Value$/",
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "11.2.0",
@@ -3137,11 +3082,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_health{server=\"$server\", job=\"redfish-exporter\"}",
-          "format": "time_series",
+          "exemplar": false,
+          "expr": "redfish_chassis_health{server=~\"$server\"}",
+          "format": "table",
           "instant": true,
-          "interval": "30m",
-          "legendFormat": "Chassis {{chassis_id}}",
+          "interval": "",
+          "legendFormat": "{{chassis_id}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -3198,8 +3145,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "orange",
@@ -3245,7 +3191,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "redfish_chassis_temperature_celsius{server=~\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_temperature_celsius{server=~\"$server\", job!=\"redfish-exporter-collectlog\"}",
           "interval": "",
           "legendFormat": "{{sensor}}",
           "refId": "A"
@@ -3253,6 +3199,141 @@
       ],
       "title": "Temperatures",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "color-background"
+            },
+            "filterable": false,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46"
+              },
+              {
+                "color": "#299c46",
+                "value": 1
+              },
+              {
+                "color": "#d44a3a",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "1": {
+                        "color": "dark-green",
+                        "index": 0,
+                        "text": "OK"
+                      },
+                      "2": {
+                        "color": "dark-yellow",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "3": {
+                        "color": "dark-red",
+                        "index": 2,
+                        "text": "CRITICAL"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 63
+      },
+      "id": 7,
+      "maxDataPoints": 100,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "redfish_chassis_health{server=\"$server\", job!=\"redfish-exporter-collectlog\"}",
+          "format": "table",
+          "instant": true,
+          "interval": "30m",
+          "legendFormat": "Chassis {{chassis_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Health by Chassis",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "env": true,
+              "group": true,
+              "instance": true,
+              "job": true,
+              "resource": true,
+              "server": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -3305,8 +3386,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3349,7 +3429,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\", job=\"redfish-exporter\"}",
+          "expr": "redfish_chassis_power_average_consumed_watts{server=~\"$server\", job!=\"redfish-exporter-collectlog\"}",
           "interval": "",
           "legendFormat": "{{power_voltage}}",
           "range": true,
@@ -3387,7 +3467,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "production",
           "value": "production"
         },
@@ -3418,7 +3498,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "compute",
           "value": "compute"
         },
@@ -3481,8 +3561,8 @@
     ]
   },
   "time": {
-    "from": "now-15m",
-    "to": "now-1m"
+    "from": "now-30m",
+    "to": "now-5m"
   },
   "timepicker": {
     "nowDelay": "1m",
@@ -3501,8 +3581,8 @@
   },
   "timezone": "",
   "title": "Redfish exporter",
-  "uid": "b02mElQGX",
-  "version": 1,
+  "uid": "redfish",
+  "version": 3,
   "weekStart": ""
 }
 {% endraw %}
