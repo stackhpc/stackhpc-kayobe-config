@@ -7,6 +7,11 @@ name: All in one
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        type: string
+        description: 'Runner name'
+        default: 'arc-skc-aio-runner'
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -59,6 +64,18 @@ on:
         description: Whether to perform an upgrade
         type: boolean
         default: false
+      stackhpc_cloud_tests_version:
+        description: Git version of https://github.com/stackhpc/stackhpc-cloud-tests to use for testing
+        type: string
+        default: main
+      repository:
+        description: SKC repository to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.repository }}
+      github_ref:
+        description: Git ref to checkout (convenience for external CI)
+        type: string
+        default: ${{ github.ref }}
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -74,27 +91,28 @@ jobs:
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: arc-skc-aio-runner
+    runs-on: ${{ inputs.runner }}
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
-      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-zed
+      PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2023.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
-      PREVIOUS_BRANCH: stackhpc/zed
+      PREVIOUS_BRANCH: stackhpc/2023.1
     steps:
       - name: Install Package
         uses: ConorMacBride/install-package@main
         with:
-          apt: git unzip nodejs
+          apt: git unzip nodejs openssh-client
 
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || github.ref }}
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || inputs.github_ref }}
           submodules: true
 
       - name: Output Kayobe image
@@ -167,7 +185,7 @@ jobs:
           VM_NETWORK: ${{ inputs.vm_network }}
           VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
-          VM_VOLUME_SIZE: ${{ inputs.upgrade && '55' || '40' }}
+          VM_VOLUME_SIZE: ${{ inputs.upgrade && '65' || '50' }}
           VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
@@ -214,21 +232,12 @@ jobs:
       - name: Write Terraform network config
         run: |
           cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-networks.yml
-
-          admin_oc_net_name: admin
-          admin_cidr: "{{ access_cidr.value }}"
-          admin_allocation_pool_start: 0.0.0.0
-          admin_allocation_pool_end: 0.0.0.0
-          admin_gateway: "{{ access_gw.value }}"
-          admin_bootproto: dhcp
-          admin_ips:
+          admin_oc_net_name: ethernet
+          ethernet_cidr: "{{ access_cidr.value }}"
+          ethernet_allocation_pool_start: 0.0.0.0
+          ethernet_allocation_pool_end: 0.0.0.0
+          ethernet_ips:
             controller0: "{{ access_ip_v4.value }}"
-          EOF
-
-      - name: Write Terraform network interface config
-        run: |
-          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/controllers/tf-network-interfaces
-          admin_interface: "{{ access_interface.value }}"
           EOF
 
       - name: Write all-in-one scenario config
@@ -263,6 +272,28 @@ jobs:
       - name: Pull current Kayobe image
         run: |
           docker image pull $KAYOBE_IMAGE
+
+      # Rocky 9 OVN deployments will fail when the hostname contains a '.'
+      - name: Fix hostname
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/fix-hostname.yml
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      # Reboot to Apply hostname change
+      - name: Reboot
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/reboot.yml -e reboot_with_bootstrap_user=true
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Run growroot
         run: |
@@ -304,15 +335,58 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      - name: Upgrade to RabbitMQ 3.12
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.12"
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
+      - name: Upgrade to RabbitMQ 3.13
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh "rabbitmq-upgrade 3.13"
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
+      - name: Change rabbit queues from HA to Quorum
+        run: |
+          sed -i -e 's/om_enable_rabbitmq_high_availability: true/om_enable_rabbitmq_high_availability: false/' \
+                 -e 's/om_enable_rabbitmq_quorum_queues: false/om_enable_rabbitmq_quorum_queues: true/' \
+                 etc/kayobe/environments/ci-aio/kolla/globals.yml
+        if: inputs.upgrade
+
+      - name: Migrate RabbitMQ queues
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/rabbitmq-quorum-migration.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
       # If testing upgrade, checkout the current release branch
       # Stash changes to tracked files, and set clean=false to avoid removing untracked files.
+      # Revert changes to RabbitMQ Queue types to avoid a merge conflict
       - name: Stash config changes
-        run: git stash
+        run: git restore etc/kayobe/environments/ci-aio/kolla/globals.yml && git stash
         if: inputs.upgrade
 
       - name: Checkout current release config
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.github_ref }}
           submodules: true
           clean: false
         if: inputs.upgrade
@@ -333,13 +407,15 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
+      # NOTE(Alex-Welsh): configure host with selinux_state=disabled, because
+      # Antelope images are not built as permissive
       - name: Host configure
         run: |
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh -e selinux_state=disabled
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
@@ -378,21 +454,21 @@ jobs:
             -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack -e rally_no_sensitive_log=false
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
-      - name: StackHPC OpenStack tests
-        id: stackhpc-openstack-tests
+      - name: StackHPC Cloud tests
+        id: stackhpc-cloud-tests
         continue-on-error: true
         run: |
-          mkdir -p sot-results
+          mkdir -p sct-results
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
-            -v $(pwd)/sot-results:/stack/sot-results \
+            -v $(pwd)/sct-results:/stack/sct-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-openstack-tests.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-cloud-tests.yml' -e sct_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -417,19 +493,23 @@ jobs:
           path: |
             diagnostics/
             tempest-artifacts/
-            sot-results/
-        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-openstack-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
+            sct-results/
+        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
-      - name: Fail if any Tempest tests failed
+      - name: Fail if any tests failed
         run: |
-          test $(wc -l < tempest-artifacts/failed-tests) -lt 1
-
-      - name: Fail if any StackHPC OpenStack tests failed
-        run: |
-          echo "Some StackHPC OpenStack tests failed."
-          echo "See HTML results artifact (sot-results) for details."
-          exit 1
-        if: steps.stackhpc-openstack-tests.outcome == 'failure'
+          rc=0
+          if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
+            echo "Some Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          if [[ $(wc -l < sct-results/failed-tests) -ne 0 ]]; then
+            echo "Some StackHPC Cloud tests failed."
+            echo "See HTML results artifact (sct-results) for details."
+            rc=1
+          fi
+          exit $rc
 
       - name: Destroy
         run: terraform destroy -auto-approve

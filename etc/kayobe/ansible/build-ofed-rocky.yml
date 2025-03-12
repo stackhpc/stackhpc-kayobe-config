@@ -1,0 +1,45 @@
+---
+- name: Build OFED kernel modules
+  become: true
+  hosts: ofed-builder
+  gather_facts: false
+  tasks:
+    - name: Check whether noexec is enabled for /var/tmp
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: noexec
+        state: absent
+      changed_when: false
+      check_mode: true
+      register: result
+      failed_when: result.found
+
+    - name: Install package dependencies
+      ansible.builtin.dnf:
+        name:
+          - autoconf
+          - automake
+          - createrepo
+          - cmake-filesystem
+          - doca-extra
+          - gcc-gfortran
+          - kernel-devel
+          - kernel-rpm-macros
+          - kernel-modules-extra
+          - kpartx
+          - libtool
+          - libnl3-devel
+          - lsof
+          - patch
+          - pciutils
+          - perl
+          - python3-devel
+          - rpm-build
+          - tcl
+          - tk
+        state: latest
+        update_cache: true
+
+    - name: Build OFED kernel modules
+      ansible.builtin.command:
+        cmd: /opt/mellanox/doca/tools/doca-kernel-support

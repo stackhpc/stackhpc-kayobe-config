@@ -10,7 +10,6 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    hotfix-playbook
    nova-compute-ironic
    octavia
-   rabbitmq
    secret-rotation
    tempest
    upgrading-openstack

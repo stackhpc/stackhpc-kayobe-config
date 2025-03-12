@@ -33,6 +33,8 @@ apt_config:
 apt_keys:
   - url: "https://download.docker.com/linux/ubuntu/gpg"
     filename: docker.asc
+  - url: "https://download.ceph.com/keys/release.asc"
+    filename: ceph.asc
 
 # A list of Apt repositories. Each item is a dict with the following keys:
 # * types: whitespace-separated list of repository types, e.g. deb or deb-src
@@ -70,6 +72,12 @@ stackhpc_apt_repositories:
     signed_by: docker.asc
     architecture: amd64
     required: true
+  - url: "{{ stackhpc_repo_ceph_reef_debian_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
+    components: main
+    signed_by: ceph.asc
+    architecture: amd64
+    required: true
 
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
@@ -95,8 +103,8 @@ stackhpc_apt_auth:
 # * machine: 'machine' entry in the auth file
 # * login: 'login' entry in the auth file
 # * password: 'password' entry in the auth file
-# * filename: Name of a file in which to store the auth configuration. The
-#   extension should be '.conf'.
+# * filename: Name of a file in /etc/apt/auth.conf.d in which to store
+#   the auth configuration. The extension should be ``.conf``.
 # Default is an empty list.
 apt_auth: "{{ stackhpc_apt_auth if stackhpc_repos_enabled | bool and stackhpc_repo_mirror_username is truthy else [] }}"
 

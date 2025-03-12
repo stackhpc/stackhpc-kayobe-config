@@ -2,6 +2,11 @@
 Multinode Test Environment
 ==========================
 
+.. warning::
+
+    This guide was written for the Yoga release and has not been validated for
+    Caracal. Proceed with caution.
+
 The ``ci-multinode`` environment provides a Kayobe configuration for multi-node
 clouds to be used for test and development purposes. It is designed to be used
 in combination with the `terraform-kayobe-multinode
@@ -14,6 +19,11 @@ beyond the defaults. This includes:
 * Magnum
 * Wazuh
 
+.. seealso::
+
+   On-demand and nightly GitHub Actions workflows workflow using this
+   environment are described :ref:`here <testing-multinode>`.
+
 Manila
 ======
 The Multinode environment supports Manila with the CephFS native backend, but it
@@ -25,24 +35,31 @@ is not enabled by default. To enable it, set the following in
       kolla_enable_manila: true
       kolla_enable_manila_backend_cephfs_native: true
 
-And re-run ``kayobe overcloud service deploy`` if you are working on an existing
-deployment.
+If you are working on an existing deployment, you need to do the following first.
+
+1. Create CephFS pools: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-pools.yml``
+2. Create cephx key for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-keys.yml``
+3. Run Manila related Ceph commands: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-commands-post.yml``
+4. Gather Ceph configuration and keyring for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml``
+5. Configure Storage network on Seed node: ``kayobe seed host configure -t network,ip-allocation,snat``
+
+Then, run ``kayobe overcloud service deploy`` to deploy Manila.
 
 To test it, you will need two virtual machines. Cirros does not support the Ceph
 kernel client, so you will need to use a different image. Any regular Linux
-distribution should work. As an example, this guide will use Ubuntu 20.04.
+distribution should work. As an example, this guide will use Ubuntu 22.04.
 
 Download the image locally:
 
 .. code-block:: bash
 
-      wget http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+      wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
 
 Upload the image to Glance:
 
 .. code-block:: bash
 
-      openstack image create --container-format bare --disk-format qcow2 --file focal-server-cloudimg-amd64.img Ubuntu-20.04 --progress
+      openstack image create --container-format bare --disk-format qcow2 --file jammy-server-cloudimg-amd64.img Ubuntu-22.04 --progress
 
 Create a keypair:
 
@@ -54,8 +71,8 @@ Create two virtual machines from the image:
 
 .. code-block:: bash
 
-      openstack server create --flavor m1.small --image Ubuntu-20.04 --key-name id_rsa --network admin-tenant ubuntu-client-1
-      openstack server create --flavor m1.small --image Ubuntu-20.04 --key-name id_rsa --network admin-tenant ubuntu-client-2
+      openstack server create --flavor m1.small --image Ubuntu-22.04 --key-name id_rsa --network admin-tenant ubuntu-client-1
+      openstack server create --flavor m1.small --image Ubuntu-22.04 --key-name id_rsa --network admin-tenant ubuntu-client-2
 
 Wait until the instances are active. It is worth noting that this process can
 take a while, especially if the overcloud is deployed to virtual machines. You
@@ -98,35 +115,35 @@ Then create a share type and share:
 
 .. code-block:: bash
 
-      manila type-create cephfs-type false --is_public true
-      manila type-key cephfs-type set vendor_name=Ceph storage_protocol=CEPHFS
-      manila create --name test-share --share-type cephfs-type CephFS 2
+      openstack share type create cephfs-type false --public true
+      openstack share type set cephfs-type --extra-specs vendor_name=Ceph, storage_protocol=CEPHFS
+      openstack share create --name test-share --share-type cephfs-type --public true CephFS 2
 
 Wait until the share is available:
 
 .. code-block:: bash
 
-      manila list
+      openstack share list
 
 Then allow access to the shares to two users:
 
 .. code-block:: bash
 
-      manila access-allow test-share cephx alice
-      manila access-allow test-share cephx bob
+      openstack share access create test-share cephx alice
+      openstack share access create test-share cephx bob
 
 Show the access list to make sure the state of both entries is ``active`` and
 take note of the access keys:
 
 .. code-block:: bash
 
-      manila access-list test-share
+      openstack share access list test-share
 
 And take note of the path to the share:
 
 .. code-block:: bash
 
-      manila share-export-location-list test-share
+      openstack share export location list test-share
 
 SSH into the first instance, create a directory for the share, and mount it:
 

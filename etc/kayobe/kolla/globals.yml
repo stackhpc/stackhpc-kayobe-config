@@ -22,17 +22,6 @@ kolla_image_tags:
 # Variables defining which tag to use for each container's image.
 {{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}
 
-# NOTE(priteau): Nova container images can use Rocky Linux 9.3 to avoid
-# Libvirt/QEMU version bump.
-{% if stackhpc_pulp_repo_rocky_9_minor_version < 4 %}
-nova_tag: 2023.1-rocky-9-20240725T200915
-{% endif %}
-
-#############################################################################
-# RabbitMQ
-
-om_enable_rabbitmq_high_availability: true
-
 #############################################################################
 # Monitoring and alerting related settings
 

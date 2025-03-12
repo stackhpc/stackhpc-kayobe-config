@@ -22,8 +22,8 @@ fi
 
 ARCH=$(uname -m)
 IMAGE_PATH=/opt/cache/files/
-IMAGE_URL=https://github.com/cirros-dev/cirros/releases/download/0.5.1/
-IMAGE=cirros-0.5.1-${ARCH}-disk.img
+IMAGE_URL=https://github.com/cirros-dev/cirros/releases/download/0.6.2/
+IMAGE=cirros-0.6.2-${ARCH}-disk.img
 IMAGE_NAME=cirros
 IMAGE_TYPE=linux
 

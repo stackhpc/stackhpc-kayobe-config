@@ -10,6 +10,11 @@ automates the manual setup steps below, and is recommended for most users.
 The manual setup steps are provided for reference, and for users who wish to
 make changes to the setup process.
 
+.. seealso::
+
+   All-in-one GitHub CI testing using this environment is described :ref:`here
+   <testing-ci-aio>`.
+
 Prerequisites
 =============
 
@@ -24,7 +29,7 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2023.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2024.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
@@ -47,9 +52,9 @@ following options:
 
 * ``BASE_PATH`` (default: ``~``) - Directory to deploy from. The directory must
   exist before running the script.
-* ``KAYOBE_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of Kayobe
+* ``KAYOBE_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of Kayobe
   source code to use.
-* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2023.1``) - The branch of
+* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of
   ``stackhpc-kayobe-config`` to use.
 * ``KAYOBE_AIO_LVM`` (default: ``true``) - Whether the image uses LVM.
 * ``KAYOBE_CONFIG_EDIT_PAUSE`` (default: ``false``) - Option to pause
@@ -97,7 +102,6 @@ Clone the Kayobe and Kayobe configuration repositories (this one):
    cd
    mkdir -p src
    pushd src
-   git clone https://github.com/stackhpc/kayobe.git -b |current_release_git_branch_name|
    git clone https://github.com/stackhpc/stackhpc-kayobe-config -b |current_release_git_branch_name| kayobe-config
    popd
 
@@ -111,7 +115,7 @@ Create a virtual environment and install Kayobe:
    python3 -m venv kayobe
    source kayobe/bin/activate
    pip install -U pip
-   pip install ../src/kayobe
+   pip install -r ../src/kayobe-config/requirements.txt
    popd
 
 Add initial network configuration:

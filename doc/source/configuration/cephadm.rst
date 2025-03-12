@@ -19,8 +19,6 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/quincy/cephadm/index.html
--  https://docs.ceph.com/en/quincy/
 -  https://docs.ceph.com/en/reef/cephadm/index.html
 -  https://docs.ceph.com/en/reef/
 -  https://github.com/stackhpc/ansible-collection-cephadm
@@ -206,8 +204,8 @@ Pools
 ~~~~~
 
 The following example pools should be sufficient to work with the
-default `external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+default :kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
@@ -234,8 +232,8 @@ Keys
 ~~~~
 
 The following example keys should be sufficient to work with the default
-`external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+:kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
@@ -344,12 +342,14 @@ should be used in the Kolla Manila configuration e.g.:
 
   manila_cephfs_filesystem_name: manila-cephfs
 
+.. _RGWs-With-Ceph:
+
 RADOS Gateways
 --------------
 
 RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
 documentation
-<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+<reference/storage/external-ceph-guide.html#radosgw>`.
 
 RADOS Gateways (RGWs) are defined with the following:
 

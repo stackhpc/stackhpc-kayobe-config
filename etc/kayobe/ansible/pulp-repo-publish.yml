@@ -1,16 +1,18 @@
 ---
 - name: Publish Pulp repositories
   hosts: localhost
-  gather_facts: False
+  gather_facts: false
   tasks:
-    - import_role:
+    - name: Ensure repository publications exist
+      ansible.builtin.import_role:
         name: stackhpc.pulp.pulp_publication
       # NOTE: use intermediate variable to avoid publishing containers.
       vars:
         pulp_publication_deb: "{{ stackhpc_pulp_publication_deb_development | selectattr('required') }}"
         pulp_publication_rpm: "{{ stackhpc_pulp_publication_rpm_development | selectattr('required') }}"
 
-    - import_role:
+    - name: Ensure repository distributions exist
+      ansible.builtin.import_role:
         name: stackhpc.pulp.pulp_distribution
       vars:
         pulp_distribution_deb: "{{ stackhpc_pulp_distribution_deb_development | selectattr('required') }}"

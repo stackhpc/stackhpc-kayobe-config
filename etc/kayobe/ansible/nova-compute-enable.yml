@@ -1,17 +1,17 @@
 ---
 - name: Enable nova compute service
   hosts: compute
-  gather_facts: yes
+  gather_facts: true
   tags:
     - nova-compute-enable
   vars:
     venv: "{{ virtualenv_path }}/openstack"
-    disabled_reason: "Down for maintenance by nova-compute-disable.yml"
+    disabled_reason: Down for maintenance by nova-compute-disable.yml
   tasks:
     - name: Set up openstack cli virtualenv
-      pip:
+      ansible.builtin.pip:
         virtualenv: "{{ venv }}"
-        virtualenv_command: "/usr/bin/python3 -m venv"
+        virtualenv_command: /usr/bin/python3 -m venv
         name:
           - python-openstackclient
         state: latest
@@ -22,7 +22,7 @@
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
 
     - name: Query nova compute services
-      command: >
+      ansible.builtin.command: >
         {{ venv }}/bin/openstack
         compute service list
         --format json
@@ -34,7 +34,7 @@
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
 
     - name: Enable nova compute service
-      command: >
+      ansible.builtin.command: >
         {{ venv }}/bin/openstack
         compute service set
         {{ ansible_facts.nodename }} nova-compute

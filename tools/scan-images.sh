@@ -54,6 +54,10 @@ for image in $images; do
           --severity HIGH,CRITICAL \
           --output image-scan-output/${filename}.json \
           --ignore-unfixed \
+          --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+          --db-repository public.ecr.aws/aquasecurity/trivy-db \
+          --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
+          --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db \
           $image); then
     # Clean up the output file for any images with no vulnerabilities
     rm -f image-scan-output/${filename}.json

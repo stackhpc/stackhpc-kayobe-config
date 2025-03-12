@@ -46,6 +46,15 @@ jobs:
         run: |
           docker image pull $KAYOBE_IMAGE
 
+      - name: Check kolla-images.py image map and tag hierarchy
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/check-kolla-images-py.yml'
+
       - name: Check container image tags
         run: |
           docker run -t --rm \

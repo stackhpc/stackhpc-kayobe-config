@@ -132,7 +132,7 @@ The most common variables to override are:
 - ``TEMPEST_CONCURRENCY`` - The maximum number of tests to run in parallel at
   one time. Higher values are faster but increase the risk of timeouts. 1-2 is
   safest in CI/Tenks/Multinode/AIO etc. 8-32 is typical in production. Default
-  value is 2.
+  value is 16.
 - ``KAYOBE_AUTOMATION_TEMPEST_LOADLIST``: the filename of a load list in the
   ``load-lists`` directory. Default value is ``default`` (symlink to refstack).
 - ``KAYOBE_AUTOMATION_TEMPEST_SKIPLIST``: the filename of a load list in the
@@ -176,7 +176,7 @@ you understand all the options before applying them.
     min_compute_nodes = 2
     # Required to test some API features
     min_microversion = 2.1
-    max_microversion = 2.95
+    max_microversion = 2.96
     # Flavors for creating test servers and server resize. The ``alt`` flavor should be larger.
     flavor_ref = <flavor UUID>
     flavor_ref_alt = <different flavor UUID>
@@ -197,7 +197,7 @@ you understand all the options before applying them.
     storage_protocol = ceph
     # Required to test some API features
     min_microversion = 3.0
-    max_microversion = 3.70
+    max_microversion = 3.71
 
 Tempest configuration override files are stored in
 ``.automation.conf/tempest/``. The default file used is

@@ -1,0 +1,69 @@
+---
+name: Promote Amphora image
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Tag to promote
+        type: string
+        required: true
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  amphora-image-promote:
+    name: Promote Amphora image
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+
+      - name: Setup networking
+        run: |
+          if ! ip l show breth1 >/dev/null 2>&1; then
+              sudo ip l add breth1 type bridge
+          fi
+          sudo ip l set breth1 up
+          if ! ip a show breth1 | grep 192.168.33.3/24; then
+              sudo ip a add 192.168.33.3/24 dev breth1
+          fi
+          if ! ip l show dummy1 >/dev/null 2>&1; then
+              sudo ip l add dummy1 type dummy
+          fi
+          sudo ip l set dummy1 up
+          sudo ip l set dummy1 master breth1
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Promote Amphora image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
+          -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
+          -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
+        env:
+          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}

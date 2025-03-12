@@ -3,8 +3,8 @@
 set -eux
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/2023.1
-KAYOBE_CONFIG_BRANCH=stackhpc/2023.1
+KAYOBE_BRANCH=stackhpc/2024.1
+KAYOBE_CONFIG_BRANCH=stackhpc/2024.1
 KAYOBE_AIO_LVM=true
 KAYOBE_CONFIG_EDIT_PAUSE=false
 AIO_RUN_TEMPEST=false
@@ -60,7 +60,7 @@ set +u
 source kayobe/bin/activate
 set -u
 pip install -U pip
-pip install ../src/kayobe
+pip install -r ../src/kayobe-config/requirements.txt
 popd
 
 if ! ip l show breth1 >/dev/null 2>&1; then
@@ -75,10 +75,6 @@ if ! ip l show dummy1 >/dev/null 2>&1; then
 fi
 sudo ip l set dummy1 up
 sudo ip l set dummy1 master breth1
-
-if type apt; then
-    sudo cp /run/systemd/network/* /etc/systemd/network
-fi
 
 export KAYOBE_VAULT_PASSWORD=$(cat $BASE_PATH/vault-pw)
 pushd $BASE_PATH/src/kayobe-config
