@@ -62,10 +62,6 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 ###############################################################################
 # Kolla configuration.
 
-# Kolla base container image architecture. Options are "x86_64", "aarch64".
-# Default is "{{ ansible_facts.architecture }}"
-#kolla_base_arch:
-
 # Kolla base container image distribution. Options are "centos", "debian",
 # "rocky", "ubuntu". Default is {{ os_distribution }}.
 #kolla_base_distro:
@@ -121,6 +117,18 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
+  bifrost-base:
+    type: git
+    location: https://github.com/stackhpc/bifrost.git
+    reference: stackhpc/{{ openstack_release }}
+  cloudkitty-base:
+    type: git
+    location: https://github.com/stackhpc/cloudkitty.git
+    reference: stackhpc/{{ openstack_release }}
+  glance-base:
+    type: git
+    location: https://github.com/stackhpc/glance
+    reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
     location: https://github.com/stackhpc/cloudkitty-dashboard.git
@@ -140,12 +148,20 @@ kolla_sources:
     reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx
+    reference: stackhpc/{{ openstack_release }}
+  octavia-base:
+    type: git
+    location: https://github.com/stackhpc/octavia.git
+    reference: stackhpc/{{ openstack_release }}
+  blazar-base:
+    type: git
+    location: https://github.com/stackhpc/blazar
+    reference: stackhpc/master
 
 ###############################################################################
 # Kolla image build configuration.
@@ -167,6 +183,9 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_caracal_url }}"
+    file: "CentOS-OpenStack-caracal.repo"
+    tag: "centos-openstack-caracal"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -191,9 +210,9 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
     file: "influxdb.repo"
     tag: "influxdb"
-  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_squid_url }}"
-    file: "CentOS-Ceph-Squid.repo"
-    tag: "centos-ceph-squid"
+  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_reef_url }}"
+    file: "CentOS-Ceph-Reef.repo"
+    tag: "centos-ceph-reef"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
     file: "rabbitmq_rabbitmq-erlang.repo"
     tag: "rabbitmq_rabbitmq-erlang"
@@ -221,19 +240,19 @@ stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
 # the certificate provided by the upstream repo will not match the proxy's IP.
 stackhpc_ubuntu_repo_prefix: "deb {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}[trusted=yes] {% endif %}"
 
-# List of base repositories for Ubuntu Noble.
-stackhpc_ubuntu_noble_base_repos:
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
+# List of base repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_url }} jammy-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_jammy_security_url }} jammy-security main universe"
 
-# List of UCA repositories for Ubuntu Noble.
-stackhpc_ubuntu_noble_uca_repos:
-  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} noble-updates/{{ openstack_release_codename }} main"
+# List of UCA repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_uca_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} jammy-updates/{{ openstack_release_codename }} main"
 
-# List of repositories for Ubuntu Noble.
-stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
+# List of repositories for Ubuntu Jammy.
+stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
 
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
@@ -261,7 +280,7 @@ kolla_build_blocks:
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
     {% endif %}
-    {% for repo in stackhpc_ubuntu_noble_base_repos %}
+    {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
@@ -290,7 +309,7 @@ kolla_build_blocks:
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% for repo in stackhpc_ubuntu_noble_repos %}
+    {% for repo in stackhpc_ubuntu_jammy_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
@@ -337,6 +356,9 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  glance_base_pip_packages_override:
+    - "/glance"
+    - "glance_store[cinder,vmware,swift,s3]@git+https://github.com/stackhpc/glance_store@stackhpc/4.7.0.3"
   ironic_inspector_pip_packages_append:
     - /additions/*
   magnum_base_pip_packages_override:
@@ -349,16 +371,9 @@ kolla_build_customizations_common:
     - python3-libvirt
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
-    - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
+    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
 
 kolla_build_customizations_rocky:
-  base_centos_yum_repo_packages_append:
-    - centos-release-ceph-squid
-  base_centos_yum_repo_packages_remove:
-    - centos-release-ceph-reef
-  base_centos_yum_repos_to_disable_remove:
-    - centos-ceph-reef
-    - epel
   kolla_toolbox_packages_remove:
     - openvswitch
   kolla_toolbox_packages_append:
@@ -571,12 +586,12 @@ kolla_enable_central_logging: true
 #kolla_enable_ceph_rgw:
 #kolla_enable_ceph_rgw_loadbalancer:
 #kolla_enable_cinder:
+#kolla_enable_cinder_backend_hnas_nfs:
 #kolla_enable_cinder_backend_iscsi:
 #kolla_enable_cinder_backend_lvm:
 #kolla_enable_cinder_backend_nfs:
 #kolla_enable_cinder_backend_pure_fc:
 #kolla_enable_cinder_backend_pure_iscsi:
-#kolla_enable_cinder_backend_pure_nvme_tcp:
 #kolla_enable_cinder_backend_pure_roce:
 #kolla_enable_cinder_backend_quobyte:
 #kolla_enable_cinder_backup:
@@ -683,6 +698,7 @@ kolla_enable_mariabackup: True
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
 kolla_enable_ovn: true
+#kolla_enable_ovn_sb_db_relay:
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
 kolla_enable_prometheus: true
@@ -696,11 +712,11 @@ kolla_enable_prometheus: true
 #kolla_enable_prometheus_haproxy_exporter:
 #kolla_enable_prometheus_libvirt_exporter:
 #kolla_enable_prometheus_memcached_exporter:
+#kolla_enable_prometheus_msteams:
 #kolla_enable_prometheus_mysqld_exporter:
 #kolla_enable_prometheus_node_exporter:
 #kolla_enable_prometheus_openstack_exporter:
 #kolla_enable_prometheus_openstack_exporter_external:
-#kolla_enable_prometheus_proxysql_exporter:
 #kolla_enable_prometheus_rabbitmq_exporter:
 #kolla_enable_prometheus_server:
 #kolla_enable_proxysql:

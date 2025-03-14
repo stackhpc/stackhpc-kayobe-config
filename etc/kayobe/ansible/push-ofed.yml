@@ -1,45 +1,71 @@
 ---
 - name: Push OFED packages
   hosts: ofed-builder
+  vars:
+    venv: "/opt/kayobe/venvs/kayobe"
+    doca_extract_path: "/home/stack/doca"
   tasks:
+    - name: Get OFED module repo variables
+      ansible.builtin.set_fact:
+        doca_modules_repo_name: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='name') | join('') }}"
+        doca_modules_repo_base_path: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='base_path') | join('') }}"
+        doca_modules_repo_distribution_name: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='distribution_name') | join('') }}"
+
     - name: Install python dependencies
       ansible.builtin.pip:
         name: pulp-cli
 
-    - name: Create Pulp repository for OFED
+    - name: Ensure Pulp configuration directory exists
+      ansible.builtin.file:
+        path: /home/stack/.config/pulp/
+        state: directory
+        recurse: true
+
+    - name: Setup Pulp credentials
+      ansible.builtin.blockinfile:
+        path: /home/stack/.config/pulp/cli.toml
+        create: true
+        block: |
+          [cli]
+          base_url = '{{ stackhpc_release_pulp_url }}'
+          verify_ssl = true
+          format = "json"
+          username = '{{ stackhpc_release_pulp_username }}'
+          password = '{{ stackhpc_release_pulp_password }}'
+      no_log: true
+
+    - name: Find DOCA kernel repo package
+      ansible.builtin.shell:
+        cmd: 'find /tmp/DOCA.* -name doca-kernel-repo-*'
+      register: doca_kernel_repo
+      changed_when: false
+
+    - name: Create Pulp repository for DOCA kernel modules
       pulp.squeezer.rpm_repository:
         pulp_url: "{{ stackhpc_release_pulp_url }}"
         username: "{{ stackhpc_release_pulp_username }}"
         password: "{{ stackhpc_release_pulp_password }}"
-        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}"
+        name: "{{ doca_modules_repo_name }}"
         state: present
       retries: "{{ pulp_timeout_retries | default(3) }}"
-
-    - name: Lookup Pulp RPMs on builder
-      ansible.builtin.find:
-        paths: /home/cloud-user/ofed
-      register: rpm_dir
 
     - name: Upload OFED RPMs to Pulp
       ansible.builtin.shell:
         cmd: |
-          pulp \
-          --base-url '{{ stackhpc_release_pulp_url }}' \
-          --username '{{ stackhpc_release_pulp_username }}' \
-          --password '{{ stackhpc_release_pulp_password }}' \
+          {{ venv }}/bin/pulp \
           rpm content \
           --type package upload \
-          --repository '{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}' \
-          --file {{ item.path }} \
-      with_items: "{{ rpm_dir.files }}"
-      no_log: true
+          --repository '{{ doca_modules_repo_name }}' \
+          --file {{ item }} \
+          --no-publish \
+      with_items: "{{ doca_kernel_repo.stdout_lines }}"
 
     - name: Create Pulp publication for OFED
       pulp.squeezer.rpm_publication:
         pulp_url: "{{ stackhpc_release_pulp_url }}"
         username: "{{ stackhpc_release_pulp_username }}"
         password: "{{ stackhpc_release_pulp_password }}"
-        repository: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.name }}"
+        repository: "{{ doca_modules_repo_name }}"
         state: present
       register: publication
 
@@ -48,7 +74,8 @@
         pulp_url: "{{ stackhpc_release_pulp_url }}"
         username: "{{ stackhpc_release_pulp_username }}"
         password: "{{ stackhpc_release_pulp_password }}"
-        name: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.distribution_name }}"
+        name: "{{ doca_modules_repo_distribution_name + ofed_tag }}"
         publication: "{{ publication.publication.pulp_href }}"
-        base_path: "{{ stackhpc_pulp_repo_doca_ofed_rhel9.base_path }}"
+        content_guard: development
+        base_path: "{{ doca_modules_repo_base_path + ofed_tag }}"
         state: present

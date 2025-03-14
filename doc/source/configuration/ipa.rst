@@ -27,9 +27,9 @@ post configure`` for Overcloud Ironic. This behaviour can be disabled in
 
 You can also override the distribution version pulled in during deployment,
 to do this you can change ``stackhpc_ipa_image_version`` to be the opposite
-distribution. For example, the case of switching to Ubuntu 24.04 on a Rocky 9
+distribution. For example, the case of switching to Ubuntu 22.04 on a Rocky 9
 cloud:
 
 .. code-block:: yaml
 
-    stackhpc_ipa_image_version: "{{ stackhpc_ubuntu_noble_ipa_image_version }}"
+    stackhpc_ipa_image_version: "{{ stackhpc_ubuntu_jammy_ipa_image_version }}"

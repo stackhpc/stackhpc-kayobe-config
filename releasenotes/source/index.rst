@@ -7,7 +7,6 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   master
    2024.1
    2023.1
    zed

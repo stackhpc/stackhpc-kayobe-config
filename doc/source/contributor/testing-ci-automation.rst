@@ -99,7 +99,7 @@ All in one testing
 The ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow accepts
 various parameters, and the following are used to create a test matrix for PRs:
 
-  - Operating System (Rocky 9, Ubuntu Noble)
+  - Operating System (Rocky 9, Ubuntu Jammy)
   - Neutron plugin (OVS, OVN)
   - Upgrade or no upgrade
 
@@ -113,7 +113,7 @@ job.
 The workflow performs the following high-level steps:
 
 #. Deploy a VM on an OpenStack cloud using the `aio
-   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/master/terraform/aio>`_
+   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/2024.1/terraform/aio>`_
    Terraform configuration.
 #. Deploy OpenStack in the VM using Kayobe and the :doc:`ci-aio
    <environments/ci-aio>` environment. If this is an upgrade job, the previous

@@ -1,6 +1,6 @@
-===========================
-Master Series Release Notes
-===========================
+====================================
+2024.1 Caracal Series Release Notes
+====================================
 
 .. release-notes::
-   :branch: stackhpc/master
+   :branch: stackhpc/2024.1
