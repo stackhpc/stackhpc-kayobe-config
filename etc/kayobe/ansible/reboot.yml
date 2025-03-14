@@ -9,9 +9,26 @@
     ansible_user: "{{ bootstrap_user if reboot_with_bootstrap_user | bool else kayobe_ansible_user }}"
     ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no' if reboot_with_bootstrap_user | bool else '' }}"
     ansible_python_interpreter: /usr/bin/python3
+    confirm_reboot: False
   tags:
     - reboot
   tasks:
+    - name: Prompt to confirm reboot
+      ansible.builtin.pause:
+        prompt: >
+          The following hosts will be rebooted:
+          {{ play_hosts | join(', ') }}
+          If you want to proceed type: yes
+      register: pause_prompt
+      when: not confirm_reboot
+
+    - name: Fail if reboot is not confirmed
+      ansible.builtin.assert:
+        that: confirm_reboot == 'yes' or pause_prompt.user_input == 'yes'
+        msg: >
+          Reboot has not been confirmed. You must either type 'yes' when
+          prompted, or set ``confirm_reboot=yes``.
+
     - name: Reboot and wait
       become: true
       ansible.builtin.reboot:
