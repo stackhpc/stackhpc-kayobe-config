@@ -57,26 +57,26 @@ Runner Deployment
     Ideally an Infra VM could be used here or failing that the control host.
     Wherever it is deployed the host will need access to the :code:`admin_network`, :code:`public_network` and the :code:`pulp registry` on the seed.
 
-2. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
+2. Edit the environment's :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/groups` to add the predefined :code:`github-runners` group to :code:`infra-vms`
 
 .. code-block:: ini
 
     [infra-vms:children]
     github-runners
 
-3. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` to define the host(s) that will host the runners.
+3. Edit the environment's :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/hosts` to define the host(s) that will host the runners.
 
 .. code-block:: ini
 
     [github-runners]
     prod-runner-01
 
-4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/github-runners`
+4. Provide all the relevant Kayobe :code:`group_vars` for :code:`github-runners` under :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/github-runners`
     * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
     * `network-interfaces`
     * `python-interpreter.yml` ensuring that `ansible_python_interpreter: /usr/bin/python3` has been set
 
-5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
+5. Edit the ``$KAYOBE_CONFIG_PATH/inventory/group_vars/github-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
    Below is a core set of variables that will require consideration and modification for successful deployment of the runners.
    The number of runners deployed can be configured by removing and extending the dict :code:`github-runners`.
    As for how many runners present three is suitable number as this would prevent situations where long running jobs could halt progress other tasks whilst waiting for a free runner.
@@ -120,7 +120,7 @@ Runner Deployment
 
 7. If the host is an actual Infra VM then please refer to upstream :kayobe-doc:`Infrastructure VMs <configuration/reference/infra-vms.html>` documentation for additional configuration and steps.
 
-8. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-github-runner.yml`
+8. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-github-runner.yml`
 
 9. Check runners have registered properly by visiting the repository's :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
 
@@ -130,9 +130,9 @@ Runner Deployment
 Workflow Deployment
 -------------------
 
-1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
+1. Edit :code:`$KAYOBE_CONFIG_PATH/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
-2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-github-workflows.yml`
+2. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/write-github-workflows.yml`
 
 3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
 
