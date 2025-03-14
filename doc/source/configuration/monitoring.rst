@@ -2,6 +2,8 @@
 Monitoring
 ==========
 
+.. _monitoring-service-configuration:
+
 Monitoring Configuration
 ========================
 
