@@ -78,6 +78,14 @@ def run_command(command, parse_json=False):
         return json.loads(result.stdout)
     return result.stdout.strip()
 
+def camel_to_snake(name):
+    """
+    Convert a CamelCase string to snake_case.
+
+    Reference: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
+    """
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
 def parse_device_info(device):
     """
     Produce Prometheus lines describing the device's identity and SMART status:
@@ -145,8 +153,7 @@ def parse_if_attributes(device):
         if callable(val):
             continue  # skip methods
 
-        # Convert CamelCase or PascalCase -> snake_case, e.g. dataUnitsRead -> data_units_read
-        snake_name = re.sub(r'(?<!^)(?=[A-Z])', '_', attr_name).lower()
+        snake_name = camel_to_snake(attr_name)
 
         if snake_name in SMARTMON_ATTRS and isinstance(val, (int, float)):
             metrics.append(f"{snake_name}{{{labels}}} {val}")
