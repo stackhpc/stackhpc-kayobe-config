@@ -6,7 +6,7 @@ groups:
 - name: rabbitmq.rules
   rules:
   - alert: RabbitMQNodeDown
-    expr: sum(rabbitmq_build_info{instance!=""}) < 3
+    expr: sum(rabbitmq_build_info{instance!=""}) < {% endraw %}{{ groups['rabbitmq'] | length }}{% raw %}
     for: 30m
     labels:
       severity: critical
