@@ -85,6 +85,12 @@ def parse_device_info(device):
     - device_smart_available
     - device_smart_enabled
     - device_smart_healthy
+
+    Args:
+        device (Device): A pySMART Device object with attributes such as name, interface, etc.
+
+    Returns:
+        List[str]: A list of Prometheus formatted metric strings.
     """
     serial_number = (device.serial or "").lower()
     labels = {
