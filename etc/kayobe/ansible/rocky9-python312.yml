@@ -1,37 +1,39 @@
-- name: Install Python 3.12 to hosts
+- name: Install Python 3.12 to hosts (Rocky)
   hosts: all
   become: true
+  vars:
+    ansible_user: cloud-user
   tasks:
-    - name: Install Python 3.12
-      ansible.builtin.dnf:
-        name: python3.12
-        state: latest
+    - name: Ensure Python 3.12 is default interpreter
+      when: ansible_facts.os_family == 'RedHat'
+      block:
+        - name: Install Python 3.12
+          ansible.builtin.dnf:
+            name: python3.12
+            state: latest
 
-    - name: Edit symlinks to make Python 3.12 default (/usr/bin)
-      ansible.builtin.file:
-        src: /usr/bin/python3.12
-        dest: /usr/bin/python3
-        owner: root
-        group: root
-        state: link
-        force: true
+        - name: Edit symlinks to make Python 3.12 default (/usr/bin)
+          ansible.builtin.file:
+            src: /usr/bin/python3.12
+            dest: /usr/bin/python3
+            owner: root
+            group: root
+            state: link
+            force: true
 
-    - name: Edit symlinks to make Python 3.12 default (/bin)
-      ansible.builtin.file:
-        src: /bin/python3.12
-        dest: /bin/python3
-        owner: root
-        group: root
-        state: link
-        force: true
+        - name: Edit symlinks to make Python 3.12 default (/bin)
+          ansible.builtin.file:
+            src: /bin/python3.12
+            dest: /bin/python3
+            owner: root
+            group: root
+            state: link
+            force: true
 
-    - name: Verify Python version
-      ansible.builtin.command: python3 --version
-      register: python_version
+        - name: Verify Python version
+          ansible.builtin.command: python3 --version
+          register: python_version
 
-    - name: Print Python version
-      ansible.builtin.debug:
-        var: python_version.stdout
-
-    - name: Ensure Python 3.12 pip
-      ansible.builtin.command: python3 -m ensurepip
+        - name: Print Python version
+          ansible.builtin.debug:
+            var: python_version.stdout
