@@ -10,7 +10,8 @@ from smartmon import (
     parse_device_info,
     parse_if_attributes,
     main,
-    SMARTMON_ATTRS
+    SMARTMON_ATTRS,
+    camel_to_snake
 )
 
 def load_json_fixture(filename):
@@ -158,8 +159,7 @@ class TestSmartMon(unittest.TestCase):
         # For each numeric attribute in JSON, if it's in SMARTMON_ATTRS,
         # we expect a line in the script's output.
         for attr_key, attr_val in if_attrs.items():
-            # Convert from e.g. "criticalWarning" -> "critical_warning"
-            snake_key = re.sub(r'(?<!^)(?=[A-Z])', '_', attr_key).lower()
+            snake_key = camel_to_snake(attr_key)
 
             if isinstance(attr_val, (int, float)) and snake_key in SMARTMON_ATTRS:
                 # We expect e.g. critical_warning{disk="/dev/..."} <value>
