@@ -3,7 +3,7 @@
 import subprocess
 import json
 import re
-from datetime import datetime
+import datetime
 
 from pySMART import DeviceList
 
@@ -197,7 +197,7 @@ def main():
         disk_type = dev.interface or ""
         serial_number = (dev.serial or "").lower()
 
-        run_timestamp = int(datetime.utcnow().timestamp())
+        run_timestamp = int(datetime.datetime.now(datetime.UTC).timestamp())
         all_metrics.append(f'smartctl_run{{disk="{disk_name}",type="{disk_type}"}} {run_timestamp}')
 
         active = 1

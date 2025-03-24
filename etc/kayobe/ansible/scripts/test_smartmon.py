@@ -59,136 +59,148 @@ class TestSmartMon(unittest.TestCase):
 
         return device
 
+    def _test_parse_device_info(self, fixture_name):
+        """
+        Helper method to test parse_device_info() for a single JSON fixture.
+        """
+        data = load_json_fixture(fixture_name)
+        device_info = data["device_info"]
+
+        device = self.create_mock_device_from_json(device_info)
+        metrics = parse_device_info(device)
+
+        dev_name = device_info["name"]
+        dev_iface = device_info["interface"]
+        dev_serial = device_info["serial"].lower()
+
+        # The device_info line should exist for every device
+        # e.g. device_info{disk="/dev/...",type="...",serial_number="..."} 1
+        device_info_found = any(
+            line.startswith("device_info{") and
+            f'disk="{dev_name}"' in line and
+            f'type="{dev_iface}"' in line and
+            f'serial_number="{dev_serial}"' in line
+            for line in metrics
+        )
+        self.assertTrue(
+            device_info_found,
+            f"Expected a device_info metric line for {dev_name} but didn't find it."
+        )
+
+        # If smart_capable is true, we expect device_smart_available = 1
+        if device_info.get("smart_capable"):
+            smart_available_found = any(
+                line.startswith("device_smart_available{") and
+                f'disk="{dev_name}"' in line and
+                f'serial_number="{dev_serial}"' in line and
+                line.endswith(" 1")
+                for line in metrics
+            )
+            self.assertTrue(
+                smart_available_found,
+                f"Expected device_smart_available=1 for {dev_name}, not found."
+            )
+
+        # If smart_enabled is true, we expect device_smart_enabled = 1
+        if device_info.get("smart_enabled"):
+            smart_enabled_found = any(
+                line.startswith("device_smart_enabled{") and
+                f'disk="{dev_name}"' in line and
+                line.endswith(" 1")
+                for line in metrics
+            )
+            self.assertTrue(
+                smart_enabled_found,
+                f"Expected device_smart_enabled=1 for {dev_name}, not found."
+            )
+
+        # device_smart_healthy if assessment in [PASS, WARN, FAIL]
+        # PASS => 1, otherwise => 0
+        assessment = device_info.get("assessment", "").upper()
+        if assessment in ["PASS", "WARN", "FAIL"]:
+            expected_val = 1 if assessment == "PASS" else 0
+            smart_healthy_found = any(
+                line.startswith("device_smart_healthy{") and
+                f'disk="{dev_name}"' in line and
+                line.endswith(f" {expected_val}")
+                for line in metrics
+            )
+            self.assertTrue(
+                smart_healthy_found,
+                f"Expected device_smart_healthy={expected_val} for {dev_name}, not found."
+            )
+
     def test_parse_device_info(self):
         """
         Test parse_device_info() for every JSON fixture in ./drives/.
-        We do subTest() so each fixture is tested individually.
+        Each fixture is tested individually with clear error reporting.
         """
         for fixture_path in self.fixture_files:
             fixture_name = os.path.basename(fixture_path)
-            with self.subTest(msg=f"Testing device_info with {fixture_name}"):
-                data = load_json_fixture(fixture_name)
-                device_info = data["device_info"]
+            with self.subTest(fixture=fixture_name):
+                self._test_parse_device_info(fixture_name)
 
-                device = self.create_mock_device_from_json(device_info)
-                metrics = parse_device_info(device)
+    def _test_parse_if_attributes(self, fixture_name):
+        """
+        Helper method to test parse_if_attributes() for a single JSON fixture.
+        """
+        data = load_json_fixture(fixture_name)
+        device_info = data["device_info"]
+        if_attrs = data.get("if_attributes", {})
 
-                dev_name = device_info["name"]
-                dev_iface = device_info["interface"]
-                dev_serial = device_info["serial"].lower()
+        device = self.create_mock_device_from_json(device_info, if_attrs)
+        metrics = parse_if_attributes(device)
 
-                # The device_info line should exist for every device
-                # e.g. device_info{disk="/dev/...",type="...",serial_number="..."} 1
-                device_info_found = any(
-                    line.startswith("device_info{") and
-                    f'disk="{dev_name}"' in line and
-                    f'type="{dev_iface}"' in line and
-                    f'serial_number="{dev_serial}"' in line
-                    for line in metrics
+        dev_name = device_info["name"]
+        dev_iface = device_info["interface"]
+        dev_serial = device_info["serial"].lower()
+
+        # For each numeric attribute in JSON, if it's in SMARTMON_ATTRS,
+        # we expect a line in the script's output.
+        for attr_key, attr_val in if_attrs.items():
+            # Convert from e.g. "criticalWarning" -> "critical_warning"
+            snake_key = re.sub(r'(?<!^)(?=[A-Z])', '_', attr_key).lower()
+
+            if isinstance(attr_val, (int, float)) and snake_key in SMARTMON_ATTRS:
+                # We expect e.g. critical_warning{disk="/dev/..."} <value>
+                expected_line = (
+                    f"{snake_key}{{disk=\"{dev_name}\",type=\"{dev_iface}\",serial_number=\"{dev_serial}\"}} {attr_val}"
                 )
-                self.assertTrue(
-                    device_info_found,
-                    f"Expected a device_info metric line for {dev_name} but didn't find it."
+                self.assertIn(
+                    expected_line,
+                    metrics,
+                    f"Expected metric '{expected_line}' for attribute '{attr_key}' not found."
+                )
+            else:
+                # If it's not in SMARTMON_ATTRS or not numeric,
+                # we do NOT expect a line with that name+value
+                unexpected_line = (
+                    f"{snake_key}{{disk=\"{dev_name}\",type=\"{dev_iface}\",serial_number=\"{dev_serial}\"}} {attr_val}"
+                )
+                self.assertNotIn(
+                    unexpected_line,
+                    metrics,
+                    f"Unexpected metric '{unexpected_line}' found for {attr_key}."
                 )
 
-                # If smart_capable is true, we expect device_smart_available = 1
-                if device_info.get("smart_capable"):
-                    smart_available_found = any(
-                        line.startswith("device_smart_available{") and
-                        f'disk="{dev_name}"' in line and
-                        f'serial_number="{dev_serial}"' in line and
-                        line.endswith(" 1")
-                        for line in metrics
-                    )
-                    self.assertTrue(
-                        smart_available_found,
-                        f"Expected device_smart_available=1 for {dev_name}, not found."
-                    )
-
-                # If smart_enabled is true, we expect device_smart_enabled = 1
-                if device_info.get("smart_enabled"):
-                    smart_enabled_found = any(
-                        line.startswith("device_smart_enabled{") and
-                        f'disk="{dev_name}"' in line and
-                        line.endswith(" 1")
-                        for line in metrics
-                    )
-                    self.assertTrue(
-                        smart_enabled_found,
-                        f"Expected device_smart_enabled=1 for {dev_name}, not found."
-                    )
-
-                # device_smart_healthy if assessment in [PASS, WARN, FAIL]
-                # PASS => 1, otherwise => 0
-                assessment = device_info.get("assessment", "").upper()
-                if assessment in ["PASS", "WARN", "FAIL"]:
-                    expected_val = 1 if assessment == "PASS" else 0
-                    smart_healthy_found = any(
-                        line.startswith("device_smart_healthy{") and
-                        f'disk="{dev_name}"' in line and
-                        line.endswith(f" {expected_val}")
-                        for line in metrics
-                    )
-                    self.assertTrue(
-                        smart_healthy_found,
-                        f"Expected device_smart_healthy={expected_val} for {dev_name}, not found."
-                    )
+        # Also ensure that non-numeric or disallowed attributes do not appear
+        # For instance "notInSmartmonAttrs" should never appear.
+        for line in metrics:
+            self.assertNotIn(
+                "not_in_smartmon_attrs",
+                line,
+                f"'notInSmartmonAttrs' attribute unexpectedly found in metric line: {line}"
+            )
 
     def test_parse_if_attributes(self):
         """
         Test parse_if_attributes() for every JSON fixture in ./drives/.
-        We do subTest() so each fixture is tested individually.
+        Each fixture is tested individually with clear error reporting.
         """
         for fixture_path in self.fixture_files:
             fixture_name = os.path.basename(fixture_path)
-            with self.subTest(msg=f"Testing if_attributes with {fixture_name}"):
-                data = load_json_fixture(fixture_name)
-                device_info = data["device_info"]
-                if_attrs = data.get("if_attributes", {})
-
-                device = self.create_mock_device_from_json(device_info, if_attrs)
-                metrics = parse_if_attributes(device)
-
-                dev_name = device_info["name"]
-                dev_iface = device_info["interface"]
-                dev_serial = device_info["serial"].lower()
-
-                # For each numeric attribute in JSON, if it's in SMARTMON_ATTRS,
-                # we expect a line in the script's output.
-                for attr_key, attr_val in if_attrs.items():
-                    # Convert from e.g. "criticalWarning" -> "critical_warning"
-                    snake_key = re.sub(r'(?<!^)(?=[A-Z])', '_', attr_key).lower()
-
-                    if isinstance(attr_val, (int, float)) and snake_key in SMARTMON_ATTRS:
-                        # We expect e.g. critical_warning{disk="/dev/..."} <value>
-                        expected_line = (
-                            f"{snake_key}{{disk=\"{dev_name}\",type=\"{dev_iface}\",serial_number=\"{dev_serial}\"}} {attr_val}"
-                        )
-                        self.assertIn(
-                            expected_line,
-                            metrics,
-                            f"Expected metric '{expected_line}' for attribute '{attr_key}' not found."
-                        )
-                    else:
-                        # If it's not in SMARTMON_ATTRS or not numeric,
-                        # we do NOT expect a line with that name+value
-                        unexpected_line = (
-                            f"{snake_key}{{disk=\"{dev_name}\",type=\"{dev_iface}\",serial_number=\"{dev_serial}\"}} {attr_val}"
-                        )
-                        self.assertNotIn(
-                            unexpected_line,
-                            metrics,
-                            f"Unexpected metric '{unexpected_line}' found for {attr_key}."
-                        )
-
-                # Also ensure that non-numeric or disallowed attributes do not appear
-                # For instance "notInSmartmonAttrs" should never appear.
-                for line in metrics:
-                    self.assertNotIn(
-                        "not_in_smartmon_attrs",
-                        line,
-                        f"'notInSmartmonAttrs' attribute unexpectedly found in metric line: {line}"
-                    )
+            with self.subTest(fixture=fixture_name):
+                self._test_parse_if_attributes(fixture_name)
 
     @patch("smartmon.run_command")
     @patch("smartmon.DeviceList")
