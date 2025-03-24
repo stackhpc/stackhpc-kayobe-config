@@ -79,11 +79,10 @@ Then from the OpenStack CLI:
 .. code-block:: console
 
    openstack service delete heat
+   openstack service delete heat-cfn
    openstack user delete heat
    openstack domain set --disable heat_user_domain
    openstack domain delete heat_user_domain
-   openstack endpoint list --service heat -c ID -f value | xargs openstack endpoint delete
-   openstack endpoint list --service heat-cfn -c ID -f value | xargs openstack endpoint delete
 
 You can drop the ``heat`` database too, unless you want to keep historical content.
 
@@ -517,7 +516,7 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New :ref:`stackhpc_release_train` content should be synced to the local Pulp
+New :ref:`stackhpc-release-train` content should be synced to the local Pulp
 server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:

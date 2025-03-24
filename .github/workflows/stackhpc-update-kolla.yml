@@ -1,0 +1,23 @@
+name: Update Kolla versions
+
+on:
+  # Allow manual executions
+  workflow_dispatch:
+  # Run nightly
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  update-from-branch:
+    name: Update dependencies
+    strategy:
+      matrix:
+        include:
+          - version: stackhpc/2023.1
+          - version: stackhpc/2024.1
+    uses: ./.github/workflows/update-dependencies.yml
+    with:
+      openstack_version: ${{ matrix.version }}
+    permissions:
+      contents: write
+      pull-requests: write

@@ -20,7 +20,7 @@ You can then run the playbook to upload the image:
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-register.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-register.yml
 
 By default, this will download Amphora image corresponds to OpenStack release from
 StackHPC Release Train.
