@@ -24,7 +24,7 @@
 
     - name: Fail if reboot is not confirmed
       ansible.builtin.assert:
-        that: confirm_reboot == 'yes' or pause_prompt.user_input == 'yes'
+        that: confirm_reboot | bool or pause_prompt.user_input == 'yes'
         msg: >
           Reboot has not been confirmed. You must either type 'yes' when
           prompted, or set ``confirm_reboot=yes``.
