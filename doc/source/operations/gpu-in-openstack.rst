@@ -2,6 +2,132 @@
 Support for GPUs in OpenStack
 =============================
 
+PCI Passthrough
+###############
+
+Prerequisite - BIOS Configuration
+---------------------------------
+
+On an Intel system:
+
+* Enable ``VT-x`` in the BIOS for virtualisation support.
+* Enable ``VT-d`` in the BIOS for IOMMU support.
+
+On an AMD system:
+
+* Enable ``AMD-v`` in the BIOS for virtualisation support.
+* Enable ``AMD-Vi`` (also just called ``IOMMU`` on older hardware) in the BIOS
+  for IOMMU support.
+
+It may be possible to configure passthrough without these settings, though
+stability or performance may be affected.
+
+Host and Service Configuration
+------------------------------
+
+PCI passthrough GPU variables can be found in the
+``etc/kayobe/stackhpc-compute.yml`` file.
+
+The ``gpu_group_map`` is a dictionary mapping inventory groups to GPU types.
+This is used to determine which GPU types each compute node should pass through
+to OpenStack. The keys are group names, the values are a list of GPU types.
+
+Possible GPU types are defined in the ``stackhpc_gpu_data`` dictionary. It
+contains data for many common GPUs. If you have a GPU that is not included,
+extend the dictionary following the same pattern.
+
+The ``resource_name`` is the name that will be used in the flavor extra specs.
+These can be overridden e.g. ``a100_80_resource_name: "big_gpu"``.
+
+Example configuration for three groups containing A100s, V100s, and both:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/stackhpc-compute.yml
+
+    gpu_group_map:
+      compute_a100:
+        - a100_80
+      compute_v100:
+        - v100_32
+      compute_multi_gpu:
+        - a100_80
+        - v100_32
+
+All groups in the ``gpu_group_map`` must also be added to
+``kolla_overcloud_inventory_top_level_group_map`` in ``etc/kayobe/kolla.yml``.
+Always include the Kayobe defaults unless you know what you are doing.
+
+When ``gpu_group_map`` is populated, the ``pci-passthrough.yml`` playbook will
+be added as a pre-hook to ``kayobe overcloud host configure``. Either run host
+configuration or trigger the playbook manually:
+
+.. code-block:: console
+
+    kayobe overcloud host configure --limit compute_a100,compute_v100,compute_multi_gpu
+    # OR
+    kayobe playbook run --playbook $KAYOBE_CONFIG_PATH/ansible/pci-passthrough.yml --limit compute_a100,compute_v100,compute_multi_gpu
+
+The playbook will apply the necessary configuraion and reboot the hosts if
+required.
+
+Once host configuration is complete, deploy the OpenStack services:
+.. code-block:: console
+
+    kayobe overcloud service deploy -kt nova --kolla-limit compute_a100,compute_v100,compute_multi_gpu
+
+Create a flavor
+---------------
+
+For example, to request two of the GPUs with alias **v100_32**
+
+.. code-block:: text
+
+   openstack flavor set m1.medium-gpu --property "pci_passthrough:alias"="v100_32:2"
+
+This can be also defined in the openstack-config repository
+
+add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
+
+.. code-block:: console
+
+   cd src/openstack-config
+   vim etc/openstack-config/openstack-config.yml
+
+    name: "m1.medium-gpu"
+    ram: 4096
+    disk: 40
+    vcpus: 2
+    extra_specs:
+      "pci_passthrough:alias": "v100_32:2"
+
+Invoke configuration playbooks afterwards:
+
+.. code-block:: console
+
+   source src/kayobe-config/etc/kolla/public-openrc.sh
+   source venvs/openstack/bin/activate
+   tools/openstack-config --vault-password-file <Vault password file path>
+
+Create instance with GPU passthrough
+------------------------------------
+
+.. code-block:: text
+
+    openstack server create --flavor m1.medium-gpu --image ubuntu22.04 --wait test-pci
+
+Testing GPU in a Guest VM
+-------------------------
+
+The Nvidia drivers must be installed first.  For example, on an Ubuntu guest:
+
+.. code-block:: text
+
+    sudo apt install nvidia-headless-440 nvidia-utils-440 nvidia-compute-utils-440
+
+The ``nvidia-smi`` command will generate detailed output if the driver has
+loaded successfully.
+
+
 Virtual GPUs
 ############
 
@@ -147,7 +273,7 @@ hosts can automatically be mapped to these groups by configuring
 .. _NVIDIA Role Configuration:
 
 Role Configuration
-^^^^^^^^^^^^^^^^^^
+------------------
 
 Configure the VGPU devices:
 
@@ -193,7 +319,7 @@ Configure the VGPU devices:
 .. _NVIDIA Kolla Ansible Configuration:
 
 Kolla-Ansible configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 See upstream documentation: `Kolla Ansible configuration <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#kolla-ansible-configuration>`__
 then follow the rest.
@@ -241,12 +367,12 @@ You will need to reconfigure nova for this change to be applied:
   kayobe overcloud service deploy -kt nova --kolla-limit compute_vgpu
 
 Openstack flavors
-^^^^^^^^^^^^^^^^^
+-----------------
 
 See upstream documentation: `OpenStack flavors <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#openstack-flavors>`__
 
 NVIDIA License Server
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 The Nvidia delegated license server is a virtual machine based appliance. You simply need to boot an instance
 using the image supplied on the NVIDIA Licensing portal. This can be done on the OpenStack cloud itself. The
@@ -323,7 +449,7 @@ Booting the VM:
 
 
 Manual VM driver and licence configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------
 
 vGPU client VMs need to be configured with Nvidia drivers to run GPU workloads.
 The host drivers should already be applied to the hypervisor.
@@ -393,7 +519,7 @@ includes the drivers and licencing token. Alternatively, an image can be
 created using Diskimage Builder.
 
 Disk image builder recipe to automatically license VGPU on boot
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------------------------
 
 `stackhpc-image-elements <https://github.com/stackhpc/stackhpc-image-elements>`__ provides a ``nvidia-vgpu``
 element to configure the nvidia-gridd service in VGPU mode. This allows you to boot VMs that automatically license themselves.
@@ -471,7 +597,7 @@ into your openstack-config repository and vault encrypt it. The ``file`` lookup 
 the file (as shown in the example above).
 
 Testing vGPU VMs
-^^^^^^^^^^^^^^^^
+----------------
 
 vGPU VMs can be validated using the following test workload. The test should
 succeed if the VM is correctly licenced and drivers are correctly installed for
@@ -531,265 +657,9 @@ Example output:
     Test passed
 
 Changing VGPU device types
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 See upstream documentation: `Changing VGPU device types <https://docs.openstack.org/kayobe/latest/configuration/reference/vgpu.html#changing-vgpu-device-types>`__
-
-PCI Passthrough
-###############
-
-This guide has been developed for Nvidia GPUs and CentOS 8.
-
-See `Kayobe Ops <https://github.com/stackhpc/kayobe-ops>`_ for
-a playbook implementation of host setup for GPU.
-
-BIOS Configuration Requirements
--------------------------------
-
-On an Intel system:
-
-* Enable `VT-x` in the BIOS for virtualisation support.
-* Enable `VT-d` in the BIOS for IOMMU support.
-
-Hypervisor Configuration Requirements
--------------------------------------
-
-Find the GPU device IDs
-^^^^^^^^^^^^^^^^^^^^^^^
-
-From the host OS, use ``lspci -nn`` to find the PCI vendor ID and
-device ID for the GPU device and supporting components.  These are
-4-digit hex numbers.
-
-For example:
-
-.. code-block:: text
-
-   01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GM204M [GeForce GTX 980M] [10de:13d7] (rev a1) (prog-if 00 [VGA controller])
-   01:00.1 Audio device [0403]: NVIDIA Corporation GM204 High Definition Audio Controller [10de:0fbb] (rev a1)
-
-In this case the vendor ID is ``10de``, display ID is ``13d7`` and audio ID is ``0fbb``.
-
-Alternatively, for an Nvidia Quadro RTX 6000:
-
-.. code-block:: yaml
-
-   # NVIDIA Quadro RTX 6000/8000 PCI device IDs
-   vendor_id: "10de"
-   display_id: "1e30"
-   audio_id: "10f7"
-   usba_id: "1ad6"
-   usba_class: "0c0330"
-   usbc_id: "1ad7"
-   usbc_class: "0c8000"
-
-These parameters will be used for device-specific configuration.
-
-Kernel Ramdisk Reconfiguration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The ramdisk loaded during kernel boot can be extended to include the
-vfio PCI drivers and ensure they are loaded early in system boot.
-
-.. code-block:: yaml
-
-   - name: Template dracut config
-     blockinfile:
-       path: /etc/dracut.conf.d/gpu-vfio.conf
-       block: |
-         add_drivers+="vfio vfio_iommu_type1 vfio_pci vfio_virqfd"
-       owner: root
-       group: root
-       mode: 0660
-       create: true
-     become: true
-     notify:
-       - Regenerate initramfs
-       - reboot
-
-The handler for regenerating the Dracut initramfs is:
-
-.. code-block:: yaml
-
-   - name: Regenerate initramfs
-     shell: |-
-       #!/bin/bash
-       set -eux
-       dracut -v -f /boot/initramfs-$(uname -r).img $(uname -r)
-     become: true
-
-Kernel Boot Parameters
-^^^^^^^^^^^^^^^^^^^^^^
-
-Set the following kernel parameters by adding to
-``GRUB_CMDLINE_LINUX_DEFAULT`` or ``GRUB_CMDLINE_LINUX`` in
-``/etc/default/grub.conf``.  We can use the
-`stackhpc.grubcmdline <https://galaxy.ansible.com/stackhpc/grubcmdline>`_
-role from Ansible Galaxy:
-
-.. code-block:: yaml
-
-   - name: Add vfio-pci.ids kernel args
-     include_role:
-       name: stackhpc.grubcmdline
-     vars:
-       kernel_cmdline:
-         - intel_iommu=on
-         - iommu=pt
-         - "vfio-pci.ids={{ vendor_id }}:{{ display_id }},{{ vendor_id }}:{{ audio_id }}"
-       kernel_cmdline_remove:
-         - iommu
-         - intel_iommu
-         - vfio-pci.ids
-
-Kernel Device Management
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-In the hypervisor, we must prevent kernel device initialisation of
-the GPU and prevent drivers from loading for binding the GPU in the
-host OS.  We do this using ``udev`` rules:
-
-.. code-block:: yaml
-
-   - name: Template udev rules to blacklist GPU usb controllers
-     blockinfile:
-       # We want this to execute as soon as possible
-       path: /etc/udev/rules.d/99-gpu.rules
-       block: |
-         #Remove NVIDIA USB xHCI Host Controller Devices, if present
-         ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x{{ vendor_id }}", ATTR{class}=="0x{{ usba_class }}", ATTR{remove}="1"
-         #Remove NVIDIA USB Type-C UCSI devices, if present
-         ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x{{ vendor_id }}", ATTR{class}=="0x{{ usbc_class }}", ATTR{remove}="1"
-       owner: root
-       group: root
-       mode: 0644
-       create: true
-      become: true
-
-Kernel Drivers
-^^^^^^^^^^^^^^
-
-Prevent the ``nouveau`` kernel driver from loading by
-blacklisting the module:
-
-.. code-block:: yaml
-
-   - name: Blacklist nouveau
-     blockinfile:
-       path: /etc/modprobe.d/blacklist-nouveau.conf
-       block: |
-         blacklist nouveau
-         options nouveau modeset=0
-       mode: 0664
-       owner: root
-       group: root
-       create: true
-     become: true
-     notify:
-       - reboot
-       - Regenerate initramfs
-
-Ensure that the ``vfio`` drivers are loaded into the kernel on boot:
-
-.. code-block:: yaml
-
-   - name: Add vfio to modules-load.d
-     blockinfile:
-       path: /etc/modules-load.d/vfio.conf
-       block: |
-         vfio
-         vfio_iommu_type1
-         vfio_pci
-         vfio_virqfd
-       owner: root
-       group: root
-       mode: 0664
-       create: true
-     become: true
-     notify: reboot
-
-Once this code has taken effect (after a reboot), the VFIO kernel drivers should be loaded on boot:
-
-.. code-block:: text
-
-   # lsmod | grep vfio
-   vfio_pci               49152  0
-   vfio_virqfd            16384  1 vfio_pci
-   vfio_iommu_type1       28672  0
-   vfio                   32768  2 vfio_iommu_type1,vfio_pci
-   irqbypass              16384  5 vfio_pci,kvm
-
-   # lspci -nnk -s 3d:00.0
-   3d:00.0 VGA compatible controller [0300]: NVIDIA Corporation GM107GL [Tesla M10] [10de:13bd] (rev a2)
-   Subsystem: NVIDIA Corporation Tesla M10 [10de:1160]
-   Kernel driver in use: vfio-pci
-   Kernel modules: nouveau
-
-IOMMU should be enabled at kernel level as well - we can verify that on the compute host:
-
-.. code-block:: text
-
-   # docker exec -it nova_libvirt virt-host-validate | grep IOMMU
-   QEMU: Checking for device assignment IOMMU support                         : PASS
-   QEMU: Checking if IOMMU is enabled by kernel                               : PASS
-
-OpenStack Nova configuration
-----------------------------
-
-See upsteram Nova documentation: `Attaching physical PCI devices to guests <https://docs.openstack.org/nova/latest/admin/pci-passthrough.html>`__
-
-Configure a flavor
-^^^^^^^^^^^^^^^^^^
-
-For example, to request two of the GPUs with alias **a1**
-
-.. code-block:: text
-
-   openstack flavor set m1.medium --property "pci_passthrough:alias"="a1:2"
-
-
-This can be also defined in the openstack-config repository
-
-add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
-
-.. code-block:: console
-
-   cd src/openstack-config
-   vim etc/openstack-config/openstack-config.yml
-
-    name: "m1.medium-gpu"
-    ram: 4096
-    disk: 40
-    vcpus: 2
-    extra_specs:
-      "pci_passthrough:alias": "a1:2"
-
-Invoke configuration playbooks afterwards:
-
-.. code-block:: console
-
-   source src/kayobe-config/etc/kolla/public-openrc.sh
-   source venvs/openstack/bin/activate
-   tools/openstack-config --vault-password-file <Vault password file path>
-
-Create instance with GPU passthrough
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: text
-
-   openstack server create --flavor m1.medium-gpu --image ubuntu22.04 --wait test-pci
-
-Testing GPU in a Guest VM
--------------------------
-
-The Nvidia drivers must be installed first.  For example, on an Ubuntu guest:
-
-.. code-block:: text
-
-   sudo apt install nvidia-headless-440 nvidia-utils-440 nvidia-compute-utils-440
-
-The ``nvidia-smi`` command will generate detailed output if the driver has loaded
-successfully.
 
 Further Reference
 -----------------
