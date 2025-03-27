@@ -11,6 +11,13 @@ on:
         description: Build Ubuntu 24.04 Noble
         type: boolean
         default: true
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -26,10 +33,18 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+
   ipa-image-build:
     name: Build IPA images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-host-image-builder-runner
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
     permissions: {}
     steps:
       - name: Install Package
@@ -99,12 +114,12 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "skc-ipa-image-builder"
-          aio_vm_image = "Ubuntu-24.04"
-          aio_vm_flavor = "en1.large"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
-          aio_vm_volume_size = 100
+          aio_vm_volume_size = "${{ vars.HOST_IMAGE_BUILD_VOLUME }}"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
 
@@ -112,7 +127,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -132,7 +147,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 

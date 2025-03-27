@@ -1,0 +1,271 @@
+---
+name: Build Amphora image
+on:
+  workflow_dispatch:
+    inputs:
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+      CLOUDS_YAML:
+        required: true
+      OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+
+env:
+  ANSIBLE_FORCE_COLOR: True
+  KAYOBE_ENVIRONMENT: ci-builder
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+  amphora-image-build:
+    name: Build Amphora image
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
+    permissions: {}
+    steps:
+
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+
+      # Generate a tag to apply to all built Amphora image.
+      - name: Generate Amphora image tag
+        id: image_tag
+        run: |
+          echo "image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Display Amphora image tag
+        run: |
+          echo "${{ steps.image_tag.outputs.image_tag }}"
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_public_key = "id_rsa.pub"
+          ssh_username = "ubuntu"
+          aio_vm_name = "skc-amphora-image-builder"
+          # Must be an Ubuntu Jammy host to successfully build all images
+          # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
+          aio_vm_interface = "ens3"
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: "openstack"
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-network-allocation.yml
+          ---
+          aio_ips:
+            builder: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write Terraform network interface config
+        run: |
+          mkdir -p src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed
+          rm -f src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          admin_interface: "{{ access_interface.value }}"
+          aio_interface: "{{ access_interface.value }}"
+          EOF
+
+      - name: Manage SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/authorized_keys
+          cat src/kayobe-config/terraform/aio/id_rsa.pub >> ~/.ssh/authorized_keys
+          cp src/kayobe-config/terraform/aio/id_rsa* ~/.ssh/
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host (Builder VM)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure -e seed_bootstrap_user=ubuntu --skip-tags network
+
+      - name: Install dependencies
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run \
+          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Create Amphora image output directory
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run \
+          --command "mkdir -p /opt/kayobe/images/amphora" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Build Octavia Amphora image
+        id: build_amphora
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/octavia-amphora-image-build.yml -e amphora_image_dest=/opt/kayobe/images/amphora/amphora-x64-haproxy.qcow2
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /var/log/octavia-amphora-image-build.log" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_amphora.outcome == 'failure'
+
+      - name: Upload Octavia Amphora image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/amphora \
+          -e artifact_tag=${{ steps.image_tag.outputs.image_tag }} \
+          -e file_regex="*.qcow2" \
+          -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
+          -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_amphora.outcome == 'success'
+
+      - name: Copy logs back to runner
+        continue-on-error: true
+        run: |
+          mkdir artifact
+          scp stack@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/var/log/octavia-amphora-image-build.log ./artifact
+        if: always()
+
+      - name: Fail if Amphora image builds failed
+        run: |
+          echo "Builds failed. See workflow artifacts for details." &&
+          exit 1
+        if: steps.build_amphora.outcome == 'failure'
+
+      - name: Upload logs & image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amphora-image-build-log
+          path: ./artifact
+        if: always()
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: always()
