@@ -7,6 +7,10 @@ on:
         description: OpenStack version
         type: string
         required: true
+      openstack_codename:
+        description: OpenStack codename
+        type: string
+        required: true
 
 jobs:
   propose_github_release_updates:
@@ -73,10 +77,17 @@ jobs:
           path: ${{ github.workspace }}/src/kayobe-config
           commit-message: >-
             Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
+          author: stackhpc-ci <22933334+stackhpc-ci@users.noreply.github.com>
           branch: update-dependency/${{ matrix.key }}/${{ inputs.openstack_version }}
           delete-branch: true
           title: >-
-            Bump ${{ inputs.openstack_version }} ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
+            Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
           body: >
             This PR was created automatically to update ${{ inputs.openstack_version }}
             ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}.
+
+            GitHub Release Changelog:
+            https://github.com/stackhpc/${{ matrix.key }}/releases/tag/${{ steps.latest_tag.outputs.latest_tag }}
+          labels: |
+            stackhpc-ci
+            ${{ inputs.openstack_codename }}
