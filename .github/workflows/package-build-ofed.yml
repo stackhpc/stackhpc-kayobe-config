@@ -1,5 +1,5 @@
 ---
-name: Build OFED packages
+name: Build OFED kernel modules
 on:
   workflow_dispatch:
     inputs:
@@ -19,11 +19,11 @@ on:
 
 env:
   ANSIBLE_FORCE_COLOR: True
-  KAYOBE_ENVIRONMENT: ci-builder
+  KAYOBE_ENVIRONMENT: ci-doca-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
   overcloud-ofed-packages:
-    name: Build OFED packages
+    name: Build OFED kernel modules
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: arc-skc-host-image-builder-runner
     permissions: {}
@@ -47,6 +47,11 @@ jobs:
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+
+      - name: Generate OFED tag
+        id: ofed_tag
+        run: |
+          echo "ofed_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Clone StackHPC Kayobe repository
         uses: actions/checkout@v4
@@ -86,6 +91,7 @@ jobs:
         id: image_tag
         run: |
           echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: ${{ github.workspace }}/src/kayobe-config
 
       # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
@@ -145,13 +151,13 @@ jobs:
 
       - name: Write Terraform outputs
         run: |
-          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-doca-builder/tf-outputs.yml
           ${{ steps.tf_outputs.outputs.stdout }}
           EOF
 
       - name: Write Terraform network config
         run: |
-          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-network-allocation.yml
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-doca-builder/tf-network-allocation.yml
           ---
           aio_ips:
             builder: "{{ access_ip_v4.value }}"
@@ -176,13 +182,13 @@ jobs:
       - name: Bootstrap the control host
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe control host bootstrap
 
       - name: Run growroot playbook
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/growroot.yml
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -190,23 +196,23 @@ jobs:
       - name: Configure the seed host (Builder VM)
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host configure --skip-tags network,docker
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
+          kayobe seed host configure --skip-tags network,docker,docker-registry
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Run a distro-sync
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --become --command "dnf distro-sync --refresh"
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
+          kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Reset BLS entries on the seed host
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/reset-bls-entries.yml \
           -e "reset_bls_host=ofed-builder"
         env:
@@ -215,7 +221,7 @@ jobs:
       - name: Disable noexec in /var/tmp
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe seed host command run --become --command "sed -i 's/noexec,//g' /etc/fstab"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -223,7 +229,7 @@ jobs:
       - name: Reboot to apply the kernel update
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/reboot.yml
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -231,7 +237,7 @@ jobs:
       - name: Run OFED builder playbook
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/build-ofed-rocky.yml
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -239,8 +245,9 @@ jobs:
       - name: Run OFED upload playbook
         run: |
           source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml
+          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/push-ofed.yml \
+          -e "ofed_tag=${{ steps.ofed_tag.outputs.ofed_tag }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 

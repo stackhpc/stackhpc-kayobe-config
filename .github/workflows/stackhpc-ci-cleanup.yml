@@ -11,6 +11,10 @@ jobs:
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
     permissions: {}
+    strategy:
+      matrix:
+        environment: [SMS Lab, Leafcloud]
+    environment: ${{ matrix.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +38,7 @@ jobs:
 
       - name: Install OpenStack client
         run: |
-          pip install python-openstackclient -c https://releases.openstack.org/constraints/upper/${{ steps.openstack_release.outputs.openstack_release }}
+          pip install python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
 
       - name: Clean up aio instances over 3 hours old
         run: |
@@ -52,7 +56,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -72,7 +76,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -92,7 +96,7 @@ jobs:
           done
           exit $result
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
