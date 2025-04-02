@@ -101,6 +101,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 SUPPORTED_BASE_DISTROS = [
     "rocky-9",
     "ubuntu-jammy",
+    "ubuntu-noble",
 ]
 
 
