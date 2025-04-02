@@ -11,6 +11,10 @@ on:
         description: Promote Ubuntu 22.04 Jammy
         type: boolean
         default: true
+      ubuntu-noble:
+        description: Promote Ubuntu 24.04 Noble
+        type: boolean
+        default: true
       image_tag:
         description: Tag to promote
         type: string
@@ -25,7 +29,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -98,3 +102,17 @@ jobs:
           ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy
+
+      - name: Promote Ubuntu Noble 24.04 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
+          -e artifact_type="kayobe-images" \
+          -e os_distribution='ubuntu' \
+          -e os_release='noble'
+        env:
+          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble
