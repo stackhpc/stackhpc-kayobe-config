@@ -254,6 +254,20 @@ stackhpc_ubuntu_jammy_uca_repos:
 # List of repositories for Ubuntu Jammy.
 stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
 
+# List of base repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
+
+# List of UCA repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_uca_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} noble-updates/{{ openstack_release_codename }} main"
+
+# List of repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
+
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
 
@@ -280,10 +294,16 @@ kolla_build_blocks:
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
     {% endif %}
+    {% if kolla_base_distro_version == 'jammy' %}
     {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    {% for repo in stackhpc_ubuntu_noble_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endif %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
@@ -309,10 +329,16 @@ kolla_build_blocks:
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% for repo in stackhpc_ubuntu_jammy_repos %}
+    {% if kolla_base_distro_version == 'jammy' %}
+    {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    {% for repo in stackhpc_ubuntu_noble_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endif %}
   footer: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
     {% if kolla_base_distro == 'rocky' %}
