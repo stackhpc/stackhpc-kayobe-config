@@ -324,7 +324,12 @@ kolla_build_blocks:
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro_version == 'jammy' %}
     COPY sources.list.ubuntu.jammy /etc/apt/sources.list.backup
+    {% else %}
+    COPY sources.list.ubuntu.noble /etc/apt/sources.list.backup
+    {% endif %}
+
     {% endif %}
     RUN \
         rm /etc/apt/sources.list && \
