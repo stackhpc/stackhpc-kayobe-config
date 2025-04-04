@@ -74,7 +74,9 @@ backend backend
     balance static-rr
     option httpchk HEAD / HTTP/1.0
     {% for server in servers %}
-    server {{ server.name }} {{ server.ip }}:{{ server.port }} check weight 100 inter {{ health_check_interval }}
+    {% if 'ceph-ingress-gw-01' in server.name %}
+    server {{ server.name }} 127.0.0.1:{{ server.port }} check weight 100
+    {% endif %}
     {% endfor %}
 {% endif %}
 {% if mode == 'tcp' %}
