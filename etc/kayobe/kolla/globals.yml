@@ -7,10 +7,18 @@ kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %
 
 # Use facts so this is determined correctly when the control host OS differs
 # from os_distribuition.
-kolla_base_distro_version: "{% raw %}{{ kolla_base_distro_version_default_map[kolla_base_distro] }}{% endraw %}"
+kolla_base_distro_version: "{% raw %}{{ 'noble' if ansible_facts.distribution_release == 'noble' else kolla_base_distro_version_default_map[kolla_base_distro] }}{% endraw %}"
 
 # Convenience variable for base distro and version string.
 kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
+
+kolla_base_distro_version_custom_map: {
+  "rocky-9": "3.9",
+  "ubuntu-jammy": "3.10",
+  "ubuntu-noble": "3.12"
+}
+
+distro_python_version: "{% raw %}{{ kolla_base_distro_version_custom_map[kolla_base_distro_and_version] }}{% endraw %}"
 
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
