@@ -19,17 +19,10 @@
     - name: Update network allocations
       when: '"HTTP 404" not in node_show.stderr'
       block:
-        - name: Read network allocations
-          ansible.builtin.set_fact:
-            net_alc_yaml: "{{ admin_oc_net_ips }}"
-
-        - name: Write node IP address to allocations
-          ansible.builtin.set_fact:
-            new_net_alc: "{{ net_alc_yaml | combine(new_ips, recursive=True) }}"
+        - name: Write new network allocations
           vars:
             new_ips: "{ '{{ admin_oc_net_name }}_ips': { '{{ inventory_hostname }}': '{{ ansible_host }}' } }"
-
-        - name: Write new network allocations
+            new_net_alc: "{{ admin_oc_net_ips | combine(new_ips, recursive=True) }}"
           ansible.builtin.copy:
             content: "{{ new_net_alc | to_nice_yaml(indent=2) }}"
             dest: "{{ network_allocation_path }}"
