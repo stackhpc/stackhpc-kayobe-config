@@ -23,9 +23,8 @@ stackhpc_overcloud_dib_name: "deployment_image"
 stackhpc_overcloud_dib_elements:
   - "{{ os_distribution }}-{% if os_distribution == 'rocky' %}container-stackhpc{% else %}minimal{% endif %}"
   - "cloud-init-datasources"
-  - "{% if os_distribution == 'rocky' %}disable-selinux{% endif %}"
+  - "{% if os_distribution == 'rocky' %}selinux-permissive{% endif %}"
   - "enable-serial-console"
-  - "{% if kayobe_environment == 'ci-builder' %}etc-hosts{% endif %}"
   - "vm"
   - "block-device-efi"
   - "cloud-init"
@@ -38,7 +37,9 @@ stackhpc_overcloud_dib_elements:
 stackhpc_overcloud_dib_env_vars:
   DIB_BLOCK_DEVICE_CONFIG: "{{ stackhpc_overcloud_dib_block_device_config_uefi_lvm }}"
   DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1 rd.auto"
-  DIB_CLOUD_INIT_DATASOURCES: "ConfigDrive"
+  DIB_GRUB_TIMEOUT: "5"
+  DIB_GRUB_TIMEOUT_STYLE: "menu"
+  DIB_CLOUD_INIT_DATASOURCES: "OpenStack, ConfigDrive"
   DIB_CONTAINERFILE_RUNTIME: "docker"
   DIB_CONTAINERFILE_NETWORK_DRIVER: "host"
   DIB_CONTAINERFILE_DOCKERFILE: "/opt/kayobe/src/stackhpc-image-elements/elements/rocky-container-stackhpc/containerfiles/9-stackhpc"
@@ -47,9 +48,6 @@ stackhpc_overcloud_dib_env_vars:
   # sometimes).
   # DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_focal_url if os_distribution == 'ubuntu' else '' }}"
   DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: "{{ stackhpc_overcloud_dib_dracut_enabled_modules_default_config }}"
-  # FIXME: Workaround for lack of internal DNS on SMS lab.
-  DIB_ETC_HOSTS_EXTRA: |
-    10.205.3.187 pulp-server pulp-server.internal.sms-cloud
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
   DIB_SUDOERS_FILENAME: "no-fqdn"
   # Avoid DNS queries during sudo commands, since we might not always have working DNS.

@@ -1,9 +1,10 @@
+---
 - name: Prometheus friendly network names
   hosts: overcloud
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Gather network maps from each host with unique identifiers
-      set_fact:
+      ansible.builtin.set_fact:
         host_network_maps: >-
           {%- set if_list = [] -%}
           {%- for i in network_interfaces -%}
@@ -19,13 +20,13 @@
           {{ if_list }}
 
     - name: Aggregate network maps from all hosts
-      set_fact:
+      ansible.builtin.set_fact:
         prometheus_network_maps_aggregated: "{{ groups['overcloud'] | map('extract', hostvars, 'host_network_maps') | flatten }}"
       run_once: true
       delegate_to: localhost
 
     - name: Deduplicate the aggregated list based on unique IDs
-      set_fact:
+      ansible.builtin.set_fact:
         prometheus_network_maps_blob: "{{ prometheus_network_maps_aggregated | unique(attribute='unique_id') }}"
       run_once: true
       delegate_to: localhost

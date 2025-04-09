@@ -1,4 +1,21 @@
+# yamllint disable-file
 ---
+############################################################################
+# TLS
+
+# Internal TLS configuration
+# Copy the self-signed CA into the kolla containers
+kolla_copy_ca_into_containers: "yes"
+# Use the following trust store within the container
+openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution == 'rocky' else '/etc/ssl/certs/ca-certificates.crt' }}"
+
+# Enable backend TLS
+kolla_enable_tls_backend: "yes"
+
+# Enable RabbitMQ TLS
+rabbitmq_enable_tls: "yes"
+
+############################################################################
 # Most development environments will use nested virtualisation, and we can't
 # guarantee that nested KVM support is available. Use QEMU as a lowest common
 # denominator.
@@ -25,6 +42,8 @@ nova_backend_ceph: "yes"
 neutron_bridge_name: "{{ vxlan_interfaces[0].device }}-ovs"
 neutron_external_interface: "{{ vxlan_interfaces[0].device }}"
 
+neutron_dns_domain: "{{ root_domain }}."
+
 # OpenSearch memory tuning
 opensearch_heap_size: 1g
 
@@ -44,3 +63,7 @@ designate_ns_record:
 designate_backend: "bind9"
 designate_recursion: "yes"
 designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
+
+# Open up ports in firewalld for services on the public API network.
+enable_external_api_firewalld: true
+external_api_firewalld_zone: "{{ public_net_name | net_zone }}"

@@ -15,7 +15,7 @@ any untrusted environment.
 
 ## Role variables
 
-* `pulp_auth_proxy_pulp_url`: URL of the Pulp server to proxy requests to.
+* `pulp_auth_proxy_url`: URL of the Pulp server to proxy requests to.
 * `pulp_auth_proxy_username`: Username of the Pulp server to proxy requests to.
 * `pulp_auth_proxy_password`: Password of the Pulp server to proxy requests to.
 * `pulp_auth_proxy_conf_path`: Path to a directory in which to write Nginx

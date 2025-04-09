@@ -3,7 +3,14 @@
 
 # See: https://github.com/stackhpc/docker-rally/blob/master/bin/rally-verify-wrapper.sh for a full list of tempest parameters that can be overriden.
 # You can override tempest parameters like so:
-export TEMPEST_CONCURRENCY=2
+
+# The Tempest concurrency determines how many tests can be running at once.
+# Higher values run tests faster but risk running out of resources and failing tests
+# On production systems, Tempest concurrency can usually be set to a high number e.g. 16-64. It is often limited by the number of available floating IPs.
+# On virtualised test environments, compute and networking speeds often limit the concurrency to 1-16 before tests begin to fail due to timeouts.
+export TEMPEST_CONCURRENCY=16
+
+
 # Specify single test whilst experimenting
 #export TEMPEST_PATTERN="${TEMPEST_PATTERN:-tempest.api.compute.servers.test_create_server.ServersTestJSON.test_host_name_is_same_as_server_name}"
 
@@ -21,9 +28,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   fi
 
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
-    # SMSLab is currently running with 1G switches. This causes tests using volumes and images to fail if
-    # the concurrency is set too high.
-    export TEMPEST_CONCURRENCY=1
+    export TEMPEST_CONCURRENCY=4
     # Uncomment this to perform a full tempest test
     # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full

@@ -1,0 +1,21 @@
+# yamllint disable-file
+---
+{% if stackhpc_enable_radosgw_usage_exporter | bool %}
+{% raw %}
+scrape_configs:
+  - job_name: ceph_radosgw_usage_exporter
+    honor_labels: true
+    scrape_interval: 15s
+    metric_relabel_configs:
+    - replacement: ${1}
+      source_labels: [owner,user]
+      target_label: tenant_id
+      separator: ""
+      regex: (.+)
+    static_configs:
+      - targets:
+      {% for host in groups['monitoring'] %}
+        - "{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{% endraw %}{{ stackhpc_radosgw_usage_exporter_port }}{% raw %}"
+      {% endfor %}
+{% endraw %}
+{% endif %}

@@ -93,6 +93,6 @@ hosts:
 
 .. code-block:: console
 
-   mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
-   cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+   mkdir -p $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/pre.d
+   cd $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/pre.d
    ln -s ../../../ansible/growroot.yml 30-growroot.yml

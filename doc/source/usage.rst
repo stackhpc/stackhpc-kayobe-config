@@ -16,7 +16,7 @@ when used with Kayobe's :kayobe-doc:`multiple environments
 <multiple-environments>` feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
-<https://github.com/stackhpc/kayobe/tree/stackhpc/2023.1>`__, which includes
+<https://github.com/stackhpc/kayobe/tree/stackhpc/2024.1>`__, which includes
 backported support for Ansible collections.
 
 New deployments

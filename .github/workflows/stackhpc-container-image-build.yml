@@ -9,12 +9,12 @@ on:
         required: false
         default: ""
       overcloud:
-        description: Build overcloud images?
+        description: Build container images for overcloud services?
         type: boolean
         required: false
         default: true
       seed:
-        description: Build seed images?
+        description: Build container images for seed services?
         type: boolean
         required: false
         default: false
@@ -34,11 +34,17 @@ on:
         required: false
         default: true
       push-dirty:
-        description: Push scanned images that have vulnerabilities?
+        description: Push scanned images that have critical vulnerabilities?
         type: boolean
         required: false
-        # NOTE(Alex-Welsh): This default should be flipped once we resolve existing failures
-        default: true
+        default: false
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -53,6 +59,17 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
     steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+          if [[ ${{ inputs.overcloud }} == 'false' && ${{ inputs.seed }} == 'false' ]]; then
+            echo "At least one of overcloud or seed must be selected"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -91,10 +108,15 @@ jobs:
         run: |
           echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
 
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-container-image-builder-runner
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -102,6 +124,7 @@ jobs:
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
     needs:
       - generate-tag
+      - runner-selection
     steps:
       - name: Install package dependencies
         run: |
@@ -121,13 +144,6 @@ jobs:
         with:
           path: src/kayobe-config
 
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ needs.generate-tag.outputs.openstack_release }}
-          path: src/kayobe
-
       - name: Make sure dockerd is running and test Docker
         run: |
           docker ps
@@ -136,6 +152,10 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
 
+      - name: Install yq
+        run: |
+          curl -sL https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz | tar xz && sudo mv yq_linux_amd64 /usr/bin/yq
+
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -143,14 +163,14 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       # Required for Pulp auth proxy deployment and Docker registry login.
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
           sudo pip install docker 'requests<2.32.0'
-      
+
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
@@ -176,7 +196,7 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
       - name: Create build logs output directory
-        run: mkdir image-build-logs 
+        run: mkdir image-build-logs
 
       - name: Build kolla overcloud images
         id: build_overcloud_images
@@ -228,16 +248,23 @@ jobs:
         run: mv image-scan-output image-build-logs/image-scan-output
 
       - name: Fail if no images have passed scanning
-        run: if [ $(wc -l < image-build-logs/image-scan-output/clean-images.txt) -le 0 ]; then exit 1; fi
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
         if: ${{ !inputs.push-dirty }}
 
       - name: Copy clean images to push-attempt-images list
         run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
         if: inputs.push
 
+      # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
+      # This should be reverted when it's decided to filter high level CVEs as well.
       - name: Append dirty images to push list
         run: |
           cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push }}
+
+      - name: Append images with critical vulnerabilities to push list
+        run: |
+          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
         if: ${{ inputs.push && inputs.push-dirty }}
 
       - name: Push images
@@ -249,7 +276,7 @@ jobs:
 
           while read -r image; do
             # Retries!
-            for i in {1..5}; do 
+            for i in {1..5}; do
               if docker push $image; then
                 echo "Pushed $image"
                 break
@@ -283,8 +310,15 @@ jobs:
         run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
         if: ${{ !cancelled() }}
 
-      - name: Fail when images failed scanning
-        run: if [ $(wc -l < image-build-logs/dirty-images.txt) -gt 0 ]; then cat image-build-logs/dirty-images.txt && exit 1; fi
+      # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
+      # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
+      # decided to fail the job on detecting high CVEs as well.
+      # - name: Fail when images failed scanning
+      #   run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
+      #   if: ${{ !inputs.push-dirty && !cancelled() }}
+
+      - name: Fail when critical vulnerabilities are found
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
         if: ${{ !inputs.push-dirty && !cancelled() }}
 
       # NOTE(mgoddard): Trigger another CI workflow in the

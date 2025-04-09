@@ -137,13 +137,6 @@ cloudkitty
 [cloudkitty-processor:children]
 cloudkitty
 
-# Freezer
-[freezer-api:children]
-freezer
-
-[freezer-scheduler:children]
-freezer
-
 # iSCSI
 [iscsid:children]
 compute
@@ -199,13 +192,6 @@ heat
 [heat-engine:children]
 heat
 
-# Murano
-[murano-api:children]
-murano
-
-[murano-engine:children]
-murano
-
 # Ironic
 [ironic-api:children]
 ironic
@@ -213,15 +199,12 @@ ironic
 [ironic-conductor:children]
 ironic
 
-#[ironic-inspector:children]
-#ironic
-
+{% if kolla_ironic_inspector_host %}
 [ironic-inspector]
-# FIXME: Ideally we wouldn't reference controllers in here directly, but only
-# one inspector service should exist, and groups can't be indexed in an
-# inventory (e.g. ironic[0]).
-{% if groups.get('controllers', []) | length > 0 %}
-{{ groups['controllers'][0] }}
+{{ kolla_ironic_inspector_host }}
+{% else %}
+[ironic-inspector:children]
+ironic
 {% endif %}
 
 [ironic-tftp:children]
@@ -236,32 +219,6 @@ magnum
 
 [magnum-conductor:children]
 magnum
-
-# Sahara
-[sahara-api:children]
-sahara
-
-[sahara-engine:children]
-sahara
-
-# Solum
-[solum-api:children]
-solum
-
-[solum-worker:children]
-solum
-
-[solum-deployer:children]
-solum
-
-[solum-conductor:children]
-solum
-
-[solum-application-deployment:children]
-solum
-
-[solum-image-builder:children]
-solum
 
 # Mistral
 [mistral-api:children]
@@ -347,19 +304,6 @@ watcher
 [watcher-applier:children]
 watcher
 
-# Senlin
-[senlin-api:children]
-senlin
-
-[senlin-conductor:children]
-senlin
-
-[senlin-engine:children]
-senlin
-
-[senlin-health-manager:children]
-senlin
-
 # Octavia
 [octavia-api:children]
 octavia
@@ -415,28 +359,19 @@ compute
 [zun-cni-daemon:children]
 compute
 
+# Skyline
+[skyline-apiserver:children]
+skyline
+
+[skyline-console:children]
+skyline
+
 # Tacker
 [tacker-server:children]
 tacker
 
 [tacker-conductor:children]
 tacker
-
-# Vitrage
-[vitrage-api:children]
-vitrage
-
-[vitrage-notifier:children]
-vitrage
-
-[vitrage-graph:children]
-vitrage
-
-[vitrage-ml:children]
-vitrage
-
-[vitrage-persistor:children]
-vitrage
 
 # Blazar
 [blazar-api:children]
@@ -455,9 +390,6 @@ storage
 
 [prometheus-mysqld-exporter:children]
 mariadb
-
-[prometheus-haproxy-exporter:children]
-loadbalancer
 
 [prometheus-memcached-exporter:children]
 memcached
@@ -526,3 +458,9 @@ venus
 
 [venus-manager:children]
 venus
+
+[letsencrypt-webserver:children]
+letsencrypt
+
+[letsencrypt-lego:children]
+letsencrypt

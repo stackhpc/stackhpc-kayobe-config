@@ -29,6 +29,7 @@ seed-hypervisor
 
 [wazuh-agent:children]
 seed
+seed-hypervisor
 overcloud
 
 [github-runners]
@@ -54,8 +55,11 @@ controllers
 [storage]
 # Empty group to provide declaration of storage group.
 
-[compute]
-# Empty group to provide declaration of compute group.
+[compute-vgpu]
+# Empty group to provide declaration of compute-vgpu group.
+
+[compute:children]
+compute-vgpu
 
 [overcloud:children]
 controllers
@@ -63,6 +67,17 @@ network
 monitoring
 storage
 compute
+
+###############################################################################
+# Feature control groups
+[vgpu:children]
+compute-vgpu
+
+[iommu:children]
+vgpu
+
+[mlnx]
+# Empty group to provide declaration of mlnx group.
 
 ###############################################################################
 # Service groups.
@@ -125,3 +140,15 @@ rgws
 [mgrs]
 [osds]
 [rgws]
+
+###############################################################################
+# Feature control groups
+
+[cis-hardening:children]
+overcloud
+
+###############################################################################
+# Monitoring groups.
+
+[redfish_exporter_targets:children]
+overcloud

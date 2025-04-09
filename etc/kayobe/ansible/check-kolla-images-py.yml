@@ -1,0 +1,35 @@
+---
+- name: Check kolla-images.py image map and tag hierarchy
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create a temporary directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: kolla-ansible
+      register: tempdir_result
+
+    - name: Clone Kolla Ansible repository
+      ansible.builtin.git:
+        repo: "{{ stackhpc_kolla_ansible_source_url }}"
+        version: "{{ stackhpc_kolla_ansible_source_version }}"
+        dest: "{{ tempdir_result.path }}"
+
+    - name: Check image mapping
+      ansible.builtin.command:
+        cmd: >-
+          {{ kayobe_config_path }}/../../tools/kolla-images.py
+          check-image-map
+          --kolla-ansible-path {{ tempdir_result.path }}
+
+    - name: Check tag hierarchy
+      ansible.builtin.command:
+        cmd: >-
+          {{ kayobe_config_path }}/../../tools/kolla-images.py
+          check-hierarchy
+          --kolla-ansible-path {{ tempdir_result.path }}
+
+    - name: Remove temporary directory
+      ansible.builtin.file:
+        path: "{{ tempdir_result.path }}"
+        state: absent
