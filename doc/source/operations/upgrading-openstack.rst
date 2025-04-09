@@ -79,11 +79,10 @@ Then from the OpenStack CLI:
 .. code-block:: console
 
    openstack service delete heat
+   openstack service delete heat-cfn
    openstack user delete heat
    openstack domain set --disable heat_user_domain
    openstack domain delete heat_user_domain
-   openstack endpoint list --service heat -c ID -f value | xargs openstack endpoint delete
-   openstack endpoint list --service heat-cfn -c ID -f value | xargs openstack endpoint delete
 
 You can drop the ``heat`` database too, unless you want to keep historical content.
 
@@ -517,7 +516,7 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New :ref:`stackhpc_release_train` content should be synced to the local Pulp
+New :ref:`stackhpc-release-train` content should be synced to the local Pulp
 server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:
@@ -988,6 +987,24 @@ the change:
 .. code-block:: console
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+
+.. warning::
+
+   Take extra care when updating packages on Ceph hosts. Docker live-restore
+   does not work until the Squid version of Ceph, so a reload of docker will
+   restart all Ceph containers. Set the hosts to maintenance mode before
+   updating packages, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host package update --packages "*" --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
 
 If the host is a hypervisor, enable the Nova compute service.
 
