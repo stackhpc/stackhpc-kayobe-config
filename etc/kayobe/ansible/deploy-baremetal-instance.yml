@@ -8,17 +8,17 @@
   vars:
     network_allocation_path: "{{ kayobe_env_config_path }}/network-allocation.yml"
   tasks:
-    - name: Show baremetal node
-      ansible.builtin.command:
-        cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
-      register: node_show
-      failed_when: false
-      changed_when: false
-      delegate_to: localhost
-
     - name: Update network allocations
-      when: '"HTTP 404" not in node_show.stderr'
+      when: stackhpc_populate_baremetal_network_allocations
       block:
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when: false
+          changed_when: false
+          delegate_to: localhost
+
         - name: Write new network allocations
           vars:
             new_ips: "{ '{{ admin_oc_net_name }}_ips': { '{{ inventory_hostname }}': '{{ ansible_host }}' } }"
@@ -26,6 +26,7 @@
           ansible.builtin.copy:
             content: "{{ new_net_alc | to_nice_yaml(indent=2) }}"
             dest: "{{ network_allocation_path }}"
+          when: '"HTTP 404" not in node_show.stderr'
 
 - name: Deploy baremetal compute nodes as hypervisors
   hosts: compute
