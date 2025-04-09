@@ -25,6 +25,11 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   if [[ "$KAYOBE_ENVIRONMENT" =~ "aio" ]]; then
     # Seem to get servers failing to spawn with higher concurrency
     export TEMPEST_CONCURRENCY=1
+    # NOTE(seunghun1ee): Current Ubuntu Noble kernel 6.8.0-57-generic has a bug
+    # https://bugs.launchpad.net/ubuntu/+source/linux-meta-oracle-6.8/+bug/2104178
+    # which blocks attaching interfaces to neutron routers in OVS system.
+    # Ignoring sets of tests failing because of this until kernel fix is released.
+    export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-aio-tempest-refstack
   fi
 
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
