@@ -83,7 +83,7 @@ Kayobe environments can also be specified, for example, to create an AIO environ
    beokay.py create \
    --base-path skc-aio-environment \
    --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
-   --kayobe-config-branch stackhpc/2024.1 \
+   --kayobe-config-branch |current_release_git_branch_name| \
    --kayobe-config-env-name ci-aio \
    --vault-password-file ~/vault-pw \
    --kayobe-in-requirements
