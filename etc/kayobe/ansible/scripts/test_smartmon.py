@@ -16,9 +16,9 @@ from smartmon import (
 
 def load_json_fixture(filename):
     """
-    Load a JSON file from the 'drives' subfolder.
+    Load a JSON file from the 'tests' subfolder.
     """
-    path = os.path.join(os.path.dirname(__file__), "drives", filename)
+    path = os.path.join(os.path.dirname(__file__), "tests", filename)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -26,8 +26,8 @@ def load_json_fixture(filename):
 class TestSmartMon(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Collect all *.json files from ./drives/
-        data_folder = os.path.join(os.path.dirname(__file__), "drives")
+        # Collect all *.json files from ./tests/
+        data_folder = os.path.join(os.path.dirname(__file__), "tests")
         cls.fixture_files = glob.glob(os.path.join(data_folder, "*.json"))
 
     def create_mock_device_from_json(self, device_info, if_attributes=None):
@@ -133,7 +133,7 @@ class TestSmartMon(unittest.TestCase):
 
     def test_parse_device_info(self):
         """
-        Test parse_device_info() for every JSON fixture in ./drives/.
+        Test parse_device_info() for every JSON fixture in ./tests/.
         Each fixture is tested individually with clear error reporting.
         """
         for fixture_path in self.fixture_files:
@@ -194,7 +194,7 @@ class TestSmartMon(unittest.TestCase):
 
     def test_parse_if_attributes(self):
         """
-        Test parse_if_attributes() for every JSON fixture in ./drives/.
+        Test parse_if_attributes() for every JSON fixture in ./tests/.
         Each fixture is tested individually with clear error reporting.
         """
         for fixture_path in self.fixture_files:
@@ -206,7 +206,7 @@ class TestSmartMon(unittest.TestCase):
     @patch("smartmon.DeviceList")
     def test_main(self, mock_devicelist_class, mock_run_cmd):
         """
-        End-to-end test of main() for every JSON fixture in ./drives/.
+        End-to-end test of main() for every JSON fixture in ./tests/.
         This ensures we can handle multiple disks (multiple fixture files).
         """
         for fixture_path in self.fixture_files:
