@@ -61,8 +61,8 @@ approach this on both sides.
 Beokay
 ------
 
-`Beokay <https://github.com/stackhpc/beokay>` is a tool to help assist managing Kayobe
-environments. This can be utilised to help create new StackHPC Kayobe environments and
+`Beokay <https://github.com/stackhpc/beokay>` is a tool to manage Kayobe
+environments. This can create new StackHPC Kayobe environments and
 ensure StackHPC Kayobe Configuration dependencies are from the correct repositories and
 are up-to-date:
 
