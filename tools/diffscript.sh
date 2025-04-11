@@ -8,8 +8,7 @@ LOCAL_BRANCH=examplebranch
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 # For the script to work in its current state, should be in a kayobe-config directory in the tools folder and run on the LOCAL_BRANCH
-# kayobe-config should be in a directory that also has a kayobe, kolla and kolla-ansible directory to do the git diffs later
-# --- I am trying to figure out how to use git remote to avoid this but for now this is what I've got
+
 
 cd $SCRIPTPATH/..
 
@@ -31,9 +30,13 @@ then
     CURRENTKAYOBETAG="${CURRENTKAYOBE##*@}"
     echo "Current kayobe tag: $CURRENTKAYOBETAG"
 
-    cd $SCRIPTPATH/../../kayobe
-    # git diff $LATESTKAYOBETAG $CURRENTKAYOBETAG -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    git clone https://github.com/stackhpc/kayobe.git /tmp/kayobe
+    cd /tmp/kayobe
+    
     git diff --name-status $LATESTKAYOBETAG $CURRENTKAYOBETAG -- releasenotes/notes/
+
+    cd $SCRIPTPATH/..
+    rm -rf /tmp/kayobe
 
 elif [ "$1" = "--kolla" ];
 then
@@ -48,9 +51,13 @@ then
     CURRENTKOLLATAG="${CURRENTKOLLA##* }"
     echo "Current kolla tag: $CURRENTKOLLATAG"
 
-    cd $SCRIPTPATH/../../kolla
-    # git diff $LATESTKOLLATAG $CURRENTKOLLATAG -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    git clone https://github.com/stackhpc/kolla.git /tmp/kolla
+    cd /tmp/kolla
+
     git diff --name-status $CURRENTKOLLATAG $LATESTKOLLATAG -- releasenotes/notes/
+
+    cd $SCRIPTPATH/..
+    rm -rf /tmp/kolla
 
 elif [ "$1" = "--kollaansible" ];
 then
@@ -65,13 +72,16 @@ then
     CURRENTKATAG="${CURRENTKA##* }"
     echo "Current kolla ansible tag: $CURRENTKATAG"
 
-    cd $SCRIPTPATH/../../kolla-ansible
-    # git diff $LATESTKATAG $CURRENTKATAG -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
+    git clone https://github.com/stackhpc/kolla-ansible.git /tmp/kolla-ansible
+    cd /tmp/kolla-ansible
+
     git diff --name-status $CURRENTKATAG $LATESTKATAG -- releasenotes/notes/
+
+    cd $SCRIPTPATH/..
+    rm -rf /tmp/kolla-ansible
 
 else
     #git diff on SKC
     git diff $LOCAL_BRANCH $SKC_BRANCH -- releasenotes/notes/ | grep '^\+' | grep -v '\(+++\|---\)' | sed s/^+//g
-    # git diff --name-status $SKC_BRANCH $LOCAL_BRANCH -- releasenotes/notes/
 
 fi;
