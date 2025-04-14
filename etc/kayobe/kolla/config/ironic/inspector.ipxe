@@ -1,0 +1,32 @@
+{% raw %}#!ipxe
+
+:retry_dhcp
+dhcp || goto retry_dhcp
+
+set arch ${buildarch}
+echo ${arch}
+
+{# Standalone ironic: use ironic-configured PXE configs #}
+{% if not enable_neutron | bool %}
+# load the MAC-specific file or fail if it's not found
+:boot_system
+chain pxelinux.cfg/${mac:hexhyp} || goto inspector_ipa
+{% endif %}
+
+:inspector_ipa
+:retry_boot
+# Check architecture and set boot options accordingly
+set arch ${buildarch}
+
+iseq ${arch} x86_64 && set kernel_url {{ ironic_http_url }}/ironic-agent.kernel ||
+iseq ${arch} x86_64 && set initrd_url {{ ironic_http_url }}/ironic-agent.initramfs ||
+iseq ${arch} x86_64 && set initrd_file ironic-agent.initramfs ||
+
+iseq ${arch} arm64 && set kernel_url {{ ironic_http_url }}/ironic-agent-aarch64.kernel ||
+iseq ${arch} arm64 && set initrd_url {{ ironic_http_url }}/ironic-agent-aarch64.initramfs ||
+iseq ${arch} arm64 && set initrd_file ironic-agent-aarch64.initramfs ||
+imgfree
+kernel --timeout 30000 ${kernel_url} ipa-inspection-callback-url={{ ironic_inspector_internal_endpoint }}/v1/continue systemd.journald.forward_to_console=yes BOOTIF=${mac} initrd=${initrd_file} {{ ironic_inspector_kernel_cmdline_extras | join(' ') }}
+initrd --timeout 30000 ${initrd_url}
+boot
+{% endraw %}

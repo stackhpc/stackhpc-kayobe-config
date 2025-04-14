@@ -1,0 +1,39 @@
+---
+- name: Configure Ironic for multiarch
+  any_errors_fatal: True
+  gather_facts: True
+  hosts: controllers
+  vars:
+    ironic_volume_location: /var/lib/docker/volumes/ironic/_data
+    stackhpc_ipa_image_version_aarch64: "2024.1-20250407T193151"
+    stackhpc_ipa_image_url_aarch64: >-
+      {{ stackhpc_release_pulp_content_url }}/ipa-images/\
+      {{ openstack_release }}/{{ os_distribution }}/\
+      {{ os_release }}-aarch64/{{ stackhpc_ipa_image_version_aarch64 }}
+    ironic_aarch64_kernel_filename: ipa-aarch64.kernel
+    ironic_aarch64_initramfs_filename: ipa-aarch64.initramfs
+
+  tasks:
+    - name: Download aarch64 deployment kernel
+      ansible.builtin.get_url:
+        url: "{{ stackhpc_ipa_image_url_aarch64 }}/{{ ironic_aarch64_kernel_filename }}"
+        dest: "{{ ironic_volume_location }}/httpboot/ironic-agent-aarch64.kernel"
+        force_basic_auth: true
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        unredirected_headers:
+          - "Authorization"
+        mode: '0644'
+      become: true
+
+    - name: Download aarch64 deployment initramfs
+      ansible.builtin.get_url:
+        url: "{{ stackhpc_ipa_image_url_aarch64 }}/{{ ironic_aarch64_initramfs_filename }}"
+        dest: "{{ ironic_volume_location }}/httpboot/ironic-agent-aarch64.initramfs"
+        force_basic_auth: true
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        unredirected_headers:
+          - "Authorization"
+        mode: '0644'
+      become: true
