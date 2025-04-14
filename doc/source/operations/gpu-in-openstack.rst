@@ -70,10 +70,10 @@ configuration or trigger the playbook manually:
 The playbook will apply the necessary configuraion and reboot the hosts if
 required.
 
-Once host configuration is complete, deploy the OpenStack services:
+Once host configuration is complete, deploy Nova:
 .. code-block:: console
 
-    kayobe overcloud service deploy -kt nova --kolla-limit compute_a100,compute_v100,compute_multi_gpu
+    kayobe overcloud service deploy -kt nova
 
 Create a flavor
 ---------------
@@ -84,9 +84,9 @@ For example, to request two of the GPUs with alias **v100_32**
 
    openstack flavor set m1.medium-gpu --property "pci_passthrough:alias"="v100_32:2"
 
-This can be also defined in the openstack-config repository
+This can be also defined in the openstack-config repository.
 
-add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
+Add extra_specs to flavor in etc/openstack-config/openstack-config.yml:
 
 .. code-block:: console
 
