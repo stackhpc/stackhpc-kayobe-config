@@ -33,4 +33,4 @@ kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release
 
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ovn-fix-chassis-priorities.yml
 
-kayobe overcloud host configure --limit $1 --kolla-limit $1 -e os_release=noble
+kayobe overcloud host configure --limit $1 -e os_release=noble

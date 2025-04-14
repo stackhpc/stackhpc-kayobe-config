@@ -1,11 +1,13 @@
 ---
 # To prevent Ansible role dependency errors, this playbook requires that environment variable
 # ANSIBLE_ROLES_PATH is defined and includes '$KAYOBE_PATH/ansible/roles' on the Ansible control host.
-- name: Migrate hosts from Ubuntu Jammy 22.04 to Noble 24.04
+# Where KAYOBE_PATH is the path to the source of kayobe that the environment uses.
+- name: Prepare upgrade from Ubuntu Jammy 22.04 to Noble 24.04
   hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
     reboot_timeout_s: "{{ 20 * 60 }}"
+  tags: pre
   tasks:
     - name: Assert that hosts are running Ubuntu Jammy
       ansible.builtin.assert:
@@ -63,10 +65,64 @@
           deb {{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main restricted universe multiverse
       become: true
 
-    - name: Do release upgrade
-      ansible.builtin.command: do-release-upgrade -f DistUpgradeViewNonInteractive
+    - name: Enusre /tmp is mounted with exec
+      ansible.builtin.command: sudo mount -o remount,exec /tmp
       become: true
 
+    - name: Ensure /var/lib/cephadm directory exists
+      ansible.builtin.file:
+        path: /var/lib/cephadm
+        state: directory
+        owner: root
+        group: root
+      become: true
+      when: inventory_hostname in groups['ceph']
+
+- name: Upgrade hosts from Ubuntu Jammy 22.04 to Noble 24.04
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    reboot_timeout_s: "{{ 20 * 60 }}"
+  tags: upgrade
+  tasks:
+    - name: Perform in-place Ubuntu upgrade
+      block:
+        - name: Run do-release-upgrade
+          ansible.builtin.command: do-release-upgrade -f DistUpgradeViewNonInteractive
+          become: true
+      rescue:
+        - name: Ensure Noble repo definitions do not exist in sources.list
+          ansible.builtin.blockinfile:
+            path: /etc/apt/sources.list
+            state: absent
+          become: true
+
+        - name: Ensure Kolla Ansible Docker repo definition does not exist
+          ansible.builtin.file:
+            path: /etc/apt/sources.list.d/docker.list
+            state: absent
+          become: true
+          when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
+
+        - name: Display recommanded action on upgrade failure
+          ansible.builtin.debug:
+            msg: >
+              Ubuntu upgrade failed. You can check the upgrade logs at /var/log/dist-upgrade
+              on the failed host.
+              It is likely due to packages with broken dependency. You can find broken packages
+              by running following command from the host.
+              cat /var/log/dist-upgrade/apt.log | grep "Holding Back" | awk '{print $3}'
+
+        - name: Fail fast when upgrade fails
+          ansible.builtin.meta: end_host
+
+- name: Post upgrade of Ubuntu Jammy 22.04 to Noble 24.04
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    reboot_timeout_s: "{{ 20 * 60 }}"
+  tags: post
+  tasks:
     - name: Ensure old venvs do not exist
       ansible.builtin.file:
         path: /opt/kayobe/venvs/{{ item }}
@@ -83,15 +139,45 @@
 
 - name: Run the Kayobe kayobe-target-venv playbook to ensure kayobe venv exists on remote host
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/kayobe-target-venv.yml"
+  tags: post
+
+- name: Run the Kayobe apt playbook to ensure Noble repositories are set on remote host
+  import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/apt.yml"
+  tags: post
+
+- name: Fix broken packages after upgrade
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
+  tags: post
+  tasks:
+    - name: Ensure iproute2 is installed
+      ansible.builtin.apt:
+        name: iproute2
+        state: present
+      become: true
+    - name: Ensure cephadm dependencies are installed
+      ansible.builtin.apt:
+        name:
+          - python3-yaml
+          - python3-jinja2
+        state: present
+      become: true
+      when: inventory_hostname in groups['ceph']
+
+    - name: Update Python and current user facts before running Kayobe network playbook
+      ansible.builtin.setup:
+        filter: "{{ kayobe_ansible_setup_filter }}"
+        gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
 - name: Run the Kayobe network configuration playbook, to ensure definitions are not lost on reboot
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
+  tags: post
 
 - name: Reboot and confirm the host is upgraded to Noble 24.04
   hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
     reboot_timeout_s: "{{ 20 * 60 }}"
+  tags: post
   tasks:
     - name: Ensure Noble repo definitions do not exist in sources.list
       ansible.builtin.blockinfile:
@@ -119,6 +205,23 @@
           - /usr/sbin
           - /usr/bin
           - /usr/local/sbin
+      become: true
+
+    - name: Ensure only Kayobe defined apt repositories are defined
+      ansible.builtin.file:
+        path: "/etc/apt/{{ item }}"
+        state: absent
+      loop:
+        - sources.list.distUpgrade
+        - sources.list.d/third-party.sources
+        - sources.list.d/ubuntu.sources
+      become: true
+      when: hostvars[inventory_hostname].stackhpc_repos_enabled
+
+    - name: Ensure all packages are in Noble version
+      ansible.builtin.apt:
+        upgrade: full
+        update_cache: true
       become: true
 
     - name: Update distribution facts
