@@ -66,7 +66,7 @@
           vars:
             ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
           run_once: true
-          when: credential_check.stdout == []
+          when: credential_check.stdout | from_json == []
 
         - name: Query ec2 credential for ceph_rgw
           ansible.builtin.command: >
