@@ -31,7 +31,7 @@
       register: inspection
 
     - name: Ensure the {{ container_name }} container is running
-      ansible.builtin.command: systemctl start kolla-{{ container_name }}-container.service  # noqa command-instead-of-module
+      ansible.builtin.command: systemctl start kolla-{{ container_name }}-container.service # noqa command-instead-of-module
       when: inspection.stdout == 'false'
 
     - name: Wait for the {{ container_name }} container to reach state 'Running'
@@ -70,7 +70,8 @@
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail &&
-          systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          systemctl list-units --type=service --all --no-legend --plain |
+          egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
           awk '{ print $1 }' |
-          xargs systemctl restart
+          xargs -r systemctl restart
         executable: "/bin/bash"
