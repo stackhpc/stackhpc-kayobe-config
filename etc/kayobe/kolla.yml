@@ -485,6 +485,24 @@ kolla_build_args: {}
 # * groups: A list of kayobe ansible groups to map to this kolla-ansible group.
 # * vars: A dict mapping variable names to values for hosts in this
 #         kolla-ansible group.
+# NOTE(Alex-Welsh): If you want to extend the map rather than replace it, you
+# must include the Kayobe defaults in the mapping.
+# Standard Kayobe defaults:
+#  compute:
+#    groups:
+#      - "compute"
+#  control:
+#    groups:
+#      - "controllers"
+#  monitoring:
+#    groups:
+#      - "controllers"
+#  network:
+#    groups:
+#      - "controllers"
+#  storage:
+#    groups:
+#      - "controllers"
 #kolla_overcloud_inventory_top_level_group_map:
 
 # List of names of top level kolla-ansible groups. Any of these groups which
@@ -499,7 +517,9 @@ kolla_build_args: {}
 # List of names of additional host variables to pass through from kayobe hosts
 # to kolla-ansible hosts, if set. See also
 # kolla_overcloud_inventory_pass_through_host_vars_map.
-#kolla_overcloud_inventory_pass_through_host_vars_extra:
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - stackhpc_gpu_data
+  - gpu_group_map
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
