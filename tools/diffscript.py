@@ -13,10 +13,16 @@ output = {}
 index = 0
 
 path = os.path.dirname(__file__)
-#arg = sys.argv[1] if len(sys.argv) > 1 else ''
+
+#check if branch exists, if not create it and reset
+try:
+    message = subprocess.call([path + '/branching.sh', '--try'])
+    if "error" in message:
+        raise Exception()
+except:
+    subprocess.call([path + '/branching.sh'])
 
 args = [' --kayobe', ' --kolla', ' --kollaansible', '--StackHPC-kayobe-config']
-#args = ['']
 # Loop through arguments and run the bash script for each one
 for arg in args:
     print(arg)
@@ -55,3 +61,7 @@ else:
             print(item)
             print()
         print()
+
+
+#delete temporary branch
+subprocess.call([path + '/branching.sh', '--delete'])

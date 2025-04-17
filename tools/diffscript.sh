@@ -3,7 +3,7 @@
 
 
 SKC_BRANCH=stackhpc/2024.1
-LOCAL_BRANCH=examplebranch
+LOCAL_BRANCH=twig
 # SKC_branch is up to date, LOCAL_BRANCH is reset back ~ 1 month as an example customer config (last commit 5/3/25)
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
