@@ -12,8 +12,8 @@ Overview
 ========
 
 This documentation covers the StackHPC Kayobe configuration. It is intended to
-complement, rather than replace, the upstream :kayobe-doc:`Kayobe </>`,
-:kolla-doc:`Kolla </>` and :kolla-ansible-doc:`Kolla Ansible </>`
+complement, rather than replace, the upstream :kayobe-doc:`Kayobe <>`,
+:kolla-doc:`Kolla <>` and :kolla-ansible-doc:`Kolla Ansible<>`
 documentation.
 
 The configuration includes various things, such as:

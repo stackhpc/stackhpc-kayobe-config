@@ -1,0 +1,103 @@
+---
+# StackHPC compute node configuration
+
+# Map of inventory groups to GPU types.
+# This is used to determine which GPU types each compute node should pass
+# through to OpenStack.
+# Keys are group names, values are a list of GPU types.
+# Groups must be added to kolla_overcloud_inventory_top_level_group_map
+# GPU types must be keys in stackhpc_gpu_data.
+# Example GPU group map:
+# gpu_group_map:
+#   compute_a100:
+#     - a100_80
+#   compute_v100:
+#     - v100_32
+#   compute_multi_gpu:
+#     - a100_80
+#     - v100_32
+gpu_group_map: {}
+
+# Dict mapping GPUs to PCI data.
+# Resource names are used to identify the device in placement, and can be
+# edited to match deployment-specific naming conventions
+# The default list covers many common GPUs, but can be extended as needed.
+stackhpc_gpu_data:
+  # Nvidia H100 SXM5 80GB
+  h100_80_sxm:
+    resource_name: "{{ h100_80_sxm_resource_name | default('h100_80_sxm')}}"
+    vendor_id: "10de"
+    product_id: "2330"
+    device_type: "type-PF"
+  # Nvidia A100 SXM5 80GB
+  a100_80_sxm:
+    resource_name: "{{ a100_80_sxm_resource_name | default('a100_80_sxm')}}"
+    vendor_id: "10de"
+    product_id: "20b2"
+    device_type: "type-PF"
+  # Nvidia A100 SXM5 40GB
+  a100_40_sxm:
+    resource_name: "{{ a100_40_sxm_resource_name | default('a100_40_sxm')}}"
+    vendor_id: "10de"
+    product_id: "20b0"
+    device_type: "type-PF"
+  # Nvidia A100 PCI 80GB
+  a100_80:
+    resource_name: "{{ a100_80_resource_name | default('a100_80')}}"
+    vendor_id: "10de"
+    product_id: "20b5"
+    device_type: "type-PF"
+  # Nvidia A100 PCI 40GB
+  a100_40:
+    resource_name: "{{ a100_40_resource_name | default('a100_40')}}"
+    vendor_id: "10de"
+    product_id: "20f1"
+    device_type: "type-PF"
+  # Nvidia V100 SXM3 32GB
+  v100_32_sxm3:
+    resource_name: "{{ v100_32_sxm3_resource_name | default('v100_32_sxm3')}}"
+    vendor_id: "10de"
+    product_id: "1db8"
+    device_type: "type-PCI"
+  # Nvidia V100 SXM2 32GB
+  v100_32_sxm2:
+    resource_name: "{{ v100_32_sxm2_resource_name | default('v100_32_sxm2')}}"
+    vendor_id: "10de"
+    product_id: "1db5"
+    device_type: "type-PCI"
+  # Nvidia V100 PCI 32GB
+  v100_32:
+    resource_name: "{{ v100_32_resource_name | default('v100_32')}}"
+    vendor_id: "10de"
+    product_id: "1db6"
+    device_type: "type-PCI"
+  # Nvidia RTX A6000
+  a6000:
+    resource_name: "{{ a6000_resource_name | default('a6000')}}"
+    vendor_id: "10de"
+    product_id: "2230"
+    device_type: "type-PCI"
+  # Nvidia A40
+  a40:
+    resource_name: "{{ a40_resource_name | default('a40')}}"
+    vendor_id: "10de"
+    product_id: "2235"
+    device_type: "type-PF"
+  # Nvidia T4
+  t4:
+    resource_name: "{{ t4_resource_name | default('t4')}}"
+    vendor_id: "10de"
+    product_id: "1eb8"
+    device_type: "type-PF"
+  # Nvidia L40
+  l40:
+    resource_name: "{{ l40_resource_name | default('l40')}}"
+    vendor_id: "10de"
+    product_id: "26b5"
+    device_type: "type-PF"
+  # Nvidia L40s
+  l40s:
+    resource_name: "{{ l40s_resource_name | default('l40s')}}"
+    vendor_id: "10de"
+    product_id: "26b9"
+    device_type: "type-PF"
