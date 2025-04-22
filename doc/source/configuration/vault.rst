@@ -167,6 +167,15 @@ cannot be unsealed with an expired certificate.
 Certificates generation
 =======================
 
+.. note::
+
+   Generating certificates will fail if the Vault on the overcloud is sealed. This will happen whenever the vault containers are restarted. To unseal the
+   overcloud Vault, run:
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-unseal-overcloud.yml
+
 Create the external TLS certificates (testing only)
 ---------------------------------------------------
 
