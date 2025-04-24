@@ -78,12 +78,12 @@ a package update, which can also be limited to hosts in the ``mlnx`` group.
 
   kayobe overcloud host package update --packages "*" --limit mlnx
 
-To ensure the latest kernel is the default on boot, the bootloader entires will need
+To ensure the latest kernel is the default on boot, the bootloader entries will need
 to be reset before rebooting.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reset-bls-entires.yml -e reset_bls_host=mlnx
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reset-bls-entries.yml -e reset_bls_host=mlnx
 
 The hosts can now be rebooted to use the latest kernel, a rolling reboot may be applicable
 here to reduce distruptions. See the `package updates documentation <package-updates>`.
