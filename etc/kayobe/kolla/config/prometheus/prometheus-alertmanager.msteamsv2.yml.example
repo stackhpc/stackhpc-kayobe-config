@@ -18,11 +18,11 @@ route:
 receivers:
   - name: 'msteamsv2-notifications'
     msteamsv2_configs:
-    - webhook_url: '{{ secrets_msteams_notification_channel_url }}'
+    - webhook_url: '{{ secrets_msteams_notification_channel_url | default('https://prod-01.westeurope.logic.azure.com/workflows/') }}'
       send_resolved: true
   - name: 'msteamsv2-critical-notifications'
     msteamsv2_configs:
-    - webhook_url: '{{ secrets_msteams_notification_critical_channel_url }}'
+    - webhook_url: '{{ secrets_msteams_notification_critical_channel_url | default('https://prod-01.westeurope.logic.azure.com/workflows/') }}'
       send_resolved: true
 
 templates:
