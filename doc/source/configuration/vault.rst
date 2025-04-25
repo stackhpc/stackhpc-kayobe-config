@@ -4,6 +4,13 @@
 Hashicorp Vault for internal PKI
 ================================
 
+.. warning::
+
+   Deployment of Hashicorp Vault is deprecated and will be removed in a future release.
+   New deployments should use OpenBao and existing deployments will be migrated once an
+   method for migration is available.
+   See :ref:`here <openbao>` for more information.
+
 This document describes how to deploy Hashicorp Vault for
 internal PKI purposes using the
 `StackHPC Hashicorp collection <https://galaxy.ansible.com/stackhpc/hashicorp>`_
