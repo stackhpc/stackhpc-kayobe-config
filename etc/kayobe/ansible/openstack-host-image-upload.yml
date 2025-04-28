@@ -43,16 +43,20 @@
             state: present
             filename: "{{ local_image_path }}"
             visibility: shared
-            register: image
+          register: image
 
         - name: Ensure dependencies are installed
           pip:
             name: python-openstackclient
             virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
 
-        # Allow users in stackhpc-aufn to use these images.
+        # Add the image to the chosen project
         - name: Add image to stackhpc-dev project
-          command: openstack image add project {{ image.image.id }} 3d279fd978df4b18b2174cf336f25c9b
+          command: "{{ ansible_python_interpreter | dirname | dirname }}/bin/openstack image add project {{ image.image.id }} '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}'"
+
+        # Accept the image in the receiving project
+        - name: Accept image membership in stackhpc-dev project
+          command: "{{ ansible_python_interpreter | dirname | dirname }}/bin/openstack image set {{ image.image.id }} --project '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}' --accept"
 
       always:
         - name: Remove clouds.yaml
