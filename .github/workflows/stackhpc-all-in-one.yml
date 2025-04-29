@@ -335,22 +335,13 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
-      - name: Change RabbitMQ queues from transient types to durable types (quorum and streams)
-        run: |
-          sed -i -e '$aom_enable_queue_manager: True' \
-                 -e '$aom_enable_rabbitmq_quorum_queues: True' \
-                 -e '$aom_enable_rabbitmq_transient_quorum_queue: True' \
-                 -e '$aom_enable_rabbitmq_stream_fanout: True' \
-                 etc/kayobe/environments/ci-aio/kolla/globals.yml
-        if: inputs.upgrade
-
-      - name: Migrate RabbitMQ queues
+      - name: Run upgrade prerequisites
         run: |
           docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/rabbitmq-queue-migration.sh
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/upgrade-prerequisites.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
