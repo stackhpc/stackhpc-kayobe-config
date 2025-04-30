@@ -72,7 +72,7 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
     "ovn-sb-db-server": [
         "ovn_sb_db",
     ],
-    "prometheus-v2-server": [
+    "prometheus-server": [
         "prometheus_server",
     ],
 }
