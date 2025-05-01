@@ -118,18 +118,18 @@ def parse_device_info(device):
     metric_labels = f'disk="{device.name}",serial_number="{serial_number}",type="{device.interface}"'
 
     metrics = [
-        f'device_info{{{label_str}}} 1.0',
-        f'device_smart_available{{{metric_labels}}} {float(1) if device.smart_capable else float(0)}',
+        f'smartmon_device_info{{{label_str}}} 1.0',
+        f'smartmon_device_smart_available{{{metric_labels}}} {float(1) if device.smart_capable else float(0)}',
     ]
 
     if device.smart_capable:
         metrics.append(
-            f'device_smart_enabled{{{metric_labels}}} {float(1) if device.smart_enabled else float(0)}'
+            f'smartmon_device_smart_enabled{{{metric_labels}}} {float(1) if device.smart_enabled else float(0)}'
         )
         if device.assessment:
             is_healthy = 1 if device.assessment.upper() == "PASS" else 0
             metrics.append(
-                f'device_smart_healthy{{{metric_labels}}} {float(is_healthy)}'
+                f'smartmon_device_smart_healthy{{{metric_labels}}} {float(is_healthy)}'
             )
 
     return metrics
@@ -166,7 +166,7 @@ def parse_if_attributes(device):
         snake_name = camel_to_snake(attr_name)
 
         if snake_name in SMARTMON_ATTRS and isinstance(val, (int, float)):
-            metrics.append(f"{snake_name}{{{labels}}} {float(val)}")
+            metrics.append(f"smartmon_{snake_name}{{{labels}}} {float(val)}")
 
     return metrics
 
@@ -219,7 +219,7 @@ def main(output_path=None):
             version_num = "unknown"
     except Exception:
         version_num = "unknown"
-    all_metrics.append(f'smartctl_version{{version="{version_num}"}} 1')
+    all_metrics.append(f'smartmon_smartctl_version{{version="{version_num}"}} 1')
 
     dev_list = DeviceList()
 
@@ -229,7 +229,7 @@ def main(output_path=None):
         serial_number = (dev.serial or "").lower()
 
         run_timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
-        all_metrics.append(f'smartctl_run{{disk="{disk_name}",type="{disk_type}"}} {run_timestamp}')
+        all_metrics.append(f'smartmon_smartctl_run{{disk="{disk_name}",type="{disk_type}"}} {run_timestamp}')
 
         active = 1
         try:
@@ -243,7 +243,7 @@ def main(output_path=None):
             active = 0
 
         all_metrics.append(
-            f'device_active{{disk="{disk_name}",type="{disk_type}",serial_number="{serial_number}"}} {active}'
+            f'smartmon_device_active{{disk="{disk_name}",type="{disk_type}",serial_number="{serial_number}"}} {active}'
         )
         if active == 0:
             continue

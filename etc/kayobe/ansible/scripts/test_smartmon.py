@@ -78,7 +78,7 @@ class TestSmartMon(unittest.TestCase):
 
         # The device_info line should exist for every device
         device_info_found = any(
-            line.startswith("device_info{") and
+            line.startswith("smartmon_device_info{") and
             f'disk="{dev_name}"' in line and
             f'type="{dev_iface}"' in line and
             f'serial_number="{dev_serial}"' in line
@@ -86,13 +86,13 @@ class TestSmartMon(unittest.TestCase):
         )
         self.assertTrue(
             device_info_found,
-            f"Expected a device_info metric line for {dev_name} but didn't find it."
+            f"Expected a smartmon_device_info metric line for {dev_name} but didn't find it."
         )
 
         # If smart_capable is true, we expect device_smart_available = 1
         if device_info.get("smart_capable"):
             smart_available_found = any(
-                line.startswith("device_smart_available{") and
+                line.startswith("smartmon_device_smart_available{") and
                 f'disk="{dev_name}"' in line and
                 f'serial_number="{dev_serial}"' in line and
                 line.endswith(" 1.0")
@@ -100,20 +100,20 @@ class TestSmartMon(unittest.TestCase):
             )
             self.assertTrue(
                 smart_available_found,
-                f"Expected device_smart_available=1.0 for {dev_name}, not found."
+                f"Expected smartmon_device_smart_available=1.0 for {dev_name}, not found."
             )
 
         # If smart_enabled is true, we expect device_smart_enabled = 1
         if device_info.get("smart_enabled"):
             smart_enabled_found = any(
-                line.startswith("device_smart_enabled{") and
+                line.startswith("smartmon_device_smart_enabled{") and
                 f'disk="{dev_name}"' in line and
                 line.endswith(" 1.0")
                 for line in metrics
             )
             self.assertTrue(
                 smart_enabled_found,
-                f"Expected device_smart_enabled=1.0 for {dev_name}, not found."
+                f"Expected smartmon_device_smart_enabled=1.0 for {dev_name}, not found."
             )
 
         # device_smart_healthy if assessment in [PASS, WARN, FAIL]
@@ -122,14 +122,14 @@ class TestSmartMon(unittest.TestCase):
         if assessment in ["PASS", "WARN", "FAIL"]:
             expected_val = float(1) if assessment == "PASS" else float(0)
             smart_healthy_found = any(
-                line.startswith("device_smart_healthy{") and
+                line.startswith("smartmon_device_smart_healthy{") and
                 f'disk="{dev_name}"' in line and
                 line.endswith(f" {expected_val}")
                 for line in metrics
             )
             self.assertTrue(
                 smart_healthy_found,
-                f"Expected device_smart_healthy={expected_val} for {dev_name}, not found."
+                f"Expected smartmon_device_smart_healthy={expected_val} for {dev_name}, not found."
             )
 
     def test_parse_device_info(self):
@@ -164,7 +164,7 @@ class TestSmartMon(unittest.TestCase):
 
             if isinstance(attr_val, (int, float)) and snake_key in SMARTMON_ATTRS:
                 expected_line = (
-                    f"{snake_key}{{disk=\"{dev_name}\",serial_number=\"{dev_serial}\",type=\"{dev_iface}\"}} {float(attr_val)}"
+                    f"smartmon_{snake_key}{{disk=\"{dev_name}\",serial_number=\"{dev_serial}\",type=\"{dev_iface}\"}} {float(attr_val)}"
                 )
                 self.assertIn(
                     expected_line,
@@ -175,7 +175,7 @@ class TestSmartMon(unittest.TestCase):
                 # If it's not in SMARTMON_ATTRS or not numeric,
                 # we do NOT expect a line with that name+value
                 unexpected_line = (
-                    f"{snake_key}{{disk=\"{dev_name}\",serial_number=\"{dev_serial}\",type=\"{dev_iface}\"}} {float(attr_val)}"
+                    f"smartmon_{snake_key}{{disk=\"{dev_name}\",serial_number=\"{dev_serial}\",type=\"{dev_iface}\"}} {float(attr_val)}"
                 )
                 self.assertNotIn(
                     unexpected_line,
@@ -268,8 +268,8 @@ class TestSmartMon(unittest.TestCase):
                     self.assertTrue(found, f"Expected metric '{expected}' not found")
 
                 # Check that smartctl_version metric is present
-                version_found = any(line.startswith("smartctl_version{") for line in metrics_lines)
-                self.assertTrue(version_found, "Expected 'smartctl_version' metric not found in output file.")
+                version_found = any(line.startswith("smartmon_smartctl_version{") for line in metrics_lines)
+                self.assertTrue(version_found, "Expected 'smartmon_smartctl_version' metric not found in output file.")
 
                 # Check that the output file is not empty
                 self.assertTrue(metrics_lines, "Metrics output file is empty.")
