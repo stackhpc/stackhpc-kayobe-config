@@ -139,6 +139,11 @@ def parse_if_attributes(device):
     For any device type (ATA, NVMe, SCSI, etc.), we read device.if_attributes.
     We'll iterate over its public fields, convert them to snake_case,
     and if it's in SMARTMON_ATTRS and numeric, we produce metrics.
+
+    Args:
+        device (Device): A pySMART Device object with attributes such as name, interface, etc.
+    Returns:
+        List[str]: A list of Prometheus formatted metric strings.
     """
     metrics = []
 
