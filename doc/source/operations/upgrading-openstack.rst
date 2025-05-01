@@ -297,7 +297,8 @@ RabbitMQ 4.1
    RabbitMQ queue migration and upgrade must be done in Caracal environment.
 
 StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
+Existing transient queues must be migrated to durable queues with Queue Manager
+before upgrading to RabbitMQ 4.1.
 
 Queue Migration
 ~~~~~~~~~~~~~~~
