@@ -18,6 +18,9 @@ jobs:
       pull-requests: read
     name: Check changed files
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    needs:
+      - lint
+      - tox
     outputs:
       aio: ${{ steps.changes.outputs.aio }}
       build-kayobe-image: ${{ steps.changes.outputs.build-kayobe-image }}
@@ -154,6 +157,40 @@ jobs:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
       os_release: jammy
+      ssh_username: ubuntu
+      neutron_plugin: ovn
+      OS_CLOUD: openstack
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+    secrets: inherit
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+
+  all-in-one-ubuntu-noble-ovs:
+    name: aio (Ubuntu Noble OVS)
+    needs:
+      - check-changes
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: ubuntu
+      os_release: noble
+      ssh_username: ubuntu
+      neutron_plugin: ovs
+      OS_CLOUD: openstack
+      if: ${{ needs.check-changes.outputs.aio == 'true' }}
+    secrets: inherit
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+
+  all-in-one-ubuntu-noble-ovn:
+    name: aio (Ubuntu Noble OVN)
+    needs:
+      - check-changes
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: ubuntu
+      os_release: noble
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: openstack

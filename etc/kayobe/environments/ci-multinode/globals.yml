@@ -50,7 +50,7 @@
 os_distribution: "{{ lookup('pipe', '. /etc/os-release && echo $ID') | trim }}"
 
 # OS release. Valid options are "9" when os_distribution is "rocky", or
-# "jammy" when os_distribution is "ubuntu".
+# "jammy" and "noble" when os_distribution is "ubuntu".
 os_release: >-
           {{ (lookup('pipe', '. /etc/os-release && echo $VERSION_CODENAME') | trim) if os_distribution == 'ubuntu' else
              (lookup('pipe', '. /etc/os-release && echo $VERSION_ID') | trim | split('.') | first) if os_distribution == 'rocky' }}
@@ -62,6 +62,12 @@ stackhpc_barbican_role_id_file_path: "/tmp/barbican-role-id"
 
 # Enable rebooting to update SELinux state
 selinux_do_reboot: true
+
+###############################################################################
+# Extra vars.
+
+# Don't prompt when rebooting hosts.
+confirm_reboot: true
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

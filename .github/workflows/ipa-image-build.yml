@@ -11,6 +11,10 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
+      ubuntu-noble:
+        description: Build Ubuntu 24.04 Noble
+        type: boolean
+        default: true
       runner_env:
         description: Which cloud to run on?
         type: choice
@@ -271,6 +275,65 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy_ipa.outcome == 'success'
 
+      - name: Build a Ubuntu 24.04 Noble IPA image
+        id: build_ubuntu_noble_ipa
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud deployment image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble" \
+          -e ipa_ci_builder_distribution="ubuntu" \
+          -e ipa_ci_builder_release="noble"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_noble_ipa.outcome == 'failure'
+
+      - name: Upload Ubuntu 24.04 Noble IPA kernel image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_type=ipa-images \
+          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble" \
+          -e file_regex='*.kernel' \
+          -e upload_checksum=true
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
+
+      - name: Upload Ubuntu 24.04 Noble IPA ramdisk image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_type=ipa-images \
+          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble" \
+          -e file_regex='*.initramfs' \
+          -e upload_checksum=true
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
+
       - name: Build a Rocky 9 IPA image
         id: build_rocky_9_ipa
         continue-on-error: true
@@ -348,7 +411,8 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_rocky_9_ipa.outcome == 'failure' ||
-            steps.build_ubuntu_jammy_ipa.outcome == 'failure'
+            steps.build_ubuntu_jammy_ipa.outcome == 'failure' ||
+            steps.build_ubuntu_noble_ipa.outcome == 'failure'
 
       - name: Destroy
         run: terraform destroy -auto-approve

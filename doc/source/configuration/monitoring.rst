@@ -2,6 +2,8 @@
 Monitoring
 ==========
 
+.. _monitoring-service-configuration:
+
 Monitoring Configuration
 ========================
 
@@ -79,8 +81,8 @@ on the overcloud hosts:
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
 
-Alertmanager and Slack
-======================
+Alertmanager, Slack and Microsoft Teams
+=======================================
 
 StackHPC Kayobe configuration comes bundled with an array of alerts but does not
 enable any receivers for notifications by default. Various receivers can be
@@ -116,6 +118,17 @@ If you want to add an alerting rule, there are many good examples of alerts are
 available `here <https://awesome-prometheus-alerts.grep.to/>`__. They simply
 need to be added to one of the ``*.rules`` files in the prometheus configuration
 directory.
+
+If however you are using Microsoft Teams instead of Slack, you can use Prometheus
+Alertmanager's built-in support for the new message format based on Power Automate flows.
+You will need an incoming webhook URL for your Teams channel.
+This can be done by following `these instructions <https://support.microsoft.com/en-gb/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498>`__.
+To set up a receiver, create a ``prometheus-alertmanager.yml`` file under
+``etc/kayobe/kolla/config/prometheus/``.
+An example config is stored in this directory known as ``prometheus-alertmanager.msteamvs2.yml.example``.
+The example configuration uses two Slack channels.
+One channel receives all alerts while the other only receives alerts tagged as critical.
+Feel free to modify the example configuration to suit your needs.
 
 Ceph Monitoring
 ===============

@@ -2,6 +2,14 @@
 name: Build Amphora image
 on:
   workflow_dispatch:
+    inputs:
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -17,10 +25,17 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   amphora-image-build:
     name: Build Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-host-image-builder-runner
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
     permissions: {}
     steps:
 
@@ -90,10 +105,10 @@ jobs:
           aio_vm_name = "skc-amphora-image-builder"
           # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
-          aio_vm_image = "Ubuntu-22.04"
-          aio_vm_flavor = "en1.medium"
-          aio_vm_network = "stackhpc-ci"
-          aio_vm_subnet = "stackhpc-ci"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
@@ -122,7 +137,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: "openstack"
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -250,7 +265,7 @@ jobs:
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
-          OS_CLOUD: openstack
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()

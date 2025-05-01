@@ -1,0 +1,93 @@
+name: Update dependencies
+
+on:
+  workflow_call:
+    inputs:
+      openstack_version:
+        description: OpenStack version
+        type: string
+        required: true
+      openstack_codename:
+        description: OpenStack codename
+        type: string
+        required: true
+
+jobs:
+  propose_github_release_updates:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - key: kolla
+            path: src/kayobe-config/etc/kayobe/stackhpc.yml
+            repository: stackhpc/kolla
+            search_regex: 'stackhpc_kolla_source_version\:.*$'
+            prefix: 'stackhpc_kolla_source_version\: '
+
+          - key: kolla-ansible
+            path: src/kayobe-config/etc/kayobe/stackhpc.yml
+            repository: stackhpc/kolla-ansible
+            search_regex: 'stackhpc_kolla_ansible_source_version\:.*$'
+            prefix: 'stackhpc_kolla_ansible_source_version\: '
+
+          - key: kayobe
+            path: src/kayobe-config/requirements.txt
+            repository: stackhpc/kayobe
+            search_regex: 'kayobe@stackhpc\/.*$'
+            prefix: 'kayobe@'
+    permissions:
+      contents: write
+      pull-requests: write
+    name: ${{ matrix.key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.openstack_version }}
+          path: ${{ github.workspace }}/src/kayobe-config
+
+      - name: Checkout the dependency repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ inputs.openstack_version }}
+          fetch-tags: true
+          path: ${{ github.workspace }}/src/${{ matrix.key }}
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0 --match stackhpc/\*)
+          echo latest_tag=${TAG} >> $GITHUB_OUTPUT
+        working-directory: ${{ github.workspace }}/src/${{ matrix.key }}
+
+      - name: Update dependency key
+        run: |
+          TAG_OVERRIDE=$(echo $TAG | sed 's/\//\\\//g')
+          sed -i "s/$SEARCH/$PREFIX$TAG_OVERRIDE/g" $REQUIREMENTS
+        env:
+          PREFIX: ${{ matrix.prefix }}
+          TAG: ${{ steps.latest_tag.outputs.latest_tag }}
+          REQUIREMENTS: ${{ github.workspace }}/${{ matrix.path }}
+          SEARCH: ${{ matrix.search_regex }}
+
+      - name: Propose changes via PR if required
+        uses: peter-evans/create-pull-request@v7
+        with:
+          path: ${{ github.workspace }}/src/kayobe-config
+          commit-message: >-
+            Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
+          author: stackhpc-ci <22933334+stackhpc-ci@users.noreply.github.com>
+          branch: update-dependency/${{ matrix.key }}/${{ inputs.openstack_version }}
+          delete-branch: true
+          title: >-
+            Bump ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}
+          body: >
+            This PR was created automatically to update ${{ inputs.openstack_version }}
+            ${{ matrix.key }} to ${{ steps.latest_tag.outputs.latest_tag }}.
+
+            GitHub Release Changelog:
+            https://github.com/stackhpc/${{ matrix.key }}/releases/tag/${{ steps.latest_tag.outputs.latest_tag }}
+          labels: |
+            automated
+            ${{ inputs.openstack_codename }}
