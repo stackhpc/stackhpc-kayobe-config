@@ -4,7 +4,9 @@ import subprocess
 import json
 import re
 import datetime
+import os
 
+from prometheus_client import CollectorRegistry, Gauge, write_to_textfile
 from pySMART import DeviceList
 
 SMARTCTL_PATH = "/usr/sbin/smartctl"
@@ -110,21 +112,24 @@ def parse_device_info(device):
         "serial_number": serial_number,
         "firmware_version": device.firmware or "",
     }
-    label_str = ",".join(f'{k}="{v}"' for k, v in labels.items())
+    sorted_labels = sorted(labels.items())
+    label_str = ",".join(f'{k}="{v}"' for k, v in sorted_labels)
+
+    metric_labels = f'disk="{device.name}",serial_number="{serial_number}",type="{device.interface}"'
 
     metrics = [
-        f'device_info{{{label_str}}} 1',
-        f'device_smart_available{{disk="{device.name}",type="{device.interface}",serial_number="{serial_number}"}} {1 if device.smart_capable else 0}',
+        f'device_info{{{label_str}}} 1.0',
+        f'device_smart_available{{{metric_labels}}} {float(1) if device.smart_capable else float(0)}',
     ]
 
     if device.smart_capable:
         metrics.append(
-            f'device_smart_enabled{{disk="{device.name}",type="{device.interface}",serial_number="{serial_number}"}} {1 if device.smart_enabled else 0}'
+            f'device_smart_enabled{{{metric_labels}}} {float(1) if device.smart_enabled else float(0)}'
         )
         if device.assessment:
             is_healthy = 1 if device.assessment.upper() == "PASS" else 0
             metrics.append(
-                f'device_smart_healthy{{disk="{device.name}",type="{device.interface}",serial_number="{serial_number}"}} {is_healthy}'
+                f'device_smart_healthy{{{metric_labels}}} {float(is_healthy)}'
             )
 
     return metrics
@@ -143,7 +148,7 @@ def parse_if_attributes(device):
     disk = device.name
     disk_type = device.interface or ""
     serial_number = (device.serial or "").lower()
-    labels = f'disk="{disk}",type="{disk_type}",serial_number="{serial_number}"'
+    labels = f'disk="{disk}",serial_number="{serial_number}",type="{disk_type}"'
 
     # Inspect all public attributes on device.if_attributes
     for attr_name in dir(device.if_attributes):
@@ -156,27 +161,48 @@ def parse_if_attributes(device):
         snake_name = camel_to_snake(attr_name)
 
         if snake_name in SMARTMON_ATTRS and isinstance(val, (int, float)):
-            metrics.append(f"{snake_name}{{{labels}}} {val}")
+            metrics.append(f"{snake_name}{{{labels}}} {float(val)}")
 
     return metrics
 
-def format_output(metrics):
+def write_metrics_to_textfile(metrics, output_path=None):
     """
-    Convert a list of lines like "some_metric{...} value"
-    into a Prometheus text output with # HELP / # TYPE lines.
+    Write metrics to a Prometheus textfile using prometheus_client.
+    Args:
+        metrics (List[str]): List of metric strings in 'name{labels} value' format.
+        output_path (str): Path to write the metrics file. Defaults to node_exporter textfile collector path.
     """
-    output = []
-    last_metric = ""
-    for metric in sorted(metrics):
-        metric_name = metric.split("{")[0]
-        if metric_name != last_metric:
-            output.append(f"# HELP smartmon_{metric_name} SMART metric {metric_name}")
-            output.append(f"# TYPE smartmon_{metric_name} gauge")
-            last_metric = metric_name
-        output.append(f"smartmon_{metric}")
-    return "\n".join(output)
+    registry = CollectorRegistry()
+    metric_gauges = {}
+    for metric in metrics:
+        # Split metric into name, labels, and value
+        metric_name, rest = metric.split('{', 1)
+        label_str, value = rest.split('}', 1)
+        value = value.strip()
+        # Parse labels into a dictionary
+        labels = {}
+        label_keys = []
+        label_values = []
+        for label in label_str.split(','):
+            if '=' in label:
+                k, v = label.split('=', 1)
+                k = k.strip()
+                v = v.strip('"')
+                labels[k] = v
+                label_keys.append(k)
+                label_values.append(v)
+        help_str = f"SMART metric {metric_name}"
+        # Create Gauge if not already present
+        if metric_name not in metric_gauges:
+            metric_gauges[metric_name] = Gauge(metric_name, help_str, label_keys, registry=registry)
+        # Set metric value
+        gauge = metric_gauges[metric_name]
+        gauge.labels(*label_values).set(float(value))
+    if output_path is None:
+        output_path = '/var/lib/node_exporter/textfile_collector/smartmon.prom'
+    write_to_textfile(output_path, registry)  # Write all metrics to file
 
-def main():
+def main(output_path=None):
     all_metrics = []
 
     try:
@@ -197,7 +223,7 @@ def main():
         disk_type = dev.interface or ""
         serial_number = (dev.serial or "").lower()
 
-        run_timestamp = int(datetime.datetime.now(datetime.UTC).timestamp())
+        run_timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
         all_metrics.append(f'smartctl_run{{disk="{disk_name}",type="{disk_type}"}} {run_timestamp}')
 
         active = 1
@@ -220,7 +246,11 @@ def main():
         all_metrics.extend(parse_device_info(dev))
         all_metrics.extend(parse_if_attributes(dev))
 
-    print(format_output(all_metrics))
+    write_metrics_to_textfile(all_metrics, output_path)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="Export SMART metrics to Prometheus textfile format.")
+    parser.add_argument('--output', type=str, default=None, help='Output path for Prometheus textfile (default: /var/lib/node_exporter/textfile_collector/smartmon.prom)')
+    args = parser.parse_args()
+    main(args.output)
