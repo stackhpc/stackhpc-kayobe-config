@@ -390,7 +390,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
   - "config set client.rgw rgw_keystone_api_version '3'"
   - "config set client.rgw rgw_keystone_token_cache_size '10000'"
-  - "config set client.rgw rgw_keystone_url https://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
   - "config set client.rgw rgw_keystone_verify_ssl false"
   - "config set client.rgw rgw_max_attr_name_len '1000'"
   - "config set client.rgw rgw_max_attr_size '1000'"
