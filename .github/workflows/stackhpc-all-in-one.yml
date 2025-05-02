@@ -335,6 +335,29 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      - name: Upgrade host OS
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            -e KAYOBE_PATH=/stack/kayobe-automation-env/src/kayobe \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/ubuntu-upgrade-overcloud.sh all
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade && inputs.os_release == 'jammy'
+
+      - name: Deploy services that are built for later OS
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade && inputs.os_release == 'jammy'
+
       - name: Run upgrade prerequisites
         run: |
           docker run -t --rm \
