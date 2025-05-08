@@ -4,8 +4,8 @@
   gather_facts: true
   hosts: controllers[0]
   vars:
-    vault_api_addr: https://{{ internal_net_name | net_ip }}:8200
-    vault_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+    openbao_api_addr: https://{{ internal_net_name | net_ip }}:8200
+    openbao_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
   tasks:
     - name: Assert that secrets_barbican_approle_secret_id is defined
       ansible.builtin.assert:
@@ -13,10 +13,10 @@
           - secrets_barbican_approle_secret_id is defined
         fail_msg: Please define secrets_barbican_approle_secret_id in your secrets.yml
 
-    - name: Include Vault keys
+    - name: Include OpenBao keys
       ansible.builtin.include_vars:
-        file: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
-        name: vault_keys
+        file: "{{ kayobe_env_config_path }}/openbao/overcloud-openbao-keys.json"
+        name: openbao_keys
 
     - name: Ensure hvac is installed
       ansible.builtin.pip:
@@ -31,26 +31,26 @@
       block:
         - name: Enable AppRole auth module
           hashivault_auth_method:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             method_type: approle
             state: enabled
 
         - name: Enable barbican kv store
           hashivault_secret_engine:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             name: barbican
             backend: kv
             description: Barbican kv store
 
         - name: Ensure barbican policy is defined
           hashivault_policy:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             name: barbican-policy
             state: present
             rules: |
@@ -60,9 +60,9 @@
 
         - name: Ensure barbican AppRole is defined
           hashivault_approle_role:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             bind_secret_id: true
             secret_id_bound_cidrs: "{{ internal_net_name | net_cidr }}"
             secret_id_ttl: 0
@@ -71,9 +71,9 @@
 
         - name: Get barbican Approle ID
           hashivault_approle_role_id:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             name: barbican
           register: barbican_role_id
 
@@ -90,18 +90,18 @@
 
         - name: Check if barbican Approle Secret ID is defined
           hashivault_approle_role_secret_get:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             secret: "{{ secrets_barbican_approle_secret_id }}"
             name: barbican
           register: barbican_approle_secret_get
 
         - name: Ensure barbican AppRole Secret ID is defined
           hashivault_approle_role_secret:  # noqa: fqcn
-            url: "{{ vault_api_addr }}"
-            ca_cert: "{{ vault_ca_cert }}"
-            token: "{{ vault_keys.root_token }}"
+            url: "{{ openbao_api_addr }}"
+            ca_cert: "{{ openbao_ca_cert }}"
+            token: "{{ openbao_keys.root_token }}"
             secret: "{{ secrets_barbican_approle_secret_id }}"
             name: barbican
           when: barbican_approle_secret_get.status == "absent"
