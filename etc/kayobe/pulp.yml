@@ -62,7 +62,8 @@ stackhpc_pulp_sync_for_local_container_build: false
 # Debs
 
 # Whether to sync Ubuntu packages.
-stackhpc_pulp_sync_ubuntu_jammy: "{{ os_distribution == 'ubuntu' }}"
+stackhpc_pulp_sync_ubuntu_jammy: "{{ os_release == 'jammy' }}"
+stackhpc_pulp_sync_ubuntu_noble: "{{ os_release == 'noble' }}"
 
 # Default configuration, which each element of stackhpc_pulp_deb_repos
 # is combined with
@@ -104,6 +105,23 @@ stackhpc_pulp_deb_repos:
     distributions: "pulp"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
+  # Base Ubuntu Noble repositories
+  - name: "Ubuntu Noble"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/noble/{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
+    distribution_name: "ubuntu-noble-"
+    base_path: "ubuntu/noble/"
+    components: "main restricted universe multiverse"
+    distributions: "noble noble-updates noble-backports"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: "Ubuntu Noble security"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/noble-security/{{ stackhpc_pulp_repo_ubuntu_noble_security_version }}"
+    distribution_name: "ubuntu-noble-security-"
+    base_path: "ubuntu/noble-security/"
+    components: "main restricted universe multiverse"
+    distributions: "noble-security"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
   # Ubuntu Cloud Archive (UCA) repositories
   - name: "Ubuntu Cloud Archive"
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-cloud-archive/{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
@@ -121,6 +139,14 @@ stackhpc_pulp_deb_repos:
     distributions: "jammy"
     components: "stable"
     required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
+  - name: "Docker CE for Ubuntu Noble"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-noble/{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
+    distribution_name: "docker-ce-for-ubuntu-noble-"
+    base_path: "docker-ce/ubuntu-noble/"
+    distributions: "noble"
+    components: "stable"
+    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
   - name: "Ceph Reef for Debian"
     url: "{{ stackhpc_release_pulp_content_url }}/ceph/debian-reef/{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
@@ -536,8 +562,8 @@ stackhpc_pulp_images_kolla:
   - ovn-controller
   - ovn-nb-db-server
   - ovn-northd
-  - ovn-sb-db-server
   - ovn-sb-db-relay
+  - ovn-sb-db-server
   - placement-api
   - prometheus-alertmanager
   - prometheus-blackbox-exporter
@@ -554,10 +580,13 @@ stackhpc_pulp_images_kolla:
   - rabbitmq
   - redis
   - redis-sentinel
+  - skyline-apiserver
+  - skyline-console
 
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
   ubuntu-jammy: []
+  ubuntu-noble: []
   rocky-9: []
 
 # Whitespace-separated list of regular expressions matching Kolla image names.
@@ -687,6 +716,18 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+stackhpc_sync_openbao_images: false
+
+# List of OpenBao container image repositories.
+stackhpc_pulp_repository_container_repos_openbao:
+  - name: "openbao/openbao"
+    url: "https://registry-1.docker.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ overcloud_vault_docker_tag }}"
+    required: "{{ stackhpc_sync_openbao_images | bool }}"
+
 # List of extra container image repositories.
 stackhpc_pulp_repository_container_repos_extra: []
 
@@ -698,6 +739,7 @@ stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
       stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_openbao +
       stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
@@ -705,4 +747,5 @@ stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
       stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_openbao +
       stackhpc_pulp_distribution_container_extra) | selectattr('required') }}

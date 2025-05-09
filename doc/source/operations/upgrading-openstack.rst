@@ -988,6 +988,24 @@ the change:
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
 
+.. warning::
+
+   Take extra care when updating packages on Ceph hosts. Docker live-restore
+   does not work until the Squid version of Ceph, so a reload of docker will
+   restart all Ceph containers. Set the hosts to maintenance mode before
+   updating packages, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host package update --packages "*" --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
+
 If the host is a hypervisor, enable the Nova compute service.
 
 .. code-block:: console

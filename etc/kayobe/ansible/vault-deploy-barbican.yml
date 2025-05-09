@@ -30,7 +30,7 @@
         https_proxy: ""
       block:
         - name: Enable AppRole auth module
-          hashivault_auth_method:
+          hashivault_auth_method:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -38,7 +38,7 @@
             state: enabled
 
         - name: Enable barbican kv store
-          hashivault_secret_engine:
+          hashivault_secret_engine:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -47,7 +47,7 @@
             description: Barbican kv store
 
         - name: Ensure barbican policy is defined
-          hashivault_policy:
+          hashivault_policy:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -59,7 +59,7 @@
               }
 
         - name: Ensure barbican AppRole is defined
-          hashivault_approle_role:
+          hashivault_approle_role:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -70,7 +70,7 @@
             name: barbican
 
         - name: Get barbican Approle ID
-          hashivault_approle_role_id:
+          hashivault_approle_role_id:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -89,7 +89,7 @@
           when: stackhpc_write_barbican_role_id_to_file | default(false) | bool
 
         - name: Check if barbican Approle Secret ID is defined
-          hashivault_approle_role_secret_get:
+          hashivault_approle_role_secret_get:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"
@@ -98,7 +98,7 @@
           register: barbican_approle_secret_get
 
         - name: Ensure barbican AppRole Secret ID is defined
-          hashivault_approle_role_secret:
+          hashivault_approle_role_secret:  # noqa: fqcn
             url: "{{ vault_api_addr }}"
             ca_cert: "{{ vault_ca_cert }}"
             token: "{{ vault_keys.root_token }}"

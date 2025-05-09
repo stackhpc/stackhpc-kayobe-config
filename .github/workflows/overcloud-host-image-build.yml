@@ -11,6 +11,10 @@ on:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
         default: true
+      ubuntu-noble:
+        description: Build Ubuntu 24.04 Noble
+        type: boolean
+        default: true
       runner_env:
         description: Which cloud to run on?
         type: choice
@@ -56,7 +60,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -370,6 +374,75 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
+      - name: Build an Ubuntu Noble 24.04 overcloud host image
+        id: build_ubuntu_noble
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble" \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-noble
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_noble.outcome == 'failure'
+
+      - name: Upload Ubuntu Noble 24.04 overcloud host image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
+          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+
+      - name: Upload Ubuntu Noble overcloud host image to current Dev Cloud (SMS/Leafcloud)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+
+      - name: Upload Ubuntu Noble overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+
+
       - name: Copy logs back
         continue-on-error: true
         run: |
@@ -383,7 +456,8 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_rocky_9.outcome == 'failure' ||
-            steps.build_ubuntu_jammy.outcome == 'failure'
+            steps.build_ubuntu_jammy.outcome == 'failure' ||
+            steps.build_ubuntu_noble.outcome == 'failure'
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@v4

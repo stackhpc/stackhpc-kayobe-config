@@ -4,6 +4,13 @@
 Hashicorp Vault for internal PKI
 ================================
 
+.. warning::
+
+   Deployment of Hashicorp Vault is deprecated and will be removed in a future release.
+   New deployments should use OpenBao and existing deployments will be migrated once an
+   method for migration is available.
+   See :ref:`here <openbao>` for more information.
+
 This document describes how to deploy Hashicorp Vault for
 internal PKI purposes using the
 `StackHPC Hashicorp collection <https://galaxy.ansible.com/stackhpc/hashicorp>`_
@@ -166,6 +173,15 @@ cannot be unsealed with an expired certificate.
 
 Certificates generation
 =======================
+
+.. note::
+
+   Generating certificates will fail if the Vault on the overcloud is sealed. This will happen whenever the vault containers are restarted. To unseal the
+   overcloud Vault, run:
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/vault-unseal-overcloud.yml
 
 Create the external TLS certificates (testing only)
 ---------------------------------------------------

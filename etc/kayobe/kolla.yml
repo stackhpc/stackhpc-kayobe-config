@@ -127,7 +127,7 @@ kolla_sources:
     reference: stackhpc/{{ openstack_release }}
   glance-base:
     type: git
-    location: https://github.com/stackhpc/glance
+    location: https://github.com/stackhpc/glance.git
     reference: stackhpc/{{ openstack_release }}
   horizon-plugin-cloudkitty-dashboard:
     type: git
@@ -148,11 +148,11 @@ kolla_sources:
     reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
-    location: https://github.com/stackhpc/networking-mlnx
+    location: https://github.com/stackhpc/networking-mlnx.git
     reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
-    location: https://github.com/stackhpc/networking-mlnx
+    location: https://github.com/stackhpc/networking-mlnx.git
     reference: stackhpc/{{ openstack_release }}
   octavia-base:
     type: git
@@ -160,7 +160,7 @@ kolla_sources:
     reference: stackhpc/{{ openstack_release }}
   blazar-base:
     type: git
-    location: https://github.com/stackhpc/blazar
+    location: https://github.com/stackhpc/blazar.git
     reference: stackhpc/master
 
 ###############################################################################
@@ -254,6 +254,19 @@ stackhpc_ubuntu_jammy_uca_repos:
 # List of repositories for Ubuntu Jammy.
 stackhpc_ubuntu_jammy_repos: "{{ stackhpc_ubuntu_jammy_base_repos + stackhpc_ubuntu_jammy_uca_repos }}"
 
+# List of base repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
+
+# List of UCA repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_uca_repos: []
+
+# List of repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
+
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
 
@@ -280,10 +293,17 @@ kolla_build_blocks:
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
     {% endif %}
+    {% if kolla_base_distro_version == 'jammy' %}
     {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    {% for repo in stackhpc_ubuntu_noble_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+    {% endif %}
     {% endif %}
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
@@ -304,15 +324,27 @@ kolla_build_blocks:
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
-    COPY sources.list.ubuntu /etc/apt/sources.list.backup
+    {% if kolla_base_distro_version == 'jammy' %}
+    COPY sources.list.ubuntu.jammy /etc/apt/sources.list.backup
+    {% else %}
+    COPY sources.list.ubuntu.noble /etc/apt/sources.list.backup
+    {% endif %}
+
     {% endif %}
     RUN \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
-    {% for repo in stackhpc_ubuntu_jammy_repos %}
+    {% if kolla_base_distro_version == 'jammy' %}
+    {% for repo in stackhpc_ubuntu_jammy_base_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% else %}
+    {% for repo in stackhpc_ubuntu_noble_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+    {% endif %}
   footer: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
     {% if kolla_base_distro == 'rocky' %}
@@ -371,7 +403,7 @@ kolla_build_customizations_common:
     - python3-libvirt
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
-    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx@stackhpc/{{ openstack_release }}
+    - networking-mlnx@git+https://github.com/stackhpc/networking-mlnx.git@stackhpc/{{ openstack_release }}
 
 kolla_build_customizations_rocky:
   kolla_toolbox_packages_remove:
@@ -490,6 +522,24 @@ kolla_base_arch: "{{ 'aarch64' if stackhpc_cpu_arch == 'arm64' else stackhpc_cpu
 # * groups: A list of kayobe ansible groups to map to this kolla-ansible group.
 # * vars: A dict mapping variable names to values for hosts in this
 #         kolla-ansible group.
+# NOTE(Alex-Welsh): If you want to extend the map rather than replace it, you
+# must include the Kayobe defaults in the mapping.
+# Standard Kayobe defaults:
+#  compute:
+#    groups:
+#      - "compute"
+#  control:
+#    groups:
+#      - "controllers"
+#  monitoring:
+#    groups:
+#      - "controllers"
+#  network:
+#    groups:
+#      - "controllers"
+#  storage:
+#    groups:
+#      - "controllers"
 #kolla_overcloud_inventory_top_level_group_map:
 
 # List of names of top level kolla-ansible groups. Any of these groups which
@@ -504,7 +554,9 @@ kolla_base_arch: "{{ 'aarch64' if stackhpc_cpu_arch == 'arm64' else stackhpc_cpu
 # List of names of additional host variables to pass through from kayobe hosts
 # to kolla-ansible hosts, if set. See also
 # kolla_overcloud_inventory_pass_through_host_vars_map.
-#kolla_overcloud_inventory_pass_through_host_vars_extra:
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - stackhpc_gpu_data
+  - gpu_group_map
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
@@ -644,7 +696,7 @@ kolla_enable_heat: false
 #kolla_enable_influxdb:
 #kolla_enable_ironic:
 #kolla_enable_ironic_neutron_agent:
-#kolla_enable_ironic_prometheus_exporter:
+kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
 #kolla_enable_keepalived:
 #kolla_enable_keystone:

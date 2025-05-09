@@ -57,3 +57,51 @@ configuration:
 The intention is to avoid merge conflicts where possible, but there may be
 cases where this is difficult. We are open to discussion on how best to
 approach this on both sides.
+
+Beokay
+------
+
+`Beokay <https://github.com/stackhpc/beokay>` is a tool to manage Kayobe
+environments. This can create new StackHPC Kayobe environments and
+ensure StackHPC Kayobe Configuration dependencies are from the correct repositories and
+are up-to-date:
+
+To create a Beokay environment using the base configuration, for the latest release:
+
+.. code-block:: console
+
+   beokay.py create \
+   --base-path skc-environment \
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
+   --kayobe-config-branch |current_release_git_branch_name| \
+   --kayobe-in-requirements
+
+Kayobe environments can also be specified, for example, to create an AIO environment:
+
+.. code-block:: console
+
+   beokay.py create \
+   --base-path skc-aio-environment \
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
+   --kayobe-config-branch |current_release_git_branch_name| \
+   --kayobe-config-env-name ci-aio \
+   --vault-password-file ~/vault-pw \
+   --kayobe-in-requirements
+
+When Beokay environments are no longer required, they can be deleted by running:
+
+.. code-block:: console
+
+   beokay.py destroy \
+   --base-path skc-environment
+
+Specific Kayobe commands can also be run via Beokay, for example, to run a Kolla
+service deployment on overcloud hosts:
+
+.. code-block:: console
+
+   beokay.py run \
+   'kayobe overcloud service deploy' \
+   --base-path skc-aio-environment \
+   --kayobe-config-env-name ci-aio \
+   --vault-password-file ~/vault-pw

@@ -31,10 +31,12 @@ class Scenario:
 
 ROCKY_9 = OSRelease("rocky", "9", "cloud-user")
 UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
+UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
     OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2023.1", "zed", [ROCKY_9, UBUNTU_JAMMY]),
+    OpenStackRelease("master", "2024.1", [ROCKY_9, UBUNTU_NOBLE])
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
 
