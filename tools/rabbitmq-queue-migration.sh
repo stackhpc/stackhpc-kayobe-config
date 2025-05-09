@@ -65,7 +65,7 @@ if [[ ! "$1" = "--skip-checks" ]]; then
     sleep 60
     # Assert that all queues are durable
     if ! ( kayobe overcloud host command run -l controllers -b --command "docker exec $RABBITMQ_CONTAINER_NAME rabbitmqctl list_queues durable --silent | grep false" > /dev/null 2>&1 ); then
-        echo -e "${GREEN}Queues migrated successfully" 
+        echo -e "${GREEN}Queues migrated successfully"
     else
         echo -e "${RED}Failed post-check: A controller has non-durable queues"
     fi
