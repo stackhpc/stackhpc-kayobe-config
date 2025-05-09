@@ -666,6 +666,18 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+stackhpc_sync_openbao_images: false
+
+# List of OpenBao container image repositories.
+stackhpc_pulp_repository_container_repos_openbao:
+  - name: "openbao/openbao"
+    url: "https://registry-1.docker.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ overcloud_vault_docker_tag }}"
+    required: "{{ stackhpc_sync_openbao_images | bool }}"
+
 # List of extra container image repositories.
 stackhpc_pulp_repository_container_repos_extra: []
 
@@ -677,6 +689,7 @@ stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
       stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_openbao +
       stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
@@ -684,4 +697,5 @@ stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
       stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_openbao +
       stackhpc_pulp_distribution_container_extra) | selectattr('required') }}

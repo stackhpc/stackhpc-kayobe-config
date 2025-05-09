@@ -26,4 +26,4 @@ set -x
 
 kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release=noble --limit seed
 
-kayobe seed host configure
+kayobe seed host configure -e os_release=noble

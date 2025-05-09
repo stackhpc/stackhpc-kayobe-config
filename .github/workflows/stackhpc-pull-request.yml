@@ -18,6 +18,9 @@ jobs:
       pull-requests: read
     name: Check changed files
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    needs:
+      - lint
+      - tox
     outputs:
       aio: ${{ steps.changes.outputs.aio }}
       build-kayobe-image: ${{ steps.changes.outputs.build-kayobe-image }}
