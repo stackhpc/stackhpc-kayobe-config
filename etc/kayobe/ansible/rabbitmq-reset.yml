@@ -86,7 +86,8 @@
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail &&
-          systemctl -a | egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
-          awk '{ print $NF }' |
-          xargs systemctl restart
+          systemctl list-units --type=service --all --no-legend --plain |
+          egrep 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          awk '{ print $1 }' |
+          xargs -r systemctl restart
         executable: "/bin/bash"

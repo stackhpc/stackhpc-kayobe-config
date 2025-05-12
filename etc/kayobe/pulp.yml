@@ -513,8 +513,8 @@ stackhpc_pulp_images_kolla:
   - ovn-controller
   - ovn-nb-db-server
   - ovn-northd
-  - ovn-sb-db-server
   - ovn-sb-db-relay
+  - ovn-sb-db-server
   - placement-api
   - prometheus-alertmanager
   - prometheus-blackbox-exporter
@@ -531,6 +531,8 @@ stackhpc_pulp_images_kolla:
   - rabbitmq
   - redis
   - redis-sentinel
+  - skyline-apiserver
+  - skyline-console
 
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
@@ -559,10 +561,11 @@ stackhpc_pulp_repository_container_repos_kolla_common:
 # List of Kolla container image repositories.
 stackhpc_pulp_repository_container_repos_kolla: >-
   {%- set repos = [] -%}
+  {%- set image_tags = lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tags') | from_yaml -%}
   {%- for image in stackhpc_pulp_images_kolla_filtered -%}
-  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro_and_version]-%}
+  {%- if image not in stackhpc_kolla_unbuildable_images[kolla_base_distro_and_version] -%}
   {%- set image_repo = kolla_docker_namespace ~ "/" ~ image -%}
-  {%- set repo = {"name": image_repo} -%}
+  {%- set repo = {"name": image_repo, "include_tags": image_tags[image]} -%}
   {%- set _ = repos.append(stackhpc_pulp_repository_container_repos_kolla_common | combine(repo)) -%}
   {%- endif -%}
   {%- endfor -%}
@@ -663,6 +666,18 @@ stackhpc_pulp_distribution_container_hashicorp:
     state: present
     required: "{{ stackhpc_sync_hashicorp_images | bool }}"
 
+stackhpc_sync_openbao_images: false
+
+# List of OpenBao container image repositories.
+stackhpc_pulp_repository_container_repos_openbao:
+  - name: "openbao/openbao"
+    url: "https://registry-1.docker.io"
+    policy: on_demand
+    proxy_url: "{{ pulp_proxy_url }}"
+    state: present
+    include_tags: "{{ overcloud_vault_docker_tag }}"
+    required: "{{ stackhpc_sync_openbao_images | bool }}"
+
 # List of extra container image repositories.
 stackhpc_pulp_repository_container_repos_extra: []
 
@@ -674,6 +689,7 @@ stackhpc_pulp_repository_container_repos: >-
   {{ (stackhpc_pulp_repository_container_repos_kolla +
       stackhpc_pulp_repository_container_repos_ceph +
       stackhpc_pulp_repository_container_repos_hashicorp +
+      stackhpc_pulp_repository_container_repos_openbao +
       stackhpc_pulp_repository_container_repos_extra) | selectattr('required') }}
 
 # List of container image distributions.
@@ -681,4 +697,5 @@ stackhpc_pulp_distribution_container: >-
   {{ (stackhpc_pulp_distribution_container_kolla +
       stackhpc_pulp_distribution_container_ceph +
       stackhpc_pulp_distribution_container_hashicorp +
+      stackhpc_pulp_distribution_container_openbao +
       stackhpc_pulp_distribution_container_extra) | selectattr('required') }}
