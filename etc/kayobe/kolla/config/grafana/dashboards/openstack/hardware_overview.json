@@ -1,5 +1,48 @@
 {% raw %}
 {
+  "__inputs": [
+    {
+      "name": "datasource",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.4.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -25,9 +68,22 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": null,
   "links": [],
-  "liveNow": false,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 10,
+      "panels": [],
+      "title": "All Disks Metrics",
+      "type": "row"
+    },
     {
       "datasource": {
         "type": "prometheus",
@@ -56,15 +112,15 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 0
+        "y": 1
       },
-      "hideTimeOverride": false,
       "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -76,7 +132,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -130,15 +186,15 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 0
+        "y": 1
       },
-      "hideTimeOverride": false,
       "id": 5,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -150,7 +206,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -199,15 +255,15 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 0
+        "y": 1
       },
-      "hideTimeOverride": false,
       "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -219,7 +275,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -489,7 +545,7 @@
         "h": 10,
         "w": 20,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 2,
       "options": {
@@ -506,7 +562,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "$$hashKey": "object:40",
@@ -541,7 +597,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "smartmon_temperature_case_raw_value{instance=~\"$node\"} or smartmon_temperature_celsius_raw_value{instance=~\"$node\"}",
+          "expr": "smartmon_temperature{instance=~\"$node\"}",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -562,7 +618,12 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true
+            },
+            "includeByName": {},
             "indexByName": {
               "Time 1": 3,
               "Time 2": 10,
@@ -583,7 +644,12 @@
               "type 1": 2,
               "type 2": 17
             },
-            "renameByName": {}
+            "renameByName": {
+              "disk": "Disk",
+              "instance": "Instance",
+              "job": "",
+              "type": "Type"
+            }
           }
         }
       ],
@@ -607,6 +673,7 @@
             "axisLabel": "Temperature (°C)",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -653,9 +720,8 @@
         "h": 13,
         "w": 9,
         "x": 0,
-        "y": 17
+        "y": 18
       },
-      "hideTimeOverride": false,
       "id": 8,
       "options": {
         "legend": {
@@ -665,11 +731,11 @@
           "showLegend": true
         },
         "tooltip": {
-          "maxHeight": 600,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -678,7 +744,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg_over_time(smartmon_temperature_case_raw_value{instance=~\"$node\"}[1h]) or avg_over_time(smartmon_temperature_celsius_raw_value{instance=~\"$node\"}[1h])",
+          "expr": "avg_over_time(smartmon_temperature{instance=~\"$node\"}[1h])",
           "instant": false,
           "interval": "",
           "legendFormat": "{{instance}} - {{disk}} - {{serial_number}}",
@@ -686,8 +752,547 @@
           "refId": "A"
         }
       ],
-      "title": "Disk Temperatures",
+      "title": "All Disk Temperatures",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 11,
+      "panels": [],
+      "title": "NVMe Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unique_device"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Health"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width"
+              },
+              {
+                "id": "displayName",
+                "value": "Health"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Ok"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "from": 1,
+                      "result": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Bad"
+                      },
+                      "to": 1000000000000000
+                    },
+                    "type": "range"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* 2"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Temp"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperature"
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "noValue",
+                "value": "-"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* 1"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "__name__"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* 3"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #TBW"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "deckbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #TBR"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "deckbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Capacity"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Device"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "",
+                    "url": "/d/uesjf83hh/nvme-monitoring?var-serial_number=${__data.fields[\"Serial Number\"]}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 20,
+        "x": 0,
+        "y": 32
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "frameIndex": 1,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "TBW"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "$$hashKey": "object:40",
+          "aggregation": "Last",
+          "alias": "Healthy",
+          "crit": 0,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "decimals": 0,
+          "displayAliasType": "Warning / Critical",
+          "displayType": "Regular",
+          "displayValueWithAlias": "Never",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_critical_warning_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "range": false,
+          "refId": "Health",
+          "units": "none",
+          "valueHandler": "Number Threshold",
+          "warn": 0
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_temperature_celsius{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "Temp"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_data_units_written_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\") * 512",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "TBW"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_data_units_read_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\") * 512",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "TBR"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_physical_size_bytes{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "Capacity"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(delta(nvme_data_units_written_total{instance=~\"$node\"}[24h])*512000,\"unique_device\", \"-\", \"instance\", \"device\")/label_join(nvme_physical_size_bytes{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "",
+          "range": false,
+          "refId": "DWPD"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "label_join(nvme_rated_dwpd{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "Rated DWPD"
+        }
+      ],
+      "title": "SMART Info",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "unique_device",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true,
+              "Time 5": true,
+              "Time 6": true,
+              "Time 7": true,
+              "Value #Health": false,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "__name__ 3": true,
+              "__name__ 4": true,
+              "device 1": false,
+              "device 2": true,
+              "device 3": true,
+              "device 4": true,
+              "device 5": true,
+              "device 6": true,
+              "device 7": true,
+              "instance 1": false,
+              "instance 2": true,
+              "instance 3": true,
+              "instance 4": true,
+              "instance 5": true,
+              "instance 6": true,
+              "instance 7": true,
+              "job 1": true,
+              "job 2": true,
+              "job 3": true,
+              "job 4": true,
+              "job 5": true,
+              "job 6": true,
+              "job 7": true,
+              "model 2": true,
+              "model 3": true,
+              "model 4": true,
+              "model 5": true,
+              "model 6": true,
+              "model 7": true,
+              "original_device 1": true,
+              "original_device 2": true,
+              "original_device 3": true,
+              "original_device 4": true,
+              "original_device 5": true,
+              "original_device 6": true,
+              "original_device 7": true,
+              "serial_number 2": true,
+              "serial_number 3": true,
+              "serial_number 4": true,
+              "serial_number 5": true,
+              "serial_number 6": true,
+              "serial_number 7": true,
+              "unique_device": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "Time 1": 11,
+              "Time 2": 15,
+              "Time 3": 23,
+              "Time 4": 27,
+              "Time 5": 32,
+              "Time 6": 38,
+              "Time 7": 53,
+              "Value #Capacity": 6,
+              "Value #DWPD": 8,
+              "Value #Health": 2,
+              "Value #Rated DWPD": 7,
+              "Value #TBR": 5,
+              "Value #TBW": 4,
+              "Value #Temp": 3,
+              "__name__ 1": 12,
+              "__name__ 2": 16,
+              "__name__ 3": 37,
+              "__name__ 4": 54,
+              "device 1": 1,
+              "device 2": 21,
+              "device 3": 24,
+              "device 4": 28,
+              "device 5": 33,
+              "device 6": 39,
+              "device 7": 55,
+              "instance 1": 0,
+              "instance 2": 17,
+              "instance 3": 14,
+              "instance 4": 29,
+              "instance 5": 34,
+              "instance 6": 40,
+              "instance 7": 56,
+              "job 1": 13,
+              "job 2": 18,
+              "job 3": 25,
+              "job 4": 30,
+              "job 5": 35,
+              "job 6": 41,
+              "job 7": 57,
+              "model 1": 9,
+              "model 2": 43,
+              "model 3": 45,
+              "model 4": 47,
+              "model 5": 49,
+              "model 6": 51,
+              "model 7": 58,
+              "original_device 1": 20,
+              "original_device 2": 22,
+              "original_device 3": 26,
+              "original_device 4": 31,
+              "original_device 5": 36,
+              "original_device 6": 42,
+              "original_device 7": 59,
+              "serial_number 1": 10,
+              "serial_number 2": 44,
+              "serial_number 3": 46,
+              "serial_number 4": 48,
+              "serial_number 5": 50,
+              "serial_number 6": 52,
+              "serial_number 7": 60,
+              "unique_device": 19
+            },
+            "renameByName": {
+              "Time 1": "",
+              "Value #Capacity": "Disk Size",
+              "Value #DWPD": "DWPD",
+              "Value #Rated DWPD": "Rated DWPD",
+              "Value #TBR": "TBR",
+              "Value #TBW": "TBW",
+              "__name__ 1": "",
+              "device 1": "Device",
+              "instance 1": "Hostname",
+              "model 1": "Model Name",
+              "serial_number 1": "Serial Number"
+            }
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "table"
     },
     {
       "datasource": {
@@ -707,6 +1312,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -748,8 +1354,8 @@
       "gridPos": {
         "h": 13,
         "w": 10,
-        "x": 9,
-        "y": 17
+        "x": 0,
+        "y": 42
       },
       "id": 9,
       "options": {
@@ -760,11 +1366,11 @@
           "showLegend": true
         },
         "tooltip": {
-          "maxHeight": 600,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -780,58 +1386,142 @@
       ],
       "title": "DWPD",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Temperature (°C)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 9,
+        "x": 10,
+        "y": 42
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "avg_over_time(nvme_temperature_celsius{instance=~\"$node\"}[1h]) ",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{instance}} - {{device}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "NVMe Temperatures",
+      "type": "timeseries"
     }
   ],
   "refresh": false,
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
       {
+        "baseFilters": [],
         "datasource": {
           "type": "prometheus",
           "uid": "PBFA97CFB590B2093"
         },
         "filters": [],
-        "hide": 0,
         "name": "Filters",
-        "skipUrlSync": false,
         "type": "adhoc"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
-        },
-        "hide": 0,
+        "current": {},
         "includeAll": false,
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "prometheus",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
         "definition": "label_values(node_cpu_seconds_total{job=\"node\"}, instance)",
-        "hide": 0,
         "includeAll": true,
         "label": "Host:",
-        "multi": false,
         "name": "node",
         "options": [],
         "query": {
@@ -840,7 +1530,6 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
@@ -850,12 +1539,11 @@
     "from": "now-24h",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "",
   "title": "Hardware Overview",
   "uid": "TCN51Y25P",
-  "version": 1,
+  "version": 10,
   "weekStart": ""
 }
 {% endraw %}
