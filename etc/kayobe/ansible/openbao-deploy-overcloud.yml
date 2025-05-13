@@ -21,7 +21,12 @@
   gather_facts: true
   hosts: controllers
   vars:
-    openbao_bind_address: "{{ internal_net_name | net_ip }}"
+    openbao_bind_addr: "{{ internal_net_name | net_ip }}"
+    # This is the IP address of the first controller and therefore the leader within
+    # OpenBao. This could be replaced with the VIP address of the internal network if
+    # HAProxy has been configured to load balance the OpenBao API.
+    openbao_raft_leaders:
+      - "{{ internal_net_name | net_ip(inventory_hostname=groups['controllers'][0]) }}"
   tasks:
     - name: Set a fact about the virtualenv on the remote system
       ansible.builtin.set_fact:
@@ -89,6 +94,28 @@
         vault_unseal_token: "{{ openbao_keys.root_token }}"
         vault_unseal_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
         vault_unseal_keys: "{{ openbao_keys.keys_base64 }}"
+      environment:
+        https_proxy: ""
+      run_once: true
+
+      # As the first instance is now unsealed the other instances will now need some
+      # time to connect before we can proceed.
+    - name: Wait for OpenBao Raft peers to connect
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+      # Raft peers take few seconds before they report an unsealed state therefore
+      # we must wait.
+    - name: Unseal OpenBao
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      vars:
+        vault_api_addr: https://{{ internal_net_name | net_ip }}:8200
+        vault_unseal_token: "{{ openbao_keys.root_token }}"
+        vault_unseal_ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        vault_unseal_keys: "{{ openbao_keys.keys_base64 }}"
+        vault_unseal_timeout: 10
       environment:
         https_proxy: ""
 
