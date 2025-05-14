@@ -12,7 +12,7 @@ improvement over an unhardened system. A typical score would be 70%.
 
 The following operating systems are supported:
 
-- Ubuntu 22.04
+- Ubuntu 24.04
 - Rocky 9
 
 Configuration
@@ -25,7 +25,7 @@ instance, you may want different rules on a network node compared to a
 controller. It is best to consult the upstream role documentation for details
 about what each variable does. The documentation can be found here:
 
-- `Ubuntu 22.04 <https://github.com/ansible-lockdown/UBUNTU22-CIS>`__
+- `Ubuntu 24.04 <https://github.com/ansible-lockdown/UBUNTU24-CIS>`__
 - `Rocky 9 <https://github.com/ansible-lockdown/RHEL9-CIS>`__
 
 Running the playbooks

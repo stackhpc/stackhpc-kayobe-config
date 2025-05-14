@@ -20,7 +20,7 @@ in ``etc/kayobe/stackhpc-overcloud-host-images.yml``.
 Currently, images exist for the following operating systems:
 
 * Rocky Linux 9
-* Ubuntu Jammy 22.04
+* Ubuntu Noble 24.04
 
 The image to download is selected automatically using the ``os_distribution``
 and ``os_release`` variables. These images are versioned and a variable for

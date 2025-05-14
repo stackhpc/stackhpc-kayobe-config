@@ -60,7 +60,7 @@ jobs:
     with:
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.os_distribution }}
-      os_release: ${{ inputs.os_distribution == 'rocky' && '9' || 'jammy' }}
+      os_release: ${{ inputs.os_distribution == 'rocky' && '9' || 'noble' }}
       ssh_username: ${{ inputs.os_distribution == 'rocky' && 'cloud-user' || 'ubuntu' }}
       neutron_plugin: ${{ inputs.neutron_plugin }}
       upgrade: ${{ inputs.upgrade }}
@@ -69,7 +69,7 @@ jobs:
       break_duration: ${{ fromJSON(inputs.break_duration) }}
       ssh_key: ${{ inputs.ssh_key }}
       stackhpc_kayobe_config_version: ${{ github.ref_name }}
-      # NOTE(upgrade): Reference the PREVIOUS release here.
-      stackhpc_kayobe_config_previous_version: ${{ inputs.upgrade == 'major' && 'stackhpc/2023.1' || 'stackhpc/2024.1' }}
+      # NOTE(upgrade): Reference the PREVIOUS and CURRENT releases here.
+      stackhpc_kayobe_config_previous_version: ${{ inputs.upgrade == 'major' && 'stackhpc/2024.1' || 'stackhpc/2025.1' }}
       terraform_kayobe_multinode_version: ${{ inputs.terraform_kayobe_multinode_version }}
     secrets: inherit

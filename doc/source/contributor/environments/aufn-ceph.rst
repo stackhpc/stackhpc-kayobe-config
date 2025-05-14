@@ -9,25 +9,23 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Caracal. Proceed with caution.
+    2025.1. Proceed with caution.
 
 Prerequisites
 =============
 
-* a baremetal node with at least 64GB of RAM running Rocky Linux 9 or Ubuntu Jammy.
-
-* access to the test pulp server on SMS lab
+* a VM or baremetal node with at least 64GB of RAM running Rocky Linux 9 or Ubuntu Noble.
 
 Setup
 =====
 
 ---
 
-**Note**: The steps detailed below are combined into a convenient script which is packaged with this repo at ``etc/kayobe/environments/aufn-ceph/a-universe-from-nothing.sh``. For an automated deployment, this script can simply be copied to the baremetal host and then executed as ``bash ~/a-universe-from-nothing.sh``.
+**Note**: The steps detailed below are combined into a convenient script which is packaged with this repo at ``etc/kayobe/environments/aufn-ceph/a-universe-from-nothing.sh``. For an automated deployment, this script can simply be copied to the host and then executed as ``bash ~/a-universe-from-nothing.sh``.
 
 ---
 
-To begin the manual setup, access the baremetal node via SSH and install some basic dependencies.
+To begin the manual setup, access the node via SSH and install some basic dependencies.
 
 Rocky:
 

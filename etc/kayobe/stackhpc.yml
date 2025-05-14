@@ -29,18 +29,6 @@ stackhpc_rocky_9_url_version: "{{ '9.' + stackhpc_pulp_repo_rocky_9_minor_versio
 
 ###############################################################################
 # Debs
-# Ubuntu jammy
-stackhpc_repo_ubuntu_jammy_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu/jammy/{{ stackhpc_repo_ubuntu_jammy_version }}"
-stackhpc_repo_ubuntu_jammy_version: "{{ stackhpc_repo_distribution }}"
-
-# Ubuntu jammy security
-stackhpc_repo_ubuntu_jammy_security_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu/jammy-security/{{ stackhpc_repo_ubuntu_jammy_security_version }}"
-stackhpc_repo_ubuntu_jammy_security_version: "{{ stackhpc_repo_distribution }}"
-
-# Ubuntu jammy CVE-3034-6287
-stackhpc_repo_ubuntu_jammy_cve_2024_6387_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu-jammy-cve-2024-6387/{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_version }}"
-stackhpc_repo_ubuntu_jammy_cve_2024_6387_version: "{{ stackhpc_repo_distribution }}"
-
 # Ubuntu noble
 stackhpc_repo_ubuntu_noble_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu/noble/{{ stackhpc_repo_ubuntu_noble_version }}"
 stackhpc_repo_ubuntu_noble_version: "{{ stackhpc_repo_distribution }}"
@@ -53,17 +41,9 @@ stackhpc_repo_ubuntu_noble_security_version: "{{ stackhpc_repo_distribution }}"
 stackhpc_repo_ubuntu_cloud_archive_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ubuntu-cloud-archive/{{ stackhpc_repo_ubuntu_cloud_archive_version }}"
 stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_repo_distribution }}"
 
-# Docker CE for Ubuntu Jammy
-stackhpc_repo_docker_ce_ubuntu_jammy_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/ubuntu-jammy/{{ stackhpc_repo_docker_ce_ubuntu_jammy_version }}"
-stackhpc_repo_docker_ce_ubuntu_jammy_version: "{{ stackhpc_repo_distribution }}"
-
 # Docker CE for Ubuntu Noble
 stackhpc_repo_docker_ce_ubuntu_noble_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/ubuntu-noble/{{ stackhpc_repo_docker_ce_ubuntu_noble_version }}"
 stackhpc_repo_docker_ce_ubuntu_noble_version: "{{ stackhpc_repo_distribution }}"
-
-# Ceph Reef for Debian
-stackhpc_repo_ceph_reef_debian_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/ceph/debian-reef/{{ stackhpc_repo_ceph_reef_debian_version }}"
-stackhpc_repo_ceph_reef_debian_version: "{{ stackhpc_repo_distribution }}"
 
 ###############################################################################
 # RPMs
@@ -92,17 +72,13 @@ stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_repo_distribution }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_version }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_repo_distribution }}"
 
-# CentOS Stream 9 - OpenStack Caracal
-stackhpc_repo_centos_stream_9_openstack_caracal_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/cloud/x86_64/openstack-caracal/{{ stackhpc_repo_centos_stream_9_openstack_caracal_version }}"
-stackhpc_repo_centos_stream_9_openstack_caracal_version: "{{ stackhpc_repo_distribution }}"
-
 # CentOS Stream 9 - OpsTools - collectd
 stackhpc_repo_centos_stream_9_opstools_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_repo_centos_stream_9_opstools_version }}"
 stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_repo_distribution }}"
 
-# CentOS Stream 9 - Ceph Reef
-stackhpc_repo_centos_stream_9_storage_ceph_reef_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/storage/x86_64/ceph-reef/{{ stackhpc_repo_centos_stream_9_storage_ceph_reef_version }}"
-stackhpc_repo_centos_stream_9_storage_ceph_reef_version: "{{ stackhpc_repo_distribution }}"
+# CentOS Stream 9 - Ceph Squid
+stackhpc_repo_centos_stream_9_storage_ceph_squid_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/centos/9-stream/storage/x86_64/ceph-squid/{{ stackhpc_repo_centos_stream_9_storage_ceph_squid_version }}"
+stackhpc_repo_centos_stream_9_storage_ceph_squid_version: "{{ stackhpc_repo_distribution }}"
 
 # CentOS Stream 9 Docker CE
 stackhpc_repo_centos_stream_9_docker_url: "{{ stackhpc_repo_mirror_url }}/pulp/content/docker-ce/centos/9/x86_64/stable/{{ stackhpc_repo_centos_stream_9_docker_version }}"
@@ -165,11 +141,13 @@ stackhpc_repo_elrepo_9_version: "{{ stackhpc_repo_distribution }}"
 
 # Kolla source repository.
 stackhpc_kolla_source_url: "https://github.com/stackhpc/kolla"
-stackhpc_kolla_source_version: stackhpc/18.6.0.9
+# FIXME: Pin once kolla is synced downstream
+stackhpc_kolla_source_version: stackhpc/{{ openstack_release }}
 
 # Kolla Ansible source repository.
 stackhpc_kolla_ansible_source_url: "https://github.com/stackhpc/kolla-ansible"
-stackhpc_kolla_ansible_source_version: stackhpc/18.6.0.9
+# FIXME: Pin once kolla-ansible is synced downstream
+stackhpc_kolla_ansible_source_version: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Container image registry
@@ -202,4 +180,4 @@ stackhpc_enable_kolla_ansible_check: true
 download_amphora_from_ark: true
 
 # Octavia Amphora image version
-stackhpc_amphora_image_version: "2024.1-20250117T092645"
+stackhpc_amphora_image_version: "TODO"
