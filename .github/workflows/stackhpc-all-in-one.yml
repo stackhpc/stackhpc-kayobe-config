@@ -7,11 +7,10 @@ name: All in one
 on:
   workflow_call:
     inputs:
-      runner:
-        required: false
+      runner_env:
+        description: Which cloud to run on?
         type: string
-        description: 'Runner name'
-        default: 'arc-skc-aio-runner'
+        default: SMS Lab
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -87,11 +86,18 @@ on:
         required: true
 
 jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
+    needs:
+      - runner-selection
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
