@@ -77,12 +77,12 @@ jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
     with:
-      runner_env: ${{ inputs.runner_env }}
+      runner_env: ${{ inputs.upgrade == true && 'Leafcloud' || inputs.runner_env }}
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    environment: ${{ inputs.runner_env }}
+    environment: ${{ inputs.upgrade == true && 'Leafcloud' || inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
     needs:
       - runner-selection
