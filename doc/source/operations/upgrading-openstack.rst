@@ -41,7 +41,33 @@ RabbitMQ 4.0
 RabbitMQ is being upgraded to 4.0 in Epoxy. Existing transient queues must be
 migrated on Caracal prior to upgrading.
 
-.. TODO(mattcrees): Add link to docs when they exist
+.. warning::
+
+   This migration will stop all services using RabbitMQ and cause an extended
+   API outage while queues are migrated. It should only be performed in a
+   pre-agreed maintenance window.
+
+   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
+   make sure to pause reconsiliation of all clusters before the API outage
+   window. See the `Azimuth docs
+   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
+   for instructions.
+
+Set the following variables in your kolla globals file (i.e.
+$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
+
+.. code-block:: yaml
+
+   om_enable_queue_manager: true
+   om_enable_rabbitmq_quorum_queues: true
+   om_enable_rabbitmq_transient_quorum_queue: true
+   om_enable_rabbitmq_stream_fanout: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
 
 stackhpc.linux collection
 -------------------------
