@@ -7,11 +7,10 @@ name: All in one
 on:
   workflow_call:
     inputs:
-      runner:
-        required: false
+      runner_env:
+        description: Which cloud to run on?
         type: string
-        description: 'Runner name'
-        default: 'arc-skc-aio-runner'
+        default: SMS Lab
       kayobe_image:
         description: Kayobe container image
         type: string
@@ -40,18 +39,6 @@ on:
         description: Default network interface name
         type: string
         default: ens3
-      vm_flavor:
-        description: Flavor for the all-in-one VM
-        type: string
-        default: en1.medium
-      vm_network:
-        description: Network for the all-in-one VM
-        type: string
-        default: stackhpc-ci
-      vm_subnet:
-        description: Subnet for the all-in-one VM
-        type: string
-        default: stackhpc-ci
       OS_CLOUD:
         description: Name of cloud in clouds.yaml
         type: string
@@ -87,11 +74,18 @@ on:
         required: true
 
 jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.upgrade == true && 'Leafcloud' || inputs.runner_env }}
   # NOTE: Runner needs unzip and nodejs packages.
   all-in-one:
     name: All in one
     if: ${{ inputs.if && !cancelled() }}
-    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.upgrade == true && 'Leafcloud' || inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
+    needs:
+      - runner-selection
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
@@ -170,9 +164,9 @@ jobs:
           aio_vm_interface = "${{ env.VM_INTERFACE }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
-          aio_vm_flavor = "${{ env.VM_FLAVOR }}"
-          aio_vm_network = "${{ env.VM_NETWORK }}"
-          aio_vm_subnet = "${{ env.VM_SUBNET }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_volume_size = "${{ env.VM_VOLUME_SIZE }}"
           aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
@@ -181,9 +175,6 @@ jobs:
           SSH_USERNAME: "${{ inputs.ssh_username }}"
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
-          VM_FLAVOR: ${{ inputs.vm_flavor }}
-          VM_NETWORK: ${{ inputs.vm_network }}
-          VM_SUBNET: ${{ inputs.vm_subnet }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
           VM_VOLUME_SIZE: ${{ inputs.upgrade && '65' || '50' }}
           VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
@@ -192,7 +183,7 @@ jobs:
         run: terraform plan
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -213,7 +204,7 @@ jobs:
           exit 1
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
@@ -517,7 +508,7 @@ jobs:
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/terraform/aio
         env:
-          OS_CLOUD: ${{ inputs.OS_CLOUD }}
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()
