@@ -423,6 +423,11 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: inputs.upgrade
 
+      - name: Prune unused docker images
+        run: |
+          docker image prune -af
+        if: inputs.upgrade
+
       - name: Tempest tests
         id: tempest
         run: |
