@@ -76,6 +76,9 @@ on:
         description: Git ref to checkout (convenience for external CI)
         type: string
         default: ${{ github.ref }}
+      user-ssh-public-key:
+        description: User's SSH public key to access AIOs
+        type: string
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -262,6 +265,9 @@ jobs:
           cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
       # The same tag may be reused (e.g. stackhpc/yoga), so ensure we have the latest image.
       - name: Pull previous Kayobe image
         run: |
@@ -314,6 +320,24 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-configure.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Add user's SSH key to authorized_keys
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-host-command-run.sh \
+            -b --command "echo '${{ inputs.user-ssh-public-key }} << EOF' >> /home/stack/.ssh/authorized_keys"
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Copy kayobe-config dir to AIO
+        run: |
+          scp -i terraform/aio/id_rsa -r . stack@${{ fromJson(steps.tf_outputs.outputs.stdout).access_ip_v4.value }}:~/
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        continue-on-error: true
 
       - name: Service deploy
         run: |
@@ -481,6 +505,7 @@ jobs:
         if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
       - name: Fail if any tests failed
+        id: test-result
         run: |
           rc=0
           if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
@@ -494,6 +519,12 @@ jobs:
             rc=1
           fi
           exit $rc
+        continue-on-error: true
+
+      - name: Break on failure
+        run: |
+          sleep 360m
+        if: steps.test-result.outcome != 'success'
 
       - name: Destroy
         run: terraform destroy -auto-approve
