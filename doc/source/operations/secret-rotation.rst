@@ -74,7 +74,7 @@ Full method
    the state of the cloud before any changes are made
 
 2. Edit your Kolla-Ansible checkout to include changes not yet included
-   upstream. 
+   upstream.
 
 .. _kolla-change:
 
@@ -98,7 +98,7 @@ Full method
       .. code:: bash
 
          git fetch https://review.opendev.org/openstack/kolla-ansible refs/changes/78/903178/2 && git cherry-pick FETCH_HEAD
-   
+
    3. Re-install Kolla-Ansible from source in your Kolla-Ansible Python
       environment
 
@@ -129,7 +129,7 @@ Full method
       ^redis_master_password
       ^memcache_secret_key
       _ssh_key
-         
+
          private_key
          public_key
       ^$

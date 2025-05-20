@@ -59,7 +59,7 @@ if [[ ! -d kayobe ]]; then
     virtualenv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
-# unbound variable. 
+# unbound variable.
 set +u
 source kayobe/bin/activate
 set -u
@@ -135,7 +135,7 @@ deactivate
 set -u
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-openstack.sh $BASE_PATH
 
-# Create a test vm 
+# Create a test vm
 VENV_DIR=$BASE_PATH/venvs/openstack
 if [[ ! -d $VENV_DIR ]]; then
     python3 -m venv $VENV_DIR
