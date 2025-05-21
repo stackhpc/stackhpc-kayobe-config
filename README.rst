@@ -2,11 +2,11 @@
 StackHPC Kayobe Configuration
 =============================
 
-This repository provides a base Kayobe configuration for the Master release
-of StackHPC OpenStack.
+This repository provides a base Kayobe configuration for the 2025.1 Epoxy
+release of StackHPC OpenStack.
 
 Documentation is hosted on `readthedocs.io
-<https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-master/index.html>`__,
+<https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2025.1/index.html>`__,
 and includes release notes.
 
 Kayobe

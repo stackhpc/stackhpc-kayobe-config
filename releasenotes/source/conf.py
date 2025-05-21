@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'StackHPC Kayobe Configuration Release Notes'
-copyright = '2024 StackHPC Ltd'
+copyright = '2025 StackHPC Ltd'
 
 # Release notes do not need a version number in the title, they
 # cover multiple releases.
@@ -223,3 +223,9 @@ htmlhelp_basename = 'StackHPCKayobeConfigReleaseNotesdoc'
 
 # -- Options for Internationalization output ------------------------------
 locale_dirs = ['locale/']
+
+
+# Otherwise causes:
+# WARNING: cannot cache unpickable configuration value: 'html_context' (because it contains a function, class, or module object) [config.cache]
+# See https://github.com/sphinx-doc/sphinx/issues/12300
+suppress_warnings = ["config.cache"]

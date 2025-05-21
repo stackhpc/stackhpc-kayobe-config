@@ -140,7 +140,7 @@ Known issues
 Security baseline
 =================
 
-As part of the Master release we are looking to improve the security
+As part of the 2025.1 Epoxy release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
 been done, they should be completed before the upgrade begins.
 
