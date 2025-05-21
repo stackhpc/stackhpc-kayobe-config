@@ -48,7 +48,7 @@ migrated on Caracal prior to upgrading.
    pre-agreed maintenance window.
 
    If you are using Azimuth or the ClusterAPI driver for Magnum, you should
-   make sure to pause reconsiliation of all clusters before the API outage
+   make sure to pause reconciliation of all clusters before the API outage
    window. See the `Azimuth docs
    <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
    for instructions.
