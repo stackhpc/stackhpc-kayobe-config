@@ -109,14 +109,14 @@ jobs:
   # when the parent jobs completed successfully or were skipped. We pass an
   # 'if' argument to the called workflow to allow running it conditionally.
 
-  # build-kayobe-image:
-  #   name: Build Kayobe Image
-  #   needs:
-  #     - check-changes
-  #   uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
-  #   with:
-  #     if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
-  #   if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+  build-kayobe-image:
+    name: Build Kayobe Image
+    needs:
+      - check-changes
+    uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
+    with:
+      if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   # check-tags:
   #   name: Check container image tags
