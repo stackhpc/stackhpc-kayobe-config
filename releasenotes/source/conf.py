@@ -223,3 +223,9 @@ htmlhelp_basename = 'StackHPCKayobeConfigReleaseNotesdoc'
 
 # -- Options for Internationalization output ------------------------------
 locale_dirs = ['locale/']
+
+
+# Otherwise causes:
+# WARNING: cannot cache unpickable configuration value: 'html_context' (because it contains a function, class, or module object) [config.cache]
+# See https://github.com/sphinx-doc/sphinx/issues/12300
+suppress_warnings = ["config.cache"]
