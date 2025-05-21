@@ -13,7 +13,7 @@ Creating a custom Horizon theme
 
 A simple custom theme for Horizon can be implemented as small modifications of
 an existing theme, such as the `Default
-<https://opendev.org/openstack/horizon/src/branch/master/openstack_dashboard/themes/default>`__
+<https://opendev.org/openstack/horizon/src/branch/2025.1/openstack_dashboard/themes/default>`__
 one.
 
 A theme contains at least two files: ``static/_styles.scss``, which can be empty, and
