@@ -530,6 +530,15 @@ Full procedure
 Post Upgrade works
 ==================
 
+Audit log
+---------
+
+With the reboot, an audit file ``audit.log`` can take most of sotrage
+of ``/var/log/audit/``.
+It can trigger ``LowDiskSpace`` alert from Prometheus if the directory
+is mounted to its own partition.
+But this is expected behaviour.
+
 Deploy Ubuntu Noble Kolla containers
 ------------------------------------
 
