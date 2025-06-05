@@ -11,7 +11,7 @@ StackHPC provides prebuilt Ironic Python Agent (IPA) images in Release Train
 through Ark.
 
 These images are built in CI using a GitHub workflow and are configured in this
-repository. See  :kayobe-doc: `Kayobe documentation
+repository. See :kayobe-doc:`Kayobe documentation
 <configuration/reference/ironic-python-agent.html>` for more details on IPA.
 
 Release Train IPA images are used by Bifrost and Overcloud Ironic by default in
