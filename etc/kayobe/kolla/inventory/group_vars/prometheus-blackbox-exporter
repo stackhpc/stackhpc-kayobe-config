@@ -62,5 +62,3 @@ stackhpc_prometheus_blackbox_exporter_endpoints_default:
     enabled: "{{ enable_ironic | bool }}"
   - endpoints: "{% set ironic_inspector_endpoints = [] %}{% for host in groups.get('ironic-inspector', []) %}{{ ironic_inspector_endpoints.append('ironic_inspector_backend_' + host.replace('-', '') + ':os_endpoint:' + 'http://' + ('api' | kolla_address(host) | put_address_in_context('url')) + ':' + hostvars[host]['ironic_inspector_port']) }}{% endfor %}{{ ironic_inspector_endpoints }}"
     enabled: "{{ enable_ironic | bool }}"
-  - endpoints: "{% set swift_endpoints = [] %}{% for host in groups.get('swift-api', []) %}{{ swift_endpoints.append('swift_backend_' + host.replace('-', '') + ':os_endpoint:' + 'http://' + ('api' | kolla_address(host) | put_address_in_context('url')) + ':' + hostvars[host]['swift_api_port']) }}{% endfor %}{{ swift_endpoints }}"
-    enabled: "{{ enable_swift | bool }}"
