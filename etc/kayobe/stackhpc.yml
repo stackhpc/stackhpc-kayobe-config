@@ -178,8 +178,8 @@ stackhpc_kolla_ansible_source_version: stackhpc/18.6.0.10
 stackhpc_docker_registry: "{{ pulp_url | regex_replace('^https?://', '') }}"
 
 # Username and password of container registry.
-stackhpc_docker_registry_username: "{{ pulp_username }}"
-stackhpc_docker_registry_password: "{{ pulp_password }}"
+stackhpc_docker_registry_username: "{{ pulp_stack_username if pulp_stack_password is defined and pulp_stack_password | length > 0 else pulp_username }}"
+stackhpc_docker_registry_password: "{{ pulp_stack_password if pulp_stack_password is defined and pulp_stack_password | length > 0 else pulp_password }}"
 
 ###############################################################################
 # Feature flags
