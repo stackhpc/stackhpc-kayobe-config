@@ -25,7 +25,7 @@ elif $KAYOBE_AIO_LVM; then
 fi
 
 if type dnf; then
-    sudo dnf -y install git
+    sudo dnf -y install git python3.12
 else
     sudo apt update
     sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv
@@ -52,7 +52,7 @@ fi
 mkdir -p venvs
 pushd venvs
 if [[ ! -d kayobe ]]; then
-    python3 -m venv kayobe
+    python3.12 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable.
@@ -88,22 +88,43 @@ kayobe overcloud host configure
 
 kayobe overcloud service deploy
 
+export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
+export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
+pushd $BASE_PATH/src/kayobe
+./dev/overcloud-test-vm.sh
+
 if $AIO_RUN_TEMPEST; then
+    if type apt; then
+        sudo apt install docker-buildx-plugin
+    fi
+
     pushd $BASE_PATH/src/kayobe-config
     git submodule init
     git submodule update
-    sudo DOCKER_BUILDKIT=1 docker build --build-arg BASE_IMAGE=rockylinux:9 --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest --network host .
+
+    sudo DOCKER_BUILDKIT=1 docker build \
+        --build-arg BASE_IMAGE=rockylinux:9 \
+        --build-arg USE_PYTHON_312=true \
+        --file .automation/docker/kayobe/Dockerfile \
+        --tag kayobe:latest \
+        --network host .
+
     export KAYOBE_AUTOMATION_SSH_PRIVATE_KEY=$(cat ~/.ssh/id_rsa)
     mkdir -p tempest-artifacts
-    sudo -E docker run --name kayobe-automation --detach -it --rm --network host \
-    -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
-    -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest \
-    /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh -e ansible_user=stack
+
+    sudo -E docker run \
+        --name kayobe-automation \
+        --detach -it --rm \
+        --network host \
+        -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+        -v $(pwd)/tempest-artifacts:/stack/tempest-artifacts \
+        -e KAYOBE_ENVIRONMENT \
+        -e KAYOBE_VAULT_PASSWORD \
+        -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+        kayobe:latest \
+        /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh \
+        -e ansible_user=stack
+
     sleep 300
     sudo docker logs -f tempest
-else
-    export KAYOBE_CONFIG_SOURCE_PATH=$BASE_PATH/src/kayobe-config
-    export KAYOBE_VENV_PATH=$BASE_PATH/venvs/kayobe
-    pushd $BASE_PATH/src/kayobe
-    ./dev/overcloud-test-vm.sh
 fi
