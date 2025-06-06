@@ -1,0 +1,28 @@
+---
+- name: Check Kolla-Ansible version
+  tags: kolla-ansible-version-check
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Check version
+      when: stackhpc_enable_kolla_ansible_check
+      check_mode: false
+      block:
+        - name: Get current Kolla-Ansible tag
+          ansible.builtin.command:
+            cmd: git describe --tags
+            chdir: "{{ lookup('ansible.builtin.env', 'KOLLA_SOURCE_PATH') }}"
+          register: kolla_ansible_current_version
+
+        - name: Check installed Kolla-Ansible version is the expected version
+          ansible.builtin.assert:
+            that: "stackhpc_kolla_ansible_source_version in kolla_ansible_current_version.stdout"
+            fail_msg: |
+              Kolla-Ansible must use the expected version before continuing.
+
+              Current Kolla-Ansible version: {{ kolla_ansible_current_version.stdout }}
+              Expected Kolla-Ansible version: {{ stackhpc_kolla_ansible_source_version }}
+
+              Upgrade Kolla-Ansible by running: kayobe control host upgrade
+            success_msg: |
+              Kolla-Ansible running at version: {{ kolla_ansible_current_version.stdout }}
