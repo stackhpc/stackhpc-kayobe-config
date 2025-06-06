@@ -29,13 +29,13 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   curl -o automated-setup.sh https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
 .. parsed-literal::
 
-   sudo chmod 700 automated-setup.sh
+   sudo chmod +x automated-setup.sh
 
 Acquire the Ansible Vault password for this repository, and store a
 copy at ``~/vault-pw``.
