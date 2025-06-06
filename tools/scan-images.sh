@@ -17,8 +17,8 @@ fi
 # Clear any previous outputs
 rm -rf image-scan-output
 
-# Make a fresh output directory
-mkdir -p image-scan-output
+# Make fresh output directories
+mkdir -p image-scan-output image-sboms
 
 # Get built container images
 docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2" > $1-scanned-container-images.txt
@@ -40,6 +40,7 @@ for image in $images; do
   global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
   image_vulnerabilities=$(yq .$imagename'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
   touch .trivyignore
+  mkdir -p image-scan-output/$filename
   for vulnerability in $global_vulnerabilities; do
     echo $vulnerability >> .trivyignore
   done
@@ -52,7 +53,7 @@ for image in $images; do
           --scanners vuln \
           --format json \
           --severity HIGH,CRITICAL \
-          --output image-scan-output/${filename}.json \
+          --output image-scan-output/${filename}/${filename}.json \
           --ignore-unfixed \
           --db-repository ghcr.io/aquasecurity/trivy-db:2 \
           --db-repository public.ecr.aws/aquasecurity/trivy-db \
@@ -60,14 +61,14 @@ for image in $images; do
           --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db \
           $image); then
     # Clean up the output file for any images with no vulnerabilities
-    rm -f image-scan-output/${filename}.json
+    rm -f image-scan-output/${filename}/${filename}.json
 
     # Add the image to the clean list
     echo "${image}" >> image-scan-output/clean-images.txt
   else
 
     # Write a header for the summary CSV
-    echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}.summary.csv
+    echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}/${filename}.summary.csv
 
     # Write the summary CSV data
     jq -r '.Results[]
@@ -88,9 +89,9 @@ for image in $images; do
                     ]
                 )
             | .[]
-            | @csv' image-scan-output/${filename}.json >> image-scan-output/${filename}.summary.csv
+            | @csv' image-scan-output/${filename}/${filename}.json >> image-scan-output/${filename}/${filename}.summary.csv
 
-    if [ $(grep "CRITICAL" image-scan-output/${filename}.summary.csv -c) -gt 0 ]; then
+    if [ $(grep "CRITICAL" image-scan-output/${filename}/${filename}.summary.csv -c) -gt 0 ]; then
       # If the image contains critical vulnerabilities, add the image to critical list
       echo "${image}" >> image-scan-output/critical-images.txt
     else
@@ -98,5 +99,13 @@ for image in $images; do
       echo "${image}" >> image-scan-output/dirty-images.txt
     fi
   fi
-  rm .trivyignore
+  trivy image \
+        --quiet \
+        --format spdx \
+        --output image-scan-output/${filename}/${filename}-sbom.spdx \
+        --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+        --db-repository public.ecr.aws/aquasecurity/trivy-db \
+        --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
+        --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db \
+        $image
 done
