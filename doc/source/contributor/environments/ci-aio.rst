@@ -29,7 +29,7 @@ Download the setup script:
 
 .. parsed-literal::
 
-   curl -o automated-setup.sh https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   curl -LO https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
@@ -62,6 +62,10 @@ following options:
   customised before continuing.
 * ``AIO_RUN_TEMPEST`` (default: ``false``) - Whether to run Tempest Refstack
   after deployment instead of the default VM smoke test.
+* ``USE_OVS`` (default: ``false``) - Whether to disable OVN and deploy using
+  OVS instead.
+* ``VAULT_PASSWORD_FILE`` (default: ``$BASE_PATH/vault-pw``) - Path to a file
+  containing the Kayobe vault password for the environment.
 
 Manual Setup
 ============
