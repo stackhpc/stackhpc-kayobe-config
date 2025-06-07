@@ -1,111 +1,160 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Check correct usage
-if [[ ! $2 ]]; then
-  echo "Usage: scan-images.sh <os-distribution> <image-tag>"
+# Global variables
+scan_common_args=" \
+                  --exit-code 1 \
+                  --scanners vuln \
+                  --format json \
+                  --severity HIGH,CRITICAL \
+                  --ignore-unfixed \
+                  --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+                  --db-repository public.ecr.aws/aquasecurity/trivy-db \
+                  --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
+                  --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db "
+
+# Print usage instructions and error with wrong inputs
+usage() {
+  echo "Usage: scan-images.sh <os-distribution> <image-tag> [--sbom]"
   exit 2
-fi
+}
 
-set -u
+# Check dependencies are installed, print installation instructions otherwise
+check_deps_installed() {
+  if ! trivy --version > /dev/null; then
+    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.62.1'
+    exit 1
+  fi
+  if ! yq --version > /dev/null; then
+    echo 'Please install yq: sudo dnf/apt install yq'
+    exit 1
+  fi
+}
 
-# Check that trivy is installed
-if ! trivy --version; then
-  echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.49.1'
-fi
+# Prepare output files
+file_prep() {
+  rm -rf image-scan-output
+  mkdir -p image-scan-output
+  touch image-scan-output/clean-images.txt image-scan-output/dirty-images.txt image-scan-output/critical-images.txt
+}
 
-# Clear any previous outputs
-rm -rf image-scan-output
+# Gather image lists
+get_images() {
+  docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2" > $1-scanned-container-images.txt
+  grep --invert-match --no-filename ^REPOSITORY $1-scanned-container-images.txt | sed 's/ \+/:/g' | cut -f 1,2 -d:
+}
 
-# Make fresh output directories
-mkdir -p image-scan-output image-sboms
+# Generate ignored vulnerabilities file
+generate_trivy_ignore() {
+  local imagename=$1
+  local global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  local image_vulnerabilities=$(yq .$imagename'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
 
-# Get built container images
-docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2" > $1-scanned-container-images.txt
-
-# Make a file of imagename:tag
-images=$(grep --invert-match --no-filename ^REPOSITORY $1-scanned-container-images.txt | sed 's/ \+/:/g' | cut -f 1,2 -d:)
-
-# Ensure output files exist
-touch image-scan-output/clean-images.txt image-scan-output/dirty-images.txt image-scan-output/critical-images.txt
-
-# If Trivy detects no vulnerabilities, add the image name to clean-images.txt.
-# If there are vulnerabilities detected, add it to dirty-images.txt and
-# generate a csv summary
-# If the image contains at least one critical vulnerabilities, add it to
-# critical-images.txt
-for image in $images; do
-  filename=$(basename $image | sed 's/:/\./g')
-  imagename=$(echo $filename | cut -d "." -f 1 | sed 's/-/_/g')
-  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
-  image_vulnerabilities=$(yq .$imagename'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml)
   touch .trivyignore
-  mkdir -p image-scan-output/$filename
   for vulnerability in $global_vulnerabilities; do
     echo $vulnerability >> .trivyignore
   done
   for vulnerability in $image_vulnerabilities; do
     echo $vulnerability >> .trivyignore
   done
-  if $(trivy image \
-          --quiet \
-          --exit-code 1 \
-          --scanners vuln \
-          --format json \
-          --severity HIGH,CRITICAL \
-          --output image-scan-output/${filename}/${filename}.json \
-          --ignore-unfixed \
-          --db-repository ghcr.io/aquasecurity/trivy-db:2 \
-          --db-repository public.ecr.aws/aquasecurity/trivy-db \
-          --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
-          --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db \
-          $image); then
-    # Clean up the output file for any images with no vulnerabilities
-    rm -f image-scan-output/${filename}/${filename}.json
+}
 
-    # Add the image to the clean list
+# Put results into CSV
+generate_summary_csv() {
+  local imagename=$1
+  local filename=$2
+
+  echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${imagename}/${filename}-summary.csv
+
+  jq -r '.Results[]
+      | select(.Vulnerabilities)
+      | .Vulnerabilities
+      | map(select(.PkgName | test("kernel") | not ))
+      | group_by(.VulnerabilityID)
+      | map(
+        [
+          (map(.PkgName) | unique | join(";")),
+          (map(.PkgPath | select( . != null )) | join(";")),
+          .[0].PkgID,
+          .[0].VulnerabilityID,
+          .[0].FixedVersion,
+          .[0].PrimaryURL,
+          .[0].Severity
+          ]
+        )
+      | .[]
+      | @csv' image-scan-output/${imagename}/${filename}-scan.json >> image-scan-output/${imagename}/${filename}-summary.csv
+}
+
+# Categorise images based on severity
+categorise_image() {
+  local imagename=$1
+  local filename=$2
+  local image=$3
+
+  if [ $(grep "CRITICAL" image-scan-output/${imagename}/${filename}-summary.csv -c) -gt 0 ]; then
+    echo "${image}" >> image-scan-output/critical-images.txt
+  else
+    echo "${image}" >> image-scan-output/high-images.txt
+  fi
+}
+
+# Scan images, generate SBOMs if requested 
+scan_image() {
+  local image=$1
+  local filename=$(basename $image | sed 's/:/\./g')
+  local imagename=$(echo $filename | cut -d "." -f 1 | sed 's/-/_/g')
+
+  mkdir -p image-scan-output/$imagename
+  generate_trivy_ignore $imagename
+
+  echo "Scanning $imagename"
+
+  # If SBOM is required, generate that first, then generate scan results from it
+  if $generate_sbom; then
+    trivy image \
+        --format spdx-json \
+        --output image-scan-output/${imagename}/${filename}-sbom.json \
+        $image
+    scan_command="trivy sbom $scan_common_args \
+                  --output image-scan-output/${imagename}/${filename}-scan.json \
+                  image-scan-output/${imagename}/${filename}-sbom.json"
+  else
+    scan_command="trivy image $scan_common_args \
+                  --output image-scan-output/${imagename}/${filename}-scan.json $image"
+  fi
+  echo "scan command"
+  echo "$scan_command"
+  # Run scan, against image or SBOM. If no results, delete files.
+  if $scan_command; then
+    rm -f image-scan-output/${imagename}/${filename}-scan.json
     echo "${image}" >> image-scan-output/clean-images.txt
   else
-
-    # Write a header for the summary CSV
-    echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${filename}/${filename}.summary.csv
-
-    # Write the summary CSV data
-    jq -r '.Results[]
-            | select(.Vulnerabilities)
-            | .Vulnerabilities
-            # Ignore packages with "kernel" in the PkgName
-            | map(select(.PkgName | test("kernel") | not ))
-            | group_by(.VulnerabilityID)
-            | map(
-                  [
-                    (map(.PkgName) | unique | join(";")),
-                    (map(.PkgPath | select( . != null )) | join(";")),
-                    .[0].PkgID,
-                    .[0].VulnerabilityID,
-                    .[0].FixedVersion,
-                    .[0].PrimaryURL,
-                    .[0].Severity
-                    ]
-                )
-            | .[]
-            | @csv' image-scan-output/${filename}/${filename}.json >> image-scan-output/${filename}/${filename}.summary.csv
-
-    if [ $(grep "CRITICAL" image-scan-output/${filename}/${filename}.summary.csv -c) -gt 0 ]; then
-      # If the image contains critical vulnerabilities, add the image to critical list
-      echo "${image}" >> image-scan-output/critical-images.txt
-    else
-      # Otherwise, add the image to the dirty list
-      echo "${image}" >> image-scan-output/dirty-images.txt
-    fi
+    generate_summary_csv $imagename $filename
+    categorise_image $imagename $filename $image
   fi
-  trivy image \
-        --quiet \
-        --format spdx \
-        --output image-scan-output/${filename}/${filename}-sbom.spdx \
-        --db-repository ghcr.io/aquasecurity/trivy-db:2 \
-        --db-repository public.ecr.aws/aquasecurity/trivy-db \
-        --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
-        --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db \
-        $image
-done
+}
+
+# Main function
+main() {
+  if [[ ! $2 ]]; then
+    usage
+  fi
+
+  generate_sbom=false
+  if [[ "$3" == "--sbom" ]]; then
+    generate_sbom=true
+  fi
+
+  set -u
+
+  check_deps_installed
+  file_prep
+
+  images=$(get_images $1 $2)
+  for image in $images; do
+    scan_image $image
+  done
+}
+
+main "$@"
