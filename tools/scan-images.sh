@@ -35,7 +35,7 @@ check_deps_installed() {
 file_prep() {
   rm -rf image-scan-output
   mkdir -p image-scan-output
-  touch image-scan-output/clean-images.txt image-scan-output/dirty-images.txt image-scan-output/critical-images.txt
+  touch image-scan-output/clean-images.txt image-scan-output/high-images.txt image-scan-output/critical-images.txt
 }
 
 # Gather image lists
@@ -99,7 +99,21 @@ categorise_image() {
   fi
 }
 
-# Scan images, generate SBOMs if requested 
+# Generate SBOM, return correct scan command for SBOM
+generate_sbom() {
+  local imagename=$1
+  local filename=$2
+  local image=$3
+  trivy image \
+        --format spdx-json \
+        --output image-scan-output/${imagename}/${filename}-sbom.json \
+        $image > /dev/null 2>&1
+  echo "trivy sbom $scan_common_args \
+        --output image-scan-output/${imagename}/${filename}-scan.json \
+        image-scan-output/${imagename}/${filename}-sbom.json"
+}
+
+# Scan images, generate SBOMs if requested
 scan_image() {
   local image=$1
   local filename=$(basename $image | sed 's/:/\./g')
@@ -108,25 +122,19 @@ scan_image() {
   mkdir -p image-scan-output/$imagename
   generate_trivy_ignore $imagename
 
-  echo "Scanning $imagename"
-
-  # If SBOM is required, generate that first, then generate scan results from it
+  # If SBOM is required, generate it first and scan the results, otherwise we
+  # scan the image directly.
   if $generate_sbom; then
-    trivy image \
-        --format spdx-json \
-        --output image-scan-output/${imagename}/${filename}-sbom.json \
-        $image
-    scan_command="trivy sbom $scan_common_args \
-                  --output image-scan-output/${imagename}/${filename}-scan.json \
-                  image-scan-output/${imagename}/${filename}-sbom.json"
+    echo "Generating SBOM for $imagename"
+    scan_command=$(generate_sbom $imagename $filename $image)
   else
     scan_command="trivy image $scan_common_args \
                   --output image-scan-output/${imagename}/${filename}-scan.json $image"
   fi
-  echo "scan command"
-  echo "$scan_command"
-  # Run scan, against image or SBOM. If no results, delete files.
-  if $scan_command; then
+
+  # Run scan against image or SBOM, format output. If no results, delete files.
+  echo "Scanning $imagename for vulnerabilities"
+  if $scan_command > /dev/null 2>&1; then
     rm -f image-scan-output/${imagename}/${filename}-scan.json
     echo "${image}" >> image-scan-output/clean-images.txt
   else
