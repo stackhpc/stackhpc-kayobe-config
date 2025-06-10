@@ -1,0 +1,48 @@
+---
+name: Create output for `runs-on` variable
+
+on:
+  workflow_call:
+    inputs:
+      runner_env:
+        description: 'The environment input from caller workflow'
+        default: 'SMS Lab'
+        required: True
+        type: string
+    outputs:
+      runner_name_image_build:
+        description: "Image builder runner name"
+        value: ${{ jobs.define_runner.outputs.image-build-runner }}
+      runner_name_container_image_build:
+        description: "Container image build runner name"
+        value: ${{ jobs.define_runner.outputs.container-image-build-runner }}
+      runner_name_aio:
+        description: "AiO runner name"
+        value: ${{ jobs.define_runner.outputs.aio-runner }}
+
+jobs:
+  define_runner:
+    environment: ${{ inputs.runner_env }}
+    runs-on: ubuntu-latest
+    outputs:
+      image-build-runner: ${{ steps.builder-runner.outputs.runner_name_image_build }}
+      container-image-build-runner: ${{ steps.container-image-build-runner.outputs.runner_name_container_image_build }}
+      aio-runner: ${{ steps.aio-runner.outputs.runner_name_aio }}
+    steps:
+      - name: Set output for image builder runner
+        run: echo "Setting runner for ${{ inputs.runner_env }} -> ${{ vars.RUNS_ON_TARGET_IMAGE_BUILDER }}"
+
+      - id: builder-runner
+        run: echo "runner_name_image_build=${{ vars.RUNS_ON_TARGET_IMAGE_BUILDER }}" >> $GITHUB_OUTPUT
+
+      - name: Set output for container image build runner
+        run: echo "Setting runner for ${{ inputs.runner_env }} -> ${{ vars.RUNS_ON_TARGET_CONTAINER_IMAGE_BUILDER }}"
+
+      - id: container-image-build-runner
+        run: echo "runner_name_container_image_build=${{ vars.RUNS_ON_TARGET_CONTAINER_IMAGE_BUILDER }}" >> $GITHUB_OUTPUT
+
+      - name: Set output for aio runner
+        run: echo "Setting runner for ${{ inputs.runner_env }} -> ${{ vars.RUNS_ON_TARGET_AIO }}"
+
+      - id: aio-runner
+        run: echo "runner_name_aio=${{ vars.RUNS_ON_TARGET_AIO }}" >> $GITHUB_OUTPUT

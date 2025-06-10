@@ -1,6 +1,8 @@
-====
-Ceph
-====
+.. _cephadm-kayobe:
+
+================
+Cephadm & Kayobe
+================
 
 This section describes how to use the Cephadm integration included in StackHPC
 Kayobe configuration to deploy Ceph.
@@ -204,8 +206,8 @@ Pools
 ~~~~~
 
 The following example pools should be sufficient to work with the
-default `external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+default :kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
@@ -232,8 +234,8 @@ Keys
 ~~~~
 
 The following example keys should be sufficient to work with the default
-`external Ceph
-configuration <https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html>`__
+:kolla-ansible-doc:`external Ceph
+configuration <reference/storage/external-ceph-guide.html>`
 for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
 
 .. code:: yaml
@@ -349,7 +351,7 @@ RADOS Gateways
 
 RADOS Gateway integration is described in the :kolla-ansible-doc:`Kolla Ansible
 documentation
-<https://docs.openstack.org/kolla-ansible/latest/reference/storage/external-ceph-guide.html#radosgw>`.
+<reference/storage/external-ceph-guide.html#radosgw>`.
 
 RADOS Gateways (RGWs) are defined with the following:
 
@@ -388,7 +390,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
   - "config set client.rgw rgw_keystone_api_version '3'"
   - "config set client.rgw rgw_keystone_token_cache_size '10000'"
-  - "config set client.rgw rgw_keystone_url https://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
   - "config set client.rgw rgw_keystone_verify_ssl false"
   - "config set client.rgw rgw_max_attr_name_len '1000'"
   - "config set client.rgw rgw_max_attr_size '1000'"

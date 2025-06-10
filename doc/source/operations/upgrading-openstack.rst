@@ -49,7 +49,7 @@ This behavior can be overridden manually:
 
 Wherever possible, Magnum deployments should be migrated to the CAPI Helm
 driver. Instructions for enabling the driver can be found `here
-<../configuration/magnum-capi.rst>`_. Enable the driver, recreate any clusters
+<../configuration/magnum-capi.html>`_. Enable the driver, recreate any clusters
 using Heat, and disable the service.
 
 After the upgrade (so that alerts don't fire) you can remove Heat with the
@@ -79,11 +79,10 @@ Then from the OpenStack CLI:
 .. code-block:: console
 
    openstack service delete heat
+   openstack service delete heat-cfn
    openstack user delete heat
    openstack domain set --disable heat_user_domain
    openstack domain delete heat_user_domain
-   openstack endpoint list --service heat -c ID -f value | xargs openstack endpoint delete
-   openstack endpoint list --service heat-cfn -c ID -f value | xargs openstack endpoint delete
 
 You can drop the ``heat`` database too, unless you want to keep historical content.
 
@@ -167,6 +166,30 @@ Support for the ``AvailabilityZoneFilter`` filter has been dropped in Nova.
 Remove it from any Nova config files before upgrading. It will cause errors in
 Caracal and halt the Nova scheduler.
 
+Keystone LDAP TLS configuration
+-------------------------------
+
+Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
+if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
+authentication will fail if this configuration is absent. See `upstream
+Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
+for more details.
+
+OS Capacity exporter and dashboard enabled by default
+-----------------------------------------------------
+
+The OS Capacity exporter will automatically be deployed after the upgrade.
+During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
+will also be updated to use the exporter. If you want to disable this, change
+the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
+
+.. code-block:: yaml
+
+   # Whether the OpenStack Capacity exporter is enabled.
+   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
+   # targets being templated during deployment.
+   stackhpc_enable_os_capacity: false
+
 Known issues
 ============
 
@@ -219,7 +242,7 @@ been done, they should be completed before the upgrade begins.
 
    * Enable `host firewalling <TODO>`_
 
-* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.rst>`_
+* Enable `Center for Internet Security (CIS) compliance <../configuration/security-hardening.html>`_
 * Enable TLS on the :kayobe-doc:`public API network
   <configuration/reference/kolla-ansible.html#tls-encryption-of-apis>`
 * Enable TLS on the `internal API network <../configuration/vault.html>`_
@@ -246,6 +269,11 @@ suggestions:
 * Check Grafana dashboards.
 * Update the deployment to use the latest |previous_release| images and
   configuration.
+* If your customer has overriden any policies, check to see if they need
+  updating to align with new defaults. These will be written to files
+  ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
+  generally be found in the documentation of each project. For example, Nova
+  policy: https://docs.openstack.org/nova/latest/configuration/policy.html
 
 RabbitMQ SLURP upgrade
 ----------------------
@@ -488,7 +516,7 @@ To upgrade the Ansible control host:
 Syncing Release Train artifacts
 -------------------------------
 
-New :ref:`stackhpc_release_train` content should be synced to the local Pulp
+New :ref:`stackhpc-release-train` content should be synced to the local Pulp
 server. This includes host packages (Deb/RPM) and container images.
 
 .. _sync-rt-package-repos:
@@ -960,6 +988,24 @@ the change:
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
 
+.. warning::
+
+   Take extra care when updating packages on Ceph hosts. Docker live-restore
+   does not work until the Squid version of Ceph, so a reload of docker will
+   restart all Ceph containers. Set the hosts to maintenance mode before
+   updating packages, and unset when done:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe overcloud host package update --packages "*" --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+
+   **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
+   state after each host configuration. Ensure all warnings and errors are
+   resolved before moving on.
+
 If the host is a hypervisor, enable the Nova compute service.
 
 .. code-block:: console
@@ -1118,7 +1164,7 @@ scope of the upgrade:
 Updating the Octavia Amphora Image
 ----------------------------------
 
-If using Octavia with the Amphora driver, you should :ref:`build a new amphora
+If using Octavia with the Amphora driver, you should :ref:`update the amphora
 image <Amphora image>`.
 
 Testing

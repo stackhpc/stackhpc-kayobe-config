@@ -37,7 +37,7 @@ prometheus_blackbox_exporter_endpoints_default:
   - endpoints:
       - "ceph_rgw:http_2xx:{{ ceph_rgw_public_base_endpoint }}"
       - "{{ ('ceph_rgw_internal:http_2xx:' + ceph_rgw_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"
-    enabled: "{{ enable_ceph_rgw | bool }}"
+    enabled: "{{ enable_ceph_rgw | bool and enable_ceph_rgw_loadbalancer | bool }}"
   - endpoints:
       - "cinder:os_endpoint:{{ cinder_public_base_endpoint }}"
       - "{{ ('cinder_internal:os_endpoint:' + cinder_internal_base_endpoint) if not kolla_same_external_internal_vip | bool }}"

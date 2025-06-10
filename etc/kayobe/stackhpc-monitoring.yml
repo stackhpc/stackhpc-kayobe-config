@@ -26,6 +26,9 @@ alertmanager_packet_drop_threshold: 1
 # packets/s averaged over 5 minutes.
 alertmanager_packet_errors_threshold: 1
 
+# Number of RabbitMQ nodes in the cluster.
+alertmanager_number_of_rabbitmq_nodes: "{{ groups['controllers'] | length }}"
+
 ###############################################################################
 # Exporter configuration
 
@@ -45,8 +48,14 @@ stackhpc_os_capacity_openstack_cacert: ""
 stackhpc_os_capacity_openstack_verify: true
 # Redfish exporter
 
+# How often to scrape the os capacity exporter in seconds.
+stackhpc_os_capacity_scrape_interval: 900
+
 # Whether the redfish exporter is enabled.
 stackhpc_enable_redfish_exporter: false
+
+# How often to scrape the BMCs in seconds.
+stackhpc_redfish_exporter_scrape_interval: "{{ [8 * groups['redfish_exporter_targets'] | length, 300] | max }}"
 
 # Credentials
 redfish_exporter_default_username: "{{ ipmi_username }}"
@@ -54,6 +63,9 @@ redfish_exporter_default_password: "{{ ipmi_password }}"
 
 # The address of the BMC that is used to query redfish metrics.
 redfish_exporter_target_address: "{{ ipmi_address }}"
+
+# How often to scrape OpenStack Exporter in seconds.
+stackhpc_prometheus_openstack_exporter_interval: 300
 
 ###############################################################################
 

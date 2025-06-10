@@ -91,6 +91,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
     "nova_compute_ironic": "nova",
+    "ovn_sb_db_relay": "ovn",
     "redis_sentinel": "openstack",
     "swift_object_expirer": "swift",
     "tgtd": "iscsi",
@@ -100,6 +101,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 SUPPORTED_BASE_DISTROS = [
     "rocky-9",
     "ubuntu-jammy",
+    "ubuntu-noble",
 ]
 
 

@@ -66,7 +66,7 @@
           vars:
             ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
           run_once: true
-          when: credential_check.stdout == []
+          when: credential_check.stdout | from_json == []
 
         - name: Query ec2 credential for ceph_rgw
           ansible.builtin.command: >
@@ -107,7 +107,7 @@
         - name: Ensure radosgw_usage_exporter container is running
           community.docker.docker_container:
             name: radosgw_usage_exporter
-            image: ghcr.io/stackhpc/radosgw_usage_exporter:v0.1.1
+            image: ghcr.io/stackhpc/radosgw_usage_exporter:v0.1.3
             network_mode: host
             env:
               RADOSGW_SERVER: "{{ radosgw_server }}"
@@ -115,6 +115,7 @@
               ACCESS_KEY: "{{ ec2.Access }}"
               SECRET_KEY: "{{ ec2.Secret }}"
               VIRTUAL_PORT: "{{ stackhpc_radosgw_usage_exporter_port | string }}"
+              REQUESTS_CA_BUNDLE: "/etc/ssl/certs/ca-certificates.crt"
             entrypoint: "{{ ['python', '-u', './radosgw_usage_exporter.py', '--insecure'] if not stackhpc_radosgw_usage_exporter_verify else omit }}"
           vars:
             ec2: "{{ credential.stdout | from_json | first }}"

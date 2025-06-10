@@ -47,7 +47,28 @@ dnf_custom_repos: "{{ stackhpc_dnf_repos if stackhpc_repos_enabled | bool else [
 # To use these repos, set stackhpc_repos_enabled to true.
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
-stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) }}"
+stackhpc_dnf_repos: "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) | combine(dnf_custom_repos_doca if dnf_install_doca | bool else {}) }}"
+
+# DOCA repositories
+dnf_custom_repos_doca:
+  doca:
+    baseurl: "{{ stackhpc_repo_rhel9_doca_url }}"
+    description: "DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
+    enabled: "{{ dnf_enable_doca | bool | default(false) }}"
+    priority: -1
+    file: doca
+    gpgcheck: no
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  doca-modules:
+    baseurl: "{{ stackhpc_repo_rhel9_doca_modules_url }}"
+    description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
+    enabled: "{{ dnf_enable_doca_modules | bool | default(false) }}"
+    priority: -1
+    file: doca
+    gpgcheck: no
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Custom repositories shared between all RHEL 9 derivatives.
 dnf_custom_repos_el9:
@@ -132,6 +153,12 @@ dnf_enable_epel: "{{ dnf_install_epel | bool }}"
 # Whether to enable the ELRepo repository. This affects RedHat-based, 9.x release systems only.
 dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
 
+# Whether to enable DOCA repositories. This affects RedHat-based systems only.
+dnf_enable_doca: "{{ dnf_install_doca | bool }}"
+
+# Whether to enable the DOCA kernel module repository. This affects RedHat-based systems only.
+dnf_enable_doca_modules: "{{ dnf_install_doca | bool }}"
+
 # URL of EPEL GPG keys.
 dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
 
@@ -152,6 +179,9 @@ dnf_enable_docker: true
 #URL of docker repo GPG key
 dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
 
+# Whether to create a repo file for DOCA. This affects RedHat-based
+# systems only.
+dnf_install_doca: "{{ 'mlnx' in group_names }}"
 
 ###############################################################################
 # DNF Automatic configuration.

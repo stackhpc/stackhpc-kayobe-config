@@ -13,6 +13,7 @@ the various features provided.
    lvm
    cephadm
    monitoring
+   openbao
    vault
    wazuh
    walled-garden

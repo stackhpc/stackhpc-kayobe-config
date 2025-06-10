@@ -1,0 +1,142 @@
+---
+- name: Enable GPU passthough
+  hosts: "{{ (gpu_group_map | default({})).keys() }}"
+  vars:
+    # This playbook will execute after nodes are deployed
+    # and before overcloud host configure - we can't assume
+    # users and venvs exist.
+    ansible_user: "{{ bootstrap_user }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_python_interpreter: "/usr/bin/python3"
+    vfio_pci_ids: |-
+      {% set gpu_list = [] %}
+      {% set output = [] %}
+      {% for gpu_group in (gpu_group_map | default({})) | dict2items %}
+      {% if gpu_group.key in group_names %}
+      {% set _ = gpu_list.append(gpu_group.value) %}
+      {% endif %}
+      {% endfor %}
+      {% for item in gpu_list | flatten | unique %}
+      {% set _ = output.append(stackhpc_gpu_data[item]['vendor_id'] + ':' + stackhpc_gpu_data[item]['product_id']) %}
+      {% endfor %}
+      {{ output | join(',') }}
+    reboot_timeout_s: "{{ 20 * 60 }}"
+  tasks:
+    - name: Template dracut config
+      ansible.builtin.blockinfile:
+        path: /etc/dracut.conf.d/gpu-vfio.conf
+        block: |
+          add_drivers+="vfio vfio_iommu_type1 vfio_pci vfio_virqfd"
+        owner: root
+        group: root
+        mode: 0660
+        create: true
+      become: true
+      notify:
+        - Regenerate initramfs
+        - reboot
+
+    - name: Add vfio to modules-load.d
+      ansible.builtin.blockinfile:
+        path: /etc/modules-load.d/vfio.conf
+        block: |
+          vfio
+          vfio_iommu_type1
+          vfio_pci
+          vfio_virqfd
+        owner: root
+        group: root
+        mode: 0664
+        create: true
+      become: true
+      notify: reboot
+
+    - name: Blacklist nouveau
+      ansible.builtin.blockinfile:
+        path: /etc/modprobe.d/blacklist-nouveau.conf
+        block: |
+          blacklist nouveau
+          options nouveau modeset=0
+        mode: 0664
+        owner: root
+        group: root
+        create: true
+      become: true
+      notify:
+        - reboot
+        - Regenerate initramfs
+
+    - name: Ignore unsupported model specific registers
+      # Occasionally, applications running in the VM may crash unexpectedly,
+      # whereas they would run normally on a physical machine. If, while
+      # running dmesg -wH, you encounter an error mentioning MSR, the reason
+      # for those crashes is that KVM injects a General protection fault (GPF)
+      # when the guest tries to access unsupported Model-specific registers
+      # (MSRs) - this often results in guest applications/OS crashing. A
+      # number of those issues can be solved by passing the ignore_msrs=1
+      # option to the KVM module, which will ignore unimplemented MSRs.
+      # source: https://wiki.archlinux.org/index.php/QEMU
+      ansible.builtin.blockinfile:
+        path: /etc/modprobe.d/kvm.conf
+        block: |
+          options kvm ignore_msrs=Y
+          # This option is not available in centos 7 as the kernel is too old,
+          # but it can help with dmesg spam in newer kernels (centos8?). Sample
+          # dmesg log message:
+          #  [  +0.000002] kvm [8348]: vcpu0, guest rIP: 0xffffffffb0a767fa ignored rdmsr: 0x619
+          # options kvm report_ignored_msrs=N
+        mode: 0664
+        owner: root
+        group: root
+        create: true
+      become: true
+      notify: reboot
+
+    - name: Add vfio-pci.ids kernel args
+      ansible.builtin.include_role:
+        name: stackhpc.linux.grubcmdline
+      vars:
+        kernel_cmdline:
+          - intel_iommu=on
+          - iommu=pt
+          - "vfio-pci.ids={{ vfio_pci_ids }}"
+        kernel_cmdline_remove:
+          - iommu
+          - intel_iommu
+          - vfio-pci.ids
+
+  handlers:
+    - name: Regenerate initramfs (RedHat)
+      listen: Regenerate initramfs
+      ansible.builtin.shell: |-
+        #!/bin/bash
+        set -eux
+        dracut -v -f /boot/initramfs-$(uname -r).img $(uname -r)
+      become: true
+      changed_when: true
+      when: ansible_facts.os_family == 'RedHat'
+
+    - name: Regenerate initramfs (Debian)
+      listen: Regenerate initramfs
+      ansible.builtin.shell: |-
+        #!/bin/bash
+        set -eux
+        update-initramfs -u -k $(uname -r)
+      become: true
+      changed_when: true
+      when: ansible_facts.os_family == 'Debian'
+
+    - name: Reboot
+      listen: reboot
+      become: true
+      ansible.builtin.reboot:
+        reboot_timeout: "{{ reboot_timeout_s }}"
+        search_paths:
+          # Systems running molly-guard hang waiting for confirmation before rebooting without this.
+          - /lib/molly-guard
+          # Default list:
+          - /sbin
+          - /bin
+          - /usr/sbin
+          - /usr/bin
+          - /usr/local/sbin

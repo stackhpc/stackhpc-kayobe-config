@@ -1,0 +1,78 @@
+---
+- name: Deploy OpenBao on the seed
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  vars:
+    openbao_bind_addr: "{{ ansible_facts['lo'].ipv4.address }}"
+    openbao_api_addr: "http://{{ openbao_bind_addr }}:8200"
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      ansible.builtin.set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python PyYAML and hvac modules are installed
+      ansible.builtin.pip:
+        name:
+          - PyYAML
+          - hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Ensure OpenBao directory exists in Kayobe configuration
+      ansible.builtin.file:
+        path: "{{ kayobe_env_config_path }}/openbao/"
+        state: directory
+      delegate_to: localhost
+      run_once: true
+
+    - name: Apply OpenBao role
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.openbao
+      vars:
+        openbao_registry_url: "{{ seed_openbao_registry_url }}"
+        openbao_registry_username: "{{ seed_openbao_registry_username }}"
+        openbao_registry_password: "{{ seed_openbao_registry_password }}"
+        openbao_config_dir: /opt/kayobe/openbao
+        openbao_cluster_name: seed
+        openbao_docker_image: "{{ seed_openbao_docker_image }}"
+        openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
+        openbao_write_keys_file: true
+        openbao_write_keys_file_path: "{{ kayobe_env_config_path }}/openbao/seed-openbao-keys.json"
+
+    - name: Include Vault keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/openbao/seed-openbao-keys.json"
+        name: openbao_keys
+
+    - name: Unseal OpenBao
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      vars:
+        vault_api_addr: "{{ openbao_api_addr }}"
+        vault_unseal_keys: "{{ openbao_keys.keys_base64 }}"
+
+    - name: Apply PKI role
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.vault_pki
+      vars:
+        vault_api_addr: "{{ openbao_api_addr }}"
+        vault_token: "{{ openbao_keys.root_token }}"
+        vault_pki_root_ca_name: OS-TLS-ROOT
+        vault_pki_write_root_ca_to_file: true
+        vault_pki_intermediate_ca_name: OS-TLS-INT
+        vault_pki_intermediate_export: true
+        vault_pki_intermediate_roles: "{{ seed_openbao_pki_roles }}"
+        vault_pki_certificates_directory: "{{ kayobe_env_config_path }}/openbao"
+        vault_pki_generate_certificates: true
+        vault_pki_write_certificates: true
+        vault_pki_certificate_subject: "{{ seed_openbao_pki_certificate_subject }}"
+        vault_pki_write_certificate_files: true
+        vault_pki_write_pem_bundle: false
+        vault_pki_write_int_ca_to_file: true
