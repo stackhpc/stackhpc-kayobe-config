@@ -364,9 +364,9 @@ In order to enable JWT support the following steps must be carried out within th
 GitLab Pipelines
 ----------------
 
-1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
+1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` or environment equivalent the appropriate changes to your deployments specific needs.
+See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
 Following the instructions in the documentation will allow you to customise the workflows to fit within your deployment.
-For example disabling jobs that might not be relevant such as physical network configuration or overcloud host provision in clouds where this is absent.
 If using multiple environments ensure that :code:`gitlab_kayobe_environments` is updated to reflect all environments present in the deployment.
 Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors.
 
