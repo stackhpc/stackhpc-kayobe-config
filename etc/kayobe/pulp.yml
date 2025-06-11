@@ -26,6 +26,10 @@ pulp_enable_tls: false
 pulp_username: admin
 pulp_password: "{{ secrets_pulp_password }}"
 
+# Credentials for non-admin user within Pulp.
+pulp_stack_username: stack
+pulp_stack_password: "{{ secrets_pulp_stack_password | default('') }}"
+
 # Proxy to use when adding remotes.
 pulp_proxy_url: "{{ omit }}"
 
@@ -676,6 +680,14 @@ stackhpc_pulp_repository_container_repos_openbao:
     proxy_url: "{{ pulp_proxy_url }}"
     state: present
     include_tags: "{{ overcloud_vault_docker_tag }}"
+    required: "{{ stackhpc_sync_openbao_images | bool }}"
+
+# List of OpenBao container image distributions.
+stackhpc_pulp_distribution_container_openbao:
+  - name: openbao
+    repository: openbao/openbao
+    base_path: openbao/openbao
+    state: present
     required: "{{ stackhpc_sync_openbao_images | bool }}"
 
 # List of extra container image repositories.
