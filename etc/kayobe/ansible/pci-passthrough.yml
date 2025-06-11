@@ -11,7 +11,7 @@
     vfio_pci_ids: |-
       {% set gpu_list = [] %}
       {% set output = [] %}
-      {% for gpu_group in gpu_group_map | dict2items | default([]) %}
+      {% for gpu_group in (gpu_group_map | default({})) | dict2items %}
       {% if gpu_group.key in group_names %}
       {% set _ = gpu_list.append(gpu_group.value) %}
       {% endif %}

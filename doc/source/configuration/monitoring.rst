@@ -169,11 +169,17 @@ for the exporter.
 If you are deploying in a cloud with internal TLS, you may be required
 to provide a CA certificate for the OpenStack Capacity exporter if your
 certificate is not signed by a trusted CA. For example, to use a CA certificate
-named ``vault.crt`` that is also added to the Kolla containers:
+named ``vault.crt`` or ``openbao.crt`` that is also added to the Kolla containers:
 
 .. code-block:: yaml
 
     stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+
+or
+
+.. code-block:: yaml
+
+    stackhpc_os_capacity_openstack_cacert: "{{ kayobe_env_config_path }}/kolla/certificates/ca/openbao.crt"
 
 Alternatively, to disable certificate verification for the OpenStack Capacity
 exporter:
