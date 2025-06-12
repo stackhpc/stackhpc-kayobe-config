@@ -1,0 +1,25 @@
+---
+- name: Drain neutron of l3 agents and dhcp agents
+  hosts: localhost
+  gather_facts: true
+  tags:
+    - neutron-l3-drain
+  vars:
+    maintenance: false
+    neutron_namespace_drain_ctrl1: false
+    neutron_namespace_drain_ctrl2: false
+    neutron_namespace_drain_ctrl3: false
+  tasks:
+    - name: Drain hosts
+      ansible.builtin.import_role:
+        name: stackhpc.openstack_ops.neutron_namespace_drain
+        tasks_from: main.yml
+      when: neutron_namespace_drain_ctrl1 | bool or neutron_namespace_drain_ctrl2 | bool or neutron_namespace_drain_ctrl3 | bool or neutron_namespace_drain_host is defined
+
+    - name: Print info
+      ansible.builtin.debug:
+        msg:
+          - "{{ neutron_namespace_drain_host }} is read for maintenance"
+          - "rerun this play book with -e maintenance=false to re-add"
+          - "routers"
+      when: maintenance | bool
