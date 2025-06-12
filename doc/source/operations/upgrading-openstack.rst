@@ -135,12 +135,26 @@ the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
 Prometheus blackbox exporter endpoints
 --------------------------------------
 
-Endpoints for the blackbox exporter are now templated in the kolla-ansible
+Many endpoints for the Blackbox exporter are now templated in the Kolla-Ansible
 group vars for the cloud. This means that the
 ``prometheus_blackbox_exporter_endpoints`` variable can be removed from the
 environment's ``kolla/globals.yml`` file (if applicable) and the endpoints will
-fallback to the ones templated in the group vars. Additional endpoints may be
-added through the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
+fallback to the ones templated in the group vars. Backend endpoints such as
+`these <https://github.com/stackhpc/stackhpc-kayobe-config/blob/094c2e012a037309d103c08a71eb633fdeb214e7/etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter#L27-L64>`__
+are not yet templated by Kolla-Ansible.
+
+Additional endpoints may still be added.
+
+For Kolla-Ansible templating, use ``stackhpc_prometheus_blackbox_exporter_endpoints_custom``.
+For example:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter``
+
+   stackhpc_prometheus_blackbox_exporter_endpoints_custom:
+     - 'custom_service:http_2xx:{{ public_protocol }}://{{ external_fqdn | put_address_in_context('url') }}:{{ custom_serivce_port }}'
+
+Alternatively, for Kayobe templating, use the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
 For example:
 
 .. code-block:: yaml
