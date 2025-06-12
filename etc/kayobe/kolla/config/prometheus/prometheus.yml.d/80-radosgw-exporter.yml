@@ -14,8 +14,9 @@ scrape_configs:
       regex: (.+)
     static_configs:
       - targets:
-      {% for host in groups['monitoring'] %}
-        - "{{ 'api' | kolla_address(host) | put_address_in_context('url') }}:{% endraw %}{{ stackhpc_radosgw_usage_exporter_port }}{% raw %}"
-      {% endfor %}
+        - "{{ kolla_internal_fqdn | put_address_in_context('url') }}:{{ stackhpc_radosgw_usage_exporter_frontend_port }}"
+{% if kolla_enable_tls_internal | bool %}
+    scheme: https
+{% endif %}
 {% endraw %}
 {% endif %}
