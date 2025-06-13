@@ -52,16 +52,29 @@ The Pulp container is deployed on the seed by default, but may be disabled by
 setting ``seed_pulp_container_enabled`` to ``false`` in
 ``etc/kayobe/seed.yml``.
 
-The URL and credentials of the local Pulp server are configured in
-``etc/kayobe/pulp.yml`` via ``pulp_url``, ``pulp_username`` and
-``pulp_password``. In most cases, the default values should be sufficient.
-An admin password must be generated and set as the value of a
-``secrets_pulp_password`` variable, typically in an Ansible Vault encrypted
-``etc/kayobe/secrets.yml`` file. This password will be automatically set on
-Pulp startup.
+The URL for the local Pulp server is configured by ``pulp_url`` within
+``etc/kayobe/pulp.yml``.
 
-If a proxy is required to access the Internet from the seed, ``pulp_proxy_url``
-may be used.
+The Pulp service can be configured with two sets of credentials; one for
+administrator operations and another read-only for overcloud hosts
+to use.
+The administrator credentials can be configured ``pulp_username``,
+``pulp_password``
+The basic user account credentials can be configured with ``pulp_stack_username``
+and ``pulp_stack_password``.
+Both sets of credentials can be found within ``etc/kayobe/pulp.yml``.
+
+Both the ``pulp_password`` and ``pulp_stack_password`` are intended to be
+configured via their ``secrets_*`` counterparts, i.e.
+``secrets_pulp_password`` and ``secrets_pulp_stack_password``. These variables
+are expected to be set in an Ansible Vault encrypted
+``etc/kayobe/secrets.yml`` file.
+
+Passwords can be generated using ``OpenSSL``
+
+.. code-block:: console
+
+  openssl rand -base64 32
 
 Host images are not synchronised to the local Pulp server, since they should
 only be pulled to the seed node once. More information on host images can be

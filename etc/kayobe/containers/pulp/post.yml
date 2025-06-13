@@ -4,7 +4,7 @@
     url: "{{ pulp_url }}/pulp/api/v3/status/"
   register: pulp_status
   until: pulp_status is success
-  retries: "{{ pulp_timeout_retries | default(30) }}"
+  retries: "{{ pulp_timeout_retries | default(120) }}"
   delay: "{{ pulp_timeout_delay | default(3) }}"
 
 - name: Set the Pulp admin password
@@ -27,6 +27,18 @@
   when:
     - stackhpc_pulp_sync_for_local_container_build | bool
     - pulp_settings.changed
+
+- name: Ensure Pulp stack user exists
+  ansible.builtin.include_role:
+    name: stackhpc.pulp.pulp_user
+  vars:
+    pulp_users:
+      - username: "{{ pulp_stack_username }}"
+        password: "{{ pulp_stack_password }}"
+        is_staff: false
+  when:
+    - pulp_stack_username is defined and pulp_stack_username | length > 0
+    - pulp_stack_password is defined and pulp_stack_password | length > 0
 
 - name: Login to docker registry
   docker_login:
