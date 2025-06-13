@@ -37,21 +37,15 @@
         files_matching: passwords.yml
         name: kolla_passwords
 
-    - name: Add an IP to connect to the instances
-      # FIXME: host configure will have bounced the bridge
-      # and removed the IP
-      ansible.builtin.command: ip a add 10.0.2.1/24 dev breth1
-      register: result
-      failed_when: 'result.rc != 0 and "RTNETLINK answers: File exists" not in result.stderr'
-      changed_when: result.rc == 0
-      become: true
-
     - name: Run init-run-once
       ansible.builtin.script:
         cmd: scripts/aio-init.sh
         creates: /tmp/.init-runonce
       environment:
         KOLLA_OPENSTACK_COMMAND: "{{ venv }}/bin/openstack"
+        EXT_NET_CIDR: "{{ aio_cidr }}"
+        EXT_NET_RANGE: "start={{ aio_neutron_allocation_pool_start }},end={{ aio_neutron_allocation_pool_end }}"
+        EXT_NET_GATEWAY: "{{ external_net_names | first | net_ip(inventory_hostname=groups['controllers'][0]) }}"
         OS_PROJECT_DOMAIN_NAME: Default
         OS_USER_DOMAIN_NAME: Default
         OS_PROJECT_NAME: admin
