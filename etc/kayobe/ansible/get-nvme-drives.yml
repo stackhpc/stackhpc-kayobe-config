@@ -1,0 +1,96 @@
+---
+- name: Gather unique NVMe disk models on all hosts
+  hosts: overcloud
+  gather_facts: no
+  tasks:
+    - name: Retrieve NVMe device information
+      ansible.builtin.command: "nvme list -o json"
+      register: nvme_list
+      changed_when: false
+      become: true
+
+    - name: Parse NVMe device model names
+      ansible.builtin.set_fact:
+        nvme_models: "{{ nvme_models | default([]) + [item.ModelNumber] }}"
+      loop: "{{ nvme_list.stdout | from_json | json_query('Devices[].{ModelNumber: ModelNumber}') }}"
+      changed_when: false
+
+    - name: Set unique NVMe models as host facts
+      ansible.builtin.set_fact:
+        unique_nvme_models: "{{ (nvme_models | default([])) | unique }}"
+
+    - name: Show unique NVMe models per host
+      ansible.builtin.debug:
+        var: unique_nvme_models
+
+- name: Aggregate all unique NVMe models from all hosts
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Aggregate unique NVMe models from all overcloud hosts
+      ansible.builtin.set_fact:
+        all_nvme_models: "{{ groups['overcloud'] | map('extract', hostvars, 'unique_nvme_models') | select('defined') | sum(start=[]) | unique }}"
+
+    - name: Show all unique NVMe models
+      ansible.builtin.debug:
+        var: all_nvme_models
+
+    - name: Ensure dwpd-ratings.yml exists
+      ansible.builtin.stat:
+        path: "{{ kayobe_env_config_path }}/dwpd-ratings.yml"
+      register: dwpd_ratings_stat
+      run_once: true
+
+    - name: Load existing dwpd-ratings.yml
+      ansible.builtin.set_fact:
+        existing_dwpd_yml: "{{ lookup('file', kayobe_env_config_path ~ '/dwpd-ratings.yml') | from_yaml }}"
+      when: dwpd_ratings_stat.stat.exists
+      run_once: true
+
+    - name: Convert existing YAML array into a dictionary
+      ansible.builtin.set_fact:
+        dwpd_lookup: "{{ dwpd_lookup | default({}) | combine({item.model_name: item.rated_dwpd}) }}"
+      loop: "{{ existing_dwpd_yml.stackhpc_dwpd_ratings | default([]) }}"
+      loop_control:
+        label: "{{ item.model_name }}"
+      run_once: true
+
+    - name: Get list of existing model names
+      ansible.builtin.set_fact:
+        existing_model_names: "{{ existing_dwpd_yml.stackhpc_dwpd_ratings | default([]) | map(attribute='model_name') | list }}"
+      run_once: true
+
+    - name: Identify new models not already in the configuration
+      ansible.builtin.set_fact:
+        new_models: "{{ all_nvme_models | default([]) | reject('in', existing_model_names | default([])) | list }}"
+      run_once: true
+
+    - name: Create entry dictionary for new models
+      ansible.builtin.set_fact:
+        new_entries: "{{ new_entries | default([]) + [{'model_name': item, 'rated_dwpd': 1}] }}"
+      loop: "{{ new_models }}"
+      run_once: true
+      when: new_models | length > 0
+
+    - name: Build updated list for stackhpc_dwpd_ratings
+      ansible.builtin.set_fact:
+        new_dwpd_list: "{{ existing_dwpd_yml.stackhpc_dwpd_ratings | default([]) + (new_entries | default([])) }}"
+      run_once: true
+
+    - name: Write updated dwpd-ratings.yml
+      ansible.builtin.copy:
+        content: "---\nstackhpc_dwpd_ratings:\n{% for item in new_dwpd_list %}  - model_name: \"{{ item.model_name }}\"\n    rated_dwpd: {{ item.rated_dwpd }}\n{% endfor %}"
+        dest: "{{ kayobe_env_config_path }}/dwpd-ratings.yml"
+      run_once: true
+      notify: Show updated dwpd-ratings.yml contents
+      when: new_dwpd_list is defined and new_dwpd_list | length > 0
+
+  handlers:
+    - name: Show updated dwpd-ratings.yml contents
+      ansible.builtin.debug:
+        msg:
+          - "Updated local dwpd-ratings.yml contents"
+          - "{{ {'stackhpc_dwpd_ratings': new_dwpd_list} | to_nice_yaml }}"
+          - "PLEASE REVIEW AND COMMIT {{ kayobe_env_config_path }}/dwpd-ratings.yml TO VERSION CONTROL."
+      run_once: true
+      changed_when: true
