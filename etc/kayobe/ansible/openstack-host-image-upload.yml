@@ -32,7 +32,9 @@
 
         - name: Ensure dependencies are installed
           ansible.builtin.pip:
-            name: openstacksdk
+            name:
+              - openstacksdk
+              - python-openstackclient
 
         - name: Upload an image to Glance
           openstack.cloud.image:
@@ -45,18 +47,13 @@
             visibility: shared
           register: image
 
-        - name: Ensure dependencies are installed
-          pip:
-            name: python-openstackclient
-            virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
-
         # Add the image to the chosen project
         - name: Add image to stackhpc-dev project
-          command: "{{ ansible_python_interpreter | dirname | dirname }}/bin/openstack image add project {{ image.image.id }} '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}'"
+          ansible.builtin.command: "openstack image add project {{ image.image.id }} '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}'"
 
         # Accept the image in the receiving project
         - name: Accept image membership in stackhpc-dev project
-          command: "{{ ansible_python_interpreter | dirname | dirname }}/bin/openstack image set {{ image.image.id }} --project '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}' --accept"
+          ansible.builtin.command: "openstack image set {{ image.image.id }} --project '{{ lookup('ansible.builtin.env', 'HOST_IMAGE_BUILD_SHARE_PROJECT_ID') }}' --accept"
 
       always:
         - name: Remove clouds.yaml
