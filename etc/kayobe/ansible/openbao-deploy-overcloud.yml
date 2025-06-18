@@ -88,7 +88,7 @@
         file: "{{ kayobe_env_config_path }}/openbao/overcloud-openbao-keys.json"
         name: openbao_keys
 
-    - name: Unseal OpenBao
+    - name: Unseal first OpenBao instance
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.vault_unseal
       vars:
@@ -109,7 +109,7 @@
 
       # Raft peers take few seconds before they report an unsealed state therefore
       # we must wait.
-    - name: Unseal OpenBao
+    - name: Unseal all OpenBao instances
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.vault_unseal
       vars:
