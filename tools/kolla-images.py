@@ -311,7 +311,7 @@ def check_image_map(kolla_ansible_path: str):
     image_map = yaml.safe_load(image_map_str)
     image_var_re = re.compile(r"^([a-z0-9_]+)_image$")
     image_map = {
-        image_var_re.match(image_var).group(1): image.split("/")[-1].replace('{{ docker_image_url }}', '')
+        image_var_re.match(image_var).group(1): image.split("/")[-1].replace('{{ docker_image_name_prefix }}', '')
         for image_var, image in image_map.items()
     }
     # Filter out unsupported images.

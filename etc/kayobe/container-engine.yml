@@ -1,5 +1,15 @@
 ---
 ###############################################################################
+# Container engine configuration
+
+# Configures the container engine. Default is 'docker'.
+#container_engine:
+
+# Path to container volumes. Default is '{{ podman_volumes_path }}' if
+# 'container_engine' is set to podman, otherwise '{{ docker_volumes_path }}'.
+#container_engine_volumes_path:
+
+###############################################################################
 # Docker configuration.
 
 # Name of the docker storage driver. Default is 'overlay2'.
@@ -37,6 +47,33 @@ docker_registry_insecure: "{{ 'https' not in stackhpc_repo_mirror_url }}"
 
 # Enable live-restore on docker daemon
 docker_daemon_live_restore: true
+
+# Path to docker runtime directory. Default is "", which means to use the
+# default location: '/var/lib/docker'.
+#docker_runtime_directory:
+
+# Path to docker volumes. Default is '{{ docker_runtime_directory |
+# default('/var/lib/docker', true) ~ '/volumes' }}"'.
+#docker_volumes_path:
+
+###############################################################################
+# Podman configuration.
+
+# URL of podman container registry
+#podman_registry:
+
+# Whether podman should be configured to use an insecure registry.
+# Default is false, unless docker_registry_enabled is true and
+# docker_registry_enable_tls is false.
+#podman_registry_insecure:
+
+# Path to podman runtime directory. Default is None, which means to use the
+# default location: '/var/lib/containers/storage'.
+#podman_runtime_directory:
+
+# Path to podman volumes. Default is '{{ podman_runtime_directory |
+# default('/var/lib/containers/storage', true) ~ '/volumes' }}"'.
+#podman_volumes_path:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

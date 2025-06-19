@@ -7,10 +7,8 @@
     # password in the get_url task of this playbook
     stackhpc_overcloud_host_image_url_no_auth: "{{ stackhpc_release_pulp_content_url }}/kayobe-images/\
       {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}/\
-      {{ 'ofed/' if stackhpc_overcloud_host_image_is_ofed else '' }}\
       {{ stackhpc_overcloud_host_image_version }}/\
-      overcloud-{{ os_distribution }}-{{ os_release }}\
-      {{ '-ofed' if stackhpc_overcloud_host_image_is_ofed else '' }}.qcow2"
+      overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
   tasks:
     - name: Print image information
       ansible.builtin.debug:
@@ -18,7 +16,6 @@
           OS Distribution: {{ os_distribution }}
           OS Release: {{ os_release }}
           Image tag: {{ stackhpc_overcloud_host_image_version }}
-          OFED: {{ stackhpc_overcloud_host_image_is_ofed }}
 
     # TODO: Add checksum support
     - name: Download image artifact

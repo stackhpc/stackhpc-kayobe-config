@@ -176,7 +176,7 @@ jobs:
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
-          VM_VOLUME_SIZE: ${{ inputs.upgrade && '65' || '50' }}
+          VM_VOLUME_SIZE: ${{ inputs.upgrade && '75' || '50' }}
           VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
@@ -326,6 +326,29 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      - name: Upgrade host OS
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            -e KAYOBE_PATH=/stack/kayobe-automation-env/src/kayobe \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh tools/ubuntu-upgrade-overcloud.sh all
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade && inputs.os_release == 'jammy'
+
+      - name: Deploy services that are built for later OS
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade && inputs.os_release == 'jammy'
+
       - name: Run upgrade prerequisites
         run: |
           docker run -t --rm \
@@ -389,6 +412,11 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-upgrade.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: inputs.upgrade
+
+      - name: Prune unused docker images
+        run: |
+          docker image prune -af
         if: inputs.upgrade
 
       - name: Tempest tests

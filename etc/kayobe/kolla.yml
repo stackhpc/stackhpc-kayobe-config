@@ -134,18 +134,18 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/magnum.git
     reference: stackhpc/{{ openstack_release }}
-  neutron-base-plugin-networking-generic-switch:
-    type: git
-    location: https://github.com/stackhpc/networking-generic-switch.git
-    reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
+  blazar-base:
+    type: git
+    location: https://github.com/stackhpc/blazar.git
+    reference: stackhpc/master
 
 ###############################################################################
 # Kolla image build configuration.
@@ -350,7 +350,6 @@ kolla_build_customizations_common:
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
     - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
-
 kolla_build_customizations_rocky:
   base_centos_yum_repo_packages_append:
     - centos-release-ceph-squid
@@ -359,6 +358,10 @@ kolla_build_customizations_rocky:
   base_centos_yum_repos_to_disable_remove:
     - centos-ceph-reef
     - epel
+    - centos9-nfv-ovs
+    - centos9-opstools
+    - centos9-rabbitmq
+    - centos9-storage
   kolla_toolbox_packages_remove:
     - openvswitch
   kolla_toolbox_packages_append:
@@ -379,6 +382,8 @@ kolla_build_customizations_rocky:
   nova_base_packages_append:
     - openvswitch3.3
     - python3-openvswitch3.3
+  nova_libvirt_packages_remove:
+    - openvswitch
   octavia_base_packages_remove:
     - python3-openvswitch
   openvswitch_base_packages_remove:
@@ -568,6 +573,10 @@ kolla_overcloud_inventory_pass_through_host_vars_extra:
 # Primary group of Kolla SSH user. Default is 'kolla'.
 #kolla_ansible_group:
 
+# Whether to use privilege escalation for operations on the control host.
+# Default is {{ kayobe_control_host_become }}.
+#kolla_ansible_control_host_become:
+
 # Whether to use privilege escalation for all operations performed via Kolla
 # Ansible. Default is 'false'.
 #kolla_ansible_become:
@@ -592,6 +601,7 @@ kolla_enable_central_logging: true
 #kolla_enable_ceph_rgw_loadbalancer:
 #kolla_enable_cinder:
 #kolla_enable_cinder_backend_iscsi:
+#kolla_enable_cinder_backend_lightbits:
 #kolla_enable_cinder_backend_lvm:
 #kolla_enable_cinder_backend_nfs:
 #kolla_enable_cinder_backend_pure_fc:
@@ -639,10 +649,13 @@ kolla_enable_heat: false
 #kolla_enable_horizon_octavia:
 #kolla_enable_horizon_tacker:
 #kolla_enable_horizon_trove:
+#kolla_enable_horizon_venus:
 #kolla_enable_horizon_watcher:
 #kolla_enable_horizon_zun:
 #kolla_enable_influxdb:
 #kolla_enable_ironic:
+#kolla_enable_ironic_dnsmasq:
+#kolla_enable_ironic_inspector:
 #kolla_enable_ironic_neutron_agent:
 kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
@@ -657,6 +670,7 @@ kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
 #kolla_enable_manila_backend_cephfs_nfs:
+#kolla_enable_manila_backend_flashblade:
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_glusterfs_nfs:
 #kolla_enable_manila_backend_hnas:
