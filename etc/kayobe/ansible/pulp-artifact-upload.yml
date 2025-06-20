@@ -48,7 +48,7 @@
 
     - name: Write checksum to file
       ansible.builtin.copy:
-        content: "{{ file_stats.stat.checksum }}"
+        content: "{{ file_stats.stat.checksum }} {{ found_files.files[0].path | basename }}"
         dest: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
       when: upload_checksum
 
