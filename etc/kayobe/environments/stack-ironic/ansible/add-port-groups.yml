@@ -1,0 +1,131 @@
+---
+- name: Add Ironic Port Groups
+  hosts: controllers[0]
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+  tasks:
+    - name: Set up openstack cli virtualenv
+      pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+          - python-ironicclient
+        state: latest
+        virtualenv_command: "python3.{{ ansible_facts.python.version.minor }} -m venv"
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+
+- name: Ensure Ironic port groups exist
+  hosts: baremetal-compute-is-bonded
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+  tasks:
+    - name: Check Ironic variables are defined
+      ansible.builtin.assert:
+        that:
+          - ironic_bond_physical_network_name is defined
+          - ironic_bond_mode is defined
+          - ironic_bond_miimon is defined
+          - ironic_bond_xmit_hash_policy is defined
+          - ironic_bond_is_standalone_ports is defined
+        fail_msg: One or more Ironic variables are undefined.
+
+    - block:
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when:
+            - '"HTTP 404" in node_show.stderr'
+            - node_show.rc != 0
+          changed_when: false
+
+        - name: Set baremetal_uuid fact
+          ansible.builtin.set_fact:
+            baremetal_uuid: "{{ (node_show.stdout | from_json).uuid }}"
+
+        - name: Get baremetal port
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal port list --long --node {{ baremetal_uuid }} -f json --sort-column Address"
+          register: port_list
+          changed_when: false
+
+        - name: Set port facts
+          ansible.builtin.set_fact:
+            baremetal_ports: "{{ baremetal_ports | default([]) + [item] }}"
+          loop: "{{ port_list.stdout | from_json | community.general.json_query(_query) }}"
+          vars:
+            _query: "[?\"Physical Network\"=='{{ ironic_bond_physical_network_name }}'].{uuid: UUID, mac_address: Address, port_group: \"Portgroup UUID\"}"
+
+        - name: List existing port groups
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal port group list"
+          register: existing_port_groups
+          changed_when: false
+
+        - name: Create port group
+          ansible.builtin.command:
+            cmd: >
+              {{ venv }}/bin/openstack baremetal port group create
+              --node {{ baremetal_uuid }}
+              --name {{ inventory_hostname }}
+              --address {{ baremetal_ports[0].mac_address }}
+              --mode {{ ironic_bond_mode }}
+              --property miimon={{ ironic_bond_miimon }}
+              --property xmit_hash_policy="{{ ironic_bond_xmit_hash_policy }}"
+              {{ '--support-standalone-ports' if ironic_bond_is_standalone_ports | bool else '' }}
+          register: create_port_group
+          when:
+            - "inventory_hostname not in existing_port_groups.stdout"
+            - "baremetal_ports[0].mac_address not in existing_port_groups.stdout"
+          changed_when:
+            - create_port_group.rc == 0
+
+        - name: Show port group uuid
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal port group show {{ inventory_hostname }} -f value -c uuid"
+          register: port_group_show
+          changed_when: false
+
+        - name: Set port group uuid fact
+          ansible.builtin.set_fact:
+            port_group_uuid: "{{ port_group_show.stdout }}"
+
+        - block:
+            - name: Enter maintenance mode
+              ansible.builtin.command: |
+                {{ venv }}/bin/openstack
+                baremetal node maintenance set {{ inventory_hostname }}
+                {{ '--reason ' + maintenance_reason | default('None', true) | quote }}
+              vars:
+                maintenance_reason: "Maintenance entered at {{ '%Y-%m-%d %H:%M:%S' | strftime() }} for port group association"
+
+            - name: Associate port group with ports
+              ansible.builtin.command:
+                cmd: "{{ venv }}/bin/openstack baremetal port set --port-group {{ port_group_uuid }} {{ item.uuid }}"
+              register: associate_port_group
+              loop: "{{ baremetal_ports }}"
+              changed_when:
+                - associate_port_group.rc == 0
+
+            - name: Exit maintenance mode
+              ansible.builtin.command: |
+                {{ venv }}/bin/openstack
+                baremetal node maintenance unset {{ inventory_hostname }}
+          when: >
+            baremetal_ports | selectattr('port_group', 'undefined') | list | length > 0 or
+            baremetal_ports | selectattr('port_group', 'none') | list | length > 0
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
