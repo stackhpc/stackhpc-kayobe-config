@@ -30,6 +30,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
     export TEMPEST_CONCURRENCY=4
     # Uncomment this to perform a full tempest test
+    export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=ipv6-tests
     # export KAYOBE_AUTOMATION_TEMPEST_LOADLIST=tempest-full
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
   fi
