@@ -11,11 +11,11 @@ set -o pipefail
 controller_vip=192.168.39.2
 seed_hv_ip=192.168.33.4
 
-iface=$(ip route | awk '$1 == "default" {print $5; exit}')
+iface=$(sudo ip route | awk '$1 == "default" {print $5; exit}')
 
 # Private IP address by which the seed hypervisor is accessible in the cloud
 # hosting the VM.
-seed_hv_private_ip=$(ip a show dev $iface | awk '$1 == "inet" { gsub(/\/[0-9]*/,"",$2); print $2; exit }')
+seed_hv_private_ip=$(sudo ip a show dev $iface | awk '$1 == "inet" { gsub(/\/[0-9]*/,"",$2); print $2; exit }')
 
 # Forward the following ports to the controller.
 # 80: Horizon

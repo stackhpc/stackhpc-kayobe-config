@@ -1,0 +1,273 @@
+---
+# This reusable workflow deploys a VM on a cloud using Terraform, then deploys
+# OpenStack in the VM via Kayobe. Tempest is then used to test the cloud.
+
+name: Tenks Seed Deploy
+
+on:
+  workflow_call:
+    inputs:
+      runner_env:
+        description: Which cloud to run on?
+        type: string
+        default: SMS Lab    
+      kayobe_image:
+        description: Kayobe container image
+        type: string
+        required: true
+      os_distribution:
+        description: Host OS distribution
+        type: string
+        default: rocky
+      os_release:
+        description: Host OS release
+        type: string
+        default: '9'
+      ssh_username:
+        description: User for terraform to access the worker VM
+        type: string
+        default: cloud-user
+      vm_image_override:
+        description: Full name of an image to use instead of the default
+        type: string
+        default: ""
+      vm_interface:
+        description: Default network interface name
+        type: string
+        default: ens3
+      OS_CLOUD:
+        description: Name of cloud in clouds.yaml
+        type: string
+        required: true
+      if:
+        description: Whether to run the workflow (workaround for required status checks issue)
+        type: boolean
+        default: true
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+      CLOUDS_YAML:
+        required: true
+      OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+
+jobs:
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+  # NOTE: Runner needs unzip and nodejs packages.
+  tenks-seed-deploy:
+    name: Tenks Seed Deploy
+    if: ${{ inputs.if && !cancelled() }}
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
+    needs:
+      - runner-selection
+    permissions: {}
+    env:
+      KAYOBE_ENVIRONMENT: ci-tenks
+      KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+      KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+    steps:
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs openssh-client
+
+      - name: Checkout Kayobe config
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          submodules: true
+
+      - name: Output Kayobe image
+        id: kayobe_image
+        run: |
+          echo kayobe_image=$KAYOBE_IMAGE >> $GITHUB_OUTPUT
+
+      - name: Make sure dockerd is running and test Docker
+        run: |
+          docker ps
+
+      # Forced to use SMS-style images for now. No leafcloud support
+      - name: Output image name
+        id: image_name
+        run: |
+          echo image_name=${{ inputs.os_distribution }}${{ inputs.os_release == '9' && '9' || '-24.04' }} >> $GITHUB_OUTPUT
+
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_public_key = "id_rsa.pub"
+          ssh_username = "${{ env.SSH_USERNAME }}"
+          aio_vm_interface = "${{ env.VM_INTERFACE }}"
+          aio_vm_name = "${{ env.VM_NAME }}"
+          aio_vm_image = "${{ env.VM_IMAGE }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
+          aio_vm_volume_size = "75"
+          aio_vm_tags = ${{ env.VM_TAGS }}
+          EOF
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          SSH_USERNAME: "${{ inputs.ssh_username }}"
+          VM_NAME: "skc-ci-tenks-deploy-${{ github.run_id }}"
+          VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
+          VM_INTERFACE: ${{ inputs.vm_interface }}
+          VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        id: tf_apply
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/tf-networks.yml
+          admin_oc_net_name: ethernet
+          ethernet_cidr: "{{ access_cidr.value }}"
+          ethernet_allocation_pool_start: 0.0.0.0
+          ethernet_allocation_pool_end: 0.0.0.0
+          ethernet_ips:
+            controller0: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write all-in-one scenario config
+        run: |
+          cat << EOF > etc/kayobe/environments/$KAYOBE_ENVIRONMENT/zz-aio-scenario.yml
+          ---
+          os_distribution: ${{ env.OS_DISTRIBUTION }}
+          os_release: "${{ env.OS_RELEASE }}"
+          EOF
+        env:
+          OS_DISTRIBUTION: ${{ inputs.os_distribution }}
+          OS_RELEASE: ${{ inputs.os_release }}
+
+      # Use a heredoc to define a multiline string output
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+      - name: Set SSH key output
+        id: ssh_key
+        run: |
+          echo "ssh_key<<EOF" >> $GITHUB_OUTPUT
+          cat terraform/aio/id_rsa >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # The same tag may be reused (e.g. pr-123), so ensure we have the latest image.
+      - name: Pull current Kayobe image
+        run: |
+          docker image pull $KAYOBE_IMAGE
+
+      - name: Run deploy script
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            -e KAYOBE_PATH=/stack/kayobe-automation-env/src/kayobe \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/script-run.sh etc/kayobe/environments/ci-tenks/automated-deployment.sh
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      - name: Collect diagnostic information
+        id: diagnostics
+        run: |
+          mkdir -p diagnostics
+          sudo -E docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v $(pwd)/diagnostics:/stack/diagnostics \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/diagnostics.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}
+
+      - name: Upload Diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ inputs.os_distribution }}-${{ inputs.os_release }}
+          path: |
+            diagnostics/
+        if: ${{ !cancelled() && steps.diagnostics.outcome == 'success' }}
+
+      - name: Fail if any tests failed
+        run: |
+          rc=0
+          if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
+            echo "Some Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          if [[ $(wc -l < sct-results/failed-tests) -ne 0 ]]; then
+            echo "Some StackHPC Cloud tests failed."
+            echo "See HTML results artifact (sct-results) for details."
+            rc=1
+          fi
+          exit $rc
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: always()

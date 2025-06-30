@@ -21,7 +21,7 @@ Setup
 
 ---
 
-**Note**: The steps detailed below are combined into a convenient script which is packaged with this repo at ``etc/kayobe/environments/aufn-ceph/a-universe-from-nothing.sh``. For an automated deployment, this script can simply be copied to the host and then executed as ``bash ~/a-universe-from-nothing.sh``.
+**Note**: The steps detailed below are combined into a convenient script which is packaged with this repo at ``etc/kayobe/environments/ci-tenks/a-universe-from-nothing.sh``. For an automated deployment, this script can simply be copied to the host and then executed as ``bash ~/a-universe-from-nothing.sh``.
 
 ---
 
@@ -93,8 +93,8 @@ The following commands activate the correct kayobe environment and prepare the A
 .. parsed-literal::
 
    pushd ~/src/kayobe-config
-   source kayobe-env --environment aufn-ceph
-   $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-local-networking.sh
+   source kayobe-env --environment ci-tenks
+   $KAYOBE_CONFIG_PATH/environments/ci-tenks/configure-local-networking.sh
    kayobe control host bootstrap
 
 Deployment
@@ -113,7 +113,7 @@ Once the seed vm is provisioned, deploy a local pulp server on the seed and then
 .. parsed-literal::
 
     kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
-    $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-local-networking.sh
+    $KAYOBE_CONFIG_PATH/environments/ci-tenks/configure-local-networking.sh
 
 We can now sync the contents of the local pulp server with that of SMS test pulp and then complete the seed VM setup:
 
@@ -131,7 +131,7 @@ With the seed VM configured, we use Tenks_ to deploy an additional set of VMs on
 
 .. parsed-literal::
 
-    export TENKS_CONFIG_PATH=$KAYOBE_CONFIG_PATH/environments/aufn-ceph/tenks.yml
+    export TENKS_CONFIG_PATH=$KAYOBE_CONFIG_PATH/environments/ci-tenks/tenks.yml
     export KAYOBE_CONFIG_SOURCE_PATH=~/src/kayobe-config
     export KAYOBE_VENV_PATH=~/venvs/kayobe
     pushd ~/src/kayobe
@@ -158,7 +158,7 @@ Finally, we create the bare minimum cloud infrastructure (networks, images, flav
 
 .. parsed-literal::
 
-    $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-openstack.sh ~
+    $KAYOBE_CONFIG_PATH/environments/ci-tenks/configure-openstack.sh ~
 
 This completes the deployment process.
 
