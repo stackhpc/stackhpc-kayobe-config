@@ -118,6 +118,94 @@ stackhpc_pulp_deb_repos:
     components: "stable"
     required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
 
+  - name: TreasureData5 for Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/ubuntu/noble/{{ stackhpc_pulp_repo_treasuredata_5_noble_version }}"
+    distribution_name: ubuntu-noble-treasuredata-5-
+    base_path: treasuredata/lts/5/ubuntu/noble/
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: RabbitMQ - Erlang - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/ubuntu/noble/x86_64/{{ stackhpc_pulp_repo_rabbitmq_erlang_noble_version }}"
+    distribution_name: ubuntu-noble-rabbitmq-erlang-
+    base_path: rabbitmq/erlang/ubuntu/noble/x86_64/
+    distributions: noble
+    component: "main"
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: RabbitMQ - Server - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/ubuntu/noble/noarch/{{ stackhpc_pulp_repo_rabbitmq_server_noble_version }}"
+    distribution_name: ubuntu-noble-rabbitmq-server-
+    base_path: rabbitmq/rabbitmq-server/ubuntu/noble/noarch/
+    distributions: noble
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: InfluxDB - Ubuntu Jammy
+    url: "{{ stackhpc_release_pulp_content_url }}/influxdb/ubuntu/jammy/x86_64/stable/{{ stackhpc_pulp_repo_influxdb_jammy_version }}"
+    distribution_name: influxdb-ubuntu-jammy-
+    base_path: influxdb/ubuntu/jammy/x86_64/stable/
+    distributions: jammy
+    components: stable
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: MariaDB 10.11 - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-server/10.11/repo/ubuntu/{{ stackhpc_pulp_repo_mariadb_10_11_noble_version }}"
+    distribution_name: mariadb-10.11-ubuntu-noble-
+    base_path: mariadb-server/10.11/repo/ubuntu/
+    distributions: noble
+    components: main
+    architectures: amd64
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: MariaDB 10.11.11 - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-server/mariadb-10.11.11/repo/ubuntu/{{ stackhpc_pulp_repo_mariadb_10_11_11_noble_version }}"
+    distribution_name: mariadb-10.11.11-ubuntu-noble-
+    base_path: mariadb-server/mariadb-10.11.11/repo/ubuntu/
+    distributions: noble
+    components: main
+    architectures: amd64
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: Grafana - Apt
+    url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/apt/{{ stackhpc_pulp_repo_grafana_apt_version }}"
+    distribution_name: ubuntu-noble-grafana-
+    base_path: grafana/oss/apt/
+    distributions: stable
+    components: main
+    policy: immediate
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: OpenSearch - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/3.x/apt/{{ stackhpc_pulp_repo_opensearch_3_x_apt_version }}"
+    distribution_name: ubuntu-noble-opensearch-
+    base_path: opensearch/3.x/apt/
+    architectures: amd64
+    distributions: stable
+    components: main
+    policy: immediate
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: OpenSearch Dashboards - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/3.x/apt/{{ stackhpc_pulp_repo_opensearch_dashboards_3_x_apt_version }}"
+    distribution_name: ubuntu-noble-opensearch-dashboards-
+    base_path: opensearch-dashboards/3.x/apt/
+    architectures: amd64
+    distributions: stable
+    components: main
+    policy: immediate
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: ProxySQL - Ubuntu Noble
+    url: "{{ stackhpc_release_pulp_content_url }}/ProxySQL/proxysql-3.0.x/noble/{{ stackhpc_pulp_repo_proxysql_3_0_noble_version }}"
+    distribution_name: ubuntu-noble-proxysql-
+    base_path: ProxySQL/proxysql-3.0.x/noble/
+    architectures: amd64
+    distributions: "./"
+    components: ""
+    policy: immediate
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
 

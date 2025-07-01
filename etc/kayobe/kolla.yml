@@ -232,8 +232,21 @@ stackhpc_ubuntu_noble_base_repos:
 stackhpc_ubuntu_noble_uca_repos:
   - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} noble-updates/{{ openstack_release_codename }} main"
 
+# List of third-party repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_third_party_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_treasuredata_5_noble_gpg_key }}]{{ stackhpc_repo_treasuredata_5_noble_url }} noble contrib"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_rabbitmq_erlang_noble_gpg_key }}]{{ stackhpc_repo_rabbitmq_erlang_noble_url }} noble main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_rabbitmq_server_noble_gpg_key }}]{{ stackhpc_repo_rabbitmq_server_noble_url }} noble main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_influxdb_jammy_gpg_key }}]{{ stackhpc_repo_influxdb_jammy_url }} jammy stable"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_mariadb_10_11_noble_gpg_key }}]{{ stackhpc_repo_mariadb_10_11_noble_url }} noble main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_mariadb_10_11_11_noble_gpg_key }}]{{ stackhpc_repo_mariadb_10_11_11_noble_url }} noble main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_grafana_apt_gpg_key }}]{{ stackhpc_repo_grafana_apt_url }} stable main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_opensearch_noble_gpg_key }}]{{ stackhpc_repo_opensearch_noble_url }} stable main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_opensearch_dashboards_gpg_key }}]{{ stackhpc_repo_opensearch_dashboards_url }} stable main"
+  - "{{ stackhpc_ubuntu_repo_prefix }}[signed-by={{ stackhpc_repo_proxysql_3_0_noble_gpg_key }}]{{ stackhpc_repo_proxysql_3_0_noble_url }} ./"
+
 # List of repositories for Ubuntu Noble.
-stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
+stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos + stackhpc_ubuntu_noble_third_party_repos}}"
 
 # Whether to revert to the upstream mirrors in built Kolla container images.
 stackhpc_kolla_clean_up_repo_mirrors: true
