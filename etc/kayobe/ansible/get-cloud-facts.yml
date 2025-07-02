@@ -1,0 +1,64 @@
+---
+- name: Gather Cloud Facts
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Write facts to file
+      vars:
+        cloud_facts:
+          ansible_control_host_distribution: "{{ ansible_facts.distribution }}"
+          ansible_control_host_distribution_release: "{{ ansible_facts.distribution_release }}"
+          openstack_release: "{{ openstack_release }}"
+          controller_count: "{{ groups.controllers | length }}"
+          #re enable this block one at a time to find out which don't work
+          hypervisor_count: "{{ groups.hypervisors | length }}"
+          monitoring_count: "{{ groups.monitoring | length }}" 
+          osd_count: "{{ groups.osds | length }}"
+          compute_count: "{{ groups.compute | length }}"
+          # baremetal_count: "{{ groups.baremetal-compute | length }}"
+          ceph_release: "{{ cephadm_ceph_release }}" 
+          bifrost_version: "{{ kolla_bifrost_source_version }}"
+          barbican_enabled: "{{ kolla_enable_barbican }}"
+          nova_enabled: "{{ kolla_enable_nova }}"
+          neutron_enabled: "{{ kolla_enable_neutron }}"
+          ovs_enabled: "{{ kolla_enable_openvswitch }}"
+          ovn_enabled: "{{ kolla_enable_ovn }}"
+          glance_enabled: "{{ kolla_enable_glance }}"
+          cinder_enabled: "{{ kolla_enable_cinder }}"
+          keystone_enabled: "{{ kolla_enable_keystone }}"
+          horizon_enabled: "{{ kolla_enable_horizon }}"
+          fluentd_enabled: "{{ kolla_enable_fluentd }}"
+          rabbitmq_enabled: "{{ kolla_enable_rabbitmq }}"
+          mariadb_enabled: "{{ kolla_enable_mariadb }}"
+          mariabackup_enabled: "{{ kolla_enable_mariabackup }}"
+          memcached_enabled: "{{ kolla_enable_memcached }}"
+          haproxy_enabled: "{{ kolla_enable_haproxy }}"
+          keepalived_enabled: "{{ kolla_enable_keepalived }}"
+          octavia_enabled: "{{ kolla_enable_octavia }}"
+          designate_enabled: "{{ kolla_enable_designate }}"
+          manila_enabled: "{{ kolla_enable_manila }}"
+          magnum_enabled: "{{ kolla_enable_magnum }}"
+          heat_enabled: "{{ kolla_enable_heat }}"
+          ironic_enabled: "{{ kolla_enable_ironic }}"
+          # networking_generic_switch_enabled: can't find
+          skyline_enabled: "{{ kolla_enable_skyline }}"
+          # azimuth_enabled: can't find
+          blazar_enabled: "{{ kolla_enable_blazar }}"
+          # slurm_enabled: can't find
+          pulp_enabled: "{{ seed_pulp_container_enabled }}"
+          opensearch_enabled: "{{ kolla_enable_opensearch }}"
+          openearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
+          influxdb_enabled: "{{ kolla_enable_influxdb }}"
+          grafana_enabled: "{{ kolla_enable_grafana }}"
+          prometheus_enabled: "{{ kolla_enable_prometheus }}"
+          cloudkitty_enabled: "{{ kolla_enable_cloudkitty }}"
+          telegraf_enabled: "{{ kolla_enable_telegraf }}"
+          internal_tls_enabled: "{{ kolla_enable_tls_internal }}"
+          external_tls_enabled: "{{ kolla_enable_tls_external }}"
+          # firewalld_enabled: "{{ kolla_enable_external_api_firewalld }}"
+          local_pulp: "{{ stackhpc_repos_enabled }}"
+          # run network connectivity check
+          pulp_tls_enabled: "{{ pulp_enable_tls }}"
+      copy:
+        content: "{{ cloud_facts | to_json }}"
+        dest: ~/cloud-facts.json
