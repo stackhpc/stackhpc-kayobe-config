@@ -1,0 +1,159 @@
+---
+hpe_pfss_frontend: "2111,110"
+hpe_pfss_backend: "110"
+hpe_pfss_dmf_backend: "111"
+agr_idm: "2113"
+agr_dmf: "2071"
+agr_client_storage: "2103"
+external_vlans: "61,114,1441,1481,2071,2103,2107,2111,2113,2157,2167"
+test_external_vlans: "1482"
+agr_hpc_internal: "112"
+agr_hpc_internal_staging: "114"
+ironic_tenant_vlans: "160-179"
+sriov_vlans: "180"
+weka_frontend: "167"
+hpc3_storage_access: "168"
+hpc3_compute_internal: "169"
+hpc3_services_internal: "170"
+hpc3_proxy: "1441,1481,167,168,169,170"
+
+switch_interface_config_spine: "link state up"
+
+#looks like 'internal_provider_vlans' isn't used anymore, so removed from controller and compute below SEAN 24/7/23
+switch_interface_config_controller_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ tunnel_net_vlan }},{{ octavia_net_vlan }},{{ public_net_vlan }},{{ external_vlans }},{{ ironic_tenant_vlans }},{{ sriov_vlans }}"
+
+switch_interface_config_storage_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ storage_mgmt_net_vlan }}"
+
+switch_interface_config_compute_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ storage_mgmt_net_vlan }},{{ tunnel_net_vlan }},{{ octavia_net_vlan }},{{ external_vlans }},{{ ironic_tenant_vlans }},{{ sriov_vlans }},{{ hpe_pfss_backend }}"
+
+switch_interface_config_hpe_pfss_backend: "{{ bridge_trunk }} {{ hpe_pfss_backend }}"
+switch_interface_config_hpe_pfss_backend_pvid: "{{ bridge_trunk_native }} {{ hpe_pfss_backend }}"
+switch_interface_config_hpe_pfss_backend_dmf: "{{ bridge_trunk }} {{ hpe_pfss_dmf_backend }}"
+switch_interface_config_hpe_pfss_backend_dmf_pvid: "{{ bridge_trunk_native }} {{ hpe_pfss_dmf_backend }}"
+switch_interface_config_hpe_pfss_frontend: "{{ bridge_trunk }} {{ hpe_pfss_frontend }}"
+switch_interface_config_agr_client_storage: "{{ bridge_trunk }} {{ agr_client_storage }}"
+switch_interface_config_agr_idm: "{{ bridge_trunk }} {{ agr_idm }}"
+switch_interface_config_agr_dmf: "{{ bridge_trunk }} {{ agr_dmf }}"
+switch_interface_config_agr_hpc_internal: "{{ bridge_trunk }} {{ agr_hpc_internal }}"
+switch_interface_config_agr_hpc_internal_staging: "{{ bridge_trunk }} {{ agr_hpc_internal_staging }}"
+switch_interface_config_test_external: "{{ bridge_trunk }} {{ test_external_vlans }}"
+switch_interface_config_weka_frontend: "{{ bridge_access }} {{ weka_frontend }}"
+switch_interface_config_weka_frontend_pvid: "{{ bridge_trunk_native }} {{ weka_frontend }}"
+switch_interface_config_hpc3_storage_access: "{{ bridge_trunk }} {{ hpc3_storage_access }}"
+switch_interface_config_hpc3_services_proxy: "{{ bridge_trunk }} {{ hpc3_proxy }}"
+
+switch_vlan_vni_map:
+ 61: 10061
+ 65: 10065
+ 66: 10066
+ 67: 10067
+ 68: 10068
+ 69: 10069
+ 110: 10110
+ 112: 10112
+ 114: 10114
+ 160: 10160
+ 161: 10161
+ 162: 10162
+ 163: 10163
+ 164: 10164
+ 165: 10165
+ 166: 10166
+ 167: 10167
+ 168: 10168
+ 169: 10169
+ 170: 10170
+ 171: 10171
+ 172: 10172
+ 173: 10173
+ 174: 10174
+ 175: 10175
+ 176: 10176
+ 177: 10177
+ 178: 10178
+ 179: 10179
+ 961: 10961
+ 962: 10962
+ 998: 10998
+ 999: 10999
+ 1000: 11000
+ 1001: 11001
+ 1441: 11441
+ 1481: 11481
+ 1482: 11482
+ 2071: 12071
+ 2103: 12103
+ 2107: 12107
+ 2111: 12111
+ 2113: 12113
+ 2157: 12157
+ 2167: 12167
+
+switch_svi:
+  VRF_1:
+    61:
+      vrr: "10.1.61.254/24"
+      vrr_mac: "00:00:5E:00:01:02"
+    65:
+      vrr: "10.1.65.254/24"
+      vrr_mac: "00:00:5E:00:01:03"
+    66:
+      vrr: "10.1.66.254/24"
+      vrr_mac: "00:00:5E:00:01:04"
+    67:
+      vrr: "10.1.67.254/24"
+      vrr_mac: "00:00:5E:00:01:07"
+    68:
+      vrr: "10.1.68.254/24"
+      vrr_mac: "00:00:5E:00:01:08"
+    69:
+      vrr: "10.1.69.254/24"
+      vrr_mac: "00:00:5E:00:01:09"
+    167:
+      vrr: "10.230.1.254/23"
+      vrr_ip: "10.230.1.253/23"
+      vrr_mac: "00:00:5E:00:01:67"
+    168:
+      vrr: "10.1.168.254/24"
+      vrr_ip: "10.1.168.253/24"
+      vrr_mac: "00:00:5E:00:01:68"
+    169:
+      vrr: "10.231.255.254/16"
+      vrr_ip: "10.231.255.253/16"
+      vrr_mac: "00:00:5E:00:01:69"
+    170:
+      vrr: "10.232.255.254/16"
+      vrr_ip: "10.232.255.253/16"
+      vrr_mac: "00:00:5E:00:01:70"
+    171:
+      vrr: "10.233.1.254/23"
+      vrr_ip: "10.233.1.253/23"
+      vrr_mac: "00:00:5E:00:01:71"
+    172:
+      vrr: "10.233.5.254/23"
+      vrr_ip: "10.233.5.253/23"
+      vrr_mac: "00:00:5E:00:01:72"
+    173:
+      vrr: "10.234.255.254/23"
+      vrr_ip: "10.234.255.253/23"
+      vrr_mac: "00:00:5E:00:01:73"
+    174:
+      vrr: "10.235.255.254/23"
+      vrr_ip: "10.235.255.253/23"
+      vrr_mac: "00:00:5E:00:01:74"
+    961:
+      vrr: "10.1.91.254/24"
+      vrr_mac: "00:00:5E:00:01:05"
+    962:
+      vrr: "10.1.92.254/24"
+      vrr_mac: "00:00:5E:00:01:06"
+    1441:
+      vrr: "163.7.147.254/22"
+      vrr_mac: "00:00:5E:00:14:41"
+    1481:
+      vrr: "163.7.148.30/27"
+      vrr_mac: "00:00:5E:00:14:81"
+    1482:
+      vrr: "163.7.148.62/27"
+      vrr_mac: "00:00:5E:00:14:82"
+

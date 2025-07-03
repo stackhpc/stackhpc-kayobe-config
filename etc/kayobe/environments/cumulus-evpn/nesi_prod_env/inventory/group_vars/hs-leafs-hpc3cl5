@@ -1,0 +1,74 @@
+---
+switch_routing_bgp_vrfs:
+  VRF_1:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id {{ switch_routing_bgp_router_id }}
+    - address-family ipv4-unicast redistribute connected enable on
+    - address-family ipv4-unicast route-export to-evpn
+  VRF_2:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id  {{ switch_routing_bgp_router_id }}
+    - address-family ipv4-unicast redistribute connected enable on
+    - address-family ipv4-unicast route-export to-evpn
+
+switch_routing_vrfs:
+  VRF_1:
+    - "vni 3004002"
+    - "vlan 4002"
+  VRF_2:
+    - "vni 3004003"
+    - "vlan 4003"
+
+switch_routing_bgp_neighbors:
+  swp57:
+    - "peer-group underlay"
+  swp58:
+   - "peer-group underlay"
+  swp59:
+   - "peer-group underlay"
+  swp60:
+   - "peer-group underlay"
+  swp61:
+   - "peer-group underlay"
+  swp62:
+   - "peer-group underlay"
+  swp63:
+   - "peer-group underlay"
+  swp64:
+   - "peer-group underlay"
+  peerlink.4094:
+   - "remote-as internal"
+
+switch_interface_config_shared:
+  swp57:
+    description: "a09ds03"
+    config:
+      - link state up
+  swp58:
+    description: "a09ds03"
+    config:
+      - link state up
+  swp59:
+    description: "a09ds04"
+    config:
+      - link state up
+  swp60:
+    description: "a09ds04"
+    config:
+      - link state up
+  swp61:
+    description: "a05ds05"
+    config:
+      - link state up
+  swp62:
+    description: "a05ds05"
+    config:
+      - link state up
+  swp63:
+    description: "a05ds06"
+    config:
+      - link state up
+  swp64:
+    description: "a05ds06"
+    config:
+      - link state up

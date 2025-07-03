@@ -1,0 +1,24 @@
+# Switch configuration for a05dl06
+
+###############################################################################
+# Switch credentials.
+
+# Host/IP on which to access the switch via SSH.
+ansible_host: 10.110.115.56
+switch_hostname: a05dl06
+switch_type: nvue
+switch_role: leaf
+
+cumulus_loopback_ip: "{{ switch_routing_bgp_router_id }}/32"
+switch_routing_bgp_asn: 65006
+switch_routing_bgp_router_id: 10.1.1.6
+
+cumulus_peerlink_clag:
+  anycast_id: 105
+  backup_ip: "{{ switch_routing_bgp_router_id }}"
+  members: "swp31,swp32"
+  #peer_ip: linklocal
+  peer_ip: "169.254.0.1"
+  priority: 2000
+
+switch_interface_config_local: {}

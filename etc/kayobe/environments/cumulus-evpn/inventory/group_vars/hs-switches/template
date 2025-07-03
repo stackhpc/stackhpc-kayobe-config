@@ -1,0 +1,199 @@
+---
+switch_config_extra_leaf_nvue: "{{ switch_config_roce_nvue + (switch_config_mlag_nvue if cumulus_peerlink_clag is defined else []) + switch_config_vni_nvue | from_json }}"
+switch_config_extra_nclu: "{{ switch_config_routing_nclu + switch_config_bgp_nclu + switch_config_snmp_nclu + switch_config_roce_nclu }}"
+switch_config_extra_nvue: "{{ switch_config_routing_nvue + switch_config_bgp_nvue + switch_config_snmp_nvue + (switch_config_extra_leaf_nvue | default([]) if switch_role == 'leaf' else []) }}"
+
+switch_config_snmp_nclu:
+  - add snmp-server readonly-community neteng access any
+  - "add snmp-server listening-address {{ ansible_host }} vrf mgmt"
+  - add snmp-server viewname systemonly included .1.3.6.1.4.1.40310.1
+  - add snmp-server viewname systemonly included .1.3.6.1.4.1.40310.2
+  - add snmp-server viewname systemonly included .1.3.6.1.4.1.2021.4
+  - add snmp-server viewname systemonly included .1.3.6.1.4.1.2021.11
+
+switch_config_snmp_nvue:
+  - set system snmp-server state enabled
+  - set system snmp-server listening-address {{ ansible_host }}
+
+switch_config_bgp_nclu: "{{ switch_config_bgp_default_nclu + switch_config_bgp_neighbors_nclu | from_json + switch_config_bgp_vrfs_nclu | from_json }}"
+switch_config_bgp_nvue: "{{ switch_config_bgp_default_nvue + switch_config_bgp_neighbors_nvue | from_json + switch_config_bgp_vrfs_nvue | from_json }}"
+switch_config_bgp_default_nclu:
+  - add bgp autonomous-system {{ switch_routing_bgp_asn }}
+  - add bgp router-id {{ switch_routing_bgp_router_id }}
+  - "{% if switch_role != 'spine' | default(True) %}add bgp bestpath as-path multipath-relax{% endif %}"
+  - add bgp neighbor underlay peer-group
+  - add bgp neighbor underlay remote-as external
+  - "{% if switch_role != 'spine' | default(True) %}add bgp neighbor underlay bfd{% endif %}"
+  - "add bgp ipv4 unicast redistribute connected {% if switch_role != 'spine' | default(True) %}route-map CONNECTED_V4{% endif %}"
+  - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  neighbor underlay activate{% endif %}"
+  - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  advertise-all-vni{% endif %}"
+
+switch_config_bgp_default_nvue:
+  - set router bgp autonomous-system {{ switch_routing_bgp_asn }}
+  - set router bgp router-id {{ switch_routing_bgp_router_id }}
+  - "{% if switch_role != 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
+  - set vrf default router bgp peer-group underlay remote-as external
+  - set vrf default router bgp peer-group underlay address-family l2vpn-evpn enable on
+  - "{% if switch_role != 'spine' %}set vrf default router bgp peer-group underlay bfd{% endif %}"
+  - set vrf default router bgp address-family ipv4-unicast redistribute connected
+  - set vrf default router bgp address-family l2vpn-evpn enable on
+  - set nve vxlan source address {{ switch_routing_bgp_router_id }}
+  - set nve vxlan arp-nd-suppress on
+  - set evpn enable on
+
+switch_routing_bgp_neighbors: {}
+
+switch_config_bgp_neighbors_nclu: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_bgp_neighbors.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add bgp neighbor " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_bgp_neighbors_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_bgp_neighbors.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("set vrf default router bgp neighbor " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_routing_bgp_vrfs: {}
+
+switch_config_bgp_vrfs_nclu: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_bgp_vrfs.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add bgp vrf " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_bgp_vrfs_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_bgp_vrfs.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("set vrf " + key + " router bgp " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_routing_route_maps: {}
+
+switch_config_routing_route_maps_nclu: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_route_maps.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add routing route-map " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_routing_route_maps_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_route_maps.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("set router policy route-map " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_routing_prefix_lists: {}
+
+switch_config_routing_prefix_lists_nclu: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_prefix_lists.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add routing prefix-list ipv4 " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_routing_prefix_lists_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_prefix_lists.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add routing prefix-list ipv4 " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_routing_vrfs: {}
+
+switch_config_routing_vrfs_nclu: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_vrfs.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("add vrf " + key + " " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_routing_vrfs_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_routing_vrfs.items() -%}
+  {%- for val in value -%}
+  {% set x=result.append("set vrf " + key + " evpn " + val | string) %}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_config_routing_default_nclu:
+  - add routing defaults datacenter
+  - add routing service integrated-vtysh-config
+  - add routing log syslog informational
+
+switch_config_routing_default_nvue: []
+
+switch_config_routing_nclu: "{{ switch_config_routing_default_nclu + switch_config_routing_vrfs_nclu | from_json + switch_config_routing_prefix_lists_nclu | from_json + switch_config_routing_route_maps_nclu | from_json + switch_config_bgp_nclu }}"
+switch_config_routing_nvue: "{{ switch_config_routing_default_nvue + switch_config_routing_vrfs_nvue | from_json + switch_config_routing_prefix_lists_nvue | from_json + switch_config_routing_route_maps_nvue | from_json + switch_config_bgp_nvue + (switch_config_svi_nvue | from_json if switch_role == 'leaf' else []) }}"
+
+switch_config_roce_nclu:
+  - add roce lossless
+
+switch_config_roce_nvue: []
+
+switch_config_mlag_nvue:
+  - "set interface peerlink bond member {{ cumulus_peerlink_clag.members }}"
+  - "{% if cumulus_peerlink_clag.peer_ip is defined %}set interface peerlink.4094 ip address 169.254.0.{{ (cumulus_peerlink_clag.priority / 1000) | int }}/30{% endif %}"
+  - "set system global anycast-id {{ cumulus_peerlink_clag.anycast_id }}"
+  - "set mlag backup {{ cumulus_peerlink_clag.backup_ip }}"
+  - "set mlag peer-ip {% if cumulus_peerlink_clag.peer_ip is defined %}{{ cumulus_peerlink_clag.peer_ip }}{% else %}linklocal{% endif %}"
+  - "set mlag priority  {{ cumulus_peerlink_clag.priority }}"
+  - set mlag init-delay 10
+
+switch_vlan_vni_map: {}
+
+switch_config_vni_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_vlan_vni_map.items() -%}
+  {% set x=result.append("set bridge domain br_default vlan " + key | string + " vni " + value | string) %}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_svi: {}
+
+switch_config_svi_nvue: >-
+  {% set result=[] %}
+  {%- for vrf, parent_dict_item in switch_svi.items() -%}
+  {%- for vlan, nested_value in parent_dict_item.items() -%}
+  {%- if nested_value['host'] is not defined or nested_value['host'] in ['all', inventory_hostname] -%}
+  {%- if nested_value['ip'] is defined -%}
+  {% set x=result.append("set interface vlan" + vlan | string + " ip address " + nested_value['ip'] | string) %}
+  {%- endif -%}
+  {%- if nested_value['vrr'] is defined -%}
+  {% set x=result.append("set interface vlan" + vlan | string + " ip vrr address " + nested_value['vrr'] | string) %}
+  {%- endif -%}
+  {%- if nested_value['vrr_mac'] is defined -%}
+  {% set x=result.append("set interface vlan" + vlan | string + " ip vrr mac-address " + nested_value['vrr_mac'] | string) %}
+  {%- endif -%}
+  {% set x=result.append("set interface vlan" + vlan | string + " ip vrr state up") %}
+  {% set x=result.append("set interface vlan" + vlan | string + " ip vrf " + vrf | string) %}
+  {%- endif -%}
+  {%- endfor -%}
+  {%- endfor -%}
+  {{ result | to_json }}
+

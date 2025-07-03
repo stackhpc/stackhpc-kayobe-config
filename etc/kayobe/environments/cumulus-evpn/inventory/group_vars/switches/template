@@ -1,0 +1,146 @@
+---
+ansible_user: kayobe_admin
+ansible_ssh_private_key_file: "~/.ssh/kayobe_admin"
+ansible_python_interpreter: /usr/bin/python3
+
+switch_config: "{{ switch_config_del_nclu if (nclu_del_all | default(false)) else []  + switch_config_default_nclu + (switch_config_extra_nclu | default([])) if switch_type == 'nclu' else switch_config_del_nvue + switch_config_default_nvue + (switch_config_extra_nvue | default([])) if switch_type == 'nvue' }}"
+switch_config_default_nclu: "{{ switch_hostname_config_nclu + switch_dns_config_nclu | from_json + switch_loopback_config_nclu + switch_ntp_config_nclu + switch_vrf_mgmt_config_nclu }}"
+switch_config_default_nvue: "{{ switch_system_config_nvue + switch_aaa_config_nvue + switch_hostname_config_nvue + switch_dns_config_nvue | from_json + switch_loopback_config_nvue + switch_ntp_config_nvue + switch_vrf_mgmt_config_nvue }}"
+
+switch_config_del_nclu:
+  - "del all"
+
+switch_config_del_nvue:
+  - "unset acl"
+  - "unset bridge"
+  - "unset evpn"
+  - "unset interface"
+  - "unset mlag"
+  - "unset nve"
+  - "unset qos"
+  - "unset router"
+  - "unset service"
+  - "unset system"
+  - "unset vrf"
+
+switch_aaa_config_nvue:
+  - set system aaa class nvapply action allow
+  - set system aaa class nvapply command-path / permission all
+  - set system aaa class nvshow action allow
+  - set system aaa class nvshow command-path / permission ro
+  - set system aaa class sudo action allow
+  - set system aaa class sudo command-path / permission all
+  - set system aaa role nvue-admin class nvapply
+  - set system aaa role nvue-monitor class nvshow
+  - set system aaa role system-admin class nvapply
+  - set system aaa role system-admin class sudo
+  - set system aaa user cumulus full-name \'cumulus,,,\'
+  - set system aaa user cumulus role system-admin
+  - set system aaa user cumulus hashed-password \'$6$trP9Hlmn2J4oJFri$DZBFo9k5neWjyNd92kP5XafKSLDoUieldApIRirJ24A9WiNaHgx9U7h6cTHPiUwKyIJlrS0sccrXbeXQor7kY0\'
+  - set system aaa user cumulus ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQC7qeeANSEPwkkZOjVSLOUTzWSkzwRk3KpKegYXSEQiDpDPIir7yDwpINAH134Uy3TT/FIhSjwa7YG1PeFPsBjhSsUyNFTOEex4eua+68ZUdJVdX17gV6qorAoi1q7HU+uDu+vxaXGxIUs1g0Mbj9iJZHMkMKkKyjNI5kGULmlH5MSAc2VBJ8X+ykpr9T9KHA25pdTs1YcqLZgB8qh26LCktZIEPeOK1WKAf/iPNd6opqch4NigIvT2SQLJXH/fjY51PupXG9qEebc0PVGOR1AinFvWLMgrreg/M25/ctGPca8zx7EfkCCZagolTncDtAO/5qUKteBkE0c+uiCTDrr1PmxxwgLt83x9lElW473IdMUQdpjuGLsN3vcwfirOT6TshcXsStqMQailJqM8H9He4kroK4IPrB6VK1tnG4Uu4Pr+spZOk6n+WFwsnPGJCqrrGIVnjGhBEUgm/WBG3o1a7c0qGTb55/XThRUFYONK4gE5/VTFayYg9TYzovBTof0=
+  - set system aaa user cumulus ssh authorized-key nesjumprd01 type ssh-rsa
+  - set system aaa user ironic_admin full-name \'Ironic/NGS user\'
+  - set system aaa user ironic_admin role nvue-admin
+  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDaQOnXWzinD1s2++gnZ6uhFJ3fl7PEY1YrEkPLcov+4Phi/Aoj2nUO2BdU9mpQAqvYz+pevArjcbfx9f1winDtSwaDg0P5McY7QGOM541TONVqPaKwiM0AcvA2oag1s47Vb20lx/PJsx0hwCrqqSYbQConxQ0WXl0JpM5HhlcK5+tn909RxRGjtOidMtMyxY15dTUfRrmu/4mt2rQNRxbVq0528UHqnfl9IGC4IWYx8kMyevJJIgVjWIlILMw9V2psDCTPj2l4E50ra997M3SuNAZfrvfi0+s8yZFrU5ArBGJsYUOGUE8jH+pNzNtyceM5Awwq1qoMVbUAtS5aqHXBopjgNp85Ydf90LJ8oNJfMPBM5vo3baZMP+if24PkIk/6zwVzPiNVl5ItFv9zhg1x4Fyo/VjDPh7ObVtaoXIMc87zGuqmo+XBfcZ4xiLtOSKN0AnDPKu8SvJU4fe3+ViGjOpoLg4oWhm+19CZettNCF+Km44ee2Dh6F9W/8xM7S8=
+  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 type ssh-rsa
+  - set system aaa user kayobe_admin full-name \'Kayobe admin user\'
+  - set system aaa user kayobe_admin role nvue-admin
+  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDOsvfcl9AINL7OeAuJX1Wi+ppR7+EqsIj51ujnqX9HuVoxt5kxVrIuM/NeZJXwR29ozrkIFjaDnExsNaN9hKlzagPdE46HSKaDOGyvZJW75AoXZrxAD6TzerpxmItqCnbQIEp3Fr4QE9Y8dzPE4XmT+nctKOy4Wtzh/AsUnwdMnTPQK3v9EJnm9FR3OCWI9I3eFKLKtOXQQEcn2tF6BvVT6ylURrtldRmJgnAlh4PDU1+qfMUgIrwE79RbNMwq1RL82gTN0g5bVPAvsfP0K68yh5TJBxt+KIAfw2A6Gu2IFS7kdUEvraO8VIcDrE+XLjVU2rOU5POTAPMlihbBJrB+hgJqJVBxrxMk6EPQovFnM+lXZ094750qB+TTW7LPFByuOap5SaIuEVxilLudmhU0FflHEnxD4jRYKmtRMvqbul0SOVhGO2CHrKae3cTXs2MIbZfSux9utzhi3xcqi4wpEQN+9EVkFu6QrseSsbbcyvZ7Yz5sfbadjIh4VcK4J/c=
+  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 type ssh-rsa
+
+switch_system_config_nvue:
+  - set system api state enabled
+  - set system config auto-save state enabled
+  - set system control-plane acl acl-default-dos inbound
+  - set system control-plane acl acl-default-whitelist inbound
+  - set system reboot mode cold
+  - set system security password-hardening expiration -1
+  - set system security password-hardening expiration-warning -1
+  - set system ssh-server state enabled
+  - set system wjh channel forwarding trigger l2
+  - set system wjh channel forwarding trigger l3
+  - set system wjh channel forwarding trigger tunnel
+  - set system wjh enable on
+
+switch_hostname_config_nclu:
+  - "add hostname {{ switch_hostname }}"
+
+switch_hostname_config_nvue:
+  - "set system hostname {{ switch_hostname }}"
+  - "set interface eth0 type eth"
+  - "set interface eth0 ip vrf mgmt"
+  - "set interface eth0 ip address {{ ansible_host }}/24"
+  - "set interface eth0 ip gateway {{ switch_mgmt_gateway }}"
+
+switch_dns_config_nclu: >-
+  {% set result=[] %}
+  {%- for value in switch_dns_servers -%}
+  {% set x=result.append("add dns nameserver ipv4 " + value | string + " vrf mgmt") %}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_dns_config_nvue: >-
+  {% set result=[] %}
+  {%- for value in switch_dns_servers -%}
+  {% set x=result.append("set service dns mgmt server " + value | string) %}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_loopback_config_nclu:
+  - "{% if cumulus_vxlan_anycast_ip is defined %}add loopback lo clag vxlan-anycast-ip {{ cumulus_vxlan_anycast_ip }}{% endif %}"
+  - "{% if cumulus_vxlan_local_tunnel_ip is defined %}add loopback lo vxlan local-tunnelip {{ cumulus_vxlan_local_tunnel_ip }}{% endif %}"
+  - "{% if cumulus_loopback_ip is defined %}add loopback lo ip address {{ cumulus_loopback_ip }}{% endif %}"
+
+switch_loopback_config_nvue:
+  - "{% if cumulus_vxlan_anycast_ip is defined %}set nve vxlan mlag shared-address {{ cumulus_vxlan_anycast_ip }}{% endif %}"
+  - "{% if cumulus_vxlan_local_tunnel_ip is defined %}set nve vxlan source address {{ cumulus_vxlan_local_tunnel_ip }}{% endif %}"
+  - "{% if cumulus_loopback_ip is defined %}set interface lo ip address {{ cumulus_loopback_ip }}{% endif %}"
+
+switch_ntp_config_nclu:
+  - add time zone {{ switch_timezone | default('UTC') }}
+  - del time ntp server 0.cumulusnetworks.pool.ntp.org
+  - del time ntp server 1.cumulusnetworks.pool.ntp.org
+  - del time ntp server 2.cumulusnetworks.pool.ntp.org
+  - del time ntp server 3.cumulusnetworks.pool.ntp.org
+  - "{% for ntp_server in switch_ntp_servers | default([]) %}add time ntp server {{ ntp_server }} iburst{% if not loop.last %} {% endif %}{% endfor %}"
+  - add time ntp source {{ switch_ntp_source | default('eth0') }}
+
+switch_ntp_config_nvue:
+  - set system timezone {{ switch_timezone | default('UTC') }}
+  - unset service ntp default server 0.cumulusnetworks.pool.ntp.org
+  - unset service ntp default server 1.cumulusnetworks.pool.ntp.org
+  - unset service ntp default server 2.cumulusnetworks.pool.ntp.org
+  - unset service ntp default server 3.cumulusnetworks.pool.ntp.org
+  - unset service ntp default
+  - "{% for ntp_server in switch_ntp_servers | default([]) %}set service ntp mgmt server {{ ntp_server }} iburst on{% if not loop.last %} {% endif %}{% endfor %}"
+  - set service ntp mgmt listen {{ switch_ntp_source | default('eth0') }}
+
+switch_vrf_mgmt_config_nclu:
+  - add vrf mgmt ip address 127.0.0.1/8
+  - add vrf mgmt ipv6 address ::1/128
+  - add vrf mgmt vrf-table auto
+
+switch_vrf_mgmt_config_nvue: []
+
+switch_config_svi_nvue: >-
+  {% set result=[] %}
+  {%- for key, value in switch_svi.items() -%}
+  {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + value | string) %}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+# Additional ,,macros''
+bond_lacp_bypass: "{% if switch_type == 'nclu' %}{% elif switch_type == 'nvue' %}bond lacp-bypass on{% endif %}"
+bond_members: "bond {% if switch_type == 'nclu' %}slaves{% elif switch_type == 'nvue' %}member{% endif %}"
+bond_mlag_id: "{% if switch_type == 'nclu' %}clag{% elif switch_type == 'nvue' %}bond mlag{% endif %} id"
+bridge_access: "bridge {% if switch_type == 'nclu' %}access{% elif switch_type == 'nvue' %}domain br_default access{% endif %}"
+bridge_trunk: "bridge {% if switch_type == 'nclu' %}vids{% elif switch_type == 'nvue' %}domain br_default vlan{% endif %}"
+bridge_trunk_native: "bridge {% if switch_type == 'nclu' %}pvid{% elif switch_type == 'nvue' %}domain br_default untagged{% endif %}"
+
+switch_peerlink_config_nclu:
+  - clag backup-ip {{ cumulus_peerlink_clag.backup_ip }}
+  - clag peer-ip {{ cumulus_peerlink_clag.peer_ip }}
+  - clag priority {{ cumulus_peerlink_clag.priority }}
+  - clag sys-mac {{ cumulus_peerlink_clag.sysmac }}
+
+switch_interface_config: "{{ (switch_interface_config_shared | default({})) | combine(switch_interface_config_shared_svi | default({})) | combine(switch_interface_config_local | default({})) }}"

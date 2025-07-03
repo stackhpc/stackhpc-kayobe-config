@@ -1,0 +1,452 @@
+---
+cumulus_vxlan_anycast_ip: 10.1.1.105
+
+switch_routing_bgp_vrfs:
+  VRF_1:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id {{ switch_routing_bgp_router_id }}
+    - address-family ipv4-unicast redistribute connected enable on
+    - address-family ipv4-unicast route-export to-evpn
+  VRF_2:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id  {{ switch_routing_bgp_router_id }}
+    - address-family ipv4-unicast redistribute connected enable on
+    - address-family ipv4-unicast route-export to-evpn
+
+switch_routing_vrfs:
+  VRF_1:
+    - "vni 3004002"
+    - "vlan 4002"
+  VRF_2:
+    - "vni 3004003"
+    - "vlan 4003"
+
+switch_routing_bgp_neighbors:
+  swp23:
+   - "peer-group underlay"
+  swp24:
+   - "peer-group underlay"
+  swp25:
+   - "peer-group underlay"
+  swp26:
+   - "peer-group underlay"
+  swp27:
+   - "peer-group underlay"
+  swp28:
+   - "peer-group underlay"
+  swp29:
+   - "peer-group underlay"
+  swp30:
+   - "peer-group underlay"
+  peerlink.4094:
+   - "remote-as internal"
+switch_interface_config_shared:
+  swp1:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp1s0:
+    description: "a06ss07"
+    config:
+      - "link state up"
+  bond1s0:
+    type: bond
+    description: "a06ss07"
+    config:
+      - bond member swp1s0
+      - bond mlag id 100
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp1s1:
+    description: "a06ss08"
+    config:
+      - "link state up"
+  bond1s1:
+    type: bond
+    description: "a06ss08"
+    config:
+      - bond member swp1s1
+      - bond mlag id 101
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp2:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp2s0:
+    description: "a06ss09"
+    config:
+      - "link state up"
+  bond2s0:
+    type: bond
+    description: "a06ss09"
+    config:
+      - bond member swp2s0
+      - bond mlag id 200
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp2s1:
+    description: "a06ss10"
+    config:
+      - "link state up"	
+  bond2s1:
+    type: bond
+    description: "a06ss10"
+    config:
+      - bond member swp2s1
+      - bond mlag id 201
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"	  
+  swp3:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp3s0:
+    description: "a06ss11"
+    config:
+      - "link state up"
+  bond3s0:
+    type: bond
+    description: "a06ss11"
+    config:
+      - bond member swp3s0
+      - bond mlag id 300
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp3s1:
+    description: "a06ss12"
+    config:
+      - "link state up"	 
+  bond3s1:
+    type: bond
+    description: "a06ss12"
+    config:
+      - bond member swp3s1
+      - bond mlag id 301
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp4:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp4s0:
+    description: "a06ss13"
+    config:
+      - "link state up"
+  bond4s0:
+    type: bond
+    description: "a06ss13"
+    config:
+      - bond member swp4s0
+      - bond mlag id 400
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp4s1:
+    description: "a06ss14"
+    config:
+      - "link state up"
+  bond4s1:
+    type: bond
+    description: "a06ss14"
+    config:
+      - bond member swp4s1
+      - bond mlag id 401
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp5:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp5s0:
+    description: "a06ss15"
+    config:
+      - "link state up"
+  bond5s0:
+    type: bond
+    description: "a06ss15"
+    config:
+      - bond member swp5s0
+      - bond mlag id 500
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp5s1:
+    description: "a06ss16"
+    config:
+      - "link state up"
+  bond5s1:
+    type: bond
+    description: "a06ss16"
+    config:
+      - bond member swp5s1
+      - bond mlag id 501
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp6:
+    config:
+      - "link breakout 2x"
+      - "link state up"
+  swp6s0:
+    description: "a06ss17"
+    config:
+      - "link state up"
+  bond6s0:
+    type: bond
+    description: "a06ss17"
+    config:
+      - bond member swp6s0
+      - bond mlag id 600
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp6s1:
+    description: "a06ss18"
+    config:
+      - "link state up"
+  bond6s1:
+    type: bond
+    description: "a06ss18"
+    config:
+      - bond member swp6s1
+      - bond mlag id 601
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_storage_data }}"
+  swp7:
+    description: "a06co13"
+    config:
+      - "link state up"
+  bond7:
+    type: bond
+    description: "a06co13"
+    config:
+      - bond member swp7
+      - bond mlag id 700
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_compute_data }}"
+  swp8:
+    description: "a06co14"
+    config:
+      - "link state up"
+  bond8:
+    type: bond
+    description: "a06co14"
+    config:
+      - bond member swp8
+      - bond mlag id 800
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_compute_data }}"
+  swp9:
+    description: "a06co15"
+    config:
+      - "link state up"
+  bond9:
+    type: bond
+    description: "a06co15"
+    config:
+      - bond member swp9
+      - bond mlag id 900
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_compute_data }}"  
+  swp10:
+    description: "a06co16"
+    config:
+      - "link state up"
+  bond10:
+    type: bond
+    description: "a06co16"
+    config:
+      - bond member swp10
+      - bond mlag id 1000
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_compute_data }}"
+  swp11:
+    description: "a05vs01"
+    config:
+      - "link state up"
+  swp12:
+    description: "a05vs02"
+    config:
+      - "link state up"
+  swp13:
+    config:
+      - "link breakout 4x"
+      - "link state up"
+  swp13s0:
+    description: "a05wfs01"
+    config:
+      - "link state up"
+  bond13s0:
+    type: bond
+    description: "a05wfs01-bond"
+    config:
+      - bond member swp13s0
+      - bond mlag id 1300
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp13s1:
+    description: "a05wfs02"
+    config:
+      - "link state up"
+  bond13s1:
+    type: bond
+    description: "a05wfs02-bond"
+    config:
+      - bond member swp13s1
+      - bond mlag id 1301
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp13s2:
+    description: "a05wfs03"
+    config:
+      - "link state up"
+  bond13s2:
+    type: bond
+    description: "a05wfs03-bond"
+    config:
+      - bond member swp13s2
+      - bond mlag id 1302
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp13s3:
+    description: "a05wfs04"
+    config:
+      - "link state up"
+  bond13s3:
+    type: bond
+    description: "a05wfs04-bond"
+    config:
+      - bond member swp13s3
+      - bond mlag id 1303
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp14:
+    config:
+      - "link breakout 4x"
+      - "link state up"
+  swp14s0:
+    description: "a05wfs05"
+    config:
+      - "link state up"
+  bond14s0:
+    type: bond
+    description: "a05wfs05-bond"
+    config:
+      - bond member swp14s0
+      - bond mlag id 1400
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp14s1:
+    description: "a05wfs06"
+    config:
+      - "link state up"
+  bond14s1:
+    type: bond
+    description: "a05wfs06-bond"
+    config:
+      - bond member swp14s1
+      - bond mlag id 1401
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp14s2:
+    description: "a05wfs07"
+    config:
+      - "link state up"
+  bond14s2:
+    type: bond
+    description: "a05wfs07-bond"
+    config:
+      - bond member swp14s2
+      - bond mlag id 1402
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_storage_access }}"
+  swp14s3:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp15:
+    description: "a06prox01"
+    config:
+      - "link state up"
+  bond15:
+    type: bond
+    description: "a06prox01-bond"
+    config:
+      - bond member swp15
+      - bond mlag id 1500
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_services_proxy }}"
+  swp16:
+    description: "a06prox02"
+    config:
+      - "link state up"
+  bond16:
+    type: bond
+    description: "a06prox02-bond"
+    config:
+      - bond member swp16
+      - bond mlag id 1600
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_services_proxy }}"
+  swp17:
+    description: "a06prox03"
+    config:
+      - "link state up"
+  bond17:
+    type: bond
+    description: "a06prox03-bond"
+    config:
+      - bond member swp17
+      - bond mlag id 1700
+      - bond lacp-bypass off
+      - "{{ switch_interface_config_hpc3_services_proxy }}"
+  swp18:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp19:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp20:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp21:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp22:
+    description: "UNUSED"
+    config:
+      - "link state down"
+  swp23:
+    description: "a09ds03"
+    config:
+      - link state up
+  swp24:
+    description: "a09ds03"
+    config:
+      - link state up
+  swp25:
+    description: "a09ds04"
+    config:
+      - link state up
+  swp26:
+    description: "a09ds04"
+    config:
+      - link state up
+  swp27:
+    description: "a05ds05"
+    config:
+      - link state up
+  swp28:
+    description: "a05ds05"
+    config:
+      - link state up
+  swp29:
+    description: "a05ds06"
+    config:
+      - link state up
+  swp30:
+    description: "a05ds06"
+    config:
+      - link state up
+
