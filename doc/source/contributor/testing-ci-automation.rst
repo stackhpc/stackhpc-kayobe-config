@@ -83,8 +83,8 @@ jobs:
     present in the ``stackhpc-dev`` namespace in Ark.
 
   Uses the ``.github/workflows/stackhpc-check-tags.yml`` reusable workflow,
-  which runs the ``etc/kayobe/ansible/check-tags.yml`` and
-  ``etc/kayobe/ansible/check-kolla-images-py.yml`` playbooks.
+  which runs the ``etc/kayobe/ansible/tools/check-tags.yml`` and
+  ``etc/kayobe/ansible/tools/check-kolla-images-py.yml`` playbooks.
 ``aio [upgrade] (<OS> <neutron plugin>)``
   Runs an all-in-one OpenStack deployment test.
   Various jobs are run using different parameters.

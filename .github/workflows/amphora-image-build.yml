@@ -212,7 +212,7 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/octavia-amphora-image-build.yml -e amphora_image_dest=/opt/kayobe/images/amphora/amphora-x64-haproxy.qcow2
+          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/maintenance/octavia-amphora-image-build.yml -e amphora_image_dest=/opt/kayobe/images/amphora/amphora-x64-haproxy.qcow2
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -231,7 +231,7 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/amphora \
           -e artifact_tag=${{ steps.image_tag.outputs.image_tag }} \
           -e file_regex="*.qcow2" \

@@ -32,13 +32,13 @@
             dest: "{{ diagnostics_tmpdir.path }}/facts.json"
 
         - name: Run diagnostics script
-          ansible.builtin.script: "{{ kayobe_config_path }}/../../tools/diagnostics.sh"
+          ansible.builtin.script: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../../tools/diagnostics.sh"
           become: true
           failed_when: diagnostics_result.rc is not defined
           register: diagnostics_result
           environment:
             LOG_DIR: "{{ diagnostics_tmpdir.path }}"
-            CONFIG_DIR: "{{ kayobe_config_path }}/../.."
+            CONFIG_DIR: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../.."
 
         - name: Download diagnostic logs to localhost
           ansible.posix.synchronize:

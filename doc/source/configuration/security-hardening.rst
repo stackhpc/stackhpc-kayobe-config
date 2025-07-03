@@ -46,7 +46,7 @@ whether or not workloads or API requests are affected by any configuration chang
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/cis.yml
 
 Targetting additional hosts
 ---------------------------

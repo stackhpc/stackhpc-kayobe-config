@@ -39,7 +39,7 @@
 
     - name: Run init-run-once
       ansible.builtin.script:
-        cmd: scripts/aio-init.sh
+        cmd: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/scripts/aio-init.sh"
         creates: /tmp/.init-runonce
       environment:
         KOLLA_OPENSTACK_COMMAND: "{{ venv }}/bin/openstack"

@@ -177,13 +177,13 @@ If using an LVM-based image, grow the root volume group.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/growroot.yml
+   kayobe playbook run etc/kayobe/ansible/tools/growroot.yml
 
 On Ubuntu systems, purge the command-not-found package.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/purge-command-not-found.yml
+   kayobe playbook run etc/kayobe/ansible/fixes/purge-command-not-found.yml
 
 Next, configure the host OS & services.
 

@@ -18,14 +18,14 @@
     - name: Check image mapping
       ansible.builtin.command:
         cmd: >-
-          {{ kayobe_config_path }}/../../tools/kolla-images.py
+          {{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../../tools/kolla-images.py
           check-image-map
           --kolla-ansible-path {{ tempdir_result.path }}
 
     - name: Check tag hierarchy
       ansible.builtin.command:
         cmd: >-
-          {{ kayobe_config_path }}/../../tools/kolla-images.py
+          {{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../../tools/kolla-images.py
           check-hierarchy
           --kolla-ansible-path {{ tempdir_result.path }}
 

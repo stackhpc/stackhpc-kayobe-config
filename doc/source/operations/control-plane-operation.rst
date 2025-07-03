@@ -249,7 +249,7 @@ Example: Reboot all compute hosts apart from compute0:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit 'compute:!compute0'
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit 'compute:!compute0'
 
 References
 ----------
@@ -346,22 +346,22 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 If the system is production environment and want to use packages tested in test/staging
 environment, you can promote them by:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 To sync container images:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 For more information about StackHPC Release Train, see :ref:`stackhpc-release-train` documentation.
 

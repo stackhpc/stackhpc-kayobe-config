@@ -20,7 +20,7 @@ The playbook can be invoked with:
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/hotfix-containers.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/hotfix-containers.yml
 
 Playbook variables:
 -------------------
@@ -49,7 +49,7 @@ to a file, then add them as an extra var. e.g:
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/hotfix-containers.yml -e "@~/vars.yml"
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/hotfix-containers.yml -e "@~/vars.yml"
 
 
 Example Variables file

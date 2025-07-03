@@ -131,6 +131,22 @@ For example:
          - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
       enabled: "{{ seed_pulp_container_enabled | bool }}"
 
+Ansible playbook subdirectories
+--------------------------------------
+
+The playbooks under ``etc/kayobe/ansible`` have been subdivided into different
+categories to make them easier to navigate. This change may result in merge
+conflicts where playbooks have been edited downstream, and broken hooks where
+symlinks have been used.
+
+To mitigate the impact of these changes, two scripts have been added:
+
+* ``tools/get-new-playbook-path.sh`` - Returns the new category of a given
+  playbook. For example ``tools/get-new-playbook-path.sh
+  deploy-os-capacity-exporter.yml`` returns ``deployment/``
+* ``tools/magic-symlink-fix.sh`` - Uses the previous script to attempt to fix
+  any broken symlinks in the kayobe configuration.
+
 Known issues
 ============
 
@@ -573,22 +589,22 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 Once the host package content has been tested in a test/staging environment, it
 may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 To sync container images:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 Build locally customised container images
 -----------------------------------------
@@ -714,7 +730,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed-hypervisor
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed-hypervisor
 
 Upgrading Host Services
 -----------------------
@@ -780,7 +796,7 @@ If the kernel has been upgraded, reboot the seed to pick up the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed
 
 Verify that Bifrost, Ironic and Inspector are running as expected:
 
@@ -918,7 +934,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l wazuh-manager
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l wazuh-manager
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -956,7 +972,7 @@ Run the following playbook to update Wazuh Manager services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -978,7 +994,7 @@ Run the following playbook to update Wazuh Agent services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml
 
 Verify that the agents have conncted to Wazuh Manager correctly by
 :ref:`logging into the Wazuh UI <wazuh-verification>`.
@@ -1034,7 +1050,7 @@ the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 .. warning::
 
@@ -1045,10 +1061,10 @@ the change:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host package update --packages "*" --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are
@@ -1058,7 +1074,7 @@ If the host is a hypervisor, enable the Nova compute service.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-enable.yml --limit <host>
 
 If any VMs were powered off, they may now be powered back on.
 
@@ -1114,9 +1130,9 @@ least start with a small number of hosts:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host configure --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are

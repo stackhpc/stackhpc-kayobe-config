@@ -129,13 +129,13 @@ If using an LVM-based image, grow the root volume group.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/growroot.yml -e growroot_group=seed
+   kayobe playbook run etc/kayobe/ansible/tools/growroot.yml -e growroot_group=seed
 
 On Ubuntu systems, purge the command-not-found package.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/purge-command-not-found.yml
+   kayobe playbook run etc/kayobe/ansible/fixes/purge-command-not-found.yml
 
 Next, configure the host OS & services.
 
@@ -176,7 +176,7 @@ To deploy the proxy:
 
 .. parsed-literal::
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-auth-proxy.yml
 
 Building images
 ===============
