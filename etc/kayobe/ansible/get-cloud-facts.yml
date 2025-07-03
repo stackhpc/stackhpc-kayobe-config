@@ -9,14 +9,20 @@
           ansible_control_host_distribution: "{{ ansible_facts.distribution }}"
           ansible_control_host_distribution_release: "{{ ansible_facts.distribution_release }}"
           openstack_release: "{{ openstack_release }}"
-          controller_count: "{{ groups.controllers | length }}"
-          #re enable this block one at a time to find out which don't work
-          hypervisor_count: "{{ groups.hypervisors | length }}"
-          monitoring_count: "{{ groups.monitoring | length }}" 
-          osd_count: "{{ groups.osds | length }}"
-          compute_count: "{{ groups.compute | length }}"
-          # baremetal_count: "{{ groups.baremetal-compute | length }}"
-          ceph_release: "{{ cephadm_ceph_release }}" 
+          openstack_release_name: "{{ openstack_release_codename }}"
+          controller_count: "{{ groups['controllers'] | length }}"
+          hypervisor_count: "{{ groups['hypervisors'] | length }}"
+          monitoring_count: "{{ groups['monitoring'] | length }}" 
+          osd_count: "{{ groups['osds'] | length }}"
+          compute_count: "{{ groups['compute'] | length }}"
+          baremetal_count: "{{ groups['baremetal-compute'] | length }}"
+          ceph_deployed: "{{ groups['ceph'] | length > 0 | bool }}"
+          ceph_count: "{{ groups['ceph'] | length }}"
+          ceph_release: "{{ cephadm_ceph_release }}"
+          storage_hyperconverged: "{{ groups['controllers'] | intersect(groups['osds']) | length > 0 | bool }}"
+          wazuh_enabled: "{{ groups['wazuh-agent'] | length > 0 | bool }}"
+          kayobe_managed_switches: "{{ groups['switches'] | length > 0 | bool }}"
+          proxy_configured: "{{ http_proxy | bool or https_proxy | bool }}" 
           bifrost_version: "{{ kolla_bifrost_source_version }}"
           barbican_enabled: "{{ kolla_enable_barbican }}"
           nova_enabled: "{{ kolla_enable_nova }}"
@@ -42,9 +48,9 @@
           ironic_enabled: "{{ kolla_enable_ironic }}"
           # networking_generic_switch_enabled: can't find
           skyline_enabled: "{{ kolla_enable_skyline }}"
-          # azimuth_enabled: can't find
+          # azimuth_enabled: can't find - look at this later
           blazar_enabled: "{{ kolla_enable_blazar }}"
-          # slurm_enabled: can't find
+          # slurm_enabled: can't find - look at this later
           pulp_enabled: "{{ seed_pulp_container_enabled }}"
           opensearch_enabled: "{{ kolla_enable_opensearch }}"
           openearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
@@ -55,10 +61,13 @@
           telegraf_enabled: "{{ kolla_enable_telegraf }}"
           internal_tls_enabled: "{{ kolla_enable_tls_internal }}"
           external_tls_enabled: "{{ kolla_enable_tls_external }}"
-          # firewalld_enabled: "{{ kolla_enable_external_api_firewalld }}"
+          firewalld_enabled_all: "{{ controller_firewalld_enabled and compute_firewalld_enabled and storage_firewalld_enabled and monitoring_firewalld_enabled and infra_vm_firewalld_enabled and seed__firewalld_enabled and seed_hypervisor_firewalld_enabled}}"
+          firewalld_enabled_any: "{{ controller_firewalld_enabled or compute_firewalld_enabled or storage_firewalld_enabled or monitoring_firewalld_enabled or infra_vm_firewalld_enabled or seed__firewalld_enabled or seed_hypervisor_firewalld_enabled }}"
           local_pulp: "{{ stackhpc_repos_enabled }}"
-          # run network connectivity check
+          # run network connectivity check - v2: ping some public site
           pulp_tls_enabled: "{{ pulp_enable_tls }}"
+          kolla_image_tags: "{{ kolla_image_tags }}"
+          # kolla_image_tags_v2: "{{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}"
       copy:
-        content: "{{ cloud_facts | to_json }}"
+        content: "{{ cloud_facts | to_nice_json(sort_keys=false) }}"
         dest: ~/cloud-facts.json
