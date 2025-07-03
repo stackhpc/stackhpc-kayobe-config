@@ -1,0 +1,1292 @@
+# Switch configuration for a02dl04
+# This switch is a Cumulus SN3700M
+
+###############################################################################
+# Switch credentials.
+
+# Host/IP on which to access the switch via SSH.
+ansible_host: 10.110.115.54
+switch_hostname: a02dl04
+switch_type: nclu
+switch_role: leaf
+
+cumulus_peerlink_clag:
+  backup_ip: 10.1.1.3
+  peer_ip: linklocal
+  priority: 32768
+  sysmac: 44:38:39:FF:00:02
+cumulus_loopback_ip: 10.1.1.4/32
+cumulus_vxlan_anycast_ip: 10.1.1.102
+cumulus_vxlan_local_tunnel_ip: 10.1.1.4
+
+switch_routing_bgp_asn: 65002
+switch_routing_bgp_router_id: 10.1.1.4
+
+switch_routing_bgp_vrfs:
+  VRF_1:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id {{ switch_routing_bgp_router_id }}
+    - bestpath as-path multipath-relax
+#    - neighbor 210.7.37.113 remote-as 38022
+#    - neighbor 210.7.37.113 bfd 3 1000 1000
+#    - neighbor vlan999 interface remote-as internal
+#    - ipv4 unicast neighbor 210.7.37.113 route-map POLICY-OUT-1000 out
+    - ipv4 unicast redistribute connected
+#    - ipv4 unicast aggregate-address 163.7.176.0/22
+    - l2vpn evpn  advertise ipv4 unicast
+  VRF_2:
+    - autonomous-system {{ switch_routing_bgp_asn }}
+    - router-id  {{ switch_routing_bgp_router_id }}
+    - bestpath as-path multipath-relax
+#    - neighbor 10.255.29.17 remote-as 65029
+#    - neighbor 10.255.29.17 bfd 3 1000 1000
+#    - neighbor vlan998 interface remote-as internal
+#    - ipv4 unicast neighbor 10.255.29.17 route-map POLICY-OUT-1001 out
+    - ipv4 unicast redistribute connected
+#    - ipv4 unicast aggregate-address 10.29.0.0/16
+    - l2vpn evpn  advertise ipv4 unicast
+
+switch_routing_bgp_neighbors:
+  swp23:
+    - "interface peer-group underlay"
+  swp24:
+    - "interface peer-group underlay"
+  swp25:
+    - "interface peer-group underlay"
+  swp26:
+   - "interface peer-group underlay"
+  swp27:
+    - "interface peer-group underlay"
+  swp28:
+    - "interface peer-group underlay"
+  swp29:
+    - "interface peer-group underlay"
+  swp30:
+   - "interface peer-group underlay"
+  peerlink.4094:
+    - "interface remote-as internal"
+
+switch_routing_route_maps:
+  CONNECTED_V4:
+    - "permit 10 match interface lo"
+
+switch_interface_config:
+  swp1s0:
+    description: "bond member of bond1s0"
+    config: []
+  bond1s0:
+    type: bond
+    description: "a02hgs01"
+    config:
+      - bond slaves swp1s0
+      - clag id 100
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp1s1:
+    description: "bond member of bond1s1"
+    config: []
+  bond1s1:
+    type: bond
+    description: "a02hgs02"
+    config:
+      - bond slaves swp1s1
+      - clag id 101
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp2s0:
+    description: "bond member of bond2s0"
+    config: []
+  bond2s0:
+    type: bond
+    description: "a02hgs03"
+    config:
+      - bond slaves swp2s0
+      - clag id 200
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp2s1:
+    description: "bond member of bond2s1"
+    config: []
+  bond2s1:
+    type: bond
+    description: "a02hgs04"
+    config:
+      - bond slaves swp2s1
+      - clag id 201
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp3s0:
+    description: "bond member of bond3s0"
+    config: []
+  bond3s0:
+    type: bond
+    description: "a02hgs05"
+    config:
+      - bond slaves swp3s0
+      - clag id 300
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp3s1:
+    description: "bond member of bond3s1"
+    config: []
+  bond3s1:
+    type: bond
+    description: "a02hgs06"
+    config:
+      - bond slaves swp3s1
+      - clag id 301
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp4s0:
+    description: "bond member of bond4s0"
+    config: []
+  bond4s0:
+    type: bond
+    description: "a02hgs07"
+    config:
+      - bond slaves swp4s0
+      - clag id 400
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp4s1:
+    description: "bond member of bond4s1"
+    config: []
+  bond4s1:
+    type: bond
+    description: "a02hgs08"
+    config:
+      - bond slaves swp4s1
+      - clag id 401
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp5s0:
+    description: "bond member of bond5s0"
+    config: []
+  bond5s0:
+    type: bond
+    description: "a02hgs09"
+    config:
+      - bond slaves swp5s0
+      - clag id 500
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp5s1:
+    description: "bond member of bond5s1"
+    config: []
+  bond5s1:
+    type: bond
+    description: "a02hgs10"
+    config:
+      - bond slaves swp5s1
+      - clag id 501
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp6s0:
+    description: "bond member of bond6s0"
+    config: []
+  bond6s0:
+    type: bond
+    description: "a02hgf01"
+    config:
+      - bond slaves swp6s0
+      - clag id 600
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp6s1:
+    description: "bond member of bond6s1"
+    config: []
+  bond6s1:
+    type: bond
+    description: "a02hgf04"
+    config:
+      - bond slaves swp6s1
+      - clag id 601
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  bond7s0:
+    type: bond
+    description: "a02hgf02"
+    config:
+      - bond slaves swp7s0
+      - clag id 700
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp7s1:
+    description: "bond member of bond7s1"
+    config: []
+  bond7s1:
+    type: bond
+    description: "a02hgf05"
+    config:
+      - bond slaves swp7s1
+      - clag id 701
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  bond8s0:
+    type: bond
+    description: "a02hgf03"
+    config:
+      - bond slaves swp8s0
+      - clag id 800
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp8s1:
+    description: "bond member of bond8s1"
+    config: []
+  bond8s1:
+    type: bond
+    description: "FREE"
+    config:
+      - bond slaves swp8s1
+      - clag id 801
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp9s0:
+    description: "bond member of bond9s0"
+    config: []
+  bond9s0:
+    type: bond
+    description: "a09co17"
+    config:
+      - bond slaves swp9s0
+      - clag id 900
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp9s1:
+    description: "bond member of bond9s1"
+    config: []
+  bond9s1:
+    type: bond
+    description: "a09co18"
+    config:
+      - bond slaves swp9s1
+      - clag id 901
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp10s0:
+    description: "bond member of bond10s0"
+    config: []
+  bond10s0:
+    type: bond
+    description: "a03gc09"
+    config:
+      - bond slaves swp10s0
+      - clag id 1000
+      - bond lacp-bypass-allow
+      - "{{ bridge_access }} 161"
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp10s1:
+    description: "bond member of bond10s1"
+    config: []
+  bond10s1:
+    type: bond
+    description: "a03gc10"
+    config:
+      - bond slaves swp10s1
+      - clag id 1001
+      - bond lacp-bypass-allow
+      - "{{ bridge_access }} 161"
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp11s0:
+    description: "bond member of bond11s0"
+    config: []
+  bond11s0:
+    type: bond
+    description: "a02hgp01"
+    config:
+      - bond slaves swp11s0
+      - clag id 1100
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_frontend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp11s1:
+    description: "bond member of bond11s1"
+    config: []
+  bond11s1:
+    type: bond
+    description: "a02hgp01"
+    config:
+      - bond slaves swp11s1
+      - clag id 1101
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_frontend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_client_storage }}"
+      - "{{ switch_interface_config_agr_idm }}"
+  swp12s0:
+    description: "bond member of bond12s0"
+    config: []
+  bond12s0:
+    type: bond
+    description: "a02hgp02"
+    config:
+      - bond slaves swp12s0
+      - clag id 1200
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_frontend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp12s1:
+    description: "bond member of bond12s1"
+    config: []
+  bond12s1:
+    type: bond
+    description: "a02hgp02"
+    config:
+      - bond slaves swp12s1
+      - clag id 1201
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_frontend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_client_storage }}"
+      - "{{ switch_interface_config_agr_idm }}"
+  swp13s0:
+    description: "bond member of bond13s0"
+    config: []
+  bond13s0:
+    type: bond
+    description: "a02gc06"
+    config:
+      - bond slaves swp13s0
+      - clag id 1300
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp13s1:
+    description: "bond member of bond13s1"
+    config: []
+  bond13s1:
+    type: bond
+    description: "a02hga01"
+    config:
+      - bond slaves swp13s1
+      - clag id 1301
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_frontend }}"
+      - "{{ switch_interface_config_agr_client_storage }}"
+      - "{{ switch_interface_config_agr_idm }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+  swp14s0:
+    description: "bond member of bond14s0"
+    config: []
+  bond14s0:
+    type: bond
+    description: "a02gc08"
+    config:
+      - bond slaves swp14s0
+      - clag id 1400
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp14s1:
+    description: "bond member of bond14s1"
+    config: []
+  bond14s1:
+    type: bond
+    description: "a02gc07"
+    config:
+      - bond slaves swp14s1
+      - clag id 1401
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp15s0:
+    description: "bond member of bond15s0"
+    config: []
+  bond15s0:
+    type: bond
+    description: "a02lm01"
+    config:
+      - bond slaves swp15s0
+      - clag id 1500
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp15s1:
+    description: "bond member of bond15s1"
+    config: []
+  bond15s1:
+    type: bond
+    description: "a02lm02"
+    config:
+      - bond slaves swp15s1
+      - clag id 1501
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp16s0:
+    description: "bond member of bond16s0"
+    config: []
+  bond16s0:
+    type: bond
+    description: "a02co05"
+    config:
+      - bond slaves swp16s0
+      - clag id 1600
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp16s1:
+    description: "bond member of bond16s1"
+    config: []
+  bond16s1:
+    type: bond
+    description: "a02co06"
+    config:
+      - bond slaves swp16s1
+      - clag id 1601
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_compute_data }}"
+  swp17s0:
+    description: "bond member of bond17s0"
+    config: []
+  bond17s0:
+    type: bond
+    description: "a02co07"
+    config:
+      - bond slaves swp17s0
+      - clag id 1700
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp17s1:
+    description: "bond member of bond17s1"
+    config: []
+  bond17s1:
+    type: bond
+    description: "a02co08"
+    config:
+      - bond slaves swp17s1
+      - clag id 1701
+      #- bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp18s0:
+    description: "bond member of bond18s0"
+    config: []
+  bond18s0:
+    type: bond
+    description: "a02co09"
+    config:
+      - bond slaves swp18s0
+      - clag id 1800
+      #- bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp18s1:
+    description: "bond member of bond18s1"
+    config: []
+  bond18s1:
+    type: bond
+    description: "a02co10"
+    config:
+      - bond slaves swp18s1
+      - clag id 1801
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp19s0:
+    description: "bond member of bond19s0"
+    config: []
+  bond19s0:
+    type: bond
+    description: "a02co11"
+    config:
+      - bond slaves swp19s0
+      - clag id 1900
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp19s1:
+    description: "bond member of bond19s1"
+    config: []
+  bond19s1:
+    type: bond
+    description: "a02co12"
+    config:
+      - bond slaves swp19s1
+      - clag id 1901
+      - bond lacp-bypass-allow
+      # NOTE: Do not add switch_interface_config_compute_data for bare metal nodes.
+  swp20s0:
+    description: "bond member of bond20s0"
+    config: []
+  bond20s0:
+    type: bond
+    description: "a02hdd01"
+    config:
+      - bond slaves swp20s0
+      - clag id 2000
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  swp20s1:
+    description: "bond member of bond20s1"
+    config: []
+  bond20s1:
+    type: bond
+    description: "a02hdd02"
+    config:
+      - bond slaves swp20s1
+      - clag id 2001
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  swp21s0:
+    description: "bond member of bond21s0"
+    config: []
+  bond21s0:
+    type: bond
+    description: "a02hdd03"
+    config:
+      - bond slaves swp21s0
+      - clag id 2100
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  swp21s1:
+    description: "bond member of bond21s1"
+    config: []
+  bond21s1:
+    type: bond
+    description: "a02hda01"
+    config:
+      - bond slaves swp21s1
+      - clag id 2101
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  swp22s0:
+    description: "bond member of bond22s0"
+    config: []
+  bond22s0:
+    type: bond
+    description: "a02hdm01"
+    config:
+      - bond slaves swp22s0
+      - clag id 2200
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  swp22s1:
+    description: "bond member of bond22s1"
+    config: []
+  bond22s1:
+    type: bond
+    description: "a02hdm02"
+    config:
+      - bond slaves swp22s1
+      - clag id 2201
+      - bond lacp-bypass-allow
+      - "{{ switch_interface_config_hpe_pfss_backend }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_dmf }}"
+      - "{{ switch_interface_config_hpe_pfss_backend_pvid }}"
+      - "{{ switch_interface_config_agr_dmf }}"
+  peerlink:
+    type: bond
+    config:
+      - bond slaves swp31,swp32
+  peerlink.4094:
+    config:
+      - clag backup-ip {{ cumulus_peerlink_clag.backup_ip }}
+      - clag peer-ip {{ cumulus_peerlink_clag.peer_ip }}
+      - clag priority {{ cumulus_peerlink_clag.priority }}
+      - clag sys-mac {{ cumulus_peerlink_clag.sysmac }}
+  61:
+    type: vlan
+    config:
+      - ip address 10.1.61.250/24
+      - ip address-virtual 00:00:5E:00:01:02 10.1.61.254/24
+      - vlan-id 61
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10061:
+    type: vxlan
+    config:
+      - vxlan id 10061
+      - "{{ bridge_access }} 61"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  65:
+    type: vlan
+    config:
+      - ip address 10.1.65.250/24
+      - ip address-virtual 00:00:5E:00:01:03 10.1.65.254/24
+      - vlan-id 65
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10065:
+    type: vxlan
+    config:
+      - vxlan id 10065
+      - "{{ bridge_access }} 65"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  66:
+    type: vlan
+    config:
+      - ip address 10.1.66.250/24
+      - ip address-virtual 00:00:5E:00:01:04 10.1.66.254/24
+      - vlan-id 66
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10066:
+    type: vxlan
+    config:
+      - vxlan id 10066
+      - "{{ bridge_access }} 66"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  67:
+    type: vlan
+    config:
+      - ip address 10.1.67.250/24
+      - ip address-virtual 00:00:5E:00:01:07 10.1.67.254/24
+      - vlan-id 67
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10067:
+    type: vxlan
+    config:
+      - vxlan id 10067
+      - "{{ bridge_access }} 67"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  68:
+    type: vlan
+    config:
+      - ip address 10.1.68.250/24
+      - ip address-virtual 00:00:5E:00:01:08 10.1.68.254/24
+      - vlan-id 68
+      - vrf VRF_1
+  vni10068:
+    type: vxlan
+    config:
+      - vxlan id 10068
+      - "{{ bridge_access }} 68"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  69:
+    type: vlan
+    config:
+      - ip address 10.1.69.250/24
+      - ip address-virtual 00:00:5E:00:01:09 10.1.69.254/24
+      - vlan-id 69
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10069:
+    type: vxlan
+    config:
+      - vxlan id 10069
+      - "{{ bridge_access }} 69"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  110:
+    type: vlan
+    config:
+      - ip address 10.1.110.250/24
+      - ip address-virtual 00:00:5E:00:01:11
+      - vlan-id 110
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni10110:
+    type: vxlan
+    config:
+      - vxlan id 10110
+      - "{{ bridge_access }} 110"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  111:
+    type: vlan
+    config:
+      - ip address 10.1.111.250/24
+      - ip address-virtual 00:00:5E:00:01:13
+      - vlan-id 111
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10111:
+    type: vxlan
+    config:
+      - vxlan id 10111
+      - "{{ bridge_access }} 111"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  112: #this is routable to AgR now, so make sure it doesn't have a gw/vrr in POD-2 switches
+    type: vlan
+    config:
+      - ip address 10.1.112.250/24
+      - vlan-id 112
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni10112:
+    type: vxlan
+    config:
+      - vxlan id 10112
+      - "{{ bridge_access }} 112"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  114: #this is routable to AgR now, so make sure it doesn't have a gw/vrr in POD-2 switches
+    type: vlan
+    config:
+      - ip address 10.1.114.250/24
+      - vlan-id 114
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni10114:
+    type: vxlan
+    config:
+      - vxlan id 10114
+      - "{{ bridge_access }} 114"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  160:
+    type: vlan
+    config:
+      - ip address 10.9.160.250/24
+      - vlan-id 160
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10160:
+    type: vxlan
+    config:
+      - vxlan id 10160
+      - "{{ bridge_access }} 160"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  161:
+    type: vlan
+    config:
+      - ip address 10.9.161.250/24
+      - ip address-virtual 00:00:5E:00:01:61 10.1.161.254/24
+      - vlan-id 161
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni10161:
+    type: vxlan
+    config:
+      - vxlan id 10161
+      - "{{ bridge_access }} 161"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  162:
+    type: vlan
+    config:
+      - ip address 10.9.162.250/24
+      - ip address-virtual 00:00:5E:00:01:62 10.1.162.254/24
+      - vlan-id 162
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100162:
+    type: vxlan
+    config:
+      - vxlan id 10162
+      - "{{ bridge_access }} 162"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  163:
+    type: vlan
+    config:
+      - ip address 10.9.163.250/24
+      - ip address-virtual 00:00:5E:00:01:63 10.1.163.254/24
+      - vlan-id 163
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100163:
+    type: vxlan
+    config:
+      - vxlan id 10163
+      - "{{ bridge_access }} 163"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  164:
+    type: vlan
+    config:
+      - ip address 10.9.164.250/24
+      - ip address-virtual 00:00:5E:00:01:64 10.1.164.254/24
+      - vlan-id 164
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100164:
+    type: vxlan
+    config:
+      - vxlan id 10164
+      - "{{ bridge_access }} 164"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  165:
+    type: vlan
+    config:
+      - ip address 10.9.165.250/24
+      - ip address-virtual 00:00:5E:00:01:65 10.1.165.254/24
+      - vlan-id 165
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100165:
+    type: vxlan
+    config:
+      - vxlan id 10165
+      - "{{ bridge_access }} 165"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  166:
+    type: vlan
+    config:
+      - ip address 10.9.166.250/24
+      - ip address-virtual 00:00:5E:00:01:66 10.1.166.254/24
+      - vlan-id 166
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100166:
+    type: vxlan
+    config:
+      - vxlan id 10166
+      - "{{ bridge_access }} 166"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  167:
+    type: vlan
+    config:
+      - ip address 10.9.167.250/24
+      - ip address-virtual 00:00:5E:00:01:67 10.1.167.254/24
+      - vlan-id 167
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100167:
+    type: vxlan
+    config:
+      - vxlan id 10167
+      - "{{ bridge_access }} 167"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  168:
+    type: vlan
+    config:
+      - ip address 10.9.168.250/24
+      - ip address-virtual 00:00:5E:00:01:68 10.1.168.254/24
+      - vlan-id 168
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100168:
+    type: vxlan
+    config:
+      - vxlan id 10168
+      - "{{ bridge_access }} 168"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  169:
+    type: vlan
+    config:
+      - ip address 10.9.169.250/24
+      - ip address-virtual 00:00:5E:00:01:69 10.1.169.254/24
+      - vlan-id 169
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100169:
+    type: vxlan
+    config:
+      - vxlan id 10169
+      - "{{ bridge_access }} 169"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  170:
+    type: vlan
+    config:
+      - ip address 10.9.170.250/24
+      - ip address-virtual 00:00:5E:00:01:70 10.1.170.254/24
+      - vlan-id 170
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100170:
+    type: vxlan
+    config:
+      - vxlan id 10170
+      - "{{ bridge_access }} 170"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  171:
+    type: vlan
+    config:
+      - ip address 10.9.171.250/24
+      - ip address-virtual 00:00:5E:00:01:71 10.1.171.254/24
+      - vlan-id 171
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100171:
+    type: vxlan
+    config:
+      - vxlan id 10171
+      - "{{ bridge_access }} 171"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  172:
+    type: vlan
+    config:
+      - ip address 10.9.172.250/24
+      - ip address-virtual 00:00:5E:00:01:72 10.1.172.254/24
+      - vlan-id 172
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100172:
+    type: vxlan
+    config:
+      - vxlan id 10172
+      - "{{ bridge_access }} 172"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  173:
+    type: vlan
+    config:
+      - ip address 10.9.173.250/24
+      - ip address-virtual 00:00:5E:00:01:73 10.1.173.254/24
+      - vlan-id 173
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100173:
+    type: vxlan
+    config:
+      - vxlan id 10173
+      - "{{ bridge_access }} 173"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  174:
+    type: vlan
+    config:
+      - ip address 10.9.174.250/24
+      - ip address-virtual 00:00:5E:00:01:74 10.1.174.254/24
+      - vlan-id 174
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100174:
+    type: vxlan
+    config:
+      - vxlan id 10174
+      - "{{ bridge_access }} 174"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  175:
+    type: vlan
+    config:
+      - ip address 10.9.175.250/24
+      - ip address-virtual 00:00:5E:00:01:75 10.1.175.254/24
+      - vlan-id 175
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100175:
+    type: vxlan
+    config:
+      - vxlan id 10175
+      - "{{ bridge_access }} 175"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  176:
+    type: vlan
+    config:
+      - ip address 10.9.176.250/24
+      - ip address-virtual 00:00:5E:00:01:76 10.1.176.254/24
+      - vlan-id 176
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100176:
+    type: vxlan
+    config:
+      - vxlan id 10176
+      - "{{ bridge_access }} 176"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  177:
+    type: vlan
+    config:
+      - ip address 10.9.177.250/24
+      - ip address-virtual 00:00:5E:00:01:77 10.1.177.254/24
+      - vlan-id 177
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100177:
+    type: vxlan
+    config:
+      - vxlan id 10177
+      - "{{ bridge_access }} 177"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  178:
+    type: vlan
+    config:
+      - ip address 10.9.178.250/24
+      - ip address-virtual 00:00:5E:00:01:78 10.1.178.254/24
+      - vlan-id 178
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100178:
+    type: vxlan
+    config:
+      - vxlan id 10178
+      - "{{ bridge_access }} 178"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  179:
+    type: vlan
+    config:
+      - ip address 10.9.179.250/24
+      - ip address-virtual 00:00:5E:00:01:79 10.1.179.254/24
+      - vlan-id 179
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni100179:
+    type: vxlan
+    config:
+      - vxlan id 10179
+      - "{{ bridge_access }} 179"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  1441:
+    description: "New FIP Range"
+    type: vlan
+    config:
+      - ip address 163.7.147.250/22
+      - ip address-virtual 00:00:5E:00:14:41
+      - vlan-id 1441
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni11441:
+    type: vxlan
+    config:
+      - vxlan id 11441
+      - "{{ bridge_access }} 1441"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  1481:
+    description: "New Controller Public Range"
+    type: vlan
+    config:
+      - ip address 163.7.148.26/27
+      - ip address-virtual 00:00:5E:00:14:81
+      - vlan-id 1481
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni11481:
+    type: vxlan
+    config:
+      - vxlan id 11481
+      - "{{ bridge_access }} 1481"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  1482:
+    description: "New Test Public Range"
+    type: vlan
+    config:
+      - ip address 163.7.144.58/27
+      - ip address-virtual 00:00:5E:00:14:82
+      - vlan-id 1482
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  vni11482:
+    type: vxlan
+    config:
+      - vxlan id 11482
+      - "{{ bridge_access }} 1482"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2071:
+    type: vlan
+    config:
+      - ip address 10.29.71.250/24
+      - vlan-id 2071
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12071:
+    type: vxlan
+    config:
+      - vxlan id 12071
+      - "{{ bridge_access }} 2071"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2103:
+    type: vlan
+    config:
+      - ip address 10.29.103.250/24
+      - vlan-id 2103
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12103:
+    type: vxlan
+    config:
+      - vxlan id 12103
+      - "{{ bridge_access }} 2103"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2107:
+    type: vlan
+    config:
+      - ip address 10.29.107.250/24
+      - vlan-id 2107
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12107:
+    type: vxlan
+    config:
+      - vxlan id 12107
+      - "{{ bridge_access }} 2107"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2111:
+    type: vlan
+    config:
+      - ip address 10.29.111.250/24
+      - vlan-id 2111
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12111:
+    type: vxlan
+    config:
+      - vxlan id 12111
+      - "{{ bridge_access }} 2111"
+      - bridge arp-nd-suppress on
+      - bridge learning off 
+  2113:
+    type: vlan
+    config:
+      - ip address 10.29.113.250/24
+      - vlan-id 2113
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12113:
+    type: vxlan
+    config:
+      - vxlan id 12113
+      - "{{ bridge_access }} 2113"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2157:
+    type: vlan
+    config:
+      - ip address 10.29.157.250/24
+      - vlan-id 2157
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12157:
+    type: vxlan
+    config:
+      - vxlan id 12157
+      - "{{ bridge_access }} 2157"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  2167:
+    type: vlan
+    config:
+      - ip address 10.29.167.250/24
+      - vlan-id 2167
+      - vlan-raw-device bridge
+      - vrf VRF_2
+  vni12167:
+    type: vxlan
+    config:
+      - vxlan id 12167
+      - "{{ bridge_access }} 2167"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+  961:
+    type: vlan
+    config:
+      - ip address 10.1.91.250/24
+      - ip address-virtual 00:00:5E:00:01:05 10.1.91.254/24
+      - vrf VRF_1
+      - vlan-raw-device bridge
+      - vlan-id 961
+  962:
+    type: vlan
+    config:
+      - ip address 10.1.92.250/24
+      - ip address-virtual 00:00:5E:00:01:06 10.1.92.254/24
+      - vrf VRF_1
+      - vlan-raw-device bridge
+      - vlan-id 962
+  4002:
+    type: vlan
+    config:
+      - vlan-id 4002
+      - vlan-raw-device bridge
+      - vrf VRF_1
+  L3VNI_VRF_1:
+    type: vxlan
+    config:
+      - vxlan id 3004002
+      - "{{ bridge_access }} 4002"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+      - stp bpduguard
+      - stp portbpdufilter
+  L3VNI_VRF_2: #note L3VNI VLAN currently doesn't exist - failover issues/stable state 
+    type: vxlan
+    config:
+      - vxlan id 3004003
+      - "{{ bridge_access }} 4003"
+      - bridge arp-nd-suppress on
+      - bridge learning off
+      - stp bpduguard
+      - stp portbpdufilter
+switch_interface_config_enable_discovery:
+  bond10s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond10s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond14s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond15s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond15s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond17s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond17s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond18s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond18s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond19s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond19s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond30s0:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
+  bond30s1:
+    type: bond
+    config:
+      - "{{ bridge_access }} 161"
