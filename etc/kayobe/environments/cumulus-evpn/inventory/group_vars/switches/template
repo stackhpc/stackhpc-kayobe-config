@@ -70,7 +70,7 @@ switch_hostname_config_nvue:
   - "set interface eth0 type eth"
   - "set interface eth0 ip vrf mgmt"
   - "set interface eth0 ip address {{ ansible_host }}/24"
-  - "set interface eth0 ip gateway {{ switch_mgmt_gateway }}"
+  - "{% if switch_mgmt_gateway %}set interface eth0 ip gateway {{ switch_mgmt_gateway }}{% if endif %}"
 
 switch_dns_config_nclu: >-
   {% set result=[] %}
