@@ -32,14 +32,17 @@ switch_evpn_multihoming_enabled: true
 
 switch_config_bgp_default_nvue:
   - set router bgp autonomous-system {{ switch_routing_bgp_asn }}
-  - set router bgp router-id {{ switch_routing_bgp_router_id }}
-  - "{% if switch_role != 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
+  - set router bgp router-id {{ switch_routing_bgp_router_id }}a
+  - set bgp graceful-restart mode helper-only
+  # NOT in reference config
+  #- "{% if switch_role != 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
   - set vrf default router bgp peer-group underlay remote-as external
   - set vrf default router bgp peer-group underlay address-family l2vpn-evpn enable on
   - "{% if switch_role != 'spine' %}set vrf default router bgp peer-group underlay bfd{% endif %}"
   - set vrf default router bgp peer-group underlay bfd detect-multiplier 3
   - set vrf default router bgp peer-group underlay bfd enable on
   - set vrf default router bgp peer-group underlay bfd min-rx-interval 300
+  - set vrf default router bgp peer-group underlay bfd min-tx-interval 300
   # TODO: Not needed as set globally
   - set vrf default router bgp router-id {{ switch_routing_bgp_router_id }}
   # TODO: Not needed as set globally
@@ -53,6 +56,9 @@ switch_config_bgp_default_nvue:
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming startup-delay 10{%endif%}"
   - "{% if switch_pim_enabled | bool%}set router pim enable{%endif%}"
   - "{% if switch_pim_enabled | bool%}set router pim timers keepalive 3600{%endif%}"
+  # FIXME: hardcoded
+  - "{% if switch_pim_enabled | bool%}set vrf default router pim address-family ipv4 rp 10.10.100.100 group-range 224.1.1.0/24{%endif%}"
+  - "{% if switch_pim_enabled | bool%}set vrf default router pim ecmp enable on{%endif%}"
 
 switch_routing_bgp_neighbors: {}
 
