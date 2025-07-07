@@ -105,15 +105,23 @@ switch_ntp_config_nclu:
   - "{% for ntp_server in switch_ntp_servers | default([]) %}add time ntp server {{ ntp_server }} iburst{% if not loop.last %} {% endif %}{% endfor %}"
   - add time ntp source {{ switch_ntp_source | default('eth0') }}
 
-switch_ntp_config_nvue:
+switch_ntp_config_nvue_static:
   - set system timezone {{ switch_timezone | default('UTC') }}
   - unset service ntp default server 0.cumulusnetworks.pool.ntp.org
   - unset service ntp default server 1.cumulusnetworks.pool.ntp.org
   - unset service ntp default server 2.cumulusnetworks.pool.ntp.org
   - unset service ntp default server 3.cumulusnetworks.pool.ntp.org
   - unset service ntp default
-  - "{% for ntp_server in switch_ntp_servers | default([]) %}set service ntp mgmt server {{ ntp_server }} iburst on{% if not loop.last %} {% endif %}{% endfor %}"
   - set service ntp mgmt listen {{ switch_ntp_source | default('eth0') }}
+
+switch_ntp_config_nvue_dynamic: >-
+  {% set result=[] %}
+  {%- for ntp_server in switch_ntp_servers -%}
+  {% set x=result.append("set service ntp mgmt server {{ ntp_server }} iburst on) %}
+  {%- endfor -%}
+  {{ result | to_json }}
+
+switch_ntp_config_nvue: "{{ switch_ntp_config_nvue_static + nvue_switch_ntp_config_nvue_dynamic }}"
 
 switch_vrf_mgmt_config_nclu:
   - add vrf mgmt ip address 127.0.0.1/8
