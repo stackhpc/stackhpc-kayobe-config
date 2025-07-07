@@ -214,8 +214,8 @@ switch_config_svi_nvue: >-
   {% endif %}
   {% if switch_pim_enabled | bool %}
   {% set vni=switch_vlan_vni_map[vlan] | default('UNKNOWN') %}
-  {% set x=result.append("set vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding enable on') %}
-  {% set x=result.append("set vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding mutlicast-group ' + switch_flooding_multicast_group_map[vlan] | mandatory('vlan %s not in switch_flooding_multicast_group_map' % vlan) ) %}
+  {% set x=result.append("set interface vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding enable on') %}
+  {% set x=result.append("set interface vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding mutlicast-group ' + switch_flooding_multicast_group_map[vlan] | mandatory('vlan %s not in switch_flooding_multicast_group_map' % vlan) ) %}
   {% endif %}
   {%- endfor -%}
   {%- endfor -%}
