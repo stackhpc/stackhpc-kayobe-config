@@ -37,14 +37,22 @@ switch_config_bgp_default_nvue:
   - set vrf default router bgp peer-group underlay remote-as external
   - set vrf default router bgp peer-group underlay address-family l2vpn-evpn enable on
   - "{% if switch_role != 'spine' %}set vrf default router bgp peer-group underlay bfd{% endif %}"
+  - set vrf default router bgp peer-group underlay bfd detect-multiplier 3
+  - set vrf default router bgp peer-group underlay bfd enable on
+  - set vrf default router bgp peer-group underlay bfd min-rx-interval 300
+  # TODO: Not needed as set globally
+  - set vff default router bgp router-id {{ switch_routing_bgp_router_id }}
+  # TODO: Not needed as set globally
+  - set vrf default router bgp autonomous-system {{ switch_routing_bgp_asn }}
   - set vrf default router bgp address-family ipv4-unicast redistribute connected
   - set vrf default router bgp address-family l2vpn-evpn enable on
   - set nve vxlan source address {{ switch_routing_bgp_router_id }}
   - set nve vxlan arp-nd-suppress on
   - set evpn enable on
-  - set vrf default router bgp autonomous-system {{ switch_routing_bgp_asn }}
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming enable on{%endif%}"
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming startup-delay 10{%endif%}"
+  - "{% if switch_pim_enabled | bool%}set router pim enable{%endif%}"
+  - "{% if switch_pim_enabled | bool%}set router pim timers keepalive 300{%endif%}"
 
 switch_routing_bgp_neighbors: {}
 
@@ -203,6 +211,12 @@ switch_config_svi_nvue: >-
   {% if switch_pim_enabled | bool %}
   {% set x=result.append("set interface vlan" + vlan | string + " router pim") %}
   {% set x=result.append("set interface vlan" + vlan | string + " ip igmp") %}
+  {% endif %}
+  {% if switch_pim_enabled | bool %}
+  {% set vni=switch_vlan_vni_map[key | string] %}
+  {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + vni | string)  + ' flooding enable on'%}
+  {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + vni | string) + 'flooding mutlicast-group ' + switch_flooding_mul
+ticast_group_map[key | string] %}
   {% endif %}
   {%- endfor -%}
   {%- endfor -%}
