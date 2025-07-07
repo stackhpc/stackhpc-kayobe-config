@@ -138,7 +138,7 @@ switch_config_svi_nvue: >-
   {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + value | string) %}
   {% if switch_pim_enabled | bool %}
   {% set x=result.append("set bridge domain br_default vlan " + key | string + " vni " + value | string  + ' flooding enable on') %}
-  {% set x=result.append("set bridge domain br_default vlan " + key | string + " vni " + value | string + 'flooding mutlicast-group ' + switch_flooding_mulicast_group_map[key]) %}
+  {% set x=result.append("set bridge domain br_default vlan " + key | string + " vni " + value | string + 'flooding multicast-group ' + switch_flooding_mulicast_group_map[key]) %}
   {% endif %}
   {%- endfor -%}
   {{ result | to_json }}

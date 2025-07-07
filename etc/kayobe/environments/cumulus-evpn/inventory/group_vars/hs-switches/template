@@ -215,7 +215,7 @@ switch_config_svi_nvue: >-
   {% if switch_pim_enabled | bool %}
   {% set vni=switch_vlan_vni_map[vlan] | default('UNKNOWN') %}
   {% set x=result.append("set bridge domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding enable on') %}
-  {% set x=result.append("set bridge domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding mutlicast-group ' + switch_flooding_multicast_group_map[vlan] | mandatory('vlan %s not in switch_flooding_multicast_group_map' % vlan) ) %}
+  {% set x=result.append("set bridge domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding multicast-group ' + switch_flooding_multicast_group_map[vlan] | mandatory('vlan %s not in switch_flooding_multicast_group_map' % vlan) ) %}
   {% endif %}
   {%- endfor -%}
   {%- endfor -%}
