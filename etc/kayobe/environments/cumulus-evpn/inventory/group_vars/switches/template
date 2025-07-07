@@ -107,10 +107,6 @@ switch_ntp_config_nclu:
 
 switch_ntp_config_nvue_static:
   - set system timezone {{ switch_timezone | default('UTC') }}
-  - unset service ntp default server 0.cumulusnetworks.pool.ntp.org
-  - unset service ntp default server 1.cumulusnetworks.pool.ntp.org
-  - unset service ntp default server 2.cumulusnetworks.pool.ntp.org
-  - unset service ntp default server 3.cumulusnetworks.pool.ntp.org
   - unset service ntp default
   - set service ntp mgmt listen {{ switch_ntp_source | default('eth0') }}
 
@@ -119,7 +115,7 @@ switch_ntp_config_nvue_dynamic: >-
   {%- for ntp_server in switch_ntp_servers -%}
   {% set x=result.append("set service ntp mgmt server " ~  ntp_server | string ~ " iburst on") %}
   {%- endfor -%}
-  {{ result | to_json }}
+  {{ result }}
 
 switch_ntp_config_nvue: "{{ switch_ntp_config_nvue_static + switch_ntp_config_nvue_dynamic }}"
 
