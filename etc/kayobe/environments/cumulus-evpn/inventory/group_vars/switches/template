@@ -117,7 +117,7 @@ switch_ntp_config_nvue_static:
 switch_ntp_config_nvue_dynamic: >-
   {% set result=[] %}
   {%- for ntp_server in switch_ntp_servers -%}
-  {% set x=result.append("set service ntp mgmt server {{ ntp_server }} iburst on") %}
+  {% set x=result.append("set service ntp mgmt server " ~  ntp_server | string ~ " iburst on") %}
   {%- endfor -%}
   {{ result | to_json }}
 
