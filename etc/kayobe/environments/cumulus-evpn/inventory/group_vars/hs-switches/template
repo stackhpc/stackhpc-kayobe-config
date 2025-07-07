@@ -32,7 +32,9 @@ switch_evpn_multihoming_enabled: true
 
 switch_config_bgp_default_nvue:
   - set router bgp autonomous-system {{ switch_routing_bgp_asn }}
-  - set router bgp router-id {{ switch_routing_bgp_router_id }}a
+  - set router bgp router-id {{ switch_routing_bgp_router_id }}
+  - set router bgp graceful-restart mode helper-only
+  - set router vrr enable on
   - set bgp graceful-restart mode helper-only
   # NOT in reference config
   #- "{% if switch_role != 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
