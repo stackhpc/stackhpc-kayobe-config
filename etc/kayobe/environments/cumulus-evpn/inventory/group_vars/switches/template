@@ -95,6 +95,8 @@ switch_loopback_config_nvue:
   - "{% if cumulus_vxlan_anycast_ip is defined %}set nve vxlan mlag shared-address {{ cumulus_vxlan_anycast_ip }}{% endif %}"
   - "{% if cumulus_vxlan_local_tunnel_ip is defined %}set nve vxlan source address {{ cumulus_vxlan_local_tunnel_ip }}{% endif %}"
   - "{% if cumulus_loopback_ip is defined %}set interface lo ip address {{ cumulus_loopback_ip }}{% endif %}"
+  - "{% if switch_pim_enabled | bool %}set interface lo router pim enable on{% endif %}"
+  - "{% if switch_pim_enabled | bool %}set interface lo router pim address-family ipv4-unicast use-source {{ cumulus_loopback_ip }}{% endif %}"
 
 switch_ntp_config_nclu:
   - add time zone {{ switch_timezone | default('UTC') }}
@@ -126,10 +128,18 @@ switch_vrf_mgmt_config_nclu:
 
 switch_vrf_mgmt_config_nvue: []
 
+switch_pim_enabled: true
+
+switch_flooding_multicast_group_map: {}
+
 switch_config_svi_nvue: >-
   {% set result=[] %}
   {%- for key, value in switch_svi.items() -%}
   {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + value | string) %}
+  {% if switch_pim_enabled | bool %}
+  {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + value | string)  + ' flooding enable on'%}
+  {% set x=result.append("set vlan" + key | string " domain br_default vlan " + key | string + " vni " + value | string) + 'flooding mutlicast-group ' + switch_flooding_multicast_group_map[key | string] %}
+  {% endif %}
   {%- endfor -%}
   {{ result | to_json }}
 

@@ -28,6 +28,8 @@ switch_config_bgp_default_nclu:
   - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  neighbor underlay activate{% endif %}"
   - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  advertise-all-vni{% endif %}"
 
+switch_evpn_multihoming_enabled: true
+
 switch_config_bgp_default_nvue:
   - set router bgp autonomous-system {{ switch_routing_bgp_asn }}
   - set router bgp router-id {{ switch_routing_bgp_router_id }}
@@ -40,6 +42,9 @@ switch_config_bgp_default_nvue:
   - set nve vxlan source address {{ switch_routing_bgp_router_id }}
   - set nve vxlan arp-nd-suppress on
   - set evpn enable on
+  - set vrf default router bgp autonomous-system {{ switch_routing_bgp_asn }}
+  - {% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming enable on{%endif%}
+  - {% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming startup-delay 10{%endif%}
 
 switch_routing_bgp_neighbors: {}
 
@@ -169,6 +174,7 @@ switch_vlan_vni_map: {}
 
 switch_config_vni_nvue: >-
   {% set result=[] %}
+  {% set x=result.append("nv set bridge domain br_default type vlan-aware")
   {%- for key, value in switch_vlan_vni_map.items() -%}
   {% set x=result.append("set bridge domain br_default vlan " + key | string + " vni " + value | string) %}
   {%- endfor -%}
@@ -178,6 +184,7 @@ switch_svi: {}
 
 switch_config_svi_nvue: >-
   {% set result=[] %}
+  {% set x=result.append('nv set evpn route-advertise svi-ip on') %}
   {%- for vrf, parent_dict_item in switch_svi.items() -%}
   {%- for vlan, nested_value in parent_dict_item.items() -%}
   {%- if nested_value['host'] is not defined or nested_value['host'] in ['all', inventory_hostname] -%}
@@ -193,6 +200,10 @@ switch_config_svi_nvue: >-
   {% set x=result.append("set interface vlan" + vlan | string + " ip vrr state up") %}
   {% set x=result.append("set interface vlan" + vlan | string + " ip vrf " + vrf | string) %}
   {%- endif -%}
+  {% if switch_pim_enabled | bool %}
+  {% set x=result.append("set interface vlan" + vlan | string + "router pim" %}
+  {% set x=result.append("set interface vlan" + vlan | string + "ip igmp" %}
+  {% endif %}
   {%- endfor -%}
   {%- endfor -%}
   {{ result | to_json }}
