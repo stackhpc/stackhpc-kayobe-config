@@ -96,7 +96,7 @@ switch_loopback_config_nvue:
   - "{% if cumulus_vxlan_local_tunnel_ip is defined %}set nve vxlan source address {{ cumulus_vxlan_local_tunnel_ip }}{% endif %}"
   - "{% if cumulus_loopback_ip is defined %}set interface lo ip address {{ cumulus_loopback_ip }}{% endif %}"
   - "{% if switch_pim_enabled | bool %}set interface lo router pim enable on{% endif %}"
-  - "{% if switch_pim_enabled | bool %}set interface lo router pim address-family ipv4-unicast use-source {{ cumulus_loopback_ip }}{% endif %}"
+  - "{% if switch_pim_enabled | bool %}set interface lo router pim address-family ipv4-unicast use-source {{ cumulus_loopback_ip | ansible.utils.ipv4('address') }}{% endif %}"
 
 switch_ntp_config_nclu:
   - add time zone {{ switch_timezone | default('UTC') }}
