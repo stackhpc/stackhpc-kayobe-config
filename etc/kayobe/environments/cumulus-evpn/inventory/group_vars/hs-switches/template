@@ -50,7 +50,7 @@ switch_config_bgp_default_nvue:
   - set vrf default router bgp autonomous-system {{ switch_routing_bgp_asn }}
   - set vrf default router bgp address-family ipv4-unicast redistribute connected
   - set vrf default router bgp address-family l2vpn-evpn enable on
-  - set nve vxlan source address {{ switch_routing_bgp_router_id }}
+  - "{% if switch_role != 'spine' | default(True) %}set nve vxlan source address {{ switch_routing_bgp_router_id }}{% endif %}"
   - "{% if switch_role != 'spine' | default(True) %}set nve vxlan arp-nd-suppress on{% endif %}"
   - set evpn enable on
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming enable on{%endif%}"
