@@ -21,6 +21,19 @@ vlan10_ip: 10.1.10.2/24
 vlan20_ip: 10.1.20.2/24
 vlan30_ip: 10.1.30.2/24
 
+multihome_bond_template: >-
+ - bond member %(bond_member)s
+ - bridge domain br_default access %(access_vlan)s
+ - evpn multihoming segment local-id %(local_id)s
+ - bond lacp-bypass on
+ - bond mode lacp
+ - bridge domain br_default stp admin-edge on
+ - bridge domain br_default stp auto-edge on
+ - bridge domain br_default stp bpdu-guard on
+ - evpn multihoming segment df-preference 50000
+ - evpn multihoming segment enable on
+ - evpn multihoming segment mac-address {{ switch_anycast_mac }}
+ - link mtu 9216
 
 # To spine
 switch_routing_bgp_neighbors:
@@ -29,14 +42,11 @@ switch_routing_bgp_neighbors:
 
 switch_interface_config_local:
   bond1:
-    config:
-      - bond member swp1
+    config: "{{ multihome_bond_template % {bond_member: "swp1", access_vlan: "10", local_id: 1} | from_yaml }}"
   bond2:
-    config:
-      - bond member swp2
+    config: "{{ multihome_bond_template % {bond_member: "swp2", access_vlan: "20", local_id: 2} | from_yaml }}"
   bond3:
-    config:
-      - bond member swp3
+    config: "{{ multihome_bond_template % {bond_member: "swp3", access_vlan: "30", local_id: 3} | from_yaml }}"
   swp51-54:
     config:
       - "link state up"
