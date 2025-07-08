@@ -60,11 +60,13 @@ switch_system_config_nvue:
   - set system security password-hardening expiration -1
   - set system security password-hardening expiration-warning -1
   - set system ssh-server state enabled
+  - "{% if switch_anycast_mac is defined %}set system global anycast-mac {{ switch_anycast_mac }}{% endif %}"
+
+switch_system_config_wjh:
   - set system wjh channel forwarding trigger l2
   - set system wjh channel forwarding trigger l3
   - set system wjh channel forwarding trigger tunnel
   - set system wjh enable on
-  - "{% if switch_anycast_mac is defined %}set system global anycast-mac {{ switch_anycast_mac }}{% endif %}"
 
 switch_hostname_config_nclu:
   - "add hostname {{ switch_hostname }}"
