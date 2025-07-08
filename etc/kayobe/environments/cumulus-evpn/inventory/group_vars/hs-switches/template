@@ -28,15 +28,15 @@ switch_config_bgp_default_nclu:
   - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  neighbor underlay activate{% endif %}"
   - "{% if switch_role != 'spine' | default(True) %}add bgp l2vpn evpn  advertise-all-vni{% endif %}"
 
-switch_evpn_multihoming_enabled: true
+switch_evpn_multihoming_enabled: "{{ switch_role != 'spine' }}"
 
 switch_config_bgp_default_nvue:
   - set router bgp autonomous-system {{ switch_routing_bgp_asn }}
   - set router bgp router-id {{ switch_routing_bgp_router_id }}
   - set router bgp graceful-restart mode helper-only
-  - set router vrr enable on
+  - "{% if switch_role != 'spine' | default(True) %}set router vrr enable on{% endif %}"
   # NOT in reference config
-  #- "{% if switch_role != 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
+  #- "{% if switch_role != 'spine'= 'spine' %}set vrf default router bgp path-selection multipath aspath-ignore on{% endif %}"
   - set vrf default router bgp peer-group underlay remote-as external
   - set vrf default router bgp peer-group underlay address-family l2vpn-evpn enable on
   - "{% if switch_role != 'spine' %}set vrf default router bgp peer-group underlay bfd{% endif %}"
@@ -51,7 +51,7 @@ switch_config_bgp_default_nvue:
   - set vrf default router bgp address-family ipv4-unicast redistribute connected
   - set vrf default router bgp address-family l2vpn-evpn enable on
   - set nve vxlan source address {{ switch_routing_bgp_router_id }}
-  - set nve vxlan arp-nd-suppress on
+  - "{% if switch_role != 'spine' | default(True) %}set nve vxlan arp-nd-suppress on{% endif %}"
   - set evpn enable on
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming enable on{%endif%}"
   - "{% if switch_evpn_multihoming_enabled | bool %}set evpn multihoming startup-delay 10{%endif%}"
