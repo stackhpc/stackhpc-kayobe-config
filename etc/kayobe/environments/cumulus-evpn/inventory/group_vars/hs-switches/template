@@ -66,6 +66,15 @@ switch_routing_bgp_neighbors: {}
 switch_config_bgp_neighbors_nclu: >-
   {% set result=[] %}
   {%- for key, value in switch_routing_bgp_neighbors.items() -%}
+  {% set x=result.append("set interface " + key + " link state up") %}
+  {% set x=result.append("set interface " + key + " type swp") %}
+  {%- if switch_evpn_multihoming_enabled | bool %}
+` {% set x=result.append("set interface " + key + " evpn multihoming uplink on") %}
+  {%- endif -%}
+  {%- if switch_pim_enabled | bool %}
+` {% set x=result.append("set interface " + key + " router pim enable on") %}
+  {%- endif -%}
+  {% set x=result.append("add bgp neighbor " + key + " " + val | string) %}
   {%- for val in value -%}
   {% set x=result.append("add bgp neighbor " + key + " " + val | string) %}
   {%- endfor -%}
