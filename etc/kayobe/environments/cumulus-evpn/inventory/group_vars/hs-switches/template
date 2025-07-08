@@ -204,7 +204,7 @@ switch_config_svi_nvue: >-
   {% set x=result.append('nv set evpn route-advertise svi-ip on') %}
   {%- for vrf, parent_dict_item in switch_svi.items() -%}
   {% set x=result.append("set vrf " ~ vrf ~ " evpn enable on") -%}
-  {% set x=result.append("set vrf " ~ vrf ~ " evpn vni " ~ switch_vrf_vni_map[vrf] | mandatory("vrf: " ~ vrf ~ " not in switch_vrf_vni_map') ) %}
+  {% set x=result.append("set vrf " ~ vrf ~ " evpn vni " ~ switch_vrf_vni_map[vrf] | mandatory("vrf: " ~ vrf ~ " not in switch_vrf_vni_map") ) %}
   {% set x=result.append("set vrf " ~ vrf ~ " router bgp address-family ipv4-unicast enable on") %}
   {% set x=result.append("set vrf " ~ vrf ~ " router bgp address-family ipv4-unicast redistribute connected enable on") %}
   {% set x=result.append("set vrf " ~ vrf ~ " router bgp address-family l2vpn-evpn enable on") %}
