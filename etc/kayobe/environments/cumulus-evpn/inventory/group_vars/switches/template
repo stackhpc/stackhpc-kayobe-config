@@ -47,7 +47,7 @@ switch_aaa_config_nvue:
   - set system aaa role system-admin class sudo
   - set system aaa user cumulus full-name cumulus
   - set system aaa user cumulus role system-admin
-  - set system aaa user cumulus hashed-password '{{ switch_cumulus_user_password | password_hash('sha512') }}'
+  - set system aaa user cumulus hashed-password '{{ switch_cumulus_user_password | password_hash('sha512', 12345 | random(seed=inventory_hostname)) }}'
 
 switch_system_config_nvue:
   - set system api state enabled
