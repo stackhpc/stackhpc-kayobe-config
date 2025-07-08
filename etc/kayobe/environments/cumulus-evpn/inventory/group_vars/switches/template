@@ -23,6 +23,19 @@ switch_config_del_nvue:
   - "unset system"
   - "unset vrf"
 
+FIXME_aaa:
+  - set system aaa user cumulus ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQC7qeeANSEPwkkZOjVSLOUTzWSkzwRk3KpKegYXSEQiDpDPIir7yDwpINAH134Uy3TT/FIhSjwa7YG1PeFPsBjhSsUyNFTOEex4eua+68ZUdJVdX17gV6qorAoi1q7HU+uDu+vxaXGxIUs1g0Mbj9iJZHMkMKkKyjNI5kGULmlH5MSAc2VBJ8X+ykpr9T9KHA25pdTs1YcqLZgB8qh26LCktZIEPeOK1WKAf/iPNd6opqch4NigIvT2SQLJXH/fjY51PupXG9qEebc0PVGOR1AinFvWLMgrreg/M25/ctGPca8zx7EfkCCZagolTncDtAO/5qUKteBkE0c+uiCTDrr1PmxxwgLt83x9lElW473IdMUQdpjuGLsN3vcwfirOT6TshcXsStqMQailJqM8H9He4kroK4IPrB6VK1tnG4Uu4Pr+spZOk6n+WFwsnPGJCqrrGIVnjGhBEUgm/WBG3o1a7c0qGTb55/XThRUFYONK4gE5/VTFayYg9TYzovBTof0=
+  - set system aaa user cumulus ssh authorized-key nesjumprd01 type ssh-rsa
+  - set system aaa user ironic_admin full-name \'Ironic/NGS user\'
+  - set system aaa user ironic_admin role nvue-admin
+  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDaQOnXWzinD1s2++gnZ6uhFJ3fl7PEY1YrEkPLcov+4Phi/Aoj2nUO2BdU9mpQAqvYz+pevArjcbfx9f1winDtSwaDg0P5McY7QGOM541TONVqPaKwiM0AcvA2oag1s47Vb20lx/PJsx0hwCrqqSYbQConxQ0WXl0JpM5HhlcK5+tn909RxRGjtOidMtMyxY15dTUfRrmu/4mt2rQNRxbVq0528UHqnfl9IGC4IWYx8kMyevJJIgVjWIlILMw9V2psDCTPj2l4E50ra997M3SuNAZfrvfi0+s8yZFrU5ArBGJsYUOGUE8jH+pNzNtyceM5Awwq1qoMVbUAtS5aqHXBopjgNp85Ydf90LJ8oNJfMPBM5vo3baZMP+if24PkIk/6zwVzPiNVl5ItFv9zhg1x4Fyo/VjDPh7ObVtaoXIMc87zGuqmo+XBfcZ4xiLtOSKN0AnDPKu8SvJU4fe3+ViGjOpoLg4oWhm+19CZettNCF+Km44ee2Dh6F9W/8xM7S8=
+  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 type ssh-rsa
+  - set system aaa user kayobe_admin full-name \'Kayobe admin user\'
+  - set system aaa user kayobe_admin role nvue-admin
+  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDOsvfcl9AINL7OeAuJX1Wi+ppR7+EqsIj51ujnqX9HuVoxt5kxVrIuM/NeZJXwR29ozrkIFjaDnExsNaN9hKlzagPdE46HSKaDOGyvZJW75AoXZrxAD6TzerpxmItqCnbQIEp3Fr4QE9Y8dzPE4XmT+nctKOy4Wtzh/AsUnwdMnTPQK3v9EJnm9FR3OCWI9I3eFKLKtOXQQEcn2tF6BvVT6ylURrtldRmJgnAlh4PDU1+qfMUgIrwE79RbNMwq1RL82gTN0g5bVPAvsfP0K68yh5TJBxt+KIAfw2A6Gu2IFS7kdUEvraO8VIcDrE+XLjVU2rOU5POTAPMlihbBJrB+hgJqJVBxrxMk6EPQovFnM+lXZ094750qB+TTW7LPFByuOap5SaIuEVxilLudmhU0FflHEnxD4jRYKmtRMvqbul0SOVhGO2CHrKae3cTXs2MIbZfSux9utzhi3xcqi4wpEQN+9EVkFu6QrseSsbbcyvZ7Yz5sfbadjIh4VcK4J/c=
+  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 type ssh-rsa
+
+
 switch_aaa_config_nvue:
   - set system aaa class nvapply action allow
   - set system aaa class nvapply command-path / permission all
@@ -34,20 +47,10 @@ switch_aaa_config_nvue:
   - set system aaa role nvue-monitor class nvshow
   - set system aaa role system-admin class nvapply
   - set system aaa role system-admin class sudo
-  - set system aaa user cumulus full-name \'cumulus,,,\'
+  - set system aaa user cumulus full-name cumulus
   - set system aaa user cumulus role system-admin
   # FIXME
   - set system aaa user cumulus hashed-password \'$6$trP9Hlmn2J4oJFri$DZBFo9k5neWjyNd92kP5XafKSLDoUieldApIRirJ24A9WiNaHgx9U7h6cTHPiUwKyIJlrS0sccrXbeXQor7kY0\'
-  - set system aaa user cumulus ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQC7qeeANSEPwkkZOjVSLOUTzWSkzwRk3KpKegYXSEQiDpDPIir7yDwpINAH134Uy3TT/FIhSjwa7YG1PeFPsBjhSsUyNFTOEex4eua+68ZUdJVdX17gV6qorAoi1q7HU+uDu+vxaXGxIUs1g0Mbj9iJZHMkMKkKyjNI5kGULmlH5MSAc2VBJ8X+ykpr9T9KHA25pdTs1YcqLZgB8qh26LCktZIEPeOK1WKAf/iPNd6opqch4NigIvT2SQLJXH/fjY51PupXG9qEebc0PVGOR1AinFvWLMgrreg/M25/ctGPca8zx7EfkCCZagolTncDtAO/5qUKteBkE0c+uiCTDrr1PmxxwgLt83x9lElW473IdMUQdpjuGLsN3vcwfirOT6TshcXsStqMQailJqM8H9He4kroK4IPrB6VK1tnG4Uu4Pr+spZOk6n+WFwsnPGJCqrrGIVnjGhBEUgm/WBG3o1a7c0qGTb55/XThRUFYONK4gE5/VTFayYg9TYzovBTof0=
-  - set system aaa user cumulus ssh authorized-key nesjumprd01 type ssh-rsa
-  - set system aaa user ironic_admin full-name \'Ironic/NGS user\'
-  - set system aaa user ironic_admin role nvue-admin
-  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDaQOnXWzinD1s2++gnZ6uhFJ3fl7PEY1YrEkPLcov+4Phi/Aoj2nUO2BdU9mpQAqvYz+pevArjcbfx9f1winDtSwaDg0P5McY7QGOM541TONVqPaKwiM0AcvA2oag1s47Vb20lx/PJsx0hwCrqqSYbQConxQ0WXl0JpM5HhlcK5+tn909RxRGjtOidMtMyxY15dTUfRrmu/4mt2rQNRxbVq0528UHqnfl9IGC4IWYx8kMyevJJIgVjWIlILMw9V2psDCTPj2l4E50ra997M3SuNAZfrvfi0+s8yZFrU5ArBGJsYUOGUE8jH+pNzNtyceM5Awwq1qoMVbUAtS5aqHXBopjgNp85Ydf90LJ8oNJfMPBM5vo3baZMP+if24PkIk/6zwVzPiNVl5ItFv9zhg1x4Fyo/VjDPh7ObVtaoXIMc87zGuqmo+XBfcZ4xiLtOSKN0AnDPKu8SvJU4fe3+ViGjOpoLg4oWhm+19CZettNCF+Km44ee2Dh6F9W/8xM7S8=
-  - set system aaa user ironic_admin ssh authorized-key nesjumprd01 type ssh-rsa
-  - set system aaa user kayobe_admin full-name \'Kayobe admin user\'
-  - set system aaa user kayobe_admin role nvue-admin
-  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 key AAAAB3NzaC1yc2EAAAADAQABAAABgQDOsvfcl9AINL7OeAuJX1Wi+ppR7+EqsIj51ujnqX9HuVoxt5kxVrIuM/NeZJXwR29ozrkIFjaDnExsNaN9hKlzagPdE46HSKaDOGyvZJW75AoXZrxAD6TzerpxmItqCnbQIEp3Fr4QE9Y8dzPE4XmT+nctKOy4Wtzh/AsUnwdMnTPQK3v9EJnm9FR3OCWI9I3eFKLKtOXQQEcn2tF6BvVT6ylURrtldRmJgnAlh4PDU1+qfMUgIrwE79RbNMwq1RL82gTN0g5bVPAvsfP0K68yh5TJBxt+KIAfw2A6Gu2IFS7kdUEvraO8VIcDrE+XLjVU2rOU5POTAPMlihbBJrB+hgJqJVBxrxMk6EPQovFnM+lXZ094750qB+TTW7LPFByuOap5SaIuEVxilLudmhU0FflHEnxD4jRYKmtRMvqbul0SOVhGO2CHrKae3cTXs2MIbZfSux9utzhi3xcqi4wpEQN+9EVkFu6QrseSsbbcyvZ7Yz5sfbadjIh4VcK4J/c=
-  - set system aaa user kayobe_admin ssh authorized-key nesjumprd01 type ssh-rsa
 
 switch_system_config_nvue:
   - set system api state enabled
