@@ -162,3 +162,17 @@ switch_peerlink_config_nclu:
   - clag sys-mac {{ cumulus_peerlink_clag.sysmac }}
 
 switch_interface_config: "{{ (switch_interface_config_shared | default({})) | combine(switch_interface_config_shared_svi | default({})) | combine(switch_interface_config_local | default({})) }}"
+
+switch_config_multihome_bond_access_mode_template: |-
+ - bond member %(bond_member)s
+ - bridge domain br_default access %(access_vlan)s
+ - evpn multihoming segment local-id %(local_id)s
+ - bond lacp-bypass on
+ - bond mode lacp
+ - bridge domain br_default stp admin-edge on
+ - bridge domain br_default stp auto-edge on
+ - bridge domain br_default stp bpdu-guard on
+ - evpn multihoming segment df-preference 50000
+ - evpn multihoming segment enable on
+ - evpn multihoming segment mac-address {{ switch_anycast_mac }}
+ - link mtu 9216

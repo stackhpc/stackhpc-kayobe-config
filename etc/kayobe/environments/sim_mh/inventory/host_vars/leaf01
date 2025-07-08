@@ -8,7 +8,6 @@
 switch_type: nvue
 switch_role: leaf
 
-#cumulus_loopback_ip: "{{ switch_routing_bgp_router_id }}/32"
 cumulus_loopback_ip: 10.10.10.1/32
 switch_routing_bgp_router_id: 10.10.10.1
 
@@ -20,21 +19,6 @@ switch_routing_bgp_asn: 65101
 vlan10_ip: 10.1.10.2/24
 vlan20_ip: 10.1.20.2/24
 vlan30_ip: 10.1.30.2/24
-
-# MOVE to better location
-switch_config_multihome_bond_access_mode_template: |-
- - bond member %(bond_member)s
- - bridge domain br_default access %(access_vlan)s
- - evpn multihoming segment local-id %(local_id)s
- - bond lacp-bypass on
- - bond mode lacp
- - bridge domain br_default stp admin-edge on
- - bridge domain br_default stp auto-edge on
- - bridge domain br_default stp bpdu-guard on
- - evpn multihoming segment df-preference 50000
- - evpn multihoming segment enable on
- - evpn multihoming segment mac-address {{ switch_anycast_mac }}
- - link mtu 9216
 
 # To spine
 switch_routing_bgp_neighbors:
