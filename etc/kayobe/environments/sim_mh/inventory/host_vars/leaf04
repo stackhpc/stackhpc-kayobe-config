@@ -1,0 +1,34 @@
+# Switch configuration for a01dl01
+
+# This switch is a Cumulus 4610-54T-O-AC-B
+
+###############################################################################
+# Switch credentials.
+
+switch_type: nvue
+switch_role: leaf
+
+cumulus_loopback_ip: 10.10.10.4/32
+switch_routing_bgp_router_id: 10.10.10.4
+
+#TODO:
+switch_anycast_mac: "44:38:39:BE:EF:BB"
+
+switch_routing_bgp_asn: 65104
+
+vlan10_ip: 10.1.10.5/24
+vlan20_ip: 10.1.20.5/24
+vlan30_ip: 10.1.30.5/24
+
+# To spine
+switch_routing_bgp_neighbors:
+  swp51-54:
+    - "peer-group underlay"
+
+switch_interface_config_local:
+  bond1:
+    config: "{{ (switch_config_multihome_bond_access_mode_template % {'bond_member': 'swp1', 'access_vlan': '10', 'local_id': 1}) | from_yaml }}"
+  bond2:
+    config: "{{ (switch_config_multihome_bond_access_mode_template % {'bond_member': 'swp2', 'access_vlan': '20', 'local_id': 2}) | from_yaml }}"
+  bond3:
+    config: "{{ (switch_config_multihome_bond_access_mode_template % {'bond_member': 'swp3', 'access_vlan': '30', 'local_id': 3}) | from_yaml }}"
