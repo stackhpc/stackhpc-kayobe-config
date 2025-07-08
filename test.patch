@@ -1,0 +1,15 @@
+--- a/etc/kayobe/environments/cumulus-evpn/inventory/group_vars/hs-switches/template
++++ b/etc/kayobe/environments/cumulus-evpn/inventory/group_vars/hs-switches/template
+@@ -213,9 +213,9 @@ switch_config_svi_nvue: >-
+   {% set x=result.append("set interface vlan" + vlan | string + " ip igmp") %}
+   {% endif %}
+   {% if switch_pim_enabled | bool %}
+-  {% set vni=switch_vlan_vni_map[key | string] %}
+-  {% set x=result.append("set vlan" + key | string + " domain br_default vlan " + key | string + " vni " + vni | string + ' flooding enable on') %}
+-  {% set x=result.append("set vlan" + key | string + " domain br_default vlan " + key | string + " vni " + vni | string + ' flooding mutlicast-group ' + switch_flooding_multicast_group_map[key | string]) %}
++  {% set vni=switch_vlan_vni_map[vlan | string] | default('UNKNOWN') %}
++  {% set x=result.append("set vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding enable on') %}
++  {% set x=result.append("set vlan" + vlan | string + " domain br_default vlan " + vlan | string + " vni " + vni | string + ' flooding mutlicast-group ' + switch_flooding_multicast_group_map[vlan | string] | mandatory('vlan %s not in switch_flooding_multicast_group_map' % vlan) ) %}
+   {% endif %}
+   {%- endfor -%}
+   {%- endfor -%}
