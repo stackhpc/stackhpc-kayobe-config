@@ -111,6 +111,8 @@ prometheus_blackbox_exporter_endpoints_default:
     enabled: "{{ enable_etcd | bool }}"
   - endpoints:
       - "grafana:http_2xx:{{ grafana_public_endpoint }}"
+    enabled: "{{ enable_grafana_external | bool }}"
+  - endpoints:
       - "{{ ('grafana_internal:http_2xx:' + grafana_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
     enabled: "{{ enable_grafana | bool }}"
   - endpoints:
