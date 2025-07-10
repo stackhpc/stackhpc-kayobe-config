@@ -180,3 +180,34 @@ switch_config_multihome_bond_access_mode_template: |-
  - evpn multihoming segment enable on
  - evpn multihoming segment mac-address {{ switch_anycast_mac }}
  - link mtu 9216
+
+switch_config_multihome_bond_trunk_template: |-
+  - bond member %(bond_member)s
+  - bridge domain br_default untagged %(pvid)s
+  - bridge domain br_default vlans %(vlans)s
+  - evpn multihoming segment local-id %(local_id)s
+  - bond lacp-bypass on
+  - bond mode lacp
+  - bridge domain br_default stp admin-edge on
+  - bridge domain br_default stp auto-edge on
+  - bridge domain br_default stp bpdu-guard on
+  # NOTE: In simulatation this was only on first switch
+  - evpn multihoming segment df-preference 50000
+  - evpn multihoming segment enable on
+  - evpn multihoming segment mac-address {{ switch_anycast_mac }}
+  - link mtu 9216
+
+switch_config_access_port_template: |-
+ - bridge domain br_default access %(access_vlan)s
+ - bridge domain br_default stp admin-edge on
+ - bridge domain br_default stp auto-edge on
+ - bridge domain br_default stp bpdu-guard on
+ - link mtu 9216
+
+switch_config_trunk_port_template: |-
+  - bridge domain br_default untagged %(pvid)s
+  - bridge domain br_default vlans %(vlans)s
+  - bridge domain br_default stp admin-edge on
+  - bridge domain br_default stp auto-edge on
+  - bridge domain br_default stp bpdu-guard on
+  - link mtu 9216

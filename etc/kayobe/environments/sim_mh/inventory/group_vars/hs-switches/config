@@ -14,48 +14,41 @@ switch_ntp_servers:
 
 switch_cumulus_user_password: "{{ ansible_ssh_password }}"
 
-hpe_pfss_frontend: "2111,110"
-hpe_pfss_backend: "110"
-hpe_pfss_dmf_backend: "111"
-agr_idm: "2113"
-agr_dmf: "2071"
-agr_client_storage: "2103"
-external_vlans: "61,114,1441,1481,2071,2103,2107,2111,2113,2157,2167"
-test_external_vlans: "1482"
-agr_hpc_internal: "112"
-agr_hpc_internal_staging: "114"
-ironic_tenant_vlans: "160-179"
-sriov_vlans: "180"
-weka_frontend: "167"
-hpc3_storage_access: "168"
-hpc3_compute_internal: "169"
-hpc3_services_internal: "170"
-hpc3_proxy: "1441,1481,167,168,169,170"
+external_vlans: ""
+ironic_tenant_vlans: ""
+sriov_vlans: ""
+octavia_net_vlan: ""
 
-switch_interface_config_spine: "link state up"
+switch_interface_config_controller_vlans:
+  - "{{ internal_net_name | net_vlan }}"
+  - "{{ storage_net_name | net_vlan }}"
+  - "{{ tunnel_net_name | net_vlan }}"
+  - "{{ octavia_net_vlan }}"
+  - "{{ public_net_name | net_vlan }}"
+  - "{{ external_vlans }}"
+  - "{{ ironic_tenant_vlans }}"
+  - "{{ sriov_vlans }}"
 
-#looks like 'internal_provider_vlans' isn't used anymore, so removed from controller and compute below SEAN 24/7/23
-switch_interface_config_controller_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ tunnel_net_vlan }},{{ octavia_net_vlan }},{{ public_net_vlan }},{{ external_vlans }},{{ ironic_tenant_vlans }},{{ sriov_vlans }}"
+switch_interface_config_controller_vlans_csv: "{{ switch_interface_config_controller_vlans config_storage_vlans | unique | select | join(',') }}"
 
-switch_interface_config_storage_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ storage_mgmt_net_vlan }}"
+switch_interface_config_storage_vlans:
+ - "{{ internal_net_name | net_vlan }}"
+ - "{{ storage_net_name | net_vlan }}"
+ - "{{ storage_mgmt_net_name | net_vlan }}"
 
-switch_interface_config_compute_data: "{{ bridge_trunk }} {{ internal_net_vlan }},{{ storage_net_vlan }},{{ storage_mgmt_net_vlan }},{{ tunnel_net_vlan }},{{ octavia_net_vlan }},{{ external_vlans }},{{ ironic_tenant_vlans }},{{ sriov_vlans }},{{ hpe_pfss_backend }}"
+switch_interface_config_storage_vlans_csv: "{{ switch_interface_config_storage_vlans | unique | select | join(',') }}"
 
-switch_interface_config_hpe_pfss_backend: "{{ bridge_trunk }} {{ hpe_pfss_backend }}"
-switch_interface_config_hpe_pfss_backend_pvid: "{{ bridge_trunk_native }} {{ hpe_pfss_backend }}"
-switch_interface_config_hpe_pfss_backend_dmf: "{{ bridge_trunk }} {{ hpe_pfss_dmf_backend }}"
-switch_interface_config_hpe_pfss_backend_dmf_pvid: "{{ bridge_trunk_native }} {{ hpe_pfss_dmf_backend }}"
-switch_interface_config_hpe_pfss_frontend: "{{ bridge_trunk }} {{ hpe_pfss_frontend }}"
-switch_interface_config_agr_client_storage: "{{ bridge_trunk }} {{ agr_client_storage }}"
-switch_interface_config_agr_idm: "{{ bridge_trunk }} {{ agr_idm }}"
-switch_interface_config_agr_dmf: "{{ bridge_trunk }} {{ agr_dmf }}"
-switch_interface_config_agr_hpc_internal: "{{ bridge_trunk }} {{ agr_hpc_internal }}"
-switch_interface_config_agr_hpc_internal_staging: "{{ bridge_trunk }} {{ agr_hpc_internal_staging }}"
-switch_interface_config_test_external: "{{ bridge_trunk }} {{ test_external_vlans }}"
-switch_interface_config_weka_frontend: "{{ bridge_access }} {{ weka_frontend }}"
-switch_interface_config_weka_frontend_pvid: "{{ bridge_trunk_native }} {{ weka_frontend }}"
-switch_interface_config_hpc3_storage_access: "{{ bridge_trunk }} {{ hpc3_storage_access }}"
-switch_interface_config_hpc3_services_proxy: "{{ bridge_trunk }} {{ hpc3_proxy }}"
+switch_interface_config_compute_vlans:
+ - "{{ internal_net_name | net_vlan }}"
+ - "{{ storage_net_name | net_vlan }}"
+ - "{{ storage_mgmt_net_name | net_vlan }}"
+ - "{{ tunnel_net_name  | net_vlan }}"
+ - "{{ octavia_net_vlan  }}"
+ - "{{ external_vlans }}"
+ - "{{ ironic_tenant_vlans }}"
+ - "{{ sriov_vlans }}"
+
+switch_interface_config_compute_vlans_csv: "{{ switch_interface_config_compute_vlans | unique | select | join(',') }}"
 
 # vlan -> vni
 switch_vlan_vni_map:
