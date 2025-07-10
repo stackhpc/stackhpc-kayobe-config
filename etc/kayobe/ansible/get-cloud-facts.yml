@@ -51,7 +51,7 @@
           blazar_enabled: "{{ kolla_enable_blazar }}"
           pulp_enabled: "{{ seed_pulp_container_enabled }}"
           opensearch_enabled: "{{ kolla_enable_opensearch }}"
-          openearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
+          opensearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
           influxdb_enabled: "{{ kolla_enable_influxdb }}"
           grafana_enabled: "{{ kolla_enable_grafana }}"
           prometheus_enabled: "{{ kolla_enable_prometheus }}"
@@ -59,8 +59,26 @@
           telegraf_enabled: "{{ kolla_enable_telegraf }}"
           internal_tls_enabled: "{{ kolla_enable_tls_internal }}"
           external_tls_enabled: "{{ kolla_enable_tls_external }}"
-          firewalld_enabled_all: "{{ controller_firewalld_enabled and compute_firewalld_enabled and storage_firewalld_enabled and monitoring_firewalld_enabled and infra_vm_firewalld_enabled and seed__firewalld_enabled and seed_hypervisor_firewalld_enabled}}"
-          firewalld_enabled_any: "{{ controller_firewalld_enabled or compute_firewalld_enabled or storage_firewalld_enabled or monitoring_firewalld_enabled or infra_vm_firewalld_enabled or seed__firewalld_enabled or seed_hypervisor_firewalld_enabled }}"
+          firewalld_enabled_all: >-
+            {{
+              controller_firewalld_enabled and 
+              compute_firewalld_enabled and 
+              storage_firewalld_enabled and 
+              monitoring_firewalld_enabled and 
+              infra_vm_firewalld_enabled and 
+              seed_firewalld_enabled and 
+              seed_hypervisor_firewalld_enabled
+            }}
+          firewalld_enabled_any: >-
+            {{
+              controller_firewalld_enabled or 
+              compute_firewalld_enabled or 
+              storage_firewalld_enabled or 
+              monitoring_firewalld_enabled or 
+              infra_vm_firewalld_enabled or 
+              seed_firewalld_enabled or 
+              seed_hypervisor_firewalld_enabled
+            }}
           stackhpc_package_repos_enabled: "{{ stackhpc_repos_enabled }}"
           pulp_tls_enabled: "{{ pulp_enable_tls }}"
           kolla_image_tags: "{{ kolla_image_tags }}"
