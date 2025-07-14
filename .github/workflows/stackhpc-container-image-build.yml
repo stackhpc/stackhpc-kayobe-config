@@ -139,6 +139,10 @@ jobs:
       - generate-tag
       - runner-selection
     steps:
+      - name: Purge workspace (Arm runner only)
+        if: runner.arch == 'ARM64'
+        run: sudo rm -rf "$GITHUB_WORKSPACE"/*
+
       - name: Install package dependencies
         run: |
           sudo apt update
@@ -151,10 +155,6 @@ jobs:
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
           sudo apt update
           sudo apt install gh -y
-
-      - name: Purge workspace (Arm runner only)
-        if: runner.arch == 'ARM64'
-        run: sudo rm -rf "$GITHUB_WORKSPACE"/*
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -232,6 +232,8 @@ jobs:
             args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
           fi
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e kolla_build_log_path=/var/log/kolla-build-${{ steps.write-kolla-tag.outputs.kolla-tag }}.log"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
@@ -240,11 +242,13 @@ jobs:
         if: inputs.overcloud
 
       - name: Copy overcloud container image build logs to output directory
-        run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-overcloud.log
+        run: |
+          sudo mv /var/log/kolla-build-${{ steps.write-kolla-tag.outputs.kolla-tag }}.log \
+                  image-build-logs/kolla-build-overcloud.log
         if: inputs.overcloud
 
       - name: Copy build configs to output directory
-        run: sudo cp -rnL /opt/kayobe/etc/kolla/* image-build-logs/
+        run: sudo cp -rnL "$GITHUB_WORKSPACE/opt/kayobe/etc/kolla/"* image-build-logs/
         if: inputs.overcloud
 
       - name: Build kolla seed images
@@ -355,9 +359,9 @@ jobs:
       - name: Remove locally built images for this run
         if: always() && runner.arch == 'ARM64'
         run: |
-          docker images --quiet \
+          docker images --format '{{.Repository}}:{{.Tag}}' \
             --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" \
-            | xargs -r docker rmi -f
+            | xargs -r -n1 docker rmi -f
 
   create-manifests:
     # Only for Rocky Linux for now
