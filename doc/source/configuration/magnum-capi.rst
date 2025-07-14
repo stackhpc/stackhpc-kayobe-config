@@ -90,7 +90,8 @@ The general running order of the provisioning playbook is the following:
 
 - Install the required components on the HA cluster to manage Magnum user clusters
 
-Once the seed VM has been provisioned, it can be accessed via SSH by running ``./bin/seed-ssh`` from the root of the azimuth-config repository. Within the seed VM, the k3s cluster and the HA cluster can both be accessed using the pre-installed ``kubectl`` and ``helm`` command line tools. Both of these tools will target the k3s cluster by default; however, the ``kubeconfig`` file for the HA cluster can be found in the seed's home directory (named e.g. ``kubeconfig-capi-mgmt-<site-specific-name>.yaml``).
+Once the seed VM has been provisioned, it can be accessed via SSH by running ``./bin/seed-ssh`` from the root of the azimuth-config repository. Within the seed VM, the k3s cluster and the HA cluster can both be accessed using the pre-installed ``kubectl`` and ``helm`` command line tools. Both of these tools will target the k3s cluster by default; however, the ``kubeconfig`` file for the HA cluster can be found in the seed's home directory (named e.g. ``kubeconfig-capi-mgmt-<site-specific-name>.yaml``). This file can contain two types of authentication configurations:
+Client Certificate-Based Authentication configuration which is valid for a limited period (typically one year). Once expired, the certificate must be manually refreshed, which can lead to operational overhead. As an alternative, a token-based kubeconfig can be created by generating a ServiceAccount with appropriate ClusterRole permissions and embedding its token in a kubeconfig. This method provides a long-lived, non-expiring authentication without any manual intervention required.
 
 .. note::
 
