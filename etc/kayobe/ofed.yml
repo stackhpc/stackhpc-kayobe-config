@@ -3,7 +3,7 @@
 
 ###############################################################################
 # DOCA host version
-stackhpc_pulp_doca_version: 2.9.1
+stackhpc_pulp_doca_version: "{{ '2.9.3' if stackhpc_pulp_repo_rocky_9_minor_version == '6' else '2.9.1' }}"
 
 ###############################################################################
 # Pulp configuration for DOCA OFED
@@ -11,10 +11,14 @@ stackhpc_pulp_doca_version: 2.9.1
 # Whether to sync OFED repositories into the local Pulp service
 stackhpc_pulp_sync_ofed: "{{ groups['mlnx'] | length > 0 }}"
 
+# DOCA Snapshot lookup vars
+doca_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_version"
+doca_modules_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_version"
+
 # DOCA Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml
-stackhpc_pulp_repo_rhel9_doca_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_doca_version') }}"
-stackhpc_pulp_repo_rhel9_doca_modules_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_doca_modules_version') }}"
+stackhpc_pulp_repo_rhel9_doca_version: "{{ lookup('vars', doca_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel9_doca_modules_version: "{{ lookup('vars', doca_modules_version_lookup_var) }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

@@ -201,7 +201,7 @@ stackhpc_pulp_distribution_deb_production: >-
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
 # Rocky 9 minor version number. Supported values: 6. Default is 6
-stackhpc_pulp_repo_rocky_9_minor_version: 6
+stackhpc_pulp_repo_rocky_9_minor_version: '6'
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
@@ -495,6 +495,7 @@ stackhpc_pulp_images_kolla:
   - mariadb-clustercheck
   - mariadb-server
   - memcached
+  - neutron-bgp-dragent
   - neutron-dhcp-agent
   - neutron-l3-agent
   - neutron-metadata-agent
@@ -683,7 +684,7 @@ stackhpc_pulp_repository_container_repos_openbao:
     policy: on_demand
     proxy_url: "{{ pulp_proxy_url }}"
     state: present
-    include_tags: "{{ overcloud_vault_docker_tag }}"
+    include_tags: "{{ overcloud_openbao_docker_tag }}"
     required: "{{ stackhpc_sync_openbao_images | bool }}"
 
 # List of OpenBao container image distributions.
