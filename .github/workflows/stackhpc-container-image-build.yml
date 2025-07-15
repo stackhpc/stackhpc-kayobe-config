@@ -351,26 +351,13 @@ jobs:
   create-manifests:
     # Only for Rocky Linux for now
     name: Create Multiarch Docker Manifests
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-9
     runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     permissions: {}
     needs:
       - container-image-build
       - runner-selection
     steps:
-      - name: Install package dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git unzip python3-wheel python3-pip python3-venv curl jq wget openssh-server openssh-client
-
-      - name: Install gh
-        run: |
-          sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
 
@@ -385,8 +372,13 @@ jobs:
           username: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_USER }}
           password: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_PASS }}
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
       - name: Create and push Docker manifests
-        run: tools/multiarch-manifests.sh
+        run: src/kayobe-config/tools/multiarch-manifests.sh
 
       - name: Upload manifest logs
         uses: actions/upload-artifact@v4
@@ -398,6 +390,15 @@ jobs:
           retention-days: 7
         if: ${{ !cancelled() }}
 
+  trigger-image-sync:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+      - create-manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
       - name: Trigger container image repository sync
@@ -414,9 +415,7 @@ jobs:
           -f sync-old-images=false
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
-        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
 
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
-        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
