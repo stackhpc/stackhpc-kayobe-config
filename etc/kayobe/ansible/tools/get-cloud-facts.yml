@@ -1,13 +1,68 @@
 ---
-- name: Gather Cloud Facts
+- name: Set facts for control host
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Check if ngs enabled
+      ansible.builtin.set_fact:
+        ngs_enabled: >-
+          {{ 'genericswitch' in kolla_neutron_ml2_mechanism_drivers | default(false) }}
+      when: kolla_neutron_ml2_mechanism_drivers
+
+- name: Set facts for seed node
+  hosts: seed
+  gather_facts: true
+  tasks:
+    - name: Is there a dedicated seed node?
+      ansible.builtin.set_fact:
+        seed_node_is_vm: "{{ ansible_facts.virtualization_role == 'guest' }}"
+
+- name: Set facts for all hosts
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Pinging stackhpc.com to check internet connectivity
+      ansible.builtin.command: "ping stackhpc.com -c 3"
+      register: successful_ping
+      timeout: 5
+      ignore_errors: true
+
+    - name: Get kernel version
+      ansible.builtin.command: "uname -r"
+      register: kernel_version
+
+    - name: Check if Docker is installed
+      ansible.builtin.command: "which docker"
+      register: docker_check
+      failed_when: docker_check.rc not in [0]
+      ignore_errors: true
+
+    - name: Get running contianers
+      ansible.builtin.command: "docker ps --format {% raw %}'{{.Names}}'{% endraw %}"
+      become: true
+      register: containers_list
+      when: not docker_check.failed
+
+    - name: Set facts
+      ansible.builtin.set_fact:
+        internet_connectivity: "{{ not successful_ping.failed }}"
+        distribution: "{{ ansible_facts.distribution }}"
+        distribution_release: "{{ ansible_facts.distribution_release }}"
+        hugepages_enabled: "{{ 'hugepages' in ansible_facts.cmdline }}"
+
+- name: Write cloud facts file
   hosts: localhost
   gather_facts: true
   tasks:
     - name: Write facts to file
       vars:
         cloud_facts:
-          ansible_control_host_distribution: "{{ ansible_facts.distribution }}"
-          ansible_control_host_distribution_release: "{{ ansible_facts.distribution_release }}"
+          internet_connectivity: "{{ hostvars | group_hostvars_by_var('internet_connectivity') }}"
+          seed_node_is_vm: "{{ hostvars[groups['seed'][0]]['seed_node_is_vm'] | default('N/A') if groups ['seed'] else 'N/A' }}"
+          distributions: "{{ hostvars | group_hostvars_by_var('distribution') }}"
+          dist_releases: "{{ hostvars | group_hostvars_by_var('distribution_release') }}"
+          kernel_versions: "{{ hostvars | group_hostvars_by_var('kernel_version','stdout') }}"
+          deployed_containers: "{{ hostvars | get_hostvars_by_host('containers_list', 'stdout_lines') | default({}) }}"
           openstack_release: "{{ openstack_release }}"
           openstack_release_name: "{{ openstack_release_codename }}"
           ansible_control_host_is_vm: "{{ ansible_facts.virtualization_role == 'guest' }}"
@@ -22,41 +77,10 @@
           ceph_release: "{{ cephadm_ceph_release }}"
           storage_hyperconverged: "{{ groups['controllers'] | intersect(groups['osds']) | length > 0 | bool }}"
           wazuh_enabled: "{{ groups['wazuh-agent'] | length > 0 | bool }}"
+          ngs_enabled: "{{ ngs_enabled | default(false) }}"
           kayobe_managed_switches: "{{ groups['switches'] | length > 0 | bool }}"
           proxy_configured: "{{ http_proxy | bool or https_proxy | bool }}"
           bifrost_version: "{{ kolla_bifrost_source_version }}"
-          barbican_enabled: "{{ kolla_enable_barbican }}"
-          nova_enabled: "{{ kolla_enable_nova }}"
-          neutron_enabled: "{{ kolla_enable_neutron }}"
-          ovs_enabled: "{{ kolla_enable_openvswitch }}"
-          ovn_enabled: "{{ kolla_enable_ovn }}"
-          glance_enabled: "{{ kolla_enable_glance }}"
-          cinder_enabled: "{{ kolla_enable_cinder }}"
-          keystone_enabled: "{{ kolla_enable_keystone }}"
-          horizon_enabled: "{{ kolla_enable_horizon }}"
-          fluentd_enabled: "{{ kolla_enable_fluentd }}"
-          rabbitmq_enabled: "{{ kolla_enable_rabbitmq }}"
-          mariadb_enabled: "{{ kolla_enable_mariadb }}"
-          mariabackup_enabled: "{{ kolla_enable_mariabackup }}"
-          memcached_enabled: "{{ kolla_enable_memcached }}"
-          haproxy_enabled: "{{ kolla_enable_haproxy }}"
-          keepalived_enabled: "{{ kolla_enable_keepalived }}"
-          octavia_enabled: "{{ kolla_enable_octavia }}"
-          designate_enabled: "{{ kolla_enable_designate }}"
-          manila_enabled: "{{ kolla_enable_manila }}"
-          magnum_enabled: "{{ kolla_enable_magnum }}"
-          heat_enabled: "{{ kolla_enable_heat }}"
-          ironic_enabled: "{{ kolla_enable_ironic }}"
-          skyline_enabled: "{{ kolla_enable_skyline }}"
-          blazar_enabled: "{{ kolla_enable_blazar }}"
-          pulp_enabled: "{{ seed_pulp_container_enabled }}"
-          opensearch_enabled: "{{ kolla_enable_opensearch }}"
-          opensearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
-          influxdb_enabled: "{{ kolla_enable_influxdb }}"
-          grafana_enabled: "{{ kolla_enable_grafana }}"
-          prometheus_enabled: "{{ kolla_enable_prometheus }}"
-          cloudkitty_enabled: "{{ kolla_enable_cloudkitty }}"
-          telegraf_enabled: "{{ kolla_enable_telegraf }}"
           internal_tls_enabled: "{{ kolla_enable_tls_internal }}"
           external_tls_enabled: "{{ kolla_enable_tls_external }}"
           firewalld_enabled_all: >-
@@ -82,6 +106,9 @@
           stackhpc_package_repos_enabled: "{{ stackhpc_repos_enabled }}"
           pulp_tls_enabled: "{{ pulp_enable_tls }}"
           kolla_image_tags: "{{ kolla_image_tags }}"
+          gpu_passthrough_enabled: "{{ gpu_group_map | length > 0 | bool }}"
+          vgpu_enabled: "{{ groups['vgpu'] | length > 0 | bool }}"
+          hugepages_enabled: "{{ hostvars | group_hostvars_by_var('hugepages_enabled') }}"
       ansible.builtin.copy:
         content: "{{ cloud_facts | to_nice_json(sort_keys=false) }}"
         dest: ~/cloud-facts.json
