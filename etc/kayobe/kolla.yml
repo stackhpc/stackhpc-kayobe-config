@@ -296,6 +296,9 @@ kolla_build_blocks:
     {% endfor %}
     {% else %}
     RUN \
+        echo "== BEFORE APT SOURCE MODIFICATION ==" && \
+        cat /etc/apt/sources.list && \
+        ls -l /etc/apt/ && \
         rm /etc/apt/sources.list && \
     {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
@@ -311,8 +314,13 @@ kolla_build_blocks:
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% endif %} && \
+        echo "== AFTER APT SOURCE MODIFICATION ==" && \
+        cat /etc/apt/sources.list && \
+        ls -l /etc/apt/
     {% endif %}
     {% endif %}
+
   base_centos_repo_overrides_post_yum: |
     {# fixme #}
     {% if kolla_base_distro == 'rocky' %}
@@ -329,6 +337,7 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
     {% endif %}
+
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
@@ -337,9 +346,11 @@ kolla_build_blocks:
     {% else %}
     COPY sources.list.ubuntu.noble /etc/apt/sources.list.backup
     {% endif %}
-
     {% endif %}
     RUN \
+        echo "== BEFORE REPLACING APT SOURCES IN base_ubuntu_package_sources_list ==" && \
+        cat /etc/apt/sources.list || echo "No sources.list found" && \
+        ls -l /etc/apt/ && \
         rm /etc/apt/sources.list && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
     {% if kolla_base_distro_version == 'jammy' %}
@@ -352,6 +363,10 @@ kolla_build_blocks:
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
     {% endif %}
     {% endfor %}
+    {% endif %} && \
+        echo "== AFTER REPLACING APT SOURCES IN base_ubuntu_package_sources_list ==" && \
+        cat /etc/apt/sources.list && \
+        ls -l /etc/apt/
     {% endif %}
   footer: |
     {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
