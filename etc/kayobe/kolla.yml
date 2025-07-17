@@ -230,6 +230,7 @@ stackhpc_ubuntu_noble_base_repos:
   - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
   - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
   - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_docker_ce_ubuntu_noble_url }} noble stable"
 
 # List of UCA repositories for Ubuntu Noble.
 stackhpc_ubuntu_noble_uca_repos:
@@ -260,6 +261,7 @@ kolla_build_blocks:
     {% else %}
     RUN \
         rm /etc/apt/sources.list && \
+        ls -lac /etc/apt/sources.list.d/ &&\
     {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
