@@ -260,8 +260,9 @@ kolla_build_blocks:
     {% endfor %}
     {% else %}
     RUN \
-        rm /etc/apt/sources.list && \
-        ls -lac /etc/apt/sources.list.d/ &&\
+        cat /etc/apt/sources.list && \
+        rm -f /etc/apt/sources.list && \
+        rm -f /etc/apt/sources.list.d/* &&\
     {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
     {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
         echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
@@ -293,9 +294,9 @@ kolla_build_blocks:
     COPY sources.list.ubuntu /etc/apt/sources.list.backup
     {% endif %}
     RUN \
+        cat /etc/apt/sources.list && \
         rm /etc/apt/sources.list && \
-        ls -lac /etc/apt/sources.list.d/ && \
-        rm -f /etc/apt/sources.list.d/docker-ce.sources && \
+        rm -f /etc/apt/sources.list.d/* && \
         rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
     {% for repo in stackhpc_ubuntu_noble_repos %}
         echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
