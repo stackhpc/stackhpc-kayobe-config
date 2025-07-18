@@ -1,6 +1,6 @@
-=================================
-2025.1 Epoxy Series Release Notes
-=================================
+====================================
+2024.1 Caracal Series Release Notes
+====================================
 
 .. release-notes::
-   :branch: stackhpc/2025.1
+   :branch: stackhpc/2024.1

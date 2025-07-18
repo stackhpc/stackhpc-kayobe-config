@@ -29,4 +29,4 @@
         executable: "/bin/bash"
         cmd: >-
           set -o pipefail &&
-          systemctl -a | grep -E 'kolla-({{ stop_service_list | join('|') }})' | awk '{ print $1 }' | xargs systemctl stop
+          systemctl -a | egrep 'kolla-({{ stop_service_list | join('|') }})' | awk '{ print $1 }' | xargs systemctl stop

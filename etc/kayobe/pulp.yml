@@ -66,7 +66,8 @@ stackhpc_pulp_sync_for_local_container_build: false
 # Debs
 
 # Whether to sync Ubuntu packages.
-stackhpc_pulp_sync_ubuntu_noble: "{{ os_distribution == 'ubuntu' }}"
+stackhpc_pulp_sync_ubuntu_jammy: "{{ os_release == 'jammy' }}"
+stackhpc_pulp_sync_ubuntu_noble: "{{ os_release == 'noble' }}"
 
 # Default configuration, which each element of stackhpc_pulp_deb_repos
 # is combined with
@@ -83,6 +84,31 @@ stackhpc_pulp_deb_repos_default_config:
 
 # Deb repositories
 stackhpc_pulp_deb_repos:
+  # Base Ubuntu Jammy repositories
+  - name: "Ubuntu jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy/{{ stackhpc_pulp_repo_ubuntu_jammy_version }}"
+    distribution_name: "ubuntu-jammy-"
+    base_path: "ubuntu/jammy/"
+    components: "main restricted universe multiverse"
+    distributions: "jammy jammy-updates jammy-backports"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
+  - name: "Ubuntu jammy security"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/jammy-security/{{ stackhpc_pulp_repo_ubuntu_jammy_security_version }}"
+    distribution_name: "ubuntu-jammy-security-"
+    base_path: "ubuntu/jammy-security/"
+    components: "main restricted universe multiverse"
+    distributions: "jammy-security"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
+  - name: "Ubuntu jammy CVE-2024-6387"
+    url: "{{ stackhpc_release_pulp_content_url }}/ubuntu-jammy-cve-2024-6387/"
+    distribution_name: "ubuntu-jammy-cve-2024-6387-"
+    base_path: "ubuntu-jammy-cve-2024-6387/"
+    components: "upload"
+    distributions: "pulp"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
   # Base Ubuntu Noble repositories
   - name: "Ubuntu Noble"
     url: "{{ stackhpc_release_pulp_content_url }}/ubuntu/noble/{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
@@ -106,10 +132,18 @@ stackhpc_pulp_deb_repos:
     distribution_name: "ubuntu-cloud-archive-"
     base_path: "ubuntu-cloud-archive/"
     components: "main"
-    distributions: "noble-updates/{{ openstack_release_codename }}"
-    required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
+    distributions: "jammy-updates/{{ openstack_release_codename }}"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
   # Third-party repositories
+  - name: "Docker CE for Ubuntu Jammy"
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-jammy/{{ stackhpc_pulp_repo_docker_ce_ubuntu_jammy_version }}"
+    distribution_name: "docker-ce-for-ubuntu-jammy-"
+    base_path: "docker-ce/ubuntu-jammy/"
+    distributions: "jammy"
+    components: "stable"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
+
   - name: "Docker CE for Ubuntu Noble"
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/ubuntu-noble/{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
     distribution_name: "docker-ce-for-ubuntu-noble-"
@@ -117,6 +151,14 @@ stackhpc_pulp_deb_repos:
     distributions: "noble"
     components: "stable"
     required: "{{ stackhpc_pulp_sync_ubuntu_noble | bool }}"
+
+  - name: "Ceph Reef for Debian"
+    url: "{{ stackhpc_release_pulp_content_url }}/ceph/debian-reef/{{ stackhpc_pulp_repo_ceph_reef_debian_version }}"
+    distribution_name: "ceph-reef-debian-"
+    base_path: "ceph/debian-reef/"
+    distributions: "jammy"
+    components: "main"
+    required: "{{ stackhpc_pulp_sync_ubuntu_jammy | bool }}"
 
 # Publication format is a subset of distribution.
 stackhpc_pulp_publication_deb_development: "{{ stackhpc_pulp_distribution_deb_development }}"
@@ -200,15 +242,33 @@ stackhpc_pulp_distribution_deb_production: >-
 
 # Whether to sync Rocky Linux 9 packages.
 stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
-# Rocky 9 minor version number. Supported values: 6. Default is 6
+# Rocky 9 minor version number. Supported values: 1, 2, 3, 4, 5, 6. Default is 6
 stackhpc_pulp_repo_rocky_9_minor_version: '6'
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
-stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_appstream_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
-stackhpc_pulp_repo_rocky_9_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_baseos_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
-stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_extras_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
-stackhpc_pulp_repo_rocky_9_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_crb_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
-stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_%s_highavailability_version' % stackhpc_pulp_repo_rocky_9_minor_version) }}"
+
+# Define the architecture suffix
+arch_suffix: "{{ '_aarch64' if kolla_base_arch == 'aarch64' else '' }}"
+
+# Rocky 9 Snapshot versions
+stackhpc_pulp_repo_rocky_9_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_baseos' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_appstream' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_extras' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_9_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_crb' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_highavailability' ~ arch_suffix ~ '_version') }}"
+
+# Rocky 9 Multiarch repositories
+stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel9_rabbitmq_erlang' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_9_nfv_openvswitch_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_9_openstack_caracal_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_openstack_caracal' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_9_opstools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_opstools' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_9_storage_ceph_reef_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_9_docker_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_docker' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rhel_9_treasuredata_5_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_treasuredata_5' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rhel_9_mariadb_10_11_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_mariadb_10_11' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rhel_9_influxdb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_influxdb' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_epel_9_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_9' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_sig_security_common' ~ arch_suffix ~ '_version') }}"
 
 # Whether to sync packages common to all RHEL 9 derivatives.
 stackhpc_pulp_sync_el_9: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
@@ -289,16 +349,22 @@ stackhpc_pulp_rpm_repos:
     base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
+  - name: CentOS Stream 9 - OpenStack Caracal
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-caracal/{{ stackhpc_pulp_repo_centos_stream_9_openstack_caracal_version }}"
+    distribution_name: "centos-stream-9-openstack-caracal-"
+    base_path: "centos/9-stream/cloud/x86_64/openstack-caracal/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+
   - name: CentOS 9 - OpsTools - collectd
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
     distribution_name: "centos-9-opstools-collectd-"
     base_path: "centos/9-stream/opstools/x86_64/collectd-5/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: CentOS Stream 9 - Ceph Squid
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_version }}"
-    distribution_name: "centos-stream-9-ceph-squid-"
-    base_path: "centos/9-stream/storage/x86_64/ceph-squid/"
+  - name: CentOS Stream 9 - Ceph Reef
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-reef/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_reef_version }}"
+    distribution_name: "centos-stream-9-ceph-reef-"
+    base_path: "centos/9-stream/storage/x86_64/ceph-reef/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   # EPEL 9 repository
@@ -366,12 +432,6 @@ stackhpc_pulp_rpm_repos:
     distribution_name: "doca-modules-{{ stackhpc_pulp_doca_version }}-rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}-"
     base_path: "doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/x86_64/"
     required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
-  - name: ProxySQL 2.7 for AlmaLinux 9
-    url: "{{ stackhpc_release_pulp_content_url }}/ProxySQL/proxysql-2.7.x/almalinux/9/{{ stackhpc_pulp_repo_almalinux_9_proxysql_2_7_version }}"
-    distribution_name: "almalinux-9-proxysql-2.7-"
-    base_path: "ProxySQL/proxysql-2.7.x/almalinux/9/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
 # RPM repositories
 stackhpc_pulp_repository_rpm_repos: >-
@@ -447,6 +507,7 @@ stackhpc_pulp_images_kolla:
   - bifrost-deploy
   - blazar-api
   - blazar-manager
+  - caso
   - cinder-api
   - cinder-backup
   - cinder-scheduler
@@ -533,18 +594,19 @@ stackhpc_pulp_images_kolla:
   - prometheus-elasticsearch-exporter
   - prometheus-libvirt-exporter
   - prometheus-memcached-exporter
+  - prometheus-msteams
   - prometheus-mtail
   - prometheus-mysqld-exporter
   - prometheus-node-exporter
   - prometheus-openstack-exporter
-  - prometheus-server
-  - proxysql
+  - prometheus-v2-server
   - rabbitmq
   - redis
   - redis-sentinel
 
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
+  ubuntu-jammy: []
   ubuntu-noble: []
   rocky-9: []
 

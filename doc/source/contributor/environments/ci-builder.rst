@@ -9,7 +9,7 @@ and pushed there once built.
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    Master. Proceed with caution.
+    Caracal. Proceed with caution.
 
 In general it is preferable to use the `container image build CI workflow
 <https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/stackhpc-container-image-build.yml>`_
@@ -29,7 +29,7 @@ cases.
 Prerequisites
 =============
 
-* a Rocky Linux 9 or Ubuntu Noble 24.04 host
+* a Rocky Linux 9 or Ubuntu Jammy 22.04 host
 
 Setup
 =====

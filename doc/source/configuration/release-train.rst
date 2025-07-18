@@ -39,7 +39,7 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-* Pulp repository definitions for Rocky Linux 9 and Ubuntu Noble 24.04
+* Pulp repository definitions for Rocky Linux 9 and Ubuntu Jammy 22.04
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -94,7 +94,7 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Rocky Linux 9 and Ubuntu Noble package repositories are synced based on the
+Rocky Linux 9 and Ubuntu Jammy package repositories are synced based on the
 value of ``os_distribution`` and ``os_release``.
 
 On Ark, each package repository provides versioned snapshots using a datetime
@@ -106,7 +106,7 @@ repository.
 Package managers
 ----------------
 
-For Ubuntu Noble systems, the package manager configuration is provided by
+For Ubuntu Jammy systems, the package manager configuration is provided by
 ``stackhpc_apt_repositories`` in ``etc/kayobe/apt.yml``.
 
 The configuration is applied by default to all Ubuntu hosts. The configuration
@@ -123,7 +123,7 @@ including i18n files and command-not-found indices. This breaks APT when the
 
 .. code:: console
 
-   E: Failed to fetch https://pulp.example.com/pulp/content/ubuntu/noble-security/development/dists/noble-security/main/cnf/Commands-amd64   404  Not Found
+   E: Failed to fetch https://pulp.example.com/pulp/content/ubuntu/jammy-security/development/dists/jammy-security/main/cnf/Commands-amd64   404  Not Found
 
 The ``purge-command-not-found.yml`` custom playbook can be used to uninstall
 the package, prior to running any other APT commands. It may be installed as a

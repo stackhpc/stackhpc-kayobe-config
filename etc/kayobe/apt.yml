@@ -33,14 +33,14 @@ apt_config:
 apt_keys:
   - url: "https://download.docker.com/linux/ubuntu/gpg"
     filename: docker.asc
+  - url: "https://download.ceph.com/keys/release.asc"
+    filename: ceph.asc
 
 # A list of Apt repositories. Each item is a dict with the following keys:
-# * name: the <name>.sources filename part. Optional. Default is 'kayobe' and
-#   the default filename is 'kayobe.sources'.
 # * types: whitespace-separated list of repository types, e.g. deb or deb-src
 #   (optional, default is 'deb')
 # * url: URL of the repository
-# * suites: whitespace-separated list of suites, e.g. noble (optional, default
+# * suites: whitespace-separated list of suites, e.g. jammy (optional, default
 #   is ansible_facts.distribution_release)
 # * components: whitespace-separated list of components, e.g. main (optional,
 #   default is 'main')
@@ -50,35 +50,39 @@ apt_keys:
 #   (optional, default is unset)
 # Default is an empty list.
 stackhpc_apt_repositories:
-  - url: "{{ stackhpc_repo_ubuntu_noble_url }}"
+  - url: "{{ stackhpc_repo_ubuntu_noble_url if ansible_facts.distribution_release == 'noble' else stackhpc_repo_ubuntu_jammy_url }}"
     suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
     components: main restricted universe multiverse
     architecture: amd64
     required: true
-  - url: "{{ stackhpc_repo_ubuntu_noble_security_url }}"
+  - url: "{{ stackhpc_repo_ubuntu_noble_security_url if ansible_facts.distribution_release == 'noble' else stackhpc_repo_ubuntu_jammy_security_url }}"
     suites: "{{ ansible_facts.distribution_release }}-security"
     components: main restricted universe multiverse
     architecture: amd64
     required: true
-  - url: "{{ stackhpc_repo_docker_ce_ubuntu_noble_url }}"
-    suites: "{{ ansible_facts.distribution_release  }}"
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_noble_url if ansible_facts.distribution_release == 'noble' else stackhpc_repo_docker_ce_ubuntu_jammy_url }}"
+    suites: "{{ ansible_facts.distribution_release }}"
     components: stable
     signed_by: docker.asc
     architecture: amd64
     required: true
+  - url: "{{ stackhpc_repo_ubuntu_jammy_cve_2024_6387_url }}"
+    suites: "pulp"
+    components: upload
+    architecture: amd64
+    trusted: yes
+    required: "{{ ansible_facts.distribution_release == 'jammy' }}"
+  - url: "{{ stackhpc_repo_ceph_reef_debian_url }}"
+    suites: "{{ ansible_facts.distribution_release  }}"
+    components: main
+    signed_by: ceph.asc
+    architecture: amd64
+    required: "{{ ansible_facts.distribution_release == 'jammy' }}"
 
 # Do not replace apt configuration for non-overcloud hosts. This can result in
 # errors if apt reconfiguration is performed before local repository mirrors
 # are deployed.
 apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if stackhpc_repos_enabled | bool else [] }}"
-
-# List of Apt preferences options. Each item is a dict with the following
-# keys:
-# * content: free-form preferences file content
-# * filename: name of a file in /etc/apt/preferences.d/ in which to write
-#   the configuration
-# Default is an empty list.
-#apt_preferences:
 
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.

@@ -7,6 +7,10 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
+      ubuntu-jammy:
+        description: Build Ubuntu 22.04 Jammy
+        type: boolean
+        default: true
       ubuntu-noble:
         description: Build Ubuntu 24.04 Noble
         type: boolean
@@ -48,7 +52,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -121,7 +125,7 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "skc-host-image-builder"
-          # Must be an Ubuntu Noble host to successfully build all images
+          # Must be an Ubuntu Jammy host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
           aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
@@ -292,6 +296,74 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
+      - name: Build an Ubuntu Jammy 22.04 overcloud host image
+        id: build_ubuntu_jammy
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy" \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-jammy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_jammy.outcome == 'failure'
+
+      - name: Upload Ubuntu Jammy 22.04 overcloud host image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
+          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to current Dev Cloud (SMS/Leafcloud)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
       - name: Build an Ubuntu Noble 24.04 overcloud host image
         id: build_ubuntu_noble
         continue-on-error: true
@@ -360,6 +432,7 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
 
+
       - name: Copy logs back
         continue-on-error: true
         run: |
@@ -373,6 +446,7 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_rocky_9.outcome == 'failure' ||
+            steps.build_ubuntu_jammy.outcome == 'failure' ||
             steps.build_ubuntu_noble.outcome == 'failure'
 
       - name: Upload logs artifact
