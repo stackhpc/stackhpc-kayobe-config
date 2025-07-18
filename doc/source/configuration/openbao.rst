@@ -25,9 +25,9 @@ OpenBao/Hashicorp Vault may also be used as the secret store for Barbican.
     StackHPC Kayobe Config's default is OpenBao and this documentation is more
     focused on OpenBao.
     As Hashicorp Vault support will be discontinued from stackhpc/2026.1,
-    we highly recommend to deploy OpenBao.
+    we highly recommend new deployments use OpenBao.
 
-    To deploy Hashicorp Vault instead set ``stackhpc_ca_secret_store: vault``,
+    To configure Hashicorp Vault instead set ``stackhpc_ca_secret_store: vault``,
     then follow the instruction.
 
     Currently the migration path from Hashicorp Vault to OpenBao is in development
