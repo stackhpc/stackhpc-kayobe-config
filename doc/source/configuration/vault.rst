@@ -117,10 +117,9 @@ Setup Vault HA on the overcloud hosts
 Rotating Vault certificate on the overcloud hosts
 -------------------------------------------------
 
-The certificate for the overcloud vaults has an expiry time of one year. While
-the cloud won't break if this expires, it will need rotating before new
-certificates can be generated for internal PKI. If a vault becomes sealed, it
-cannot be unsealed with an expired certificate.
+The certificate for the overcloud Vault has an expiration of one or two years after the certificate was generated.
+The expiration date of a certificate can be determined with ``openssl x509 -enddate -noout -in overcloud.crt``
+This will be problematic if anything needs to interact with the Vault API such as issuing new certificates or Barbican integration.
 
 1. Delete the old certificate:
 

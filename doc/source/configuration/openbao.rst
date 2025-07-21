@@ -110,10 +110,9 @@ Setup OpenBao HA on the overcloud hosts
 Rotating OpenBao certificate on the overcloud hosts
 ---------------------------------------------------
 
-The certificate for the overcloud OpenBao has an expiry time of one year. While
-the cloud won't break if this expires, it will need rotating before new
-certificates can be generated for internal PKI. If a OpenBao becomes sealed, it
-cannot be unsealed with an expired certificate.
+The certificate for the overcloud OpenBao has an expiration of one or two years after the certificate was generated.
+The expiration date of a certificate can be determined with ``openssl x509 -enddate -noout -in overcloud.crt``
+This will be problematic if anything needs to interact with the OpenBao API such as issuing new certificates or Barbican integration.
 
 1. Delete the old certificate:
 
