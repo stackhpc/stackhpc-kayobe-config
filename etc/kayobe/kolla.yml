@@ -64,7 +64,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Kolla base container image architecture. Options are "x86_64", "aarch64".
 # Default is "{{ ansible_facts.architecture }}"
-#kolla_base_arch:
+# NOTE(bbezak): evaluating this var locally for non facts gathering playbooks
+kolla_base_arch: "{{ 'aarch64' if lookup('pipe','uname -m') in ['aarch64','arm64'] else 'x86_64' }}"
 
 # Kolla base container image distribution. Options are "centos", "debian",
 # "rocky", "ubuntu". Default is {{ os_distribution }}.
@@ -202,8 +203,8 @@ stackhpc_rocky_9_third_party_repos:
     file: "CentOS-Ceph-Squid.repo"
     tag: "centos-ceph-squid"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
-    file: "rabbitmq_rabbitmq-erlang.repo"
-    tag: "rabbitmq_rabbitmq-erlang"
+    file: "{{ 'copr-rabbitmq-erlang.repo' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang.repo' }}"
+    tag: "{{ 'copr-rabbitmq-erlang' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang' }}"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
