@@ -17,6 +17,13 @@ function prechecks() {
     fi
 }
 
+function rabbit_upgrade() {
+    # Ensure RabbitMQ is upgraded to 4.1
+    if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.13." --show-output; then
+        kayobe kolla ansible run "rabbitmq-upgrade 4.1"
+    fi
+}
+
 function rabbit_migration() {
     if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl list_queues durable | grep false"; then
         # Set feature flaga, execute RabbitMQ queue migration script, unset feature flags (to avoid git conflicts)
@@ -43,3 +50,4 @@ function rabbit_migration() {
 
 prechecks
 rabbit_migration
+rabbit_upgrade
