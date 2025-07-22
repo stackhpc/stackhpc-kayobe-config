@@ -22,4 +22,3 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    tempest
    upgrading-openstack
    upgrading-ceph
-   ubuntu-noble

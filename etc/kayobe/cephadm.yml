@@ -3,7 +3,7 @@
 # Cephadm deployment configuration.
 
 # Ceph release name.
-cephadm_ceph_release: "{{ 'squid' if os_release == 'noble' else 'reef' }}"
+cephadm_ceph_release: "squid"
 
 # Ceph FSID.
 #cephadm_fsid:
@@ -12,10 +12,7 @@ cephadm_ceph_release: "{{ 'squid' if os_release == 'noble' else 'reef' }}"
 cephadm_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/ceph:{{ cephadm_image_tag }}"
 
 # Ceph container image tag.
-cephadm_image_tag: "{{ 'v19.2.1' if cephadm_ceph_release == 'squid' else 'v18.2.7' }}"
-
-# Ceph custom repo workaround for Ubuntu as there are no official ceph repos for Ubuntu Jammy and Noble.
-cephadm_custom_repos: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
+cephadm_image_tag: "v19.2.2"
 
 # HAProxy container image.
 cephadm_haproxy_image: "{{ stackhpc_docker_registry if stackhpc_sync_ceph_images | bool else 'quay.io' }}/ceph/haproxy:{{ cephadm_haproxy_image_tag }}"

@@ -23,11 +23,6 @@ on:
         type: boolean
         required: false
         default: true
-      ubuntu-jammy:
-        description: Build Ubuntu Jammy 22.04 images?
-        type: boolean
-        required: false
-        default: true
       ubuntu-noble:
         description: Build Ubuntu Noble 24.04 images?
         type: boolean
@@ -66,7 +61,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -100,9 +95,6 @@ jobs:
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 9},"
-          fi
-          if [[ ${{ inputs.ubuntu-jammy }} == 'true' ]]; then
-              output+="{'name': 'ubuntu', 'release': 'jammy'},"
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
               output+="{'name': 'ubuntu', 'release': 'noble'},"
