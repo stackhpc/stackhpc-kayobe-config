@@ -20,7 +20,7 @@ function prechecks() {
 function rabbit_upgrade() {
     # Ensure RabbitMQ is upgraded to 4.1
     if kayobe overcloud host command run -l controllers -b --command "docker exec rabbitmq rabbitmqctl --version | grep -F 3.13." --show-output; then
-        kayobe kolla ansible run "rabbitmq-upgrade 4.1"
+        kayobe kolla ansible run "rabbitmq-upgrade 4.1" --kolla-skip-tags rabbitmq-version-check
     fi
 }
 
