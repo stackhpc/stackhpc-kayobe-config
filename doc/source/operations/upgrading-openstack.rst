@@ -79,7 +79,7 @@ After queue migration is finished, upgrade RabbitMQ to 4.1 by running the follow
 
 .. code-block:: bash
 
-   kayobe kolla ansible run rabbitmq-upgrade 4.1
+   kayobe kolla ansible run "rabbitmq-upgrade 4.1"
 
 .. note::
 
