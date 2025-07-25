@@ -35,11 +35,14 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-RabbitMQ 4.0
+RabbitMQ 4.1
 ------------
 
-RabbitMQ is being upgraded to 4.0 in Epoxy. Existing transient queues must be
-migrated on Caracal prior to upgrading.
+StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
+Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
+
+Queue Migration
+~~~~~~~~~~~~~~~
 
 .. warning::
 
@@ -68,6 +71,21 @@ Then execute the migration script:
 .. code-block:: bash
 
    $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
+
+RabbitMQ Upgrade
+~~~~~~~~~~~~~~~~
+
+After queue migration is finished, upgrade RabbitMQ to 4.1 by running the following command
+
+.. code-block:: bash
+
+   kayobe kolla ansible run rabbitmq-upgrade 4.1
+
+.. note::
+
+   Until Kolla-Ansible bug `LP#2118452 <https://bugs.launchpad.net/kolla-ansible/+bug/2118452>`__
+   is fixed, add ``--kolla-skip-tags rabbitmq-version-check`` to avoid Kolla-Ansible incorrectly
+   stopping RabbitMQ upgrade from 3.13 to 4.1.
 
 stackhpc.linux collection
 -------------------------
