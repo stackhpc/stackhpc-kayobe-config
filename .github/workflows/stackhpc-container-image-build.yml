@@ -33,7 +33,12 @@ on:
         type: boolean
         required: false
         default: true
-      push-dirty:
+      sbom:
+        description: Generate SBOM?
+        type: boolean
+        required: false
+        default: true
+      push-critical:
         description: Push scanned images that have critical vulnerabilities?
         type: boolean
         required: false
@@ -150,7 +155,7 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.62.1
 
       - name: Install yq
         run: |
@@ -254,14 +259,14 @@ jobs:
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Scan built container images
-        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }}
+        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom'}}
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output
 
-      - name: Fail if no images have passed scanning
+      - name: Fail if any images have critical vulnerabilities
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
-        if: ${{ !inputs.push-dirty }}
+        if: ${{ !inputs.push-critical }}
 
       - name: Copy clean images to push-attempt-images list
         run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
@@ -271,13 +276,13 @@ jobs:
       # This should be reverted when it's decided to filter high level CVEs as well.
       - name: Append dirty images to push list
         run: |
-          cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+          cat image-build-logs/image-scan-output/high-images.txt >> image-build-logs/push-attempt-images.txt
         if: ${{ inputs.push }}
 
       - name: Append images with critical vulnerabilities to push list
         run: |
           cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push && inputs.push-dirty }}
+        if: ${{ inputs.push && inputs.push-critical }}
 
       - name: Push images
         run: |
@@ -326,12 +331,12 @@ jobs:
       # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
       # decided to fail the job on detecting high CVEs as well.
       # - name: Fail when images failed scanning
-      #   run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
-      #   if: ${{ !inputs.push-dirty && !cancelled() }}
+      #   run: if [ $(wc -l < image-build-logs/image-scan-output/high-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/high-images.txt && exit 1; fi
+      #   if: ${{ !inputs.push-critical && !cancelled() }}
 
       - name: Fail when critical vulnerabilities are found
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
-        if: ${{ !inputs.push-dirty && !cancelled() }}
+        if: ${{ !inputs.push-critical && !cancelled() }}
 
       - name: Remove locally built images for this run
         if: always() && runner.arch == 'ARM64'
