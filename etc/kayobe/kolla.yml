@@ -171,6 +171,9 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_epoxy_url }}"
+    file: "CentOS-OpenStack-epoxy.repo"
+    tag: "centos-openstack-epoxy"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -288,6 +291,12 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+        # NOTE(bbezak): RDO epoxy repo obsoletes many OVN versions
+        # (see rdo-openvswitch.spec obsolete_ovn_versions:
+        # https://git.centos.org/rpms/rdo-openvswitch/blob/c9s-sig-cloud-openstack-epoxy/f/SPECS/rdo-openvswitch.spec#L10),
+        # which would replace our NFV OVS and OVN 24.03 LTS with 24.09. Hence exclude RDO OVN/OVS.
+        && \
+        sed -i '/^\[centos-openstack-epoxy\]/a excludepkgs=*rdo-ovn*,*rdo-openvswitch*' /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo \
     {% endif %}
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
