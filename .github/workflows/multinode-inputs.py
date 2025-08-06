@@ -63,6 +63,9 @@ def generate_inputs(scenario: Scenario) -> t.Dict[str, str]:
             VERSION_HIERARCHY.index(scenario.openstack_release.version) - 1
         ]
     )
+    terraform_kayobe_multinode_version = get_tkm_version(
+        scenario.openstack_release.version
+    )
     inputs = {
         "os_distribution": scenario.os_release.distribution,
         "os_release": scenario.os_release.release,
@@ -71,12 +74,20 @@ def generate_inputs(scenario: Scenario) -> t.Dict[str, str]:
         "upgrade": scenario.upgrade,
         "stackhpc_kayobe_config_version": branch,
         "stackhpc_kayobe_config_previous_version": previous_branch,
+        "terraform_kayobe_multinode_version": terraform_kayobe_multinode_version,
     }
     return inputs
 
 
 def get_branch(version: str) -> str:
     return f"stackhpc/{version}"
+
+
+def get_tkm_version(version: str) -> str:
+    if version in ["zed", "2023.1"]:
+        return "ea61ea1730e179e05e8f0e58b759267664c555e7"
+    else:
+        return "main"
 
 
 def write_output(name: str, value: str) -> None:
