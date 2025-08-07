@@ -186,7 +186,108 @@ For example:
 Known issues
 ============
 
-* None so far!
+Pulp Upgrade
+------------
+
+It was found that if pulp is upgraded from 3.43.1 to 3.81.0, most of pulp
+APIs become unusable because of a bug related to missing response header
+when docker clients expect it.
+
+Generally pulp is considered to be safe to completely destroy and re-deploy.
+So, users are encouraged to upgrade pulp in this method.
+
+If your pulp has custom built images, we recommended either not doing pulp
+upgrade by pinning pulp version at ``seed_pulp_container.pulp.tag`` in
+``$KAYOBE_CONFIG_PATH/seed.yml`` (``$KAYOBE_CONFIG_PATH/environments/<env>/seed.yml``
+if using environments) to 3.43.1,
+
+or pulling all custom built images before destroying pulp then push them again
+after pulp upgrade is done.
+
+Let's Encrypt
+-------------
+
+`Let's Encrypt TLS settings fix <https://review.opendev.org/c/openstack/kolla-ansible/+/925971>`__
+brought a breaking change to Let’s Encrypt ansible role. Now users have to explicitly set the target
+Let’s Encrypt ACME server as a kolla ansible variable ``letsencrypt_external_cert_server``/
+``letsencrypt_internal_cert_server`` if they were using Let’s Encrypt as a CA of their
+external/internal TLS certificates.
+
+Cinder
+------
+
+`Enhancement of Ceph integration of multiple clusters
+<https://review.opendev.org/c/openstack/kolla-ansible/+/907166>`__
+means the Cinder role now requires ``user`` and ``pool`` set to the each item of kolla dict
+variable ``cinder_ceph_backends`` at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+For example,
+
+.. code:: yaml
+
+   cinder_ceph_backends:
+      - name: rbd-1
+         cluster: ceph
+         user: cinder
+         pool: volumes
+         enabled: true
+      - name: rbd-2
+         cluster: ceph-hdd
+         user: cinder
+         pool: volumes-hdd
+         enabled: true
+
+You can find the name of pools from ``cephadm_pools`` in cephadm.yml and name of the users
+will be ``cinder`` unless changed to otherwise.
+
+The K-A upstream change `#909974 <https://review.opendev.org/c/openstack/kolla-ansible/+/909974>`__
+requires users to manually set Cinder cluster name.
+You can find the current name of the cluster from ``cluster`` variable in
+``DEFAULT`` category in ``cinder.conf``.
+
+For example,
+
+.. code::
+
+   [DEFAULT]
+   cluster = ceph
+
+Match the name of the cluster by setting ``cinder_cluster_name`` in ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments).
+
+.. code:: yaml
+
+   cinder_cluster_name: ceph
+
+CloudKitty
+----------
+
+The Elasticsearch storage driver is no longer compatible with Opensearch storage backend.
+Set CloudKitty storage backend to ``opensearch`` if it was set to be ``elasticsearch`` before.
+This can be set at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+
+.. code:: yaml
+
+   cloudkitty_storage_backend: opensearch
+
+Ironic
+------
+
+From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
+<https://review.opendev.org/c/openstack/kayobe/+/836999>`__
+for Ironic and follows Ironic's default.
+This can cause your Ironic configuration ``ironic.conf`` to regress.
+Check the configuration difference before applying and re-add your options at
+``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+
+For example,
+
+.. code:: yaml
+
+   [DEFAULT]
+   enabled_network_interfaces = neutron
 
 Security baseline
 =================
