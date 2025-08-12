@@ -174,8 +174,30 @@ is advisable to migrate all of the instances to another machine. See
 Ceph
 ----
 
-The following guide provides a good overview:
-https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/8/html/director_installation_and_usage/sect-rebooting-ceph
+#. Check that the cluster is healthy (i.e. ``ceph -s``). Where possible, solve
+   or isolate any issues before the shutdown e.g. by marking unhealthy OSDs as
+   'out' in the cluster.
+
+#. Stop all clients. This includes
+
+   * **All** OpenStack VMs (if their storage is RBD-backed).
+
+   * CephFS mounts.
+
+   * Ceph-backed OpenStack services such as Glance, Cinder, Manila, and RGW/S3/Swift.
+
+#. Set the ``noout`` flag, so that the cluster does not attempt to redistribute
+   data when OSDs go down. Use the following command on a MON node:
+
+   .. code-block:: console
+
+      sudo cephadm shell -- ceph osd set noout
+
+#. Shut down all the nodes, with those holding MON services last.
+
+Note that if it is not desired for Ceph services to automatically start later
+with the operating system, extra steps need to be taken and are not described
+here.
 
 Shutting down the seed VM
 -------------------------
@@ -200,6 +222,24 @@ following order:
 * Shut down Ceph nodes (if applicable)
 * Shut down seed VM
 * Shut down Ansible control host
+
+Full startup
+-------------
+
+If the entire control plane is powered down, it is best to bring the nodes up
+in the reverse order of shutdown:
+
+* Power on Ansible control host
+* Power on seed VM (and other service VMs)
+* Power on Ceph nodes (if applicable)
+   * Where possible, start the nodes running MON services first.
+   * Make sure that all OSD services are back up and running. At this point
+     it is safe to unset  the ``noout`` cluster flag.
+* Power on controllers
+* Power on network nodes (if separate from controllers)
+* Power on monitoring node (if separate from controllers)
+* Power on compute nodes
+* Power on virtual machines
 
 Rebooting a node
 ----------------
