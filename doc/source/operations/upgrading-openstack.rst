@@ -35,58 +35,6 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-RabbitMQ 4.1
-------------
-
-StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
-
-Queue Migration
-~~~~~~~~~~~~~~~
-
-.. warning::
-
-   This migration will stop all services using RabbitMQ and cause an extended
-   API outage while queues are migrated. It should only be performed in a
-   pre-agreed maintenance window.
-
-   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
-   make sure to pause reconciliation of all clusters before the API outage
-   window. See the `Azimuth docs
-   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
-   for instructions.
-
-Set the following variables in your kolla globals file (i.e.
-$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
-
-.. code-block:: yaml
-
-   om_enable_queue_manager: true
-   om_enable_rabbitmq_quorum_queues: true
-   om_enable_rabbitmq_transient_quorum_queue: true
-   om_enable_rabbitmq_stream_fanout: true
-
-Then execute the migration script:
-
-.. code-block:: bash
-
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
-
-RabbitMQ Upgrade
-~~~~~~~~~~~~~~~~
-
-After queue migration is finished, upgrade RabbitMQ to 4.1 by running the following command
-
-.. code-block:: bash
-
-   kayobe kolla ansible run "rabbitmq-upgrade 4.1"
-
-.. note::
-
-   Until Kolla-Ansible bug `LP#2118452 <https://bugs.launchpad.net/kolla-ansible/+bug/2118452>`__
-   is fixed, add ``--kolla-skip-tags rabbitmq-version-check`` to avoid Kolla-Ansible incorrectly
-   stopping RabbitMQ upgrade from 3.13 to 4.1.
-
 stackhpc.linux collection
 -------------------------
 
@@ -340,6 +288,66 @@ Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
 must be migrated to Ubuntu 24.04 before upgrading OpenStack services. The
 upgrade process is currently a work in progress.
 .. TODO: Add link to another page describing how to migrate
+
+RabbitMQ 4.1
+------------
+
+.. warning::
+
+   RabbitMQ queue migration and upgrade must be done in Caracal environment.
+
+StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
+Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
+
+Queue Migration
+~~~~~~~~~~~~~~~
+
+.. warning::
+
+   This migration will stop all services using RabbitMQ and cause an extended
+   API outage while queues are migrated. It should only be performed in a
+   pre-agreed maintenance window.
+
+   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
+   make sure to pause reconciliation of all clusters before the API outage
+   window. See the `Azimuth docs
+   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
+   for instructions.
+
+Set the following variables in your kolla globals file (i.e.
+$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
+
+.. code-block:: yaml
+
+   om_enable_queue_manager: true
+   om_enable_rabbitmq_quorum_queues: true
+   om_enable_rabbitmq_transient_quorum_queue: true
+   om_enable_rabbitmq_stream_fanout: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
+
+RabbitMQ Upgrade
+~~~~~~~~~~~~~~~~
+
+After queue migration is finished, upgrade RabbitMQ to 4.1.
+
+1. Sync and publish latest Kolla container images to ensure local pulp has RabbitMQ 4.1 image.
+   (This can be skipped if local pulp is not used.)
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+
+2. Upgrade RabbitMQ to 4.1 with Kolla-Ansible
+
+   .. code-block:: bash
+
+      kayobe kolla ansible run "rabbitmq-upgrade 4.1"
 
 Preparation
 ===========
