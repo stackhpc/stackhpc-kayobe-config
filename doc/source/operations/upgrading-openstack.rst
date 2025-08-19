@@ -312,7 +312,7 @@ Queue Migration
    If you are using Azimuth or the ClusterAPI driver for Magnum, you should
    make sure to pause reconciliation of all clusters before the API outage
    window. See the `Azimuth docs
-   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
+   <https://azimuth-cloud.github.io/azimuth-config/operations/maintenance/>`__
    for instructions.
 
 Set the following variables in your kolla globals file (i.e.
