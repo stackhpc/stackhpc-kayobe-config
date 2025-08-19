@@ -285,9 +285,9 @@ Ubuntu Noble migration
 ----------------------
 
 Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
-must be migrated to Ubuntu 24.04 before upgrading OpenStack services. The
-upgrade process is currently a work in progress.
-.. TODO: Add link to another page describing how to migrate
+must be migrated to Ubuntu 24.04 before upgrading OpenStack services.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+documentation.
 
 RabbitMQ 4.1
 ------------

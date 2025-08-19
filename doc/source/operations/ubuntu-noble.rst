@@ -1,3 +1,5 @@
+.. _upgrading-to-ubuntu-noble:
+
 =========================
 Upgrading to Ubuntu Noble
 =========================
