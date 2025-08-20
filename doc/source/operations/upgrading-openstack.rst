@@ -289,17 +289,18 @@ must be migrated to Ubuntu 24.04 before upgrading OpenStack services.
 You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
 documentation.
 
-RabbitMQ 4.1
-------------
+
+RabbitMQ Prerequisites
+----------------------
 
 .. warning::
 
-   The RabbitMQ queue migration and upgrade must be completed before upgrading
-   the environment to Epoxy.
+   StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
+   Existing transient queues must be migrated to durable queues with Queue Manager
+   before upgrading to RabbitMQ 4.1.
 
-StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-Existing transient queues must be migrated to durable queues with Queue Manager
-before upgrading to RabbitMQ 4.1.
+   This means that queue migration and the RabbitMQ 4.1 upgrade must be completed
+   before upgrading to Epoxy.
 
 Queue Migration
 ~~~~~~~~~~~~~~~
