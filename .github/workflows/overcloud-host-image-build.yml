@@ -43,7 +43,7 @@ env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-  overcloud_dib_architechture: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'amd64' || 'arm64' }}
+  overcloud_dib_architecture: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'amd64' || 'arm64' }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -284,7 +284,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
           -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
-          -e cpu-platform=${{ env.overcloud_dib_architechture }}
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -353,7 +353,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
           -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
-          -e cpu-platform=${{ env.overcloud_dib_architechture }}
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
