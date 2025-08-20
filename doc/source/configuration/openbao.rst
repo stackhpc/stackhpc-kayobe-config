@@ -111,13 +111,26 @@ Setup OpenBao on the seed node
 Setup OpenBao HA on the overcloud hosts
 ---------------------------------------
 
-1. Run secret-store-deploy-overcloud.yml custom playbook
+1. If using a walled garden, ensure ``no_proxy`` is configured to include the first controller's internal network IP. Append it to the list if necessary.
+
+   .. code-block:: yaml
+      :caption: ``inventory/group_vars/overcloud/proxy.yml``
+
+      ---
+      no_proxy:
+        - "{{ lookup('vars', internal_net_name ~ '_ips')[groups.controllers.0] }}"
+
+   .. code-block:: bash
+
+      kayobe overcloud host configure -t proxy
+
+2. Run secret-store-deploy-overcloud.yml custom playbook
 
    .. code-block:: bash
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-overcloud.yml
 
-2. Encrypt overcloud openbao keys (use proper location of vault password file)
+3. Encrypt overcloud openbao keys (use proper location of vault password file)
 
    .. code-block:: bash
 
@@ -125,6 +138,16 @@ Setup OpenBao HA on the overcloud hosts
 
       # For Hashicorp Vault
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/overcloud-vault-keys.json
+
+
+   Or if environments are being used
+
+   .. code-block:: bash
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/overcloud-openbao-keys.json
+
+      # For Hashicorp Vault
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault/overcloud-vault-keys.json
 
 Rotating OpenBao certificate on the overcloud hosts
 ---------------------------------------------------
