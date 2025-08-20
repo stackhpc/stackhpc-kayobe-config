@@ -64,7 +64,8 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Kolla base container image architecture. Options are "x86_64", "aarch64".
 # Default is "{{ ansible_facts.architecture }}"
-#kolla_base_arch:
+# NOTE(bbezak): evaluating this var locally for non facts gathering playbooks
+kolla_base_arch: "{{ 'aarch64' if lookup('pipe','uname -m') in ['aarch64','arm64'] else 'x86_64' }}"
 
 # Kolla base container image distribution. Options are "centos", "debian",
 # "rocky", "ubuntu". Default is {{ os_distribution }}.
@@ -116,6 +117,10 @@ kolla_tag: "{{ openstack_release }}-{{ kolla_base_distro }}-{{ kolla_base_distro
 # branches are only required when we have custom backports. For a new release,
 # we may have caught up with upstream.
 kolla_sources:
+  bifrost-base:
+    type: git
+    location: https://github.com/stackhpc/bifrost.git
+    reference: stackhpc/{{ openstack_release }}
   bifrost-base-additions-stackhpc-inspector-plugins:
     # Install our custom inspector plugins.
     type: git
@@ -130,22 +135,22 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  magnum-base:
+  keystone-base:
     type: git
-    location: https://github.com/stackhpc/magnum.git
-    reference: stackhpc/{{ openstack_release }}
-  neutron-base-plugin-networking-generic-switch:
-    type: git
-    location: https://github.com/stackhpc/networking-generic-switch.git
+    location: https://github.com/stackhpc/keystone.git
     reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
-    location: https://opendev.org/x/networking-mlnx
-    reference: master
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
+  blazar-base:
+    type: git
+    location: https://github.com/stackhpc/blazar.git
+    reference: stackhpc/master
 
 ###############################################################################
 # Kolla image build configuration.
@@ -167,6 +172,9 @@ stackhpc_rocky_9_additional_repos:
   - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
     file: "CentOS-NFV-OpenvSwitch.repo"
     tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_epoxy_url }}"
+    file: "CentOS-OpenStack-epoxy.repo"
+    tag: "centos-openstack-epoxy"
   - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
     file: "CentOS-OpsTools.repo"
     tag: "centos-opstools"
@@ -195,8 +203,8 @@ stackhpc_rocky_9_third_party_repos:
     file: "CentOS-Ceph-Squid.repo"
     tag: "centos-ceph-squid"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
-    file: "rabbitmq_rabbitmq-erlang.repo"
-    tag: "rabbitmq_rabbitmq-erlang"
+    file: "{{ 'copr-rabbitmq-erlang.repo' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang.repo' }}"
+    tag: "{{ 'copr-rabbitmq-erlang' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang' }}"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
@@ -206,6 +214,9 @@ stackhpc_rocky_9_third_party_repos:
   - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
     file: "opensearch.repo"
     tag: "opensearch-dashboards-2.x"
+  - url: "{{ stackhpc_repo_almalinux_9_proxysql_2_7_url }}"
+    file: "proxysql.repo"
+    tag: "proxysql"
 
 # List of EPEL 9
 stackhpc_epel_9_repos:
@@ -281,6 +292,12 @@ kolla_build_blocks:
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
     {% endfor %}
+        # NOTE(bbezak): RDO epoxy repo obsoletes many OVN versions
+        # (see rdo-openvswitch.spec obsolete_ovn_versions:
+        # https://git.centos.org/rpms/rdo-openvswitch/blob/c9s-sig-cloud-openstack-epoxy/f/SPECS/rdo-openvswitch.spec#L10),
+        # which would replace our NFV OVS and OVN 24.03 LTS with 24.09. Hence exclude RDO OVN/OVS.
+        && \
+        sed -i '/^\[centos-openstack-epoxy\]/a excludepkgs=*rdo-ovn*,*rdo-openvswitch*' /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo \
     {% endif %}
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
@@ -341,7 +358,7 @@ kolla_build_customizations_common:
     - /additions/*
   magnum_base_pip_packages_override:
     - /magnum[osprofiler]
-    - magnum-capi-helm==1.2.1
+    - magnum-capi-helm==1.3.0
   neutron_server_packages_append:
     - python3-libvirt
     - python3-ethtool
@@ -350,7 +367,6 @@ kolla_build_customizations_common:
     - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
     - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
-
 kolla_build_customizations_rocky:
   base_centos_yum_repo_packages_append:
     - centos-release-ceph-squid
@@ -359,6 +375,10 @@ kolla_build_customizations_rocky:
   base_centos_yum_repos_to_disable_remove:
     - centos-ceph-reef
     - epel
+    - centos9-nfv-ovs
+    - centos9-opstools
+    - centos9-rabbitmq
+    - centos9-storage
   kolla_toolbox_packages_remove:
     - openvswitch
   kolla_toolbox_packages_append:
@@ -379,6 +399,8 @@ kolla_build_customizations_rocky:
   nova_base_packages_append:
     - openvswitch3.3
     - python3-openvswitch3.3
+  nova_libvirt_packages_remove:
+    - openvswitch
   octavia_base_packages_remove:
     - python3-openvswitch
   openvswitch_base_packages_remove:
@@ -505,6 +527,8 @@ kolla_build_args: {}
 kolla_overcloud_inventory_pass_through_host_vars_extra:
   - stackhpc_gpu_data
   - gpu_group_map
+  - stackhpc_radosgw_usage_exporter_frontend_port
+  - stackhpc_radosgw_usage_exporter_backend_port
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
@@ -568,6 +592,10 @@ kolla_overcloud_inventory_pass_through_host_vars_extra:
 # Primary group of Kolla SSH user. Default is 'kolla'.
 #kolla_ansible_group:
 
+# Whether to use privilege escalation for operations on the control host.
+# Default is {{ kayobe_control_host_become }}.
+#kolla_ansible_control_host_become:
+
 # Whether to use privilege escalation for all operations performed via Kolla
 # Ansible. Default is 'false'.
 #kolla_ansible_become:
@@ -592,6 +620,7 @@ kolla_enable_central_logging: true
 #kolla_enable_ceph_rgw_loadbalancer:
 #kolla_enable_cinder:
 #kolla_enable_cinder_backend_iscsi:
+#kolla_enable_cinder_backend_lightbits:
 #kolla_enable_cinder_backend_lvm:
 #kolla_enable_cinder_backend_nfs:
 #kolla_enable_cinder_backend_pure_fc:
@@ -639,10 +668,13 @@ kolla_enable_heat: false
 #kolla_enable_horizon_octavia:
 #kolla_enable_horizon_tacker:
 #kolla_enable_horizon_trove:
+#kolla_enable_horizon_venus:
 #kolla_enable_horizon_watcher:
 #kolla_enable_horizon_zun:
 #kolla_enable_influxdb:
 #kolla_enable_ironic:
+#kolla_enable_ironic_dnsmasq:
+#kolla_enable_ironic_inspector:
 #kolla_enable_ironic_neutron_agent:
 kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
@@ -657,6 +689,7 @@ kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_manila:
 #kolla_enable_manila_backend_cephfs_native:
 #kolla_enable_manila_backend_cephfs_nfs:
+#kolla_enable_manila_backend_flashblade:
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_glusterfs_nfs:
 #kolla_enable_manila_backend_hnas:

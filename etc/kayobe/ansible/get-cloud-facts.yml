@@ -1,0 +1,87 @@
+---
+- name: Gather Cloud Facts
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Write facts to file
+      vars:
+        cloud_facts:
+          ansible_control_host_distribution: "{{ ansible_facts.distribution }}"
+          ansible_control_host_distribution_release: "{{ ansible_facts.distribution_release }}"
+          openstack_release: "{{ openstack_release }}"
+          openstack_release_name: "{{ openstack_release_codename }}"
+          ansible_control_host_is_vm: "{{ ansible_facts.virtualization_role == 'guest' }}"
+          controller_count: "{{ groups['controllers'] | length }}"
+          hypervisor_count: "{{ groups['hypervisors'] | length }}"
+          monitoring_count: "{{ groups['monitoring'] | length }}"
+          osd_count: "{{ groups['osds'] | length }}"
+          compute_count: "{{ groups['compute'] | length }}"
+          baremetal_count: "{{ groups['baremetal-compute'] | length }}"
+          ceph_deployed: "{{ groups['ceph'] | length > 0 | bool }}"
+          ceph_count: "{{ groups['ceph'] | length }}"
+          ceph_release: "{{ cephadm_ceph_release }}"
+          storage_hyperconverged: "{{ groups['controllers'] | intersect(groups['osds']) | length > 0 | bool }}"
+          wazuh_enabled: "{{ groups['wazuh-agent'] | length > 0 | bool }}"
+          kayobe_managed_switches: "{{ groups['switches'] | length > 0 | bool }}"
+          proxy_configured: "{{ http_proxy | bool or https_proxy | bool }}"
+          bifrost_version: "{{ kolla_bifrost_source_version }}"
+          barbican_enabled: "{{ kolla_enable_barbican }}"
+          nova_enabled: "{{ kolla_enable_nova }}"
+          neutron_enabled: "{{ kolla_enable_neutron }}"
+          ovs_enabled: "{{ kolla_enable_openvswitch }}"
+          ovn_enabled: "{{ kolla_enable_ovn }}"
+          glance_enabled: "{{ kolla_enable_glance }}"
+          cinder_enabled: "{{ kolla_enable_cinder }}"
+          keystone_enabled: "{{ kolla_enable_keystone }}"
+          horizon_enabled: "{{ kolla_enable_horizon }}"
+          fluentd_enabled: "{{ kolla_enable_fluentd }}"
+          rabbitmq_enabled: "{{ kolla_enable_rabbitmq }}"
+          mariadb_enabled: "{{ kolla_enable_mariadb }}"
+          mariabackup_enabled: "{{ kolla_enable_mariabackup }}"
+          memcached_enabled: "{{ kolla_enable_memcached }}"
+          haproxy_enabled: "{{ kolla_enable_haproxy }}"
+          keepalived_enabled: "{{ kolla_enable_keepalived }}"
+          octavia_enabled: "{{ kolla_enable_octavia }}"
+          designate_enabled: "{{ kolla_enable_designate }}"
+          manila_enabled: "{{ kolla_enable_manila }}"
+          magnum_enabled: "{{ kolla_enable_magnum }}"
+          heat_enabled: "{{ kolla_enable_heat }}"
+          ironic_enabled: "{{ kolla_enable_ironic }}"
+          skyline_enabled: "{{ kolla_enable_skyline }}"
+          blazar_enabled: "{{ kolla_enable_blazar }}"
+          pulp_enabled: "{{ seed_pulp_container_enabled }}"
+          opensearch_enabled: "{{ kolla_enable_opensearch }}"
+          opensearch_dashboards_enabled: "{{ kolla_enable_opensearch_dashboards }}"
+          influxdb_enabled: "{{ kolla_enable_influxdb }}"
+          grafana_enabled: "{{ kolla_enable_grafana }}"
+          prometheus_enabled: "{{ kolla_enable_prometheus }}"
+          cloudkitty_enabled: "{{ kolla_enable_cloudkitty }}"
+          telegraf_enabled: "{{ kolla_enable_telegraf }}"
+          internal_tls_enabled: "{{ kolla_enable_tls_internal }}"
+          external_tls_enabled: "{{ kolla_enable_tls_external }}"
+          firewalld_enabled_all: >-
+            {{
+              controller_firewalld_enabled and
+              compute_firewalld_enabled and
+              storage_firewalld_enabled and
+              monitoring_firewalld_enabled and
+              infra_vm_firewalld_enabled and
+              seed_firewalld_enabled and
+              seed_hypervisor_firewalld_enabled
+            }}
+          firewalld_enabled_any: >-
+            {{
+              controller_firewalld_enabled or
+              compute_firewalld_enabled or
+              storage_firewalld_enabled or
+              monitoring_firewalld_enabled or
+              infra_vm_firewalld_enabled or
+              seed_firewalld_enabled or
+              seed_hypervisor_firewalld_enabled
+            }}
+          stackhpc_package_repos_enabled: "{{ stackhpc_repos_enabled }}"
+          pulp_tls_enabled: "{{ pulp_enable_tls }}"
+          kolla_image_tags: "{{ kolla_image_tags }}"
+      ansible.builtin.copy:
+        content: "{{ cloud_facts | to_nice_json(sort_keys=false) }}"
+        dest: ~/cloud-facts.json

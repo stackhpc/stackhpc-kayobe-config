@@ -29,17 +29,27 @@
           register: kayobe_git_commit
           failed_when: kayobe_git_commit.stdout == ""
 
+        - name: Create a temporary directory to clone Kayobe into
+          ansible.builtin.tempfile:
+            state: directory
+          register: kayobe_temp_dir
+
         - name: Clone Kayobe
           ansible.builtin.git:
             repo: https://github.com/stackhpc/kayobe.git
-            dest: /tmp/kayobe-git
+            dest: "{{ kayobe_temp_dir.path }}/kayobe-git"
             version: stackhpc/{{ openstack_release }}
 
         - name: Get tag from Kayobe commit
           ansible.builtin.command:
             cmd: git describe --tags {{ kayobe_git_commit.stdout }}
-            chdir: /tmp/kayobe-git
+            chdir: "{{ kayobe_temp_dir.path }}/kayobe-git"
           register: kayobe_current_version
+
+        - name: Clean up temporary directory
+          ansible.builtin.file:
+            state: absent
+            path: "{{ kayobe_temp_dir.path }}"
 
         - name: Get latest Kayobe version
           ansible.builtin.shell:

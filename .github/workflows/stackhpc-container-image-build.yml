@@ -33,7 +33,12 @@ on:
         type: boolean
         required: false
         default: true
-      push-dirty:
+      sbom:
+        description: Generate SBOM?
+        type: boolean
+        required: false
+        default: true
+      push-critical:
         description: Push scanned images that have critical vulnerabilities?
         type: boolean
         required: false
@@ -89,15 +94,18 @@ jobs:
       # Dynamically define job matrix.
       # We need a separate matrix entry for each distribution, when the relevant input is true.
       # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+      # NOTE(bbezak): Both amd64 and aarch64 need to be built in a single workflow to create a multi-architecture manifest.
+      # For now include only RL9 in aarch64
       - name: Generate build matrix
         id: set-matrix
         run: |
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
-              output+="{'name': 'rocky', 'release': 9},"
+              output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
+              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64'},"
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
-              output+="{'name': 'ubuntu', 'release': 'noble'},"
+              output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
           fi
           # remove trailing comma
           output="${output%,}"
@@ -116,7 +124,9 @@ jobs:
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
+    runs-on: ${{ matrix.distro.arch == 'aarch64'
+      && fromJson('["self-hosted","sms","arm64"]')
+      || needs.runner-selection.outputs.runner_name_container_image_build }}
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -126,18 +136,13 @@ jobs:
       - generate-tag
       - runner-selection
     steps:
+      - name: Purge workspace
+        run: sudo rm -rf "$GITHUB_WORKSPACE"/*
+
       - name: Install package dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
-
-      - name: Install gh
-        run: |
-          sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -150,11 +155,12 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.62.1
 
       - name: Install yq
         run: |
-          curl -sL https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz | tar xz && sudo mv yq_linux_amd64 /usr/bin/yq
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -sL "https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_${ARCH}.tar.gz" | tar xz && sudo mv yq_linux_${ARCH} /usr/bin/yq
 
       - name: Install Kayobe
         run: |
@@ -203,10 +209,19 @@ jobs:
         continue-on-error: true
         run: |
           args="${{ inputs.regexes }}"
+          if [[ "${{ matrix.distro.arch }}" == 'aarch64' ]]; then
+            args="$args -e kolla_base_arch=${{ matrix.distro.arch }}"
+          fi
           args="$args -e kolla_base_distro=${{ matrix.distro.name }}"
           args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          if [[ "${{ matrix.distro.name }}" == 'rocky' ]]; then
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}-${{ matrix.distro.arch }}"
+          else
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          fi
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e kolla_build_log_path=$GITHUB_WORKSPACE/image-build-logs/kolla-build-overcloud.log"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
@@ -214,8 +229,8 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.overcloud
 
-      - name: Copy overcloud container image build logs to output directory
-        run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-overcloud.log
+      - name: Copy build configs to output directory
+        run: sudo cp -rnL "$GITHUB_WORKSPACE/opt/kayobe/etc/kolla/"* image-build-logs/
         if: inputs.overcloud
 
       - name: Build kolla seed images
@@ -231,27 +246,27 @@ jobs:
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.seed
+        if: inputs.seed && matrix.distro.arch == 'amd64'
 
       - name: Copy seed container image build logs to output directory
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
-        if: inputs.seed
+        if: inputs.seed && matrix.distro.arch == 'amd64'
 
       - name: Get built container images
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}" > ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" > ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
 
       - name: Scan built container images
-        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }}
+        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output
 
-      - name: Fail if no images have passed scanning
+      - name: Fail if any images have critical vulnerabilities
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
-        if: ${{ !inputs.push-dirty }}
+        if: ${{ !inputs.push-critical }}
 
       - name: Copy clean images to push-attempt-images list
         run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
@@ -261,13 +276,13 @@ jobs:
       # This should be reverted when it's decided to filter high level CVEs as well.
       - name: Append dirty images to push list
         run: |
-          cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+          cat image-build-logs/image-scan-output/high-images.txt >> image-build-logs/push-attempt-images.txt
         if: ${{ inputs.push }}
 
       - name: Append images with critical vulnerabilities to push list
         run: |
           cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push && inputs.push-dirty }}
+        if: ${{ inputs.push && inputs.push-critical }}
 
       - name: Push images
         run: |
@@ -299,7 +314,7 @@ jobs:
       - name: Upload output artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.distro.name }}-${{ matrix.distro.release }}-logs
+          name: ${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ matrix.distro.arch }}-logs
           path: image-build-logs
           retention-days: 7
         if: ${{ !cancelled() }}
@@ -316,13 +331,71 @@ jobs:
       # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
       # decided to fail the job on detecting high CVEs as well.
       # - name: Fail when images failed scanning
-      #   run: if [ $(wc -l < image-build-logs/image-scan-output/dirty-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/dirty-images.txt && exit 1; fi
-      #   if: ${{ !inputs.push-dirty && !cancelled() }}
+      #   run: if [ $(wc -l < image-build-logs/image-scan-output/high-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/high-images.txt && exit 1; fi
+      #   if: ${{ !inputs.push-critical && !cancelled() }}
 
       - name: Fail when critical vulnerabilities are found
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
-        if: ${{ !inputs.push-dirty && !cancelled() }}
+        if: ${{ !inputs.push-critical && !cancelled() }}
 
+      - name: Remove locally built images for this run
+        if: always() && runner.arch == 'ARM64'
+        run: |
+          docker images --format '{{.Repository}}:{{.Tag}}' \
+            --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" \
+            | xargs -r -n1 docker rmi -f
+
+  create-manifests:
+    # Only for Rocky Linux for now
+    name: Create Multiarch Docker Manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-9
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
+    permissions: {}
+    needs:
+      - container-image-build
+      - runner-selection
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Combine pushed images lists
+        run: |
+          find . -name 'push-attempt-images.txt' -exec cat {} + > all-pushed-images.txt
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ark.stackhpc.com
+          username: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_USER }}
+          password: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: src/kayobe-config
+
+      - name: Create and push Docker manifests
+        run: src/kayobe-config/tools/multiarch-manifests.sh
+
+      - name: Upload manifest logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-logs
+          path: |
+            all-pushed-images.txt
+            logs/manifest-creation.log
+          retention-days: 7
+        if: ${{ !cancelled() }}
+
+  trigger-image-sync:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+      - create-manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
       - name: Trigger container image repository sync
@@ -339,9 +412,7 @@ jobs:
           -f sync-old-images=false
         env:
           GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
-        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
 
       - name: Display link to container image repository sync workflows
         run: |
           echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"
-        if: ${{ github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled() }}
