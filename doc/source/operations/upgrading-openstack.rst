@@ -294,7 +294,8 @@ RabbitMQ 4.1
 
 .. warning::
 
-   RabbitMQ queue migration and upgrade must be done in Caracal environment.
+   The RabbitMQ queue migration and upgrade must be completed before upgrading
+   the environment to Epoxy.
 
 StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
 Existing transient queues must be migrated to durable queues with Queue Manager
@@ -316,7 +317,8 @@ Queue Migration
    for instructions.
 
 Set the following variables in your kolla globals file (i.e.
-$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
 
 .. code-block:: yaml
 
@@ -334,7 +336,7 @@ Then execute the migration script:
 RabbitMQ Upgrade
 ~~~~~~~~~~~~~~~~
 
-After queue migration is finished, upgrade RabbitMQ to 4.1.
+After the queue migration is finished, upgrade RabbitMQ to 4.1.
 
 1. Sync and publish latest Kolla container images to ensure local pulp has RabbitMQ 4.1 image.
    (This can be skipped if local pulp is not used.)
