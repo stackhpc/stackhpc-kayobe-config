@@ -60,3 +60,8 @@ prometheus_blackbox_exporter_endpoints_kayobe:
 prometheus_openstack_exporter_interval: "{{ stackhpc_prometheus_openstack_exporter_interval }}s"
 
 rabbitmq_image: "{% raw %}{{ docker_registry ~ '/' if docker_registry else '' }}{{ docker_namespace }}/rabbitmq-4-1{% endraw %}"
+
+# NOTE(seunghun1ee) Disable database TLS until ProxySQL 2.7 gets bug fix for
+# https://github.com/sysown/proxysql/issues/4877 or K-A bumps ProxySQL to 3.x.
+database_enable_tls_internal: false
+database_enable_tls_backend: false
