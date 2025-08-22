@@ -268,7 +268,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images/{{ inputs.cpu-platform-architecture }}" \
+          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
           -e os_release="9"
@@ -283,7 +283,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }} \
           -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
@@ -337,7 +337,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images/{{ inputs.cpu-platform-architecture }}" \
+          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
@@ -352,7 +352,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
-          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }} \
           -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
