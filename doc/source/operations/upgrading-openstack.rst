@@ -362,25 +362,15 @@ For Rocky Linux 9, install Python 3.12 manually.
 
 For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
 created with older Python version will not work with OpenStack 2025.1.
-Create new Kayobe Python virtual environment with Python 3.12.
 
-.. code-block:: bash
+Create new Kayobe environment and bootstrap Ansible control host with Python 3.12.
+Beokay is recommended when creating and managing local Kayobe environment.
+You can find more information from :ref:`beokay` documentation.
 
-   # Ubuntu 24.04
-   python3 -m venv venvs/kayobe
+.. note::
 
-   # Rocky Linux 9 need to specify python3.12 as it is not the default
-   python3.12 -m venv venvs/kayobe
-
-Activate the Kayobe Python virtual environment and then install Kayobe.
-
-.. code-block:: bash
-
-   source venvs/kayobe/bin/activate
-   pip install -r $KAYOBE_CONFIG_PATH/../../requirements.txt
-
-Run ``kayobe control host bootstrap`` to populate Kolla-Ansible Python virtual
-environment and bootstrap Ansible control host.
+   For Rocky Linux 9, ``beokay create`` need ``--python python3.12`` option
+   to specify Beokay to use Python 3.12 as it is not the default.
 
 Preparation
 ===========
@@ -508,8 +498,9 @@ The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
 release in case it is necessary before the upgrade begins.
 
-In general it is safer to rebuild an environment than upgrade, but for
-completeness the following shows how to upgrade an existing local Kayobe
+In general it is safer to rebuild an environment than upgrade. You can follow
+instructions from :ref:`beokay` documentation.
+But for completeness the following shows how to upgrade an existing local Kayobe
 environment.
 
 Change to the Kayobe configuration directory:
