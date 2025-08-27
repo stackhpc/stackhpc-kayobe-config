@@ -353,6 +353,44 @@ After the queue migration is finished, upgrade RabbitMQ to 4.1.
 
       kayobe kolla ansible run "rabbitmq-upgrade 4.1"
 
+.. _python-3-12:
+
+Python 3.12
+-----------
+
+From OpenStack 2025.1, Kayobe and Kolla-Ansible require Python 3.12.
+
+Ubuntu 24.04 has default Python of version 3.12.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+
+For Rocky Linux 9, install Python 3.12 manually.
+
+.. code-block:: bash
+
+   dnf install python3.12
+
+For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
+created with older Python version will not work with OpenStack 2025.1.
+Create new Kayobe Python virtual environment with Python 3.12.
+
+.. code-block:: bash
+
+   # Ubuntu 24.04
+   python3 -m venv venvs/kayobe
+
+   # Rocky Linux 9 need to specify python3.12 as it is not the default
+   python3.12 -m venv venvs/kayobe
+
+Activate the Kayobe Python virtual environment and then install Kayobe.
+
+.. code-block:: bash
+
+   source venvs/kayobe/bin/activate
+   pip install -r $KAYOBE_CONFIG_PATH/../../requirements.txt
+
+Run ``kayobe control host bootstrap`` to populate Kolla-Ansible Python virtual
+environment and bootstrap Ansible control host.
+
 Preparation
 ===========
 
@@ -470,9 +508,14 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
+.. note::
+
+   For OpenStack 2025.1 Kayobe environment, Python 3.12 is required.
+   You can find more information at :ref:`python-3-12`
+
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
-release in case it is necessary before the uprade begins.
+release in case it is necessary before the upgrade begins.
 
 In general it is safer to rebuild an environment than upgrade, but for
 completeness the following shows how to upgrade an existing local Kayobe
