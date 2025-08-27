@@ -152,15 +152,6 @@ if using environments) to 3.43.1,
 or pulling all custom built images before destroying pulp then push them again
 after pulp upgrade is done.
 
-Let's Encrypt
--------------
-
-`Let's Encrypt TLS settings fix <https://review.opendev.org/c/openstack/kolla-ansible/+/925971>`__
-brought a breaking change to Let’s Encrypt ansible role. Now users have to explicitly set the target
-Let’s Encrypt ACME server as a kolla ansible variable ``letsencrypt_external_cert_server``/
-``letsencrypt_internal_cert_server`` if they were using Let’s Encrypt as a CA of their
-external/internal TLS certificates.
-
 Cinder
 ------
 
