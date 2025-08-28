@@ -489,9 +489,10 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
-.. note::
+.. warning::
 
-   For OpenStack 2025.1 Kayobe environment, Python 3.12 is required.
+   Python 3.12 is required for OpenStack 2025.1 Kayobe environments.
+   The environment cannot be upgraded for this release, it must be rebuilt.
    You can find more information at :ref:`python-3-12`
 
 The local Kayobe environment should be either recreated or upgraded to use the
