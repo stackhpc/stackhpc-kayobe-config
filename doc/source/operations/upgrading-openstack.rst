@@ -152,15 +152,6 @@ if using environments) to 3.43.1,
 or pulling all custom built images before destroying pulp then push them again
 after pulp upgrade is done.
 
-Let's Encrypt
--------------
-
-`Let's Encrypt TLS settings fix <https://review.opendev.org/c/openstack/kolla-ansible/+/925971>`__
-brought a breaking change to Let’s Encrypt ansible role. Now users have to explicitly set the target
-Let’s Encrypt ACME server as a kolla ansible variable ``letsencrypt_external_cert_server``/
-``letsencrypt_internal_cert_server`` if they were using Let’s Encrypt as a CA of their
-external/internal TLS certificates.
-
 Cinder
 ------
 
@@ -353,6 +344,34 @@ After the queue migration is finished, upgrade RabbitMQ to 4.1.
 
       kayobe kolla ansible run "rabbitmq-upgrade 4.1"
 
+.. _python-3-12:
+
+Python 3.12
+-----------
+
+From OpenStack 2025.1, Kayobe and Kolla-Ansible require Python 3.12.
+
+Ubuntu 24.04 has a default Python of version 3.12.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+
+For Rocky Linux 9, install Python 3.12 manually.
+
+.. code-block:: bash
+
+   dnf install python3.12
+
+For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
+created with older Python versions will not work with OpenStack 2025.1.
+
+Create a new Kayobe environment and bootstrap the Ansible control host with Python 3.12.
+Beokay is recommended when creating and managing the local Kayobe environment.
+You can find more information from the :ref:`beokay` documentation.
+
+.. note::
+
+   For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
+   option to specify Beokay to use Python 3.12 as it is not the default.
+
 Preparation
 ===========
 
@@ -470,12 +489,19 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
+.. warning::
+
+   Python 3.12 is required for OpenStack 2025.1 Kayobe environments.
+   The environment cannot be upgraded for this release, it must be rebuilt.
+   You can find more information at :ref:`python-3-12`
+
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
-release in case it is necessary before the uprade begins.
+release in case it is necessary before the upgrade begins.
 
-In general it is safer to rebuild an environment than upgrade, but for
-completeness the following shows how to upgrade an existing local Kayobe
+In general it is safer to rebuild an environment than upgrade. You can follow
+instructions from the :ref:`beokay` documentation.
+But for completeness the following shows how to upgrade an existing local Kayobe
 environment.
 
 Change to the Kayobe configuration directory:
