@@ -16,7 +16,7 @@ when used with Kayobe's :kayobe-doc:`multiple environments
 <multiple-environments>` feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
-<https://github.com/stackhpc/kayobe/tree/stackhpc/2024.1>`__, which includes
+<https://github.com/stackhpc/kayobe/tree/stackhpc/2025.1>`__, which includes
 backported support for Ansible collections.
 
 New deployments
@@ -58,6 +58,8 @@ The intention is to avoid merge conflicts where possible, but there may be
 cases where this is difficult. We are open to discussion on how best to
 approach this on both sides.
 
+.. _beokay:
+
 Beokay
 ------
 
@@ -87,6 +89,17 @@ Kayobe environments can also be specified, for example, to create an AIO environ
    --kayobe-config-env-name ci-aio \
    --vault-password-file ~/vault-pw \
    --kayobe-in-requirements
+
+Python executable can also be specified, for example, to use Python 3.12:
+
+.. code-block:: console
+
+   beokay.py create \
+   --base-path skc-environment \
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
+   --kayobe-config-branch |current_release_git_branch_name| \
+   --kayobe-in-requirements
+   --python python3.12
 
 When Beokay environments are no longer required, they can be deleted by running:
 

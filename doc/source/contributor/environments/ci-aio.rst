@@ -18,7 +18,7 @@ make changes to the setup process.
 Prerequisites
 =============
 
-* a Rocky Linux 9 or Ubuntu Jammy 22.04 host
+* a Rocky Linux 9 or Ubuntu Noble 24.04 host
 
 Automated Setup
 ===============
@@ -29,13 +29,13 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2024.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   curl -LO https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
 .. parsed-literal::
 
-   sudo chmod 700 automated-setup.sh
+   sudo chmod +x automated-setup.sh
 
 Acquire the Ansible Vault password for this repository, and store a
 copy at ``~/vault-pw``.
@@ -52,9 +52,9 @@ following options:
 
 * ``BASE_PATH`` (default: ``~``) - Directory to deploy from. The directory must
   exist before running the script.
-* ``KAYOBE_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of Kayobe
+* ``KAYOBE_BRANCH`` (default: ``stackhpc/2025.1``) - The branch of Kayobe
   source code to use.
-* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2024.1``) - The branch of
+* ``KAYOBE_CONFIG_BRANCH`` (default: ``stackhpc/2025.1``) - The branch of
   ``stackhpc-kayobe-config`` to use.
 * ``KAYOBE_AIO_LVM`` (default: ``true``) - Whether the image uses LVM.
 * ``KAYOBE_CONFIG_EDIT_PAUSE`` (default: ``false``) - Option to pause
@@ -62,6 +62,10 @@ following options:
   customised before continuing.
 * ``AIO_RUN_TEMPEST`` (default: ``false``) - Whether to run Tempest Refstack
   after deployment instead of the default VM smoke test.
+* ``USE_OVS`` (default: ``false``) - Whether to disable OVN and deploy using
+  OVS instead.
+* ``VAULT_PASSWORD_FILE`` (default: ``$BASE_PATH/vault-pw``) - Path to a file
+  containing the Kayobe vault password for the environment.
 
 Manual Setup
 ============

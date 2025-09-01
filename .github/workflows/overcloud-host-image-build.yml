@@ -7,10 +7,6 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
-      ubuntu-jammy:
-        description: Build Ubuntu 22.04 Jammy
-        type: boolean
-        default: true
       ubuntu-noble:
         description: Build Ubuntu 24.04 Noble
         type: boolean
@@ -60,7 +56,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -133,7 +129,7 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "skc-host-image-builder"
-          # Must be an Ubuntu Jammy host to successfully build all images
+          # Must be an Ubuntu Noble host to successfully build all images
           # This MUST NOT be an LVM image. It can cause confusing conficts with the built image.
           aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
@@ -442,7 +438,6 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
 
-
       - name: Copy logs back
         continue-on-error: true
         run: |
@@ -456,7 +451,6 @@ jobs:
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
         if: steps.build_rocky_9.outcome == 'failure' ||
-            steps.build_ubuntu_jammy.outcome == 'failure' ||
             steps.build_ubuntu_noble.outcome == 'failure'
 
       - name: Upload logs artifact

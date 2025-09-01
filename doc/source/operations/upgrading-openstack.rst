@@ -35,136 +35,44 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-Heat disabled by default
-------------------------
+stackhpc.linux collection
+-------------------------
 
-The Heat OpenStack service is no longer enabled by default.
+The ``stackhpc.linux`` collection version has been bumped to 1.3.0. Note this
+version uses systemd to activate virtual functions. This change is restricted
+to the ``stackhpc.linux.sriov`` role, which is not used by Kayobe. If a custom
+playbook uses this role, you can retain existing behaviour by setting
+``sriov_numvfs_driver`` to ``udev``.
 
-This behavior can be overridden manually:
+Neutron driver defaults
+-----------------------
 
-.. code-block:: yaml
-   :caption: ``kolla.yml``
+The default Neutron ML2 type drivers and tenant network types now use
+``geneve`` instead of ``vxlan`` when OVN is enabled. This affects the
+``kolla_neutron_ml2_type_drivers`` and
+``kolla_neutron_ml2_tenant_network_types`` variables.
 
-   kolla_enable_heat: true
-
-Wherever possible, Magnum deployments should be migrated to the CAPI Helm
-driver. Instructions for enabling the driver can be found `here
-<../configuration/magnum-capi.html>`_. Enable the driver, recreate any clusters
-using Heat, and disable the service.
-
-After the upgrade (so that alerts don't fire) you can remove Heat with the
-following:
-
-.. code-block:: console
-
-   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api.cfg" -l network -b
-   kayobe overcloud host command run --command "rm /etc/kolla/haproxy/services.d/heat-api-cfn.cfg" -l network -b
-
-   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[0] -b
-   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[1] -b
-   kayobe overcloud host command run --command "systemctl restart kolla-haproxy-container.service" -l network[2] -b
-
-   kayobe overcloud host command run --command "systemctl stop kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
-   kayobe overcloud host command run --command "systemctl disable kolla-heat_api-container.service kolla-heat_api_cfn-container.service kolla-heat_engine-container.service" -l controllers -b
-   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api-container.service" -l controllers -b
-   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_api_cfn-container.service" -l controllers -b
-   kayobe overcloud host command run --command "rm /etc/systemd/system/kolla-heat_engine-container.service" -l controllers -b
-
-   kayobe overcloud host command run --command "docker rm heat_api heat_api_cfn heat_engine" -l controllers
-
-   kayobe overcloud host command run --command "rm -rf /etc/kolla/heat-api /etc/kolla/heat-api-cfn /etc/kolla/heat-engine" --limit controllers -b
-
-Then from the OpenStack CLI:
-
-.. code-block:: console
-
-   openstack service delete heat
-   openstack service delete heat-cfn
-   openstack user delete heat
-   openstack domain set --disable heat_user_domain
-   openstack domain delete heat_user_domain
-
-You can drop the ``heat`` database too, unless you want to keep historical content.
-
-.. code-block:: console
-
-   docker exec -it mariadb mysql -u root -p
-   Enter the database password when prompted.
-   drop database heat;
-
-Designate sink disabled by default
-----------------------------------
-
-Designate sink is an optional Designate service which listens for event
-notifications, primarily from Nova and Neutron. It is disabled by default (when
-designate is enabled) in Caracal. It is not required for Designate to function.
-
-If you still wish to use it, you should set the flag manually:
-
-.. code-block:: yaml
-   :caption: ``kolla/globals.yml``
-
-   designate_enable_notifications_sink: true
-
-If you are using Designate and do not make this change, the Antelope
-``designate-sink`` container will remain on the controllers after the upgrade.
-It must be removed manually.
-
-Grafana Volume
---------------
-The Grafana container volume is no longer used. If you wish to automatically
-remove the old volume, set ``grafana_remove_old_volume`` to ``true`` in
-``kolla/globals.yml``. Note that doing this will lose any plugins installed via
-the CLI directly and not through Kolla. If you have previously installed
-Grafana plugins via the Grafana UI or CLI, you must change to installing them
-at image build time. The Grafana volume, which contains existing custom
-plugins, will be automatically removed in the next release.
-
-Prometheus HAproxy Exporter
+Custom inspector_keep_ports
 ---------------------------
-Due to the change from using the ``prometheus-haproxy-exporter`` to using the
-native support for Prometheus which is now built into HAProxy, metric names may
-have been replaced and/or removed, and in some cases the metric names may have
-remained the same but the labels may have changed. Alerts and dashboards may
-also need to be updated to use the new metrics. Please review any configuration
-that references the old metrics as this is not a backwards compatible change.
 
-Horizon configuration
----------------------
-The Horizon role has been reworked to the preferred ``local_settings.d``
-configuration model. Files ``local_settings`` and ``custom_local_settings``
-have been renamed to ``_9998-kolla-settings.py`` and
-``_9999-custom-settings.py`` respectively. Users who use Horizon's custom
-configuration must change the names of those files in
-``etc/kolla/config/horizon`` as well.
+If you have customized ``inspector_keep_ports``, ensure it is set to one of:
+``all``, ``present``, or ``added``. If you are relying on the previous
+behaviour you should set ironic_keep_ports to present.
 
-Neutron DNS Domain
-------------------
-When Designate is enabled and the default Neutron DNS integration has not been
-disabled, ``neutron_dns_domain`` must be configured manually in
-``kolla/globals.yml``.
+Seed/Infra VM boot firmware
+---------------------------
 
-The ``neutron_dns_domain`` must end with a period ``.`` e.g. ``example.com.``.
-The domain set should be something that is not use anywhere else such as
-``internal.compute.example.com.``
+The default boot firmware for Seed and Infra VMs has changed from ``bios`` to
+``efi``. Set ``infra_vm_boot_firmware`` and ``seed_vm_boot_firmware`` to bios
+to retain existing behaviour.
 
-The Neutron DNS integration can be disabled by setting
-``neutron_dns_integration: false`` in ``kolla/globals.yml``
-
-Redis Default User
+Prometheus MSteams
 ------------------
 
-The ``redis_connection_string`` has changed the username used from ``admin``
-to ``default``. Whilst this does not have any negative impact on services
-that utilise Redis it will feature prominently in any preview of the overcloud
-configuration.
-
-AvailabilityZoneFilter removal
-------------------------------
-
-Support for the ``AvailabilityZoneFilter`` filter has been dropped in Nova.
-Remove it from any Nova config files before upgrading. It will cause errors in
-Caracal and halt the Nova scheduler.
+The ``prometheus-msteams`` integration in Kolla Ansible has been removed, users
+should switch to the `native
+<https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
+Prometheus Teams integration.
 
 Keystone LDAP TLS configuration
 -------------------------------
@@ -190,51 +98,140 @@ the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
    # targets being templated during deployment.
    stackhpc_enable_os_capacity: false
 
+Prometheus blackbox exporter endpoints
+--------------------------------------
+
+Many endpoints for the Blackbox exporter are now templated in the Kolla-Ansible
+group vars for the cloud. This means that the
+``prometheus_blackbox_exporter_endpoints`` variable can be removed from the
+environment's ``kolla/globals.yml`` file (if applicable) and the endpoints will
+fallback to the ones templated in the group vars. Backend endpoints such as
+`these <https://github.com/stackhpc/stackhpc-kayobe-config/blob/094c2e012a037309d103c08a71eb633fdeb214e7/etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter#L27-L64>`__
+are not yet templated by Kolla-Ansible.
+
+Additional endpoints may still be added.
+
+For Kolla-Ansible templating, use ``stackhpc_prometheus_blackbox_exporter_endpoints_custom``.
+For example:
+
+.. code-block:: yaml
+   :caption: ``etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter``
+
+   stackhpc_prometheus_blackbox_exporter_endpoints_custom:
+     - 'custom_service:http_2xx:{{ public_protocol }}://{{ external_fqdn | put_address_in_context('url') }}:{{ custom_serivce_port }}'
+
+Alternatively, for Kayobe templating, use the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
+For example:
+
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
+
+   prometheus_blackbox_exporter_endpoints_kayobe:
+      - endpoints:
+         - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
+      enabled: "{{ seed_pulp_container_enabled | bool }}"
+
 Known issues
 ============
 
-* Due to an incorrect default value NGS will attempt to use v3alpha for the api
-  path when communicating with etcd3. This isn't possible as in Caracal etcd is
-  running a newer version that has dropped support for v3alpha. You can work
-  around this in custom config, see the SMS PR for an example:
-  https://github.com/stackhpc/smslab-kayobe-config/pull/354
+Pulp Upgrade
+------------
 
-* Due to a `security-related change in the GRUB package on Rocky Linux 9
-  <https://access.redhat.com/security/cve/CVE-2023-4001>`__, the operating
-  system can become unbootable (boot will stop at a ``grub>`` prompt). Remove
-  the ``--root-dev-only`` option from ``/boot/efi/EFI/rocky/grub.cfg`` after
-  applying package updates. This will happen automatically as a post hook when
-  running the ``kayobe overcloud host package update`` command.
+It was found that if pulp is upgraded from 3.43.1 to 3.81.0, most of pulp
+APIs become unusable because of a bug related to missing response header
+when docker clients expect it.
 
-* After upgrading OpenSearch to the latest 2023.1 container image, we have seen
-  cluster routing allocation be disabled on some systems. See bug for details:
-  https://bugs.launchpad.net/kolla-ansible/+bug/2085943.
-  This will cause the "Perform a flush" handler to fail during the 2024.1
-  OpenSearch upgrade. To workaround this, you can run the following PUT request
-  to enable allocation again:
+Generally pulp is considered to be safe to completely destroy and re-deploy.
+So, users are encouraged to upgrade pulp in this method.
 
-  .. code-block:: console
+If your pulp has custom built images, we recommended either not doing pulp
+upgrade by pinning pulp version at ``seed_pulp_container.pulp.tag`` in
+``$KAYOBE_CONFIG_PATH/seed.yml`` (``$KAYOBE_CONFIG_PATH/environments/<env>/seed.yml``
+if using environments) to 3.43.1,
 
-     curl -X PUT "https://<kolla-vip>:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d '{ "transient" : { "cluster.routing.allocation.enable" : "all" } } '
+or pulling all custom built images before destroying pulp then push them again
+after pulp upgrade is done.
 
-* Cinder database migrations fail during the upgrade process when the
-  ``use_quota`` column is set to ``NULL``, which can be the case on deleted
-  volumes and snapshots if OpenStack has been in operation for several
-  releases. See `Launchpad bug 2070475
-  <https://bugs.launchpad.net/cinder/+bug/2070475>`__ for details. Until the
-  `database migrations are fixed
-  <https://review.opendev.org/c/openstack/cinder/+/923635>`__, the data can be
-  fixed with the following MySQL queries:
+Cinder
+------
 
-  .. code-block:: mysql
+`Enhancement of Ceph integration of multiple clusters
+<https://review.opendev.org/c/openstack/kolla-ansible/+/907166>`__
+means the Cinder role now requires ``user`` and ``pool`` set to the each item of kolla dict
+variable ``cinder_ceph_backends`` at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+For example,
 
-     UPDATE volumes SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
-     UPDATE snapshots SET use_quota = 1 WHERE use_quota IS NULL AND deleted_at IS NOT NULL;
+.. code:: yaml
+
+   cinder_ceph_backends:
+      - name: rbd-1
+         cluster: ceph
+         user: cinder
+         pool: volumes
+         enabled: true
+      - name: rbd-2
+         cluster: ceph-hdd
+         user: cinder
+         pool: volumes-hdd
+         enabled: true
+
+You can find the name of pools from ``cephadm_pools`` in cephadm.yml and name of the users
+will be ``cinder`` unless changed to otherwise.
+
+The K-A upstream change `#909974 <https://review.opendev.org/c/openstack/kolla-ansible/+/909974>`__
+requires users to manually set Cinder cluster name.
+You can find the current name of the cluster from ``cluster`` variable in
+``DEFAULT`` category in ``cinder.conf``.
+
+For example,
+
+.. code::
+
+   [DEFAULT]
+   cluster = ceph
+
+Match the name of the cluster by setting ``cinder_cluster_name`` in ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments).
+
+.. code:: yaml
+
+   cinder_cluster_name: ceph
+
+CloudKitty
+----------
+
+The Elasticsearch storage driver is no longer compatible with Opensearch storage backend.
+Set CloudKitty storage backend to ``opensearch`` if it was set to be ``elasticsearch`` before.
+This can be set at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+
+.. code:: yaml
+
+   cloudkitty_storage_backend: opensearch
+
+Ironic
+------
+
+From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
+<https://review.opendev.org/c/openstack/kayobe/+/836999>`__
+for Ironic and follows Ironic's default.
+This can cause your Ironic configuration ``ironic.conf`` to regress.
+Check the configuration difference before applying and re-add your options at
+``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+
+For example,
+
+.. code:: yaml
+
+   [DEFAULT]
+   enabled_network_interfaces = neutron
 
 Security baseline
 =================
 
-As part of the Caracal release we are looking to improve the security
+As part of the 2025.1 Epoxy release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
 been done, they should be completed before the upgrade begins.
 
@@ -275,46 +272,41 @@ suggestions:
   generally be found in the documentation of each project. For example, Nova
   policy: https://docs.openstack.org/nova/latest/configuration/policy.html
 
-RabbitMQ SLURP upgrade
+Ubuntu Noble migration
 ----------------------
 
-.. note::
-   The upgrade is reliant on recent changes. Make sure you have updated to
-   the latest version of kolla ansible and deployed the latest kolla containers
-   before proceeding.
+Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
+must be migrated to Ubuntu 24.04 before upgrading OpenStack services.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+documentation.
 
-Because this is a SLURP upgrade, RabbitMQ must be upgraded manually from 3.11,
-to 3.12, then to 3.13 on Antelope before the Caracal upgrade. This upgrade
-should not cause an API outage (though it should still be considered "at
-risk").
 
-Some errors have been observed in testing when the upgrades are performed
-back-to-back. A 200s delay eliminates this issue. On particularly large or slow
-deployments, consider increasing this timeout.
-
-Additionally errors have been observed at sites with OVS networking where after
-the upgrade, tenant networking is broken and requires a reset of RabbitMQ. This
-can be done by running the rabbitmq-reset playbook.
-
-.. code-block:: bash
-
-   kayobe overcloud service configuration generate --node-config-dir /tmp/ignore -kt none
-   kayobe kolla ansible run "rabbitmq-upgrade 3.12"
-   sleep 200
-   kayobe kolla ansible run "rabbitmq-upgrade 3.13"
-
-RabbitMQ quorum queues
+RabbitMQ Prerequisites
 ----------------------
-
-In Caracal, quorum queues are enabled by default for RabbitMQ. This is
-different to Antelope which used HA queues. Before upgrading to Caracal, it is
-strongly recommended that you migrate from HA to quorum queues. The migration
-is automated using a script.
 
 .. warning::
-   This migration will stop all services using RabbitMQ and cause an
-   extended API outage while queues are migrated. It should only be
-   performed in a pre-agreed maintenance window.
+
+   StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
+   Existing transient queues must be migrated to durable queues with Queue Manager
+   before upgrading to RabbitMQ 4.1.
+
+   This means that queue migration and the RabbitMQ 4.1 upgrade must be completed
+   before upgrading to Epoxy.
+
+Queue Migration
+~~~~~~~~~~~~~~~
+
+.. warning::
+
+   This migration will stop all services using RabbitMQ and cause an extended
+   API outage while queues are migrated. It should only be performed in a
+   pre-agreed maintenance window.
+
+   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
+   make sure to pause reconciliation of all clusters before the API outage
+   window. See the `Azimuth docs
+   <https://azimuth-cloud.github.io/azimuth-config/operations/maintenance/>`__
+   for instructions.
 
 Set the following variables in your kolla globals file (i.e.
 ``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
@@ -322,14 +314,63 @@ Set the following variables in your kolla globals file (i.e.
 
 .. code-block:: yaml
 
-      om_enable_rabbitmq_high_availability: false
-      om_enable_rabbitmq_quorum_queues: true
+   om_enable_queue_manager: true
+   om_enable_rabbitmq_quorum_queues: true
+   om_enable_rabbitmq_transient_quorum_queue: true
+   om_enable_rabbitmq_stream_fanout: true
 
 Then execute the migration script:
 
 .. code-block:: bash
 
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-quorum-migration.sh
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
+
+RabbitMQ Upgrade
+~~~~~~~~~~~~~~~~
+
+After the queue migration is finished, upgrade RabbitMQ to 4.1.
+
+1. Sync and publish latest Kolla container images to ensure local pulp has RabbitMQ 4.1 image.
+   (This can be skipped if local pulp is not used.)
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+
+2. Upgrade RabbitMQ to 4.1 with Kolla-Ansible
+
+   .. code-block:: bash
+
+      kayobe kolla ansible run "rabbitmq-upgrade 4.1"
+
+.. _python-3-12:
+
+Python 3.12
+-----------
+
+From OpenStack 2025.1, Kayobe and Kolla-Ansible require Python 3.12.
+
+Ubuntu 24.04 has a default Python of version 3.12.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+
+For Rocky Linux 9, install Python 3.12 manually.
+
+.. code-block:: bash
+
+   dnf install python3.12
+
+For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
+created with older Python versions will not work with OpenStack 2025.1.
+
+Create a new Kayobe environment and bootstrap the Ansible control host with Python 3.12.
+Beokay is recommended when creating and managing the local Kayobe environment.
+You can find more information from the :ref:`beokay` documentation.
+
+.. note::
+
+   For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
+   option to specify Beokay to use Python 3.12 as it is not the default.
 
 Preparation
 ===========
@@ -448,12 +489,19 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
+.. warning::
+
+   Python 3.12 is required for OpenStack 2025.1 Kayobe environments.
+   The environment cannot be upgraded for this release, it must be rebuilt.
+   You can find more information at :ref:`python-3-12`
+
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
-release in case it is necessary before the uprade begins.
+release in case it is necessary before the upgrade begins.
 
-In general it is safer to rebuild an environment than upgrade, but for
-completeness the following shows how to upgrade an existing local Kayobe
+In general it is safer to rebuild an environment than upgrade. You can follow
+instructions from the :ref:`beokay` documentation.
+But for completeness the following shows how to upgrade an existing local Kayobe
 environment.
 
 Change to the Kayobe configuration directory:

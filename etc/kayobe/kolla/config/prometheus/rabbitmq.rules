@@ -6,7 +6,7 @@ groups:
 - name: rabbitmq.rules
   rules:
   - alert: RabbitMQNodeDown
-    expr: sum(rabbitmq_build_info{instance!=""}) < 3
+    expr: sum(rabbitmq_build_info{instance!=""}) < {% endraw %}{{ alertmanager_number_of_rabbitmq_nodes }}{% raw %}
     for: 30m
     labels:
       severity: critical
@@ -41,13 +41,6 @@ groups:
       severity: warning
     annotations:
       description: RabbitMQ file descriptors usage on {{ $labels.instance }}
-  - alert: RabbitMQTooMuchReady
-    expr: rabbitmq_queue_messages_ready > 100
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      description: RabbitMQ too much ready on {{ $labels.instance }}
   - alert: RabbitMQTooMuchUnack
     expr: rabbitmq_queue_messages_unacked > 100
     for: 1m

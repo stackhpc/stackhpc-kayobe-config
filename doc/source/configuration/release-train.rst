@@ -39,7 +39,7 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-* Pulp repository definitions for Rocky Linux 9 and Ubuntu Jammy 22.04
+* Pulp repository definitions for Rocky Linux 9 and Ubuntu Noble 24.04
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -52,16 +52,29 @@ The Pulp container is deployed on the seed by default, but may be disabled by
 setting ``seed_pulp_container_enabled`` to ``false`` in
 ``etc/kayobe/seed.yml``.
 
-The URL and credentials of the local Pulp server are configured in
-``etc/kayobe/pulp.yml`` via ``pulp_url``, ``pulp_username`` and
-``pulp_password``. In most cases, the default values should be sufficient.
-An admin password must be generated and set as the value of a
-``secrets_pulp_password`` variable, typically in an Ansible Vault encrypted
-``etc/kayobe/secrets.yml`` file. This password will be automatically set on
-Pulp startup.
+The URL for the local Pulp server is configured by ``pulp_url`` within
+``etc/kayobe/pulp.yml``.
 
-If a proxy is required to access the Internet from the seed, ``pulp_proxy_url``
-may be used.
+The Pulp service can be configured with two sets of credentials; one for
+administrator operations and another read-only for overcloud hosts
+to use.
+The administrator credentials can be configured ``pulp_username``,
+``pulp_password``
+The basic user account credentials can be configured with ``pulp_stack_username``
+and ``pulp_stack_password``.
+Both sets of credentials can be found within ``etc/kayobe/pulp.yml``.
+
+Both the ``pulp_password`` and ``pulp_stack_password`` are intended to be
+configured via their ``secrets_*`` counterparts, i.e.
+``secrets_pulp_password`` and ``secrets_pulp_stack_password``. These variables
+are expected to be set in an Ansible Vault encrypted
+``etc/kayobe/secrets.yml`` file.
+
+Passwords can be generated using ``OpenSSL``
+
+.. code-block:: console
+
+  openssl rand -base64 32
 
 Host images are not synchronised to the local Pulp server, since they should
 only be pulled to the seed node once. More information on host images can be
@@ -81,7 +94,7 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Rocky Linux 9 and Ubuntu Jammy package repositories are synced based on the
+Rocky Linux 9 and Ubuntu Noble package repositories are synced based on the
 value of ``os_distribution`` and ``os_release``.
 
 On Ark, each package repository provides versioned snapshots using a datetime
@@ -93,7 +106,7 @@ repository.
 Package managers
 ----------------
 
-For Ubuntu Jammy systems, the package manager configuration is provided by
+For Ubuntu Noble systems, the package manager configuration is provided by
 ``stackhpc_apt_repositories`` in ``etc/kayobe/apt.yml``.
 
 The configuration is applied by default to all Ubuntu hosts. The configuration
@@ -110,7 +123,7 @@ including i18n files and command-not-found indices. This breaks APT when the
 
 .. code:: console
 
-   E: Failed to fetch https://pulp.example.com/pulp/content/ubuntu/jammy-security/development/dists/jammy-security/main/cnf/Commands-amd64   404  Not Found
+   E: Failed to fetch https://pulp.example.com/pulp/content/ubuntu/noble-security/development/dists/noble-security/main/cnf/Commands-amd64   404  Not Found
 
 The ``purge-command-not-found.yml`` custom playbook can be used to uninstall
 the package, prior to running any other APT commands. It may be installed as a

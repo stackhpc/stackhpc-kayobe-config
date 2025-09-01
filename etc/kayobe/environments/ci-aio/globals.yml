@@ -50,7 +50,7 @@
 os_distribution: "{{ lookup('pipe', '. /etc/os-release && echo $ID') | trim }}"
 
 # OS release. Valid options are "9" when os_distribution is "rocky", or
-# "jammy" and "noble" when os_distribution is "ubuntu".
+# "noble" when os_distribution is "ubuntu".
 os_release: >-
           {{ (lookup('pipe', '. /etc/os-release && echo $VERSION_CODENAME') | trim) if os_distribution == 'ubuntu' else
              (lookup('pipe', '. /etc/os-release && echo $VERSION_ID') | trim | split('.') | first) if os_distribution == 'rocky' }}

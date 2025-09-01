@@ -7,10 +7,6 @@ on:
         description: Upload Rocky Linux 9
         type: boolean
         default: true
-      ubuntu-jammy:
-        description: Upload Ubuntu 22.04 Jammy
-        type: boolean
-        default: true
       ubuntu-noble:
         description: Upload Ubuntu 24.04 Noble
         type: boolean
@@ -54,7 +50,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -144,51 +140,6 @@ jobs:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
-
-      - name: Output Ubuntu Jammy image tag
-        id: ubuntu_jammy_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_ubuntu_jammy_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
-
-      - name: Check if image exists already
-        id: ubuntu_jammy_image_exists
-        run: |
-          source venvs/kayobe/bin/activate &&
-          openstack image show \
-          overcloud-ubuntu-jammy-${{ steps.ubuntu_jammy_image_tag.outputs.image_tag }}
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        continue-on-error: true
-
-      - name: Download Ubuntu Jammy 22.04 overcloud host image from Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ${{ inputs.kayobe-environment }} &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-download.yml \
-          -e os_distribution="ubuntu" \
-          -e os_release="jammy"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'
-
-      - name: Upload Ubuntu Jammy 22.04 overcloud host image to Cloud
-        run: |
-          source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-ubuntu-jammy-${{ steps.ubuntu_jammy_image_tag.outputs.image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /tmp/ubuntu-jammy.qcow2 \
-          --private \
-          --progress
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'
 
       - name: Output Ubuntu Noble image tag
         id: ubuntu_noble_image_tag

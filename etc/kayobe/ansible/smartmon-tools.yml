@@ -1,7 +1,6 @@
 ---
-- name: Install and set up smartmon-tools
+- name: Install and set up SMART monitoring tools
   hosts: overcloud
-
   tasks:
     - name: Ensure smartmontools, jq, nvme-cli and cron/cronie are installed
       ansible.builtin.package:
@@ -13,13 +12,23 @@
         state: present
       become: true
 
-    - name: Ensure Python 3, venv, and pip are installed
-      ansible.builtin.package:
+    - name: Ensure Python 3, venv, and pip are installed on Debian/Ubuntu
+      ansible.builtin.apt:
         name:
           - python3
           - python3-venv
           - python3-pip
         state: present
+      when: ansible_facts.os_family == 'Debian'
+      become: true
+
+    - name: Ensure Python 3, and pip are installed on RedHat/CentOS
+      ansible.builtin.dnf:
+        name:
+          - python3
+          - python3-pip
+        state: present
+      when: ansible_facts.os_family == 'RedHat'
       become: true
 
     - name: Create smartmon Python virtual environment
@@ -33,6 +42,7 @@
         name:
           - prometheus_client
           - pySMART
+        state: present
         virtualenv: /opt/smartmon-venv
         virtualenv_python: python3
       become: true
@@ -100,3 +110,35 @@
         path: /usr/local/bin/smartmon.sh
         state: absent
       become: true
+
+- name: Gather NVMe drives and generate dwpd ratings
+  import_playbook: get-nvme-drives.yml
+  when: create_dwpd_ratings | default(false)
+
+- name: Copy DWPD ratings to overcloud hosts
+  hosts: overcloud
+  gather_facts: false
+  tasks:
+    - name: Convert the stackhpc_dwpd_ratings variable to JSON
+      ansible.builtin.set_fact:
+        dwpd_ratings_json: "{{ stackhpc_dwpd_ratings | default([]) | to_json }}"
+      run_once: true
+      when: stackhpc_dwpd_ratings is defined
+
+    - name: Ensure /opt/kayobe/etc/monitoring directory exists
+      ansible.builtin.file:
+        path: /opt/kayobe/etc/monitoring
+        state: directory
+        mode: '0755'
+      become: true
+      when: stackhpc_dwpd_ratings is defined
+
+    - name: Copy JSON file to remote
+      ansible.builtin.copy:
+        content: "{{ dwpd_ratings_json }}"
+        dest: "/opt/kayobe/etc/monitoring/dwpd_ratings.json"
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+      when: stackhpc_dwpd_ratings is defined
