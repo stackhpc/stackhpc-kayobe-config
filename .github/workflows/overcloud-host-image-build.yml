@@ -11,6 +11,10 @@ on:
         description: Build Ubuntu 24.04 Noble
         type: boolean
         default: true
+      ubuntu-jammy:
+        description: Build Ubuntu 22.04 Jammy
+        type: boolean
+        default: False
       runner_env:
         description: Which cloud to run on?
         type: choice
@@ -294,7 +298,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
@@ -363,7 +368,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
-          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
@@ -402,7 +408,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="noble"
@@ -417,7 +423,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -431,7 +438,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}          
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
