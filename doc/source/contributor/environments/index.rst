@@ -9,4 +9,5 @@ The following Kayobe environments are provided with this configuration:
    ci-aio
    ci-builder
    ci-multinode
+   ci-tenks
    aufn-ceph
