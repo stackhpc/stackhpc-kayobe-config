@@ -44,6 +44,7 @@ env:
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
   overcloud_dib_architecture: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'amd64' || 'arm64' }}
+  pulp_artifact_path: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'kayobe-images' || 'kayobe-images/aarch64' }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -268,7 +269,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
           -e os_release="9"
@@ -338,7 +339,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
@@ -408,7 +409,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type=kayobe-images/${{ inputs.cpu-platform-architecture }} \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="noble"
