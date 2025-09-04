@@ -72,7 +72,7 @@ To deploy the CAPI management cluster using this site-specific environment, run
     # Run the provision playbook from the azimuth-ops collection
     # NOTE: THIS COMMAND RUNS A DIFFERENT PLAYBOOK FROM
     # THE STANDARD AZIMUTH DEPLOYMENT INSTRUCTIONS
-    ansible-playbook stackhpc.azimuth_ops.provision_capi_mgmt
+    ansible-playbook azimuth_cloud.azimuth_ops.provision_capi_mgmt
 
 The general running order of the provisioning playbook is the following:
 
