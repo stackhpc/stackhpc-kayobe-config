@@ -64,25 +64,34 @@ stackhpc_overcloud_dib_env_vars:
   DIB_CONTAINERFILE_BUILDOPTS: "--platform linux/{{ overcloud_dib_architecture }}"
 
 # StackHPC overcloud DIB image packages.
-stackhpc_overcloud_dib_packages:
-  - "ethtool"
-  - "git"
-  - "less"
-  - "logrotate"
-  - "net-tools"
-  - "nvme-cli"
-  - "pciutils"
-  - "python3"
-  - "smartmontools"
-  - "vim"
-  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
-  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
-  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
-  - "{% if os_distribution == 'rocky' %}cloud-utils-growpart{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}cloud-guest-utils{% endif %}"
+stackhpc_overcloud_dib_packages_common:
+  - ethtool
+  - git
+  - less
+  - logrotate
+  - net-tools
+  - nvme-cli
+  - pciutils
+  - python3
+  - smartmontools
+  - vim
+
+stackhpc_overcloud_dib_packages_ubuntu:
+  - netbase
+  - iputils-ping
+  - curl
+  - apt-utils
+  - cloud-guest-utils
+
+stackhpc_overcloud_dib_packages_rocky:
+  - NetworkManager-config-server
+  - linux-firmware
+  - cloud-utils-growpart
+
+stackhpc_overcloud_dib_packages: >-
+  {{ stackhpc_overcloud_dib_packages_common +
+     (stackhpc_overcloud_dib_packages_ubuntu if os_distribution == 'ubuntu' else []) +
+     (stackhpc_overcloud_dib_packages_rocky if os_distribution == 'rocky' else []) }}
 
 # StackHPC overcloud DIB image block device configuration.
 # This image layout conforms to the CIS partition benchmarks.
