@@ -11,6 +11,10 @@ on:
         description: Build Ubuntu 24.04 Noble
         type: boolean
         default: true
+      ubuntu-jammy:
+        description: Build Ubuntu 22.04 Jammy
+        type: boolean
+        default: False
       runner_env:
         description: Which cloud to run on?
         type: choice
@@ -18,6 +22,13 @@ on:
         options:
           - SMS Lab
           - Leafcloud
+      cpu-platform-architecture:
+        description: Select the image's build architecture
+        type: choice
+        default: x86_64
+        options:
+          - x86_64
+          - aarch64
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -32,6 +43,8 @@ env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  overcloud_dib_architecture: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'amd64' || 'arm64' }}
+  pulp_artifact_path: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'kayobe-images' || 'kayobe-images/aarch64' }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -212,7 +225,7 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run \
-          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
+          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv qemu-user-static" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
 
@@ -256,7 +269,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
           -e os_release="9"
@@ -271,7 +284,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -285,12 +299,83 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
+
+      - name: Build an Ubuntu Jammy 22.04 overcloud host image
+        id: build_ubuntu_jammy
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy" \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-jammy
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: steps.build_ubuntu_jammy.outcome == 'failure'
+
+      - name: Upload Ubuntu Jammy 22.04 overcloud host image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-jammy \
+          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="ubuntu" \
+          -e os_release="jammy"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to current Dev Cloud (SMS/Leafcloud)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
+
+      - name: Upload Ubuntu Jammy overcloud host image to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.qcow2" \
+          -e image_name=overcloud-ubuntu-jammy-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
+        if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Build an Ubuntu Noble 24.04 overcloud host image
         id: build_ubuntu_noble
@@ -324,7 +409,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
           -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type=${{ env.pulp_artifact_path }} \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
           -e os_release="noble"
@@ -339,7 +424,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -353,7 +439,8 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e cpu-platform=${{ env.overcloud_dib_architecture }}          
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
