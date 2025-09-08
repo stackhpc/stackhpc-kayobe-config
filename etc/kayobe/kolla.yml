@@ -203,8 +203,14 @@ stackhpc_rocky_9_third_party_repos:
     file: "CentOS-Ceph-Squid.repo"
     tag: "centos-ceph-squid"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
-    file: "{{ 'copr-rabbitmq-erlang.repo' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang.repo' }}"
-    tag: "{{ 'copr-rabbitmq-erlang' if kolla_base_arch == 'aarch64' else 'rabbitmq_rabbitmq-erlang' }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_26_url }}"
+    file: "copr-rabbitmq-erlang-26.repo"
+    tag: "copr-rabbitmq-erlang-26"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_27_url }}"
+    file: "copr-rabbitmq-erlang-27.repo"
+    tag: "copr-rabbitmq-erlang-27"
   - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
     file: "rabbitmq_rabbitmq-server.repo"
     tag: "rabbitmq_rabbitmq-server"
@@ -287,11 +293,13 @@ kolla_build_blocks:
         tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
     {% endif %}
     {% for repo in base_centos_repo_overrides_post_yum_list %}
+    if [ -f /etc/yum.repos.d/{{ repo.file }} ]; then \
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[ \t]*\(https.*\)/#\1/g' \
                -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
-               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} &&{% endif %} \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}; \
+    fi{% if not loop.last %} &&{% endif %} \
     {% endfor %}
         # NOTE(bbezak): RDO epoxy repo obsoletes many OVN versions
         # (see rdo-openvswitch.spec obsolete_ovn_versions:
