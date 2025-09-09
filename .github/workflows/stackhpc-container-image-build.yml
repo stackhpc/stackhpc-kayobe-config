@@ -325,7 +325,7 @@ jobs:
 
       - name: Fail when images failed to push
         run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
-        if: ${{ !cancelled() }}
+        if: ${{ inputs.push && !cancelled() }}
 
       # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
       # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
