@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Disable telemetry and version check:
+# https://github.com/aquasecurity/trivy/discussions/8945
+export TRIVY_DISABLE_TELEMETRY=true
+export TRIVY_SKIP_VERSION_CHECK=true
+
 # Global variables
 scan_common_args=" \
                   --exit-code 1 \
