@@ -26,47 +26,55 @@
           ansible.builtin.shell:
             cmd: set -o pipefail && pip freeze | grep kayobe | cut -d @ -f 3
             executable: /usr/bin/bash
-          register: kayobe_git_commit
-          failed_when: kayobe_git_commit.stdout == ""
+          register: kayobe_current_commit
+          failed_when: kayobe_current_commit.stdout == ""
 
         - name: Create a temporary directory to clone Kayobe into
           ansible.builtin.tempfile:
             state: directory
           register: kayobe_temp_dir
 
-        - name: Clone Kayobe
+        - name: Get expected Kayobe version
+          ansible.builtin.shell:
+            cmd: set -o pipefail && grep -o kayobe@.*$ {{ requirements_path }} | cut -d @ -f 3
+            executable: /usr/bin/bash
+          register: kayobe_expected_version
+
+        - name: Clone Kayobe at the expected version
           ansible.builtin.git:
             repo: https://github.com/stackhpc/kayobe.git
             dest: "{{ kayobe_temp_dir.path }}/kayobe-git"
-            version: stackhpc/{{ openstack_release }}
+            version: "{{ kayobe_expected_version.stdout }}"
 
-        - name: Get tag from Kayobe commit
+        - name: Get tag from current Kayobe commit
           ansible.builtin.command:
-            cmd: git describe --tags {{ kayobe_git_commit.stdout }}
+            cmd: git describe --tags {{ kayobe_current_commit.stdout }}
             chdir: "{{ kayobe_temp_dir.path }}/kayobe-git"
-          register: kayobe_current_version
+          register: kayobe_current_tag
+
+        - name: Get commit from Kayobe checkout
+          ansible.builtin.command:
+            cmd: git rev-parse HEAD
+            chdir: "{{ kayobe_temp_dir.path }}/kayobe-git"
+          register: kayobe_expected_commit
 
         - name: Clean up temporary directory
           ansible.builtin.file:
             state: absent
             path: "{{ kayobe_temp_dir.path }}"
 
-        - name: Get latest Kayobe version
-          ansible.builtin.shell:
-            cmd: set -o pipefail && grep -o kayobe@stackhpc\/.*$ {{ requirements_path }} | cut -d @ -f 2
-            executable: /usr/bin/bash
-          register: kayobe_latest_version
-
-        - name: Check installed Kayobe version is the latest
+        - name: Check installed Kayobe version matches
           ansible.builtin.assert:
-            that: "kayobe_latest_version.stdout in kayobe_current_version.stdout"
+            that: kayobe_current_commit.stdout in kayobe_expected_commit.stdout
             fail_msg: |
               Kayobe must use the expected version before continuing.
 
-              Current Kayobe version: {{ kayobe_current_version.stdout }}
-              Expected Kayobe version: {{ kayobe_latest_version.stdout }}
+              Current Kayobe commit: {{ kayobe_current_commit.stdout }}
+              Current Kayobe tag: {{ kayobe_current_tag.stdout }}
+              Expected Kayobe commit: {{ kayobe_expected_commit.stdout }}
+              Expected Kayobe version: {{ kayobe_expected_version.stdout }}
 
               Recreate the Kayobe environment, or install the expected version
               by running: pip install --force-reinstall -r {{ requirements_path }}
             success_msg: |
-              Kayobe running at version: {{ kayobe_current_version.stdout }}
+              Kayobe running at version: {{ kayobe_expected_version.stdout }}
