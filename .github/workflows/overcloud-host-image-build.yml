@@ -1,6 +1,7 @@
 ---
 name: Build overcloud host images
 on:
+  #THIS IS FOR THE MANUAL ACTION DISPATCH
   workflow_dispatch:
     inputs:
       rocky9:
@@ -14,7 +15,7 @@ on:
       ubuntu-jammy:
         description: Build Ubuntu 22.04 Jammy
         type: boolean
-        default: False
+        default: false
       runner_env:
         description: Which cloud to run on?
         type: choice
@@ -33,6 +34,37 @@ on:
       KAYOBE_VAULT_PASSWORD:
         required: true
       CLOUDS_YAML:
+        required: true
+      CLOUDS_YAML_OTHER_CLOUD:
+        required: true
+      OS_APPLICATION_CREDENTIAL_ID:
+        required: true
+      OS_APPLICATION_CREDENTIAL_SECRET:
+        required: true
+  #THIS IS FOR THE PERIODIC WORKFLOW
+  workflow_call:
+    inputs:
+      rocky9:
+        type: boolean
+        default: true
+      ubuntu-noble:
+        type: boolean
+        default: true
+      ubuntu-jammy:
+        type: boolean
+        default: true
+      runner_env:
+        type: string
+        default: SMS Lab
+      cpu-platform-architecture:
+        type: string
+        required: true
+    secrets:
+      KAYOBE_VAULT_PASSWORD:
+        required: true
+      CLOUDS_YAML:
+        required: true
+      CLOUDS_YAML_OTHER_CLOUD:
         required: true
       OS_APPLICATION_CREDENTIAL_ID:
         required: true

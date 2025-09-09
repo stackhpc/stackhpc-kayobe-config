@@ -1,0 +1,31 @@
+---
+name: Periodic overcloud host images build
+on:
+  schedule:
+    # Runs every Monday at 3:30 AM ("30 3 * * 1").
+    - cron: "30 3 * * 1"
+
+jobs:
+  x86-overcloud-host-image-build:
+    name: Build x86_64 overcloud host images
+    uses: ./.github/workflows/overcloud-host-image-build.yml
+    with:
+      runner_env: "SMS Lab"
+      cpu-platform-architecture: "x86_64"
+      rocky9: true
+      ubuntu-noble: true
+      ubuntu-jammy: true
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+
+  aarch64-overcloud-host-image-build:
+    name: Build aarch64 overcloud host images
+    uses: ./.github/workflows/overcloud-host-image-build.yml
+    with:
+      runner_env: "SMS Lab"
+      cpu-platform-architecture: "aarch64"
+      rocky9: true
+      ubuntu-noble: true
+      ubuntu-jammy: true
+    secrets: inherit
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
