@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Disable telemetry and version check:
+# https://github.com/aquasecurity/trivy/discussions/8945
+export TRIVY_DISABLE_TELEMETRY=true
+export TRIVY_SKIP_VERSION_CHECK=true
+
 # Global variables
 scan_common_args=" \
                   --exit-code 1 \
@@ -22,7 +27,7 @@ usage() {
 # Check dependencies are installed, print installation instructions otherwise
 check_deps_installed() {
   if ! trivy --version > /dev/null; then
-    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.62.1'
+    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.66.0'
     exit 1
   fi
   if ! yq --version > /dev/null; then
