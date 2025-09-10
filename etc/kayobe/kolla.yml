@@ -62,6 +62,17 @@ kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 ###############################################################################
 # Kolla configuration.
 
+
+# Kolla base container image architecture. Options are "x86_64", "aarch64".
+# Default is "{{ ansible_facts.architecture }}"
+# NOTE(bbezak): evaluating this var locally for non facts gathering playbooks
+kolla_base_arch: >-
+  {{
+    'aarch64' if (stackhpc_cpu_arch_override is defined and stackhpc_cpu_arch_override | length > 0 and stackhpc_cpu_arch_override == 'arm64')
+    else (stackhpc_cpu_arch_override if (stackhpc_cpu_arch_override is defined and stackhpc_cpu_arch_override | length > 0)
+    else ('aarch64' if lookup('pipe','uname -m') in ['aarch64','arm64'] else 'x86_64'))
+  }}
+
 # Kolla base container image distribution. Options are "centos", "debian",
 # "rocky", "ubuntu". Default is {{ os_distribution }}.
 #kolla_base_distro:
@@ -437,11 +448,6 @@ kolla_build_customizations: "{{ kolla_build_customizations_common | combine(koll
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args: {}
-
-###############################################################################
-# Kolla platform architecture configuration.
-
-kolla_base_arch: "{{ 'aarch64' if stackhpc_cpu_arch == 'arm64' else stackhpc_cpu_arch }}"
 
 ###############################################################################
 # Kolla-ansible inventory configuration.

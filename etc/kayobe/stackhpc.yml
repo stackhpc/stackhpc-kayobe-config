@@ -28,8 +28,13 @@ stackhpc_include_os_minor_version_in_repo_url: false
 stackhpc_rocky_9_url_version: "{{ '9.' + stackhpc_pulp_repo_rocky_9_minor_version | string if stackhpc_include_os_minor_version_in_repo_url | bool else '9' }}"
 
 # Pick build architecture for kolla and disk image builder
-# Choose between x86_64 or arm64
-stackhpc_cpu_arch: 'x86_64'
+# Choose between x86_64 or arm64. Leaving unset will default
+# to the local architecture.
+stackhpc_cpu_arch_override: ""
+
+# If the override variable hasnt been set above then both kolla_base_arch and
+# stackhpc_cpu_arch will default to the local architecture.
+stackhpc_cpu_arch: "{{ 'arm64' if kolla_base_arch == 'aarch64' else kolla_base_arch }}"
 
 ###############################################################################
 # Debs
