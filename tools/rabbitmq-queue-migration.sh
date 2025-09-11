@@ -5,7 +5,7 @@ set -ex
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 
-RABBITMQ_SERVICES_TO_RESTART=barbican,blazar,cinder,cloudkitty,designate,heat,ironic,keystone,magnum,manila,neutron,nova,octavia
+RABBITMQ_SERVICES_TO_RESTART=barbican,blazar,cinder,cloudkitty,heat,ironic,keystone,magnum,manila,neutron,nova,octavia # Stop Designate separately
 RABBITMQ_CONTAINER_NAME=rabbitmq
 
 if [[ ! $KAYOBE_CONFIG_PATH ]]; then
@@ -36,6 +36,8 @@ fi
 # Generate new config, stop services using rabbit, and reset rabbit state
 kayobe overcloud service configuration generate --node-config-dir /etc/kolla --kolla-skip-tags rabbitmq-ha-precheck
 kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_SERVICES_TO_RESTART
+# Stop Designate services except for ``designate_backend_bind`` containers
+kayobe overcloud host command run -b -l controllers --command "set -o pipefail && systemctl list-units --all --type=service --no-legend --plain | grep -E kolla-designate | grep -E -v backend_bind9 | awk '{print \$NF}' | xargs systemctl stop"
 kayobe kolla ansible run rabbitmq-reset-state
 
 if [[ ! "$1" = "--skip-checks" ]]; then
@@ -57,6 +59,9 @@ if [[ ! "$1" = "--skip-checks" ]]; then
     fi
     export TERM=${CURRENTTERM}
 fi
+
+# Include designate services to kolla deployment
+RABBITMQ_SERVICES_TO_RESTART=$RABBITMQ_SERVICES_TO_RESTART,designate
 
 # Redeploy with all durable-type queues enabled
 kayobe kolla ansible run deploy-containers -kt $RABBITMQ_SERVICES_TO_RESTART
