@@ -27,27 +27,27 @@ metrics = {
     "avail_spare": Gauge(
         "available_spare_ratio",
         "Device available spare ratio",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "controller_busy_time": Counter(
         "controller_busy_time_seconds",
         "Device controller busy time in seconds",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "critical_warning": Gauge(
         "critical_warning",
         "Device critical warning bitmap field",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "data_units_read": Counter(
         "data_units_read_total",
         "Number of 512-byte data units read by host, reported in thousands",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "data_units_written": Counter(
         "data_units_written_total",
         "Number of 512-byte data units written by host, reported in thousands",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "device_info": Info(
         "device",
@@ -57,22 +57,22 @@ metrics = {
     "host_read_commands": Counter(
         "host_read_commands_total",
         "Device read commands from host",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "host_write_commands": Counter(
         "host_write_commands_total",
         "Device write commands from host",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "media_errors": Counter(
         "media_errors_total",
         "Device media errors total",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "num_err_log_entries": Counter(
         "num_err_log_entries_total",
         "Device error log entry count",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     # FIXME: The "nvmecli" metric ought to be an Info type, not a Gauge. However, making this change
     # will result in the metric having a "_info" suffix automatically appended, which is arguably
@@ -85,47 +85,47 @@ metrics = {
     "percent_used": Gauge(
         "percentage_used_ratio",
         "Device percentage used ratio",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "physical_size": Gauge(
         "physical_size_bytes",
         "Device size in bytes",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "power_cycles": Counter(
         "power_cycles_total",
         "Device number of power cycles",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "power_on_hours": Counter(
         "power_on_hours_total",
         "Device power-on hours",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "sector_size": Gauge(
         "sector_size_bytes",
         "Device sector size in bytes",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "spare_thresh": Gauge(
         "available_spare_threshold_ratio",
         "Device available spare threshold ratio",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "temperature": Gauge(
         "temperature_celsius",
         "Device temperature in degrees Celsius",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "unsafe_shutdowns": Counter(
         "unsafe_shutdowns_total",
         "Device number of unsafe shutdowns",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     "used_bytes": Gauge(
         "used_bytes",
         "Device used size in bytes",
-        ["device"], namespace=namespace, registry=registry,
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
     # fmt: on
 }
@@ -168,6 +168,8 @@ def main():
             for ctrl in subsys["Controllers"]:
                 for ns in ctrl["Namespaces"]:
                     device_name = ns["NameSpace"]
+                    model = ctrl["ModelNumber"].strip()
+                    serial_number = ctrl["SerialNumber"].strip()
 
                     # FIXME: This metric ought to be refactored into a "controller_info" metric,
                     # since it contains information that is not unique to the namespace. However,
@@ -175,14 +177,14 @@ def main():
                     # "nvme0n1", as devices, so preserve the former behaviour for now.
                     metrics["device_info"].labels(
                         device_name,
-                        ctrl["ModelNumber"],
+                        model,
                         ctrl["Firmware"],
-                        ctrl["SerialNumber"].strip(),
+                        serial_number,
                     )
 
-                    metrics["sector_size"].labels(device_name).set(ns["SectorSize"])
-                    metrics["physical_size"].labels(device_name).set(ns["PhysicalSize"])
-                    metrics["used_bytes"].labels(device_name).set(ns["UsedBytes"])
+                    metrics["sector_size"].labels(device_name, model, serial_number).set(ns["SectorSize"])
+                    metrics["physical_size"].labels(device_name, model, serial_number).set(ns["PhysicalSize"])
+                    metrics["used_bytes"].labels(device_name, model, serial_number).set(ns["UsedBytes"])
 
                     # FIXME: The smart-log should only need to be fetched once per controller, not
                     # per namespace. However, in order to preserve legacy metric labels, fetch it
@@ -193,41 +195,41 @@ def main():
                     # discard resolution if converted to a JSON number (i.e., float64_t). Instead,
                     # nvme-cli marshals them as strings. As such, they need to be explicitly cast
                     # to int or float when using them in Counter metrics.
-                    metrics["data_units_read"].labels(device_name).inc(
+                    metrics["data_units_read"].labels(device_name, model, serial_number).inc(
                         int(smart_log["data_units_read"])
                     )
-                    metrics["data_units_written"].labels(device_name).inc(
+                    metrics["data_units_written"].labels(device_name, model, serial_number).inc(
                         int(smart_log["data_units_written"])
                     )
-                    metrics["host_read_commands"].labels(device_name).inc(
+                    metrics["host_read_commands"].labels(device_name, model, serial_number).inc(
                         int(smart_log["host_read_commands"])
                     )
-                    metrics["host_write_commands"].labels(device_name).inc(
+                    metrics["host_write_commands"].labels(device_name, model, serial_number).inc(
                         int(smart_log["host_write_commands"])
                     )
-                    metrics["avail_spare"].labels(device_name).set(smart_log["avail_spare"] / 100)
-                    metrics["spare_thresh"].labels(device_name).set(smart_log["spare_thresh"] / 100)
-                    metrics["percent_used"].labels(device_name).set(smart_log["percent_used"] / 100)
-                    metrics["critical_warning"].labels(device_name).set(
+                    metrics["avail_spare"].labels(device_name, model, serial_number).set(smart_log["avail_spare"] / 100)
+                    metrics["spare_thresh"].labels(device_name, model, serial_number).set(smart_log["spare_thresh"] / 100)
+                    metrics["percent_used"].labels(device_name, model, serial_number).set(smart_log["percent_used"] / 100)
+                    metrics["critical_warning"].labels(device_name, model, serial_number).set(
                         smart_log["critical_warning"]["value"]
                     )
-                    metrics["media_errors"].labels(device_name).inc(int(smart_log["media_errors"]))
-                    metrics["num_err_log_entries"].labels(device_name).inc(
+                    metrics["media_errors"].labels(device_name, model, serial_number).inc(int(smart_log["media_errors"]))
+                    metrics["num_err_log_entries"].labels(device_name, model, serial_number).inc(
                         int(smart_log["num_err_log_entries"])
                     )
-                    metrics["power_cycles"].labels(device_name).inc(int(smart_log["power_cycles"]))
-                    metrics["power_on_hours"].labels(device_name).inc(
+                    metrics["power_cycles"].labels(device_name, model, serial_number).inc(int(smart_log["power_cycles"]))
+                    metrics["power_on_hours"].labels(device_name, model, serial_number).inc(
                         int(smart_log["power_on_hours"])
                     )
-                    metrics["controller_busy_time"].labels(device_name).inc(
+                    metrics["controller_busy_time"].labels(device_name, model, serial_number).inc(
                         int(smart_log["controller_busy_time"])
                     )
-                    metrics["unsafe_shutdowns"].labels(device_name).inc(
+                    metrics["unsafe_shutdowns"].labels(device_name, model, serial_number).inc(
                         int(smart_log["unsafe_shutdowns"])
                     )
 
                     # NVMe reports temperature in kelvins; convert it to degrees Celsius.
-                    metrics["temperature"].labels(device_name).set(smart_log["temperature"] - 273)
+                    metrics["temperature"].labels(device_name, model, serial_number).set(smart_log["temperature"] - 273)
 
 
 if __name__ == "__main__":
