@@ -22,6 +22,9 @@ from prometheus_client import CollectorRegistry, Counter, Gauge, Info, generate_
 registry = CollectorRegistry()
 namespace = "nvme"
 
+# Path to DWPD ratings JSON file (same as legacy bash script)
+DWPD_RATINGS_PATH = "/opt/kayobe/etc/monitoring/dwpd_ratings.json"
+
 metrics = {
     # fmt: off
     "avail_spare": Gauge(
@@ -127,8 +130,43 @@ metrics = {
         "Device used size in bytes",
         ["device", "model", "serial_number"], namespace=namespace, registry=registry,
     ),
+    "rated_dwpd": Gauge(
+        "rated_dwpd",
+        "Device rated drive-writes-per-day (fallback 1 if unknown)",
+        ["device", "model", "serial_number"], namespace=namespace, registry=registry,
+    ),
     # fmt: on
 }
+
+
+def load_dwpd_ratings(path: str = DWPD_RATINGS_PATH) -> dict[str, float]:
+    """Load DWPD ratings file.
+
+    Returns mapping model_name -> rated_dwpd (float/int). If file missing or invalid, returns empty dict.
+    """
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            return {}
+        result = {}
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            model = str(item.get("model_name", "")).strip()
+            if not model:
+                continue
+            try:
+                rated_dwpd = float(item.get("rated_dwpd", 1))
+            except (TypeError, ValueError):
+                rated_dwpd = 1.0
+            result[model] = rated_dwpd
+        return result
+    except FileNotFoundError:
+        print(f"WARNING: DWPD ratings file {path} not found, proceeding with fallback of 1 DWPD")
+        return {}
+    except Exception:
+        return {}
 
 
 def exec_nvme(*args):
@@ -163,6 +201,8 @@ def main():
 
     device_list = exec_nvme_json("list")
 
+    dwpd_map = load_dwpd_ratings()
+
     for device in device_list["Devices"]:
         for subsys in device["Subsystems"]:
             for ctrl in subsys["Controllers"]:
@@ -185,6 +225,10 @@ def main():
                     metrics["sector_size"].labels(device_name, model, serial_number).set(ns["SectorSize"])
                     metrics["physical_size"].labels(device_name, model, serial_number).set(ns["PhysicalSize"])
                     metrics["used_bytes"].labels(device_name, model, serial_number).set(ns["UsedBytes"])
+
+                    # Rated DWPD (drive endurance). Fallback to 1 if unknown.
+                    rated_dwpd = dwpd_map.get(model, 1)
+                    metrics["rated_dwpd"].labels(device_name, model, serial_number).set(rated_dwpd)
 
                     # FIXME: The smart-log should only need to be fetched once per controller, not
                     # per namespace. However, in order to preserve legacy metric labels, fetch it
