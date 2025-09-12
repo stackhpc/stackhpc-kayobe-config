@@ -37,7 +37,7 @@ fi
 kayobe overcloud service configuration generate --node-config-dir /etc/kolla --kolla-skip-tags rabbitmq-ha-precheck
 kayobe kolla ansible run "stop --yes-i-really-really-mean-it" -kt $RABBITMQ_SERVICES_TO_RESTART
 # Stop Designate services except for ``designate_backend_bind`` containers
-kayobe overcloud host command run -b -l controllers --command "set -o pipefail && systemctl list-units --all --type=service --no-legend --plain | grep -E kolla-designate | grep -E -v backend_bind9 | awk '{print \$NF}' | xargs systemctl stop"
+kayobe overcloud host command run -b -l controllers --command "systemctl list-units --all --type=service --no-legend --plain | awk '/kolla-designate/ && !/backend_bind9/ {print \$1}' | xargs -r systemctl stop || true"
 kayobe kolla ansible run rabbitmq-reset-state
 
 if [[ ! "$1" = "--skip-checks" ]]; then
