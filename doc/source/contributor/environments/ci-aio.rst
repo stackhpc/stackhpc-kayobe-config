@@ -44,7 +44,7 @@ Run the setup script:
 
 .. parsed-literal::
 
-   ./automated-setup.sh
+   ./automated-setup.sh deploy_full
 
 The script will pull the current version of Kayobe and this repository, and
 then run the manual setup steps below. The script can be easily edited with the
