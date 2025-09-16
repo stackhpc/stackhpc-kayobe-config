@@ -35,7 +35,9 @@ stackhpc_overcloud_dib_elements:
   - "{% if os_distribution == 'ubuntu' %}sudoers{% endif %}"
 
 # StackHPC overcloud DIB image environment variables.
-stackhpc_overcloud_dib_env_vars:
+stackhpc_overcloud_dib_env_vars: "{{ stackhpc_overcloud_dib_env_vars_default | combine(stackhpc_overcloud_dib_env_vars_ark if stackhpc_build_overcloud_image_from_pulp_package_mirrors | bool else {}) }}"
+
+stackhpc_overcloud_dib_env_vars_default:
   DIB_BLOCK_DEVICE_CONFIG: "{{ stackhpc_overcloud_dib_block_device_config_uefi_lvm }}"
   DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text net.ifnames=1 rd.auto"
   DIB_GRUB_TIMEOUT: "5"
@@ -44,10 +46,6 @@ stackhpc_overcloud_dib_env_vars:
   DIB_CONTAINERFILE_RUNTIME: "docker"
   DIB_CONTAINERFILE_NETWORK_DRIVER: "host"
   DIB_CONTAINERFILE_DOCKERFILE: "/opt/kayobe/src/stackhpc-image-elements/elements/rocky-container-stackhpc/containerfiles/9-stackhpc"
-  DIB_CONTAINERFILE_BUILDOPTS: >-
-    --build-arg=ROCKY_USE_MIRRORS=true
-    --build-arg=ROCKY_MIRROR_URLS={{ [stackhpc_repo_rocky_9_baseos_url, stackhpc_repo_rocky_9_appstream_url] | join(',') }}
-  DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_noble_url if os_distribution == 'ubuntu' else '' }}"
   DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: "{{ stackhpc_overcloud_dib_dracut_enabled_modules_default_config }}"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
   DIB_SUDOERS_FILENAME: "no-fqdn"
@@ -57,6 +55,12 @@ stackhpc_overcloud_dib_env_vars:
   YUM: dnf
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
+
+stackhpc_overcloud_dib_env_vars_ark:
+  DIB_CONTAINERFILE_BUILDOPTS: >-
+    --build-arg=ROCKY_USE_MIRRORS=true
+    --build-arg=ROCKY_MIRROR_URLS={{ [stackhpc_repo_rocky_9_baseos_url, stackhpc_repo_rocky_9_appstream_url] | join(',') }}
+  DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_noble_url if os_distribution == 'ubuntu' else '' }}"
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
