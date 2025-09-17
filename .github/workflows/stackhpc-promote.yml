@@ -44,6 +44,20 @@ jobs:
         run: |
           echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
 
+      - name: Trigger overcloud host image promotion
+        run: |
+          gh workflow run \
+          overcloud-host-image-promote.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Display link to overcloud host image promotion workflows
+        run: |
+          echo "::notice Overcloud host image promote workflow: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/overcloud-host-image-promote.yml"
+
       - name: Send message to Slack via Workflow Builder
         uses: slackapi/slack-github-action@v1.26.0
         with:
