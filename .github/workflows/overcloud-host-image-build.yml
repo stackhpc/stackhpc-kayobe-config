@@ -18,6 +18,10 @@ on:
         options:
           - SMS Lab
           - Leafcloud
+      create_skc_pr:
+        description: Propose PR to SKC
+        type: boolean
+        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD:
         required: true
@@ -44,7 +48,8 @@ jobs:
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
-    permissions: {}
+    permissions:
+      actions: write
     steps:
       - name: Validate inputs
         run: |
@@ -56,7 +61,7 @@ jobs:
       - name: Install Package
         uses: ConorMacBride/install-package@main
         with:
-          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq gh
 
       - name: Start the SSH service
         run: |
@@ -390,3 +395,43 @@ jobs:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()
+
+      - name: Trigger update overcloud host image tags
+        run: |
+          gh workflow run \
+          update-overcloud-host-image-tags.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref $BRANCH_NAME \
+          $(if [[ "${{ inputs.rocky9 }}" == "true" ]]; then echo "-f rocky9_tag=${{ steps.host_image_tag.outputs.host_image_tag }}"; fi) \
+          $(if [[ "${{ inputs.ubuntu-noble }}" == "true" ]]; then echo "-f ubuntu_noble_tag=${{ steps.host_image_tag.outputs.host_image_tag }}"; fi)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        if: inputs.create_skc_pr
+
+      - name: Display link to update overcloud host image tags workflows
+        run: |
+          echo "::notice Overcloud host image promote workflow: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/update-overcloud-host-image-tags.yml"
+        if: inputs.create_skc_pr
+
+      - name: Send message to Slack via Workflow Builder
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "channel-id": "${{ env.SLACK_CHANNEL_ID }}",
+              "inputs": "${{ env.INPUTS }}",
+              "message": "${{ env.MESSAGE }}",
+              "results-url": "${{ env.RESULTS_URL }}",
+              "workflow-url": "${{ env.WORKFLOW_URL }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # #release-train-alerts
+          SLACK_CHANNEL_ID: C03B28HRP53
+          INPUTS: >-
+            branch: ${{ github.ref_name }}
+          MESSAGE: "SKC overcloud host image build failed :sob:"
+          RESULTS_URL: "N/A"
+          WORKFLOW_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        if: failure() && inputs.create_skc_pr

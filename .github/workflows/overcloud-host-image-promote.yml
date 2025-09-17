@@ -11,10 +11,6 @@ on:
         description: Promote Ubuntu 24.04 Noble
         type: boolean
         default: true
-      image_tag:
-        description: Tag to promote
-        type: string
-        required: true
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
@@ -71,6 +67,20 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
+      - name: Gather Rocky Linux 9 overcloud host image tag
+        id: rocky9_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+        if: inputs.rocky9
+
+      - name: Gather Ubuntu Noble overcloud host image tag
+        id: ubuntu_noble_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_ubuntu_noble_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+        if: inputs.ubuntu-noble
+
       - name: Promote Rocky Linux 9 overcloud host image artifact
         run: |
           source venvs/kayobe/bin/activate &&
@@ -79,9 +89,9 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
           -e artifact_type="kayobe-images" \
           -e os_distribution='rocky' \
-          -e os_release='9'
+          -e os_release='9' \
+          -e promotion_tag=${{ steps.rocky9_image_tag.outputs.image_tag }}
         env:
-          ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9
 
@@ -93,8 +103,8 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
           -e artifact_type="kayobe-images" \
           -e os_distribution='ubuntu' \
-          -e os_release='noble'
+          -e os_release='noble' \
+          -e promotion_tag=${{ steps.ubuntu_noble_image_tag.outputs.image_tag }}
         env:
-          ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-noble
