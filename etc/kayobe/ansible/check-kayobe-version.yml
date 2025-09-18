@@ -7,12 +7,25 @@
     requirements_path: "{{ kayobe_config_path }}/../../requirements.txt"
   tasks:
     - name: Check version
-      when: stackhpc_enable_kayobe_check
+      when: stackhpc_enable_kayobe_check | bool
       check_mode: false
       block:
         - name: Get package info
           community.general.pip_package_info:
           register: packages
+
+        - name: Check if Kayobe is installed as editable
+          ansible.builtin.assert:
+            that: packages.packages.pip.kayobe[0].editable_project_location is not defined
+            fail_msg: |
+              You are using Kayobe as an editable install. Please recreate the
+              Kayobe environment, or reinstall Kayobe by running:
+              pip install --force-reinstall -r {{ requirements_path }}
+
+              If an editable install is actually required, you can skip this
+              check by setting stackhpc_enable_kayobe_check to false.
+            success_msg: |
+              Kayobe is not installed as editable.
 
         - name: Check if pip is version 24.0 or newer
           ansible.builtin.assert:
