@@ -9,10 +9,17 @@
 - name: Collect diagnostic information
   hosts: seed-hypervisor:seed:overcloud:infra-vms
   vars:
-    diagnostics_path_local: "{{ lookup('env', 'PWD') }}/diagnostics"
+    diagnostics_path_local: "{{ lookup('env', 'HOME') }}/diagnostics"
   tasks:
     - name: Run diagnostics
       block:
+        - name: Create a local directory to sync diagnostics
+          ansible.builtin.file:
+            path: "{{ diagnostics_path_local }}"
+            state: directory
+          delegate_to: localhost
+          run_once: true
+
         - name: Create a temporary directory for diagnostics
           ansible.builtin.tempfile:
             state: directory
