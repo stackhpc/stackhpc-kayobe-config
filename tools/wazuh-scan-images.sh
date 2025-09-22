@@ -7,24 +7,30 @@ SBOM_DIR="/opt/kayobe/stackhpc/sboms"
 mkdir -p "$SBOM_DIR"
 
 # Ensure the custom output template exists
-cat <<EOL > "$SBOM_DIR/trivy-custom.tmpl"
-"Package","Version Installed","Vulnerability ID","Severity","Title"
-{{- range \$ri, \$r := . }}
-{{- range \$vi, \$v := .Vulnerabilities }}
+if [[ ! -f "$SBOM_DIR/trivy-custom.tmpl" ]]; then
+cat <<'EOL' > "$SBOM_DIR/trivy-custom.tmpl"
+{{- range $ri, $r := . -}}
+{{- range $vi, $v := .Vulnerabilities -}}
 "{{ $v.PkgName }}","{{$v.InstalledVersion }}","{{ $v.VulnerabilityID }}","{{$v.Severity }}","{{$v.Title }}"
-{{- end}}
-{{- end }}
+{{- end -}}
+{{- end -}}
 EOL
+fi
+
+echo "Package","Version Installed","Vulnerability ID","Severity","Title"
 
 # Loop through each container image and process its SBOM
-docker image ls --format "{{.Repository}}:{{.Tag}}" | sort | uniq | while read -r image; do
+docker image ls --format "{{.Repository}}:{{.Tag}}:{{.Image ID}}" | sort | uniq | while read -r image; do
+    # Split image ID
+    image_id=$(echo "$image" | awk -F: '{print $NF}')
+
     # Generate SBOM filename
     sbom_file="$SBOM_DIR/$(echo "$image" | tr '/:' '_').sbom"
 
     # Generate SBOM if missing
     if [[ ! -f "$sbom_file" ]]; then
         echo "Generating SBOM for $image"
-        if ! trivy image --quiet --format spdx-json --output "$sbom_file" "$image"; then
+        if ! trivy image --quiet --format spdx-json --output "$sbom_file" "$image_id"; then
             echo "Failed to generate SBOM for $image. Skipping."
             continue
         fi
