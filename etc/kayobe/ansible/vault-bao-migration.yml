@@ -1,0 +1,47 @@
+---
+- name: Migrate Seed Vault to OpenBao
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  vars:
+    secret_store_bind_interface: lo
+    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
+    secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
+    vault_consul_snapshot_path: "/opt/kayobe/vault/consul-snapshot.snap"
+    vault_raft_snapshot_path: "/opt/kayobe/vault/raft-snapshot.snap"
+  tasks:
+    - name: Take snapshot of Consul data
+      ansible.builtin.command:
+        cmd: "docker exec -i consul consul snapshot save consul-snapshot.snap"
+
+    - name: Copy Consul snapshot to host
+      ansible.builtin.command:
+        cmd: "docker cp consul:/consul-snapshot.snap {{ vault_consul_snapshot_path }}"
+
+    - name: Template out migration file
+      ansible.builtin.template:
+        src: etc/kayobe/ansible/vault-bao-migration.hcl.j2
+        dest: /opt/kayobe/vault/vault-bao-migration.hcl
+
+    - name: Copy migration file into Vault container
+      ansible.builtin.command:
+        cmd: "docker cp /opt/kayobe/vault/vault-bao-migration.hcl vault:/vault-bao-migration.hcl"
+
+    - name: Migrate to Raft backend
+      ansible.builtin.command:
+        cmd: "docker exec -i vault vault operator migrate -config=/vault-bao-migration.hcl"
+
+    - name: Take snapshot of Raft data
+      ansible.builtin.command:
+        cmd: "docker exec -i vault vault operator raft snapshot save raft-snapshot.snap"
+
+    - name: Copy Raft snapshot to host
+      ansible.builtin.command:
+        cmd: "docker cp vault:/raft-snapshot.snap {{ vault_raft_snapshot_path }}"
+
+    # TODO:
+    # Stop Vault & Consul containers
+    # Remove Vault & Consul containers
+    # Remove docker volumes
+    # Deploy OpenBao with existing Raft snapshot
+

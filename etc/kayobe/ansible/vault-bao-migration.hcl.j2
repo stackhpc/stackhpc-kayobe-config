@@ -1,0 +1,11 @@
+storage_source "consul" {
+  address = "{{ secret_store_bind_address }}:{{ consul_port | default(8500) }}"
+  path    = "vault"
+}
+
+storage_destination "raft" {
+  path = "/vault/file/data/"
+  node_id = "node_{{ inventory_hostname }}"
+}
+
+cluster_addr = "https://{{ secret_store_bind_address }}:8201"
