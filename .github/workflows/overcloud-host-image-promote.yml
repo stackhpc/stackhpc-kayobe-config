@@ -15,8 +15,17 @@ on:
         description: Tag to promote
         type: string
         required: true
+      cpu-platform-architecture:
+        description: What is the tagged image's architecture
+        type: choice
+        required: true
+        default: x86_64
+        options:
+          - x86_64
+          - aarch64
 env:
   ANSIBLE_FORCE_COLOR: True
+  pulp_artifact_type: ${{ inputs.cpu-platform-architecture == 'x86_64' && 'kayobe-images' || 'kayobe-images/aarch64' }}
 jobs:
   overcloud-host-image-promote:
     name: Promote overcloud host image
@@ -77,7 +86,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type=${{ env.pulp_artifact_type }} \
           -e os_distribution='rocky' \
           -e os_release='9'
         env:
@@ -91,7 +100,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp-artifact-promote.yml \
-          -e artifact_type="kayobe-images" \
+          -e artifact_type=${{ env.pulp_artifact_type }} \
           -e os_distribution='ubuntu' \
           -e os_release='noble'
         env:

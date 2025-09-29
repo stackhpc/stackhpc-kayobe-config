@@ -6,7 +6,7 @@
   hosts: seed
   vars:
     local_image_path: /opt/kayobe/images/overcloud-{{ os_distribution }}-{{ os_release }}/overcloud-{{ os_distribution }}-{{ os_release }}.qcow2
-    image_name: overcloud-{{ os_distribution }}-{{ os_release }}-{{ cpu_platform }}
+    image_name: overcloud-{{ os_distribution }}-{{ os_release }}{{ '-arm64' if cpu_platform == 'arm64' else '' }}
   tasks:
     - name: Upload image to Glance
       block:
