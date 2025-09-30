@@ -95,4 +95,4 @@ hosts:
 
    mkdir -p $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/pre.d
    cd $KAYOBE_CONFIG_PATH/hooks/overcloud-host-configure/pre.d
-   ln -s ../../../ansible/growroot.yml 30-growroot.yml
+   ln -s ../../../ansible/tools/growroot.yml 30-growroot.yml

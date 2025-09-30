@@ -37,10 +37,10 @@ is not enabled by default. To enable it, set the following in
 
 If you are working on an existing deployment, you need to do the following first.
 
-1. Create CephFS pools: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-pools.yml``
-2. Create cephx key for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-keys.yml``
-3. Run Manila related Ceph commands: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-commands-post.yml``
-4. Gather Ceph configuration and keyring for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml``
+1. Create CephFS pools: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-pools.yml``
+2. Create cephx key for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-keys.yml``
+3. Run Manila related Ceph commands: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-commands-post.yml``
+4. Gather Ceph configuration and keyring for Manila: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml``
 5. Configure Storage network on Seed node: ``kayobe seed host configure -t network,ip-allocation,snat``
 
 Then, run ``kayobe overcloud service deploy`` to deploy Manila.
@@ -342,15 +342,15 @@ Create and encrypt the Wazuh secrets
 
 .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-      ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml
+      ansible-vault encrypt --vault-password-file ~/vault.password  $KAYOBE_CONFIG_PATH/environments/ci-multinode/deployment/wazuh-secrets.yml
 
 Run the Wazuh manager and agent deployment playbooks:
 
 .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml
 
 Wazuh should now be fully deployed. To test the service, you can use sshuttle
 or some other forwarding protocol to access the Wazuh dashboard.
@@ -370,7 +370,7 @@ The default username is ``admin`` and the password is the
 
 .. code-block:: bash
 
-      ansible-vault view $KAYOBE_CONFIG_PATH/environments/ci-multinode/wazuh-secrets.yml --vault-password-file ~/vault.password | grep opendistro_admin_password
+      ansible-vault view $KAYOBE_CONFIG_PATH/environments/ci-multinode/deployment/wazuh-secrets.yml --vault-password-file ~/vault.password | grep opendistro_admin_password
 
 If the deployment has been successful, you should be able to see a Wazuh agent
 for each host in your deployment (aside from the Wazuh manager itself).

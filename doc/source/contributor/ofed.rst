@@ -61,8 +61,8 @@ by running:
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 DOCA repositories can be templated to hosts by running Kayobe host configure.
 
@@ -83,14 +83,14 @@ to be reset before rebooting.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reset-bls-entries.yml -e reset_bls_host=mlnx
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reset-bls-entries.yml -e reset_bls_host=mlnx
 
 The hosts can now be rebooted to use the latest kernel, a rolling reboot may be applicable
 here to reduce distruptions. See the `package updates documentation <package-updates>`.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit mlnx
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit mlnx
 
 install-doca
 ------------
@@ -101,4 +101,4 @@ playbook:
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/install-doca.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/install-doca.yml

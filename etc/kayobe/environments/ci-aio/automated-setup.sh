@@ -143,7 +143,7 @@ kayobe_control_host_bootstrap() {
 kayobe_run_init_playbooks() {
     echo "Running Kayobe playbooks..."
     activate_kayobe_env
-    kayobe playbook run etc/kayobe/ansible/growroot.yml etc/kayobe/ansible/purge-command-not-found.yml
+    kayobe playbook run etc/kayobe/ansible/tools/growroot.yml etc/kayobe/ansible/fixes/purge-command-not-found.yml
     set +x
     deactivate
 }

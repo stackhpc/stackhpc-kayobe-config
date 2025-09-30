@@ -63,7 +63,7 @@ Place the host or batch of hosts into maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml -l <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
@@ -77,13 +77,13 @@ the maximum number of hosts that can safely reboot concurrently.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 Remove the host or batch of hosts from maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml -l <host>
 
 Wait for Ceph health to return to ``HEALTH_OK``:
 
@@ -152,7 +152,7 @@ Update the Cephadm package:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml -e cephadm_package_update=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml -e cephadm_package_update=true
 
 Testing
 =======

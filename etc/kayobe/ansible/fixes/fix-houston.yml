@@ -7,11 +7,11 @@
 # https://bugs.launchpad.net/charm-neutron-openvswitch/+bug/1899364
 # https://patchwork.kernel.org/project/netdevbpf/patch/c2ef23da1d9a4eb62f4e7b7c4540f9bafb553c15.1658420239.git.dcaratti@redhat.com/
 # To deploy this playbook, use the following commands:
-# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fix-houston.yml
+# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/fix-houston.yml
 # Enable with Kayobe Hooks by running:
 # mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-service-deploy/post.d
 # cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-service-deploy/post.d
-# ln -s ../../../ansible/fix-houston.yml 90-fix-houston.yml
+# ln -s ../../../ansible/fixes/fix-houston.yml 90-fix-houston.yml
 
 - name: Create Systemd Unit to workaround 'tc mirred to Houston' error
   hosts: network,compute
@@ -23,7 +23,7 @@
 
     - name: Create systemd service for -ovs network interface
       ansible.builtin.template:
-        src: fix-houston-interface.service.j2
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/templates/fix-houston-interface.service.j2"
         dest: /etc/systemd/system/fix-houston-{{ item }}.service
       loop: "{{ neutron_bridge_name.split(',') }}"
       vars:
