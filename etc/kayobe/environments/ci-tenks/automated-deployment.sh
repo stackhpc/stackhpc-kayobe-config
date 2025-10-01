@@ -100,10 +100,10 @@ sudo $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networ
 # for now we should skip it and just get to provisioning. Once we have a local
 # package mirror, we can probably add it back in and at least get to host
 # configuration.
-#kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-#kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter=bifrost
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml -e stackhpc_pulp_images_kolla_filter=bifrost
+#kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+#kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter=bifrost
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml -e stackhpc_pulp_images_kolla_filter=bifrost
 
 # Re-run full task to set up bifrost_deploy etc. using newly-populated pulp repo
 kayobe seed service deploy
