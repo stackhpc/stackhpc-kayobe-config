@@ -42,6 +42,8 @@
             disk_format: qcow2
             state: present
             filename: "{{ local_image_path }}"
+            properties:
+              hw_architecture: "{{ 'aarch64' if cpu_platform == 'arm64' else 'x86_64' }}"
 
       always:
         - name: Remove clouds.yaml
