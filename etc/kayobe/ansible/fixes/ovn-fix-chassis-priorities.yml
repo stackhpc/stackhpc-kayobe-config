@@ -5,23 +5,23 @@
 # metal/SR-IOV) ports.
 
 # This playbook can be used to fix the issue by realigning the priorities of
-# the table entries. It does so by assigning the highest priority to the
-# "first" (sorted alphabetically) OVN NB DB host. This results in all gateways
-# being scheduled to a single host, but is less complicated than trying to
-# balance them (and it's also not clear to me how to map between individual
-# ha_chassis and gateway_chassis entries).
+# the table entries. It executes a small inline shell script against the
+# OVN northbound database to ensure that, for each router, the HA chassis
+# backing its internal networks is aligned with the chassis currently hosting
+# the router's external gateway interface.
 
 # The playbook can be run as follows:
 # kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/ovn-fix-chassis-priorities.yml
+# By default this runs in dry-run mode; pass '-e apply=yes' to perform the updates.
 
 # If the 'controllers' group does not align with the group used to deploy the
 # OVN NB DB, this can be overridden by passing the following:
 # '-e ovn_nb_db_group=some_other_group'
 
-- name: Find OVN DB DB Leader
+- name: Find OVN NB DB Leader
   hosts: "{{ ovn_nb_db_group | default('controllers') }}"
   tasks:
-    - name: Find OVN DB Leader
+    - name: Find OVN NB DB Leader
       when: kolla_enable_ovn | bool
       block:
         - name: Find the OVN NB DB leader
@@ -43,34 +43,119 @@
 
 - name: Fix OVN chassis priorities
   hosts: ovn_nb_leader
+  gather_facts: false
   vars:
-    ovn_nb_db_group: controllers
-    ovn_nb_db_hosts_sorted: "{{ query('inventory_hostnames', ovn_nb_db_group) | sort | list }}"
-    ha_chassis_max_priority: 32767
-    gateway_chassis_max_priority: "{{ ovn_nb_db_hosts_sorted | length }}"
+    apply_updates: "{{ apply | default(false) | bool }}"
   tasks:
-    - name: Fix ha_chassis priorities
-      ansible.builtin.command: >-
-        docker exec ovn_nb_db
-        bash -c '
-        ovn-nbctl find ha_chassis chassis_name={{ item }} |
-        awk '\''$1 == "_uuid" { print $3 }'\'' |
-        while read uuid; do ovn-nbctl set ha_chassis $uuid priority={{ priority }}; done'
-      loop: "{{ ovn_nb_db_hosts_sorted }}"
-      vars:
-        priority: "{{ ha_chassis_max_priority | int - ovn_nb_db_hosts_sorted.index(item) }}"
-      register: ha_chassis_command
-      changed_when: ha_chassis_command.rc == 0
+    - name: Realign HA chassis priorities with active gateways
+      when: kolla_enable_ovn | bool
+      ansible.builtin.shell: |
+        docker exec -i ovn_nb_db bash -s <<'EOF'
+        set -euo pipefail
 
-    - name: Fix gateway_chassis priorities
-      ansible.builtin.command: >-
-        docker exec ovn_nb_db
-        bash -c '
-        ovn-nbctl find gateway_chassis chassis_name={{ item }} |
-        awk '\''$1 == "_uuid" { print $3 }'\'' |
-        while read uuid; do ovn-nbctl set gateway_chassis $uuid priority={{ priority }}; done'
-      loop: "{{ ovn_nb_db_hosts_sorted }}"
-      vars:
-        priority: "{{ gateway_chassis_max_priority | int - ovn_nb_db_hosts_sorted.index(item) }}"
-      register: gateway_chassis_command
-      changed_when: gateway_chassis_command.rc == 0
+        MAX_PRIORITY=32767
+        APPLY="{{ 'yes' if apply_updates else 'no' }}"
+
+        if [ "$APPLY" = "yes" ]; then
+            echo "APPLY MODE: Updating OVN HA priorities"
+        else
+            echo "DRY-RUN MODE: Showing proposed changes only"
+            echo "Re-run with -e apply=yes to apply changes"
+        fi
+        echo ""
+
+        # Get all external gateway ports
+        ext_ports=$(ovn-nbctl --data=bare --no-headings --columns=name find logical_router_port 'external_ids:"neutron:is_ext_gw"="True"')
+
+        for ext_port in $ext_ports; do
+            # Get router name
+            router=$(ovn-nbctl --data=bare --no-headings get logical_router_port "$ext_port" 'external_ids:"neutron:router_name"' | tr -d '"')
+
+            if [ -z "$router" ]; then
+                echo "Skipping $ext_port: no router name found"
+                continue
+            fi
+
+            # Get gateway chassis list (ordered by priority)
+            gateway_chassis=""
+            gateway_info=$(ovn-nbctl lrp-get-gateway-chassis "$ext_port" 2>/dev/null || true)
+
+            while IFS= read -r line; do
+                # Strip prefix
+                chassis=$(echo "$line" | awk '{print $1}' | cut -d'_' -f2-)
+                gateway_chassis="$gateway_chassis $chassis"
+            done <<< "$gateway_info"
+
+            gateway_chassis=${gateway_chassis# }
+
+            if [ -z "$gateway_chassis" ]; then
+                echo "Router $router: no gateway chassis configured"
+                continue
+            fi
+
+            # The first chassis in the list is the active gateway
+            active_gateway=$(echo "$gateway_chassis" | awk '{print $1}')
+            echo "Router: $router | Port: $ext_port | Active Gateway: $active_gateway"
+
+            # Process all internal ports on this router
+            router_ports=$(ovn-nbctl --data=bare --no-headings --columns=name \
+              find logical_router_port "external_ids:\"neutron:router_name\"=\"$router\"")
+
+            for port in $router_ports; do
+
+                # Skip external gateway ports
+                is_external=$(ovn-nbctl --data=bare --no-headings get logical_router_port "$port" 'external_ids:"neutron:is_ext_gw"' 2>/dev/null)
+                [ "$is_external" = "True" ] && continue
+
+                # Get network name and HA chassis group
+                network=$(ovn-nbctl --data=bare --no-headings get logical_router_port "$port" 'external_ids:"neutron:network_name"' 2>/dev/null)
+                ha_group=$(ovn-nbctl --data=bare --no-headings --columns=_uuid find ha_chassis_group name="$network")
+
+                if [ -z "$ha_group" ]; then
+                    echo "  Port $port: no HA group found for network '$network'"
+                    continue
+                fi
+
+                echo "  Port: $port | Network: $network"
+
+                # Update priorities for each chassis in the HA group
+                ha_chassis_list=$(ovn-nbctl --data=bare --no-headings get ha_chassis_group "$ha_group" ha_chassis | tr -d '[],')
+
+                for uuid in $ha_chassis_list; do
+                    chassis_name=$(ovn-nbctl --data=bare --no-headings get ha_chassis "$uuid" chassis_name)
+                    current_priority=$(ovn-nbctl --data=bare --no-headings get ha_chassis "$uuid" priority)
+
+                    # Calculate desired priority
+                    desired_priority=""
+                    index=0
+                    for gw in $gateway_chassis; do
+                        if [ "$chassis_name" = "$gw" ]; then
+                            desired_priority=$((MAX_PRIORITY - index))
+                            break
+                        fi
+                        index=$((index + 1))
+                    done
+                    [ -z "$desired_priority" ] && continue
+
+                    # Apply or report change
+                    if [ "$current_priority" -ne "$desired_priority" ]; then
+                        if [ "$APPLY" = "yes" ]; then
+                            ovn-nbctl set ha_chassis "$uuid" priority=$desired_priority
+                            echo "    $chassis_name: updated priority $current_priority to $desired_priority"
+                        else
+                            echo "    $chassis_name: would update priority $current_priority to $desired_priority"
+                        fi
+                    else
+                        echo "    $chassis_name: priority $current_priority (no change needed)"
+                    fi
+                done
+            done
+            echo ""
+        done
+        EOF
+      register: fix_output
+      changed_when: apply_updates and ('updated priority' in (fix_output.stdout | default('')))
+
+    - name: Display results
+      ansible.builtin.debug:
+        msg: "{{ fix_output.stdout }}"
