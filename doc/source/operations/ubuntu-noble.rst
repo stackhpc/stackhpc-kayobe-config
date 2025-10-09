@@ -79,7 +79,9 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml -e stackhpc_pulp_sync_ubuntu_jammy=true -e stackhpc_pulp_sync_ubuntu_noble=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml \
+       -e stackhpc_pulp_sync_ubuntu_jammy=true \
+       -e stackhpc_pulp_sync_ubuntu_noble=true
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml \
        -e stackhpc_pulp_sync_ubuntu_jammy=true \
        -e stackhpc_pulp_sync_ubuntu_noble=true
