@@ -87,7 +87,9 @@ may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml -e stackhpc_pulp_sync_ubuntu_jammy=true -e stackhpc_pulp_sync_ubuntu_noble=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml \
+       -e stackhpc_pulp_sync_ubuntu_jammy=true \
+       -e stackhpc_pulp_sync_ubuntu_noble=true
 
 To sync container images:
 
