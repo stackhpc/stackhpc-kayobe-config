@@ -165,7 +165,7 @@ Always back up the overcloud DB before starting:
 Potential issues
 ----------------
 
--  If the system uses OVS as a network driver, there's a change that kolla
+-  If the system uses OVS as a network driver, there's a chance that kolla
    services can struggle to find reply queues from RabbitMQ during the upgrade.
    Currently this could be observed when rolling reboot of controllers are done
    or deploying Ubuntu Noble based Kolla containers are deployed after all
@@ -236,7 +236,7 @@ Full procedure for one controller
 
       .. code-block:: console
 
-         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
 
    3. Make sure that everything is back in working condition before moving
       on to the next host:
@@ -321,7 +321,7 @@ Full procedure for one batch of hosts
 
       .. code-block:: console
 
-         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <hosts>
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <hosts>
 
    3. Make sure that everything is back in working condition before moving
       on to the next host:
