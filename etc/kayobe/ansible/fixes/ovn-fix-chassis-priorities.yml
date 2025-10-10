@@ -81,8 +81,8 @@
             gateway_info=$(ovn-nbctl lrp-get-gateway-chassis "$ext_port" 2>/dev/null || true)
 
             while IFS= read -r line; do
-                # Strip prefix
-                chassis=$(echo "$line" | awk '{print $1}' | cut -d'_' -f2-)
+                # Strip prefix, allowing '-' or '_' separator
+                chassis=$(echo "$line" | awk '{print $1}' | sed "s/^${ext_port}[-_]//")
                 gateway_chassis="$gateway_chassis $chassis"
             done <<< "$gateway_info"
 
