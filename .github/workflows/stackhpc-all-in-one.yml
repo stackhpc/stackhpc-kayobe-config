@@ -190,7 +190,10 @@ jobs:
       - name: Terraform Apply
         id: tf_apply
         run: |
-          for attempt in $(seq 5); do
+          # Try up to 6 times to create the infrastructure, destroying and retrying if it fails.
+          # If it fails 3 times, wait 2 hours before trying again.
+          # The cloud is likely just at capacity, so wait until other jobs finish.
+          for attempt in $(seq 6); do
               if terraform apply -auto-approve; then
                   echo "Created infrastructure on attempt $attempt"
                   exit 0
@@ -198,7 +201,12 @@ jobs:
               echo "Failed to create infrastructure on attempt $attempt"
               sleep 10
               terraform destroy -auto-approve
-              sleep 60
+              if [ "$attempt" -eq 3 ]; then
+                  echo "Sleeping for 2 hours after 3 failed attempts..."
+                  sleep 7200
+              else
+                  sleep $(shuf -i 60-180 -n 1)
+              fi
           done
           echo "Failed to create infrastructure after $attempt attempts"
           exit 1
