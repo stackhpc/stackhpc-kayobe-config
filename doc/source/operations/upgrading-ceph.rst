@@ -152,8 +152,8 @@ the output of `ceph -s`:
 
    all OSDs are running squid or later but require_osd_release < squid
 
-To resolve this, first verify that all OSDs were upgraded to Squid with `ceph
-versions`. Once confirmed, run the following command:
+To resolve this, first verify that all OSDs were upgraded to Squid with ``ceph
+versions``. Once confirmed, run the following command:
 
 .. code-block:: console
 
