@@ -145,6 +145,20 @@ Watch the cephadm logs:
 
    ceph -W cephadm
 
+After completing the upgrade to Squid, Ceph may show the following warning in
+the output of `ceph -s`:
+
+.. code-block:: console
+
+   all OSDs are running squid or later but require_osd_release < squid
+
+To resolve this, first verify that all OSDs were upgraded to Squid with `ceph
+versions`. Once confirmed, run the following command:
+
+.. code-block:: console
+
+   ceph osd require-osd-release squid
+
 Upgrade Cephadm
 ===============
 
