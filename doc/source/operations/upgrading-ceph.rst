@@ -146,7 +146,7 @@ Watch the cephadm logs:
    ceph -W cephadm
 
 After completing the upgrade to Squid, Ceph may show the following warning in
-the output of `ceph -s`:
+the output of ``ceph -s``:
 
 .. code-block:: console
 
