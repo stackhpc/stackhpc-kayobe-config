@@ -1,5 +1,5 @@
 ---
-- name: Migrate Seed Vault to OpenBao
+- name: Migrate Seed vault to OpenBao
   any_errors_fatal: true
   gather_facts: true
   hosts: seed
@@ -7,41 +7,46 @@
     secret_store_bind_interface: lo
     secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
     secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
-    vault_consul_snapshot_path: "/opt/kayobe/vault/consul-snapshot.snap"
-    vault_raft_snapshot_path: "/opt/kayobe/vault/raft-snapshot.snap"
   tasks:
-    - name: Take snapshot of Consul data
-      ansible.builtin.command:
-        cmd: "docker exec -i consul consul snapshot save consul-snapshot.snap"
+    - name: Set a fact about the virtualenv on the remote system
+      ansible.builtin.set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
 
-    - name: Copy Consul snapshot to host
-      ansible.builtin.command:
-        cmd: "docker cp consul:/consul-snapshot.snap {{ vault_consul_snapshot_path }}"
+    - name: Ensure Python hvac module is installed
+      ansible.builtin.pip:
+        name: hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
 
-    - name: Template out migration file
-      ansible.builtin.template:
-        src: etc/kayobe/ansible/vault-bao-migration.hcl.j2
-        dest: /opt/kayobe/vault/vault-bao-migration.hcl
-
-    - name: Copy migration file into Vault container
-      ansible.builtin.command:
-        cmd: "docker cp /opt/kayobe/vault/vault-bao-migration.hcl vault:/vault-bao-migration.hcl"
-
-    - name: Migrate to Raft backend
-      ansible.builtin.command:
-        cmd: "docker exec -i vault vault operator migrate -config=/vault-bao-migration.hcl"
-
-    - name: Take snapshot of Raft data
-      ansible.builtin.command:
-        cmd: "docker exec -i vault vault operator raft snapshot save raft-snapshot.snap"
-
-    - name: Copy Raft snapshot to host
-      ansible.builtin.command:
-        cmd: "docker cp vault:/raft-snapshot.snap {{ vault_raft_snapshot_path }}"
-
-    # TODO:
-    # Stop Vault & Consul containers
-    # Remove Vault & Consul containers
-    # Remove docker volumes
-    # Deploy OpenBao with existing Raft snapshot
-
+    - name: Include secret store keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/{{ stackhpc_ca_secret_store }}/seed-{{ stackhpc_ca_secret_store }}-keys.json"
+        name: secret_store_keys
+    
+    - name: Apply vault_bao_migration role
+      ansible.builtin.include_role:
+        name: stackhpc.hashicorp.vault_bao_migration
+      vars:
+        vault_root_token: "{{ secret_store_keys.root_token }}"
+        vault_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
+        hashicorp_registry_url: "{{ seed_hashicorp_registry_url }}"
+        hashicorp_registry_username: "{{ seed_hashicorp_registry_username }}"
+        hashicorp_registry_password: "{{ seed_hashicorp_registry_password }}"
+        consul_docker_image: "{{ seed_consul_docker_image }}"
+        consul_docker_tag: "{{ seed_consul_docker_tag }}"
+        consul_bind_interface: "{{ secret_store_bind_interface }}"
+        vault_bind_address: "{{ secret_store_bind_address }}"
+        vault_api_addr: "{{ secret_store_api_address }}"
+        vault_config_dir: /opt/kayobe/vault
+        vault_cluster_name: seed
+        vault_docker_image: "{{ seed_vault_docker_image }}"
+        vault_docker_tag: "{{ seed_vault_docker_tag }}"
+        vault_write_keys_file: true
+        vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/seed-vault-keys.json"
+        
