@@ -57,6 +57,7 @@ extensions = [
     'sphinx.ext.extlinks',
     #'sphinx.ext.intersphinx',
     'sphinxcontrib.rsvgconverter',
+    'sphinx_copybutton',
     'sphinx_substitution_extensions',
 ]
 
