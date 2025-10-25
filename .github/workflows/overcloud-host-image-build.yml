@@ -212,6 +212,15 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host configure -e seed_bootstrap_user=ubuntu --skip-tags network
 
+      - name: Remove unused dependencies
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run \
+          --command "sudo apt update && sudo apt autoremove --purge -y && sudo apt purge -y docker-buildx-plugin" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+
       - name: Install dependencies
         run: |
           source venvs/kayobe/bin/activate &&
