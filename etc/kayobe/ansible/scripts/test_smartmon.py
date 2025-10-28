@@ -20,7 +20,7 @@ def load_json_fixture(filename):
     """
     Load a JSON file from the 'tests' subfolder.
     """
-    path = os.path.join(os.path.dirname(__file__), "tests", filename)
+    path = os.path.join(os.path.dirname(__file__), "tests/smartmon", filename)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
