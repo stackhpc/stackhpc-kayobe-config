@@ -1,0 +1,148 @@
+---
+- name: Check baremetal node bmc is up
+  hosts: baremetal
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+    cleaning_timeout: "{{ 60 * 20 }}" # 20 minutes
+
+  tasks:
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
+      block:
+
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when:
+            - node_show.rc != 0
+          changed_when: false
+
+        - name: Check BMC is up
+          ansible.builtin.uri:
+            url: "{{ ironic_driver_info['redfish_address'] }}/redfish/v1"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+
+        - name: Check for agent inspection details
+          ansible.builtin.set_fact:
+            kayobe_agent_inspect_done: "{{ (node_show.stdout | from_json)['extra'].get('kayobe_agent_inspect_done') }}"
+            kayobe_clean_done: "{{ (node_show.stdout | from_json)['extra'].get('kayobe_clean_done') }}"
+            network_interface: "{{ (node_show.stdout | from_json)['network_interface'] }}"
+            provision_state: "{{ (node_show.stdout | from_json)['provision_state'] }}"
+            node_maintenance: "{{ (node_show.stdout | from_json)['maintenance'] }}"
+
+        - name: Fail if not agent inspection done
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has not been inspected"
+          when:
+            - kayobe_agent_inspect_done == ""
+
+        - name: Fail if not in manageable or clean failed state
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has the wrong provision_state: {{ provision_state }}"
+          when:
+            - provision_state not in ["manageable", "clean failed"]
+            - kayobe_clean_done == ""
+
+        - name: If in clean failed, move back to managable
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }} --wait 300
+          register: node_manage
+          failed_when:
+            - node_manage.rc != 0
+          when:
+            - provision_state == "clean failed"
+
+        - name: Remove node from maintenance
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node maintenance unset {{ inventory_hostname }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          when:
+            - node_maintenance
+            - provision_state in ["manageable", "clean failed"]
+
+        - name: Ensure hosts set to use software RAID
+          ansible.builtin.shell: |
+            openstack baremetal node set \
+            --target-raid-config {{ ironic_target_raid_config }} \
+            --raid-interface agent {{ inventory_hostname }}
+          when:
+            - kayobe_clean_done == ""
+            - ironic_target_raid_config is defined
+
+        - name: Move to neutron interface, assuming its a multi-tenant node
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface neutron
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "neutron"
+
+        - name: Move to flat interface, if required
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface flat --driver-info inspection_network={{ ironic_flat_provisioning_network }} --driver-info cleaning_network={{ ironic_flat_provisioning_network }} --driver-info provision_network={{ ironic_flat_provisioning_network }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "flat"
+
+        - name: Remove network overrides for multi-tenant nodes
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node unset {{ inventory_hostname }} --driver-info inspection_network --driver-info cleaning_network --driver-info provision_network
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "neutron"
+
+        - name: Clean node and make it available
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node provide {{ inventory_hostname }} --wait {{ cleaning_timeout }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          when:
+            - kayobe_clean_done == "" or provision_state in ["clean failed"]
+
+        - name: Note when cleaning has completed
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --extra kayobe_clean_done={{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when: kayobe_clean_done == ""

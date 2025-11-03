@@ -1,0 +1,11 @@
+---
+- name: Ensure overcloud baremetal is enrolled
+  ansible.builtin.import_playbook: ./baremetal-0-enroll-overcloud.yml
+- name: Check BMC is up
+  ansible.builtin.import_playbook: ./baremetal-1-check-bmc-up.yml
+- name: Do redfish inspection
+  ansible.builtin.import_playbook: ./baremetal-2-ensure-redfish-inspect.yml
+- name: Do agent inspection
+  ansible.builtin.import_playbook: ./baremetal-3-ensure-agent-inspect.yml
+- name: Make baremetal node available
+  ansible.builtin.import_playbook: ./baremetal-4-clean.yml

@@ -1,0 +1,52 @@
+---
+- name: Create Libvirt vBMC nodes
+  gather_facts: false
+  become: true
+  hosts: sushy-libvirt
+  tasks:
+    - name: Gather facts
+      setup:
+      delegate_to: localhost
+
+    - name: Install Python requirements
+      ansible.builtin.pip:
+        name:
+          - libvirt-python==11.3.0
+          - lxml==5.4.0
+      delegate_to: localhost
+
+    - name: Define vBMC storage pool
+      community.libvirt.virt_pool:
+        command: define
+        name: default
+        xml: "{{ lookup('template', sushy_directory + '/vbmc-pool.xml.j2') }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Start vBMC storage pool
+      community.libvirt.virt_pool:
+        state: active
+        name: default
+      delegate_to: localhost
+      run_once: true
+
+    - import_role:
+        name: stackhpc.libvirt-vm
+      vars:
+        libvirt_vm_arch: x86_64
+        libvirt_vms:
+          - state: present
+            name: "{{ inventory_hostname }}"
+            xml_file: "{{ sushy_directory }}/vbmc-node.xml.j2"
+            volumes:
+              - name: '{{ inventory_hostname }}.qcow2'
+                device: 'disk'
+                format: 'qcow2'
+                capacity: '20GB'
+                pool: 'default'
+            interfaces:
+              - network: 'breth1'
+            start: false
+            autostart: false
+            boot_firmware: uefi
+      delegate_to: localhost

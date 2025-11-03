@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  gather_facts: false
+
+  environment:
+    VIRTUAL_ENV: "{{ lookup('env', 'VIRTUAL_ENV') }}"
+    KAYOBE_CONFIG_PATH: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}"
+
+  tasks:
+    - name: Run Sushy Emulator playbook
+      ansible.builtin.shell: |
+          source "$VIRTUAL_ENV/bin/activate"
+          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/sushy-emulator.yml"
+      args:
+        executable: /bin/bash
+
+    - name: Run Generate mac addresses playbook
+      ansible.builtin.shell: |
+          source "$VIRTUAL_ENV/bin/activate"
+          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/generate-mac-addresses.yml"
+      args:
+        executable: /bin/bash
+
+    - name: Run Create virtual baremetal playbook
+      ansible.builtin.shell: |
+          source "$VIRTUAL_ENV/bin/activate"
+          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/create-virtual-baremetal.yml"
+      args:
+        executable: /bin/bash

@@ -1,0 +1,66 @@
+---
+- name: Ensure Sushy Emulator is deployed
+  hosts: "{{ sushy_host | default('localhost') }}"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Create Sushy configuration directory
+      ansible.builtin.file:
+        path: /etc/sushy
+        state: directory
+
+    - name: Template Sushy configuration
+      ansible.builtin.template:
+        src: "{{ sushy_directory }}/sushy.conf.j2"
+        dest: "/etc/sushy/sushy.conf"
+
+    - name: Enable Rocky devel repository
+      community.general.dnf_config_manager:
+        name: devel
+        state: enabled
+
+    - name: Install package dependencies
+      ansible.builtin.dnf:
+        name:
+          - qemu-kvm
+          - libvirt
+          - libvirt-devel
+          - python3-devel
+        state: present
+
+    - name: Start and enable the QEMU service
+      ansible.builtin.systemd_service:
+        name: virtqemud
+        state: started
+        enabled: true
+
+    - name: Start and enable the virtual stroage service
+      ansible.builtin.systemd_service:
+        name: virtstoraged
+        state: started
+        enabled: true
+
+    - name: Start and enable the virtual network service
+      ansible.builtin.systemd_service:
+        name: virtnetworkd
+        state: started
+        enabled: true
+
+    - name: Create Sushy virtualenv
+      ansible.builtin.pip:
+        name:
+          - libvirt-python
+          - sushy-tools
+        virtualenv: /opt/kayobe/venvs/sushy
+        virtualenv_command: python3 -m venv
+
+    - name: Template Sushy service unit file
+      ansible.builtin.template:
+        src: "{{ sushy_directory }}/sushyemud.service.j2"
+        dest: "/etc/systemd/system/sushyemud.service"
+
+    - name: Start and enable the Sushy Emulator service
+      ansible.builtin.systemd_service:
+        name: sushyemud
+        state: started
+        enabled: true
