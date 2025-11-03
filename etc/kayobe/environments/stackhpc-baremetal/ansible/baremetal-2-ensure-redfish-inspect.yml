@@ -1,0 +1,86 @@
+---
+- name: Check baremetal compute node bmc is up
+  hosts: baremetal
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+
+  tasks:
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+        redfish_inspect_timeout: 120
+      environment: "{{ openstack_auth_env }}"
+      block:
+
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when:
+            - node_show.rc != 0
+          changed_when: false
+
+        - name: Check BMC is up
+          ansible.builtin.uri:
+            url: "{{ ironic_driver_info['redfish_address'] }}/redfish/v1"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+
+        - name: Check for redfish inspection details
+          ansible.builtin.set_fact:
+            kayobe_redfish_inspect_done: "{{ (node_show.stdout | from_json)['extra'].get('kayobe_redfish_inspect_done') }}"
+            inspect_interface: "{{ (node_show.stdout | from_json)['inspect_interface'] }}"
+            provision_state: "{{ (node_show.stdout | from_json)['provision_state'] }}"
+
+        - name: Output when redfish inspection was done
+          ansible.builtin.debug:
+            msg: "{{ inventory_hostname }} inspected at {{ kayobe_redfish_inspect_done }}."
+          when: kayobe_redfish_inspect_done != ""
+
+        - name: Fail if not redfish inspection
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has the wrong inspect_interface: {{ inspect_interface }}"
+          when:
+            - inspect_interface != "redfish"
+            - kayobe_redfish_inspect_done == ""
+
+        - name: Fail if not in manageable state
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has the wrong provision_state: {{ provision_state }}"
+          when:
+            - provision_state != "manageable"
+            - kayobe_redfish_inspect_done == ""
+
+        - name: Wait for inspection
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node inspect {{ inventory_hostname }} --wait {{ redfish_inspect_timeout }}
+          register: node_inspect
+          failed_when:
+            - node_inspect.rc != 0
+          changed_when: true
+          when: kayobe_redfish_inspect_done == ""
+
+        - name: Note when redfish inspection is done
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --extra kayobe_redfish_inspect_done={{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when: kayobe_redfish_inspect_done == ""

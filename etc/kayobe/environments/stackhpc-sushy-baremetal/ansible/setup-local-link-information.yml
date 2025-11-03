@@ -1,0 +1,27 @@
+---
+- name: Setup fake local_link_information
+  hosts: sushy-libvirt-ipxe
+  gather_facts: false
+  tasks:
+    - name: Get baremetal port metadata
+      openstack.cloud.baremetal_port_info:
+        node: "{{ inventory_hostname }}"
+      delegate_to: localhost
+      register: baremetal
+
+    - name: Setup local_link_information
+      debug:
+        msg: "{{ baremetal.ports[0] }}"
+
+    - name: Update baremetal port
+      openstack.cloud.baremetal_port:
+        state: present
+        id: "{{ baremetal.ports[0].id }}"
+        node: "{{ inventory_hostname }}"
+        address: "{{ bikolla_mac_addresses[inventory_hostname] }}"
+        is_pxe_enabled: true
+        local_link_connection:
+          switch_id: "{{ bikolla_mac_addresses[inventory_hostname] }}"
+          port_id: "{{ baremetal.ports[0].id }}"
+          switch_info: "{{ inventory_hostname }}"
+      delegate_to: "{{ sushy_host | default('localhost') }}"

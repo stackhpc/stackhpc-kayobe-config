@@ -1,0 +1,59 @@
+{% macro storage(uuid, enum, drive_id, end) -%}
+    "{{ uuid }}": [
+        {
+            "Id": "{{ enum }}",
+            "Name": "Local Storage Controller",
+            "StorageControllers": [
+                {
+                    "MemberId": "0",
+                    "Name": "Contoso Integrated RAID",
+                    "SpeedGbps": 12
+                }
+            ],
+            "Drives": [
+                "{{ drive_id }}"
+            ]
+        }
+    ]{% if not end %},{% endif %}
+{%- endmacro %}
+
+{% macro drive(uuid, enum, drive_id, end) -%}
+    ("{{ uuid }}", "{{ enum }}"): [
+        {
+            "Id": "{{ drive_id }}",
+            "Name": "Drive Sample",
+            "CapacityBytes": 899527000000,
+            "Protocol": "SAS"
+        }
+    ]{% if not end %},{% endif %}
+{%- endmacro %}
+
+{% macro volume(uuid, enum, hostname, end) -%}
+    ("{{ uuid }}", "{{ enum }}"): [ {
+            "libvirtPoolName": "default",
+            "libvirtVolName": "{{ hostname }}.qcow2",
+            "Id": "{{ enum }}",
+            "Name": "{{ hostname }}-volume",
+            "VolumeType": "File",
+            "CapacityBytes": 1073741824
+        }
+    ]{% if not end %},{% endif %}
+{%- endmacro %}
+
+SUSHY_EMULATOR_STORAGE = {
+{% for host in groups["sushy-libvirt"] %}
+    {{ storage(host | to_uuid, 1, ('drive-'+host) | to_uuid, (host in groups["sushy-libvirt"] | last ) | bool) }}
+{% endfor %}
+}
+
+SUSHY_EMULATOR_DRIVES = {
+{% for host in groups["sushy-libvirt"] %}
+    {{ drive(host | to_uuid, 1, ('drive-'+host) | to_uuid, (host in groups["sushy-libvirt"] | last ) | bool) }}
+{% endfor %}
+}
+
+SUSHY_EMULATOR_VOLUMES = {
+{% for host in groups["sushy-libvirt"] %}
+    {{ volume(host | to_uuid, 1, host, (host in groups["sushy-libvirt"] | last ) | bool) }}
+{% endfor %}
+}

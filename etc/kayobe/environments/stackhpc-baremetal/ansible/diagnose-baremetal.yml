@@ -1,0 +1,94 @@
+---
+- name: Node enrolment health check
+  hosts: baremetal
+  gather_facts: false
+  connection: local
+  vars:
+    ping_cmd: "ping -c1 -W1"
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    purge_faulty_baremetal: false
+  tasks:
+    - name: Ping BMC
+      ansible.builtin.command: "{{ ping_cmd }} {{ redfish_address }}"
+      register: bmc_ping
+      failed_when: redfish_address is not defined
+      changed_when: false
+
+    - name: Fetch bmnode info
+      openstack.cloud.baremetal_node_info:
+        name: "{{ inventory_hostname }}"
+      register: bmnode
+      failed_when: false
+      changed_when: false
+
+    - name: Evaluate node details
+      ansible.builtin.set_fact:
+        bmnode_details:
+          bmc_reachable: "{{ bmc_ping.rc == 0 | default(false) }}"
+          kayobe_agent_inspect_done_ts: "{{ bmnode.nodes[0].extra.get('kayobe_agent_inspect_done') }}"
+          kayobe_first_provision_ts: "{{ bmnode.nodes[0].extra.get('kayobe_first_provision') }}"
+          ironic_state: "{{ bmnode.nodes[0].provision_state | default('unknown') }}"
+          ironic_power: "{{ bmnode.nodes[0].power_state | default('unknown') }}"
+          ironic_maintenance: "{{ bmnode.nodes[0].maintenance | default('unknown') }}"
+          ironic_last_error: "{{  bmnode.nodes[0].last_error | default('') }}"
+
+    - name: Evaluate enrolment status and hints
+      ansible.builtin.set_fact:
+        enrolment_status: "{{ bmnode_status }}"
+        enrolment_report_entry:
+          node: "{{ inventory_hostname }}"
+          status: "{{ bmnode_status }}"
+          details: "{{ bmnode_details }}"
+      vars:
+        bmnode_status: >-
+          {% if not bmnode_details.bmc_reachable %}
+            Can't ping node BMC
+          {% elif bmnode_details.kayobe_first_provision_ts %}
+            Node has completed Kayobe node prep for prod pipeline — check Ironic for details
+          {% elif bmnode_details.ironic_state == 'enroll' %}
+            Node stuck in Ironic node enroll state
+          {% elif not bmnode_details.kayobe_agent_inspect_done_ts %}
+            Node has not yet passed agent inspection
+          {% else %}
+            Node not yet completed node prep for prod pipeline
+          {% endif %}
+      changed_when: false
+
+    - name: Show diagnosis statement
+      debug:
+        msg: "Status: {{ enrolment_report_entry.status }}"
+
+    - name: Print diagnosis
+      ansible.builtin.debug:
+        msg:
+          - "Node: {{ enrolment_report_entry.node }}"
+          - "Status: {{ enrolment_report_entry.status }}"
+          - "Details: {{ enrolment_report_entry.details }}"
+
+    - name: Test faulty baremetal
+      block:
+        - name: Undeploy baremetal node (test BMC connection)
+          ansible.builtin.command: "{{ venv }}/bin/openstack baremetal node undeploy {{ inventory_hostname }} --wait"
+          failed_when: false
+
+        - name: Manage baremetal node (test BMC connection)
+          ansible.builtin.command: "{{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }} --wait"
+          failed_when: false
+
+        - name: Bye bye baremetal
+          ansible.builtin.command: "{{ venv }}/bin/openstack baremetal node delete {{ inventory_hostname }}"
+      when:
+        - "{{ purge_faulty_baremetal }}"
+        - "{{ bmnode_details.ironic_state not in ['available', 'active'] }}"
+        - "{{ not bmnode_details.kayobe_first_provision_ts }}"
+
+    #- name: Build summary list
+    #  ansible.builtin.set_fact:
+    #    enrolment_report_all: "{{ (enrolment_report_all | default([])) + [ hostvars[item].enrolment_report_entry ] }}"
+    #  run_once: true
+    #  loop: "{{ groups['all'] | sort }}"
+
+    #- name: Pretty-print all nodes
+    #  ansible.builtin.debug:
+    #    msg: "{{ enrolment_report_all | to_nice_json }}"
+    #  run_once: true

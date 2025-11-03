@@ -1,0 +1,116 @@
+---
+- name: Provision baremetal instances
+  hosts: baremetal
+  gather_facts: false
+  vars:
+    network: "{{ ironic_provision_network }}"
+    flavor: "{{ ironic_provision_flavor }}"
+    image: "{{ ironic_provision_image }}"
+    key_name: "{{ ironic_provision_key_name }}"
+    force_server_delete: false
+    controller_host: localhost
+    venv: "{{ virtualenv_path }}/openstack-cli"
+  tasks:
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
+      block:
+        - name: Gather information about baremetal nodes
+          openstack.cloud.baremetal_node_info:
+            name: "{{ inventory_hostname }}"
+          register: bmnode_raw
+
+        - name: Set fact for baremetal node information
+          ansible.builtin.set_fact:
+            bmnode: "{{ bmnode_raw.nodes | first }}"
+
+        - name: Check if for first provision done
+          ansible.builtin.set_fact:
+            kayobe_clean_done: "{{ bmnode.extra.get('kayobe_clean_done') }}"
+            kayobe_agent_inspect_done: "{{ bmnode.extra.get('kayobe_agent_inspect_done') }}"
+            kayobe_first_provision_done: "{{ bmnode.extra.get('kayobe_first_provision') }}"
+
+        # TODO: we should really check for cleaned
+        - name: Fail if kayobe bootstrap not done
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has not been bootstrapped yet."
+          when:
+            - kayobe_agent_inspect_done == ""
+
+        - name: Fail if not in available or active
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has the wrong provision_state: {{ bmnode.provision_state }}"
+          when:
+            - bmnode.provision_state not in ["active", "available"]
+
+## flavor creation only seems to show in openstack flavor list when
+## is_public: true, deploy server still can't find flavor.
+        - name: Create flavor for baremetal
+          openstack.cloud.compute_flavor:
+            state: present
+            is_public: false
+            name: "{{ flavor }}"
+            ram: "{{ 42 * 1024 }}"
+            vcpus: 42
+            disk: 10
+            ephemeral: 10
+            extra_specs: "{{ {
+              ('resources:CUSTOM_' ~ ironic_resource_class | upper ): 1,
+              'resources:VCPU': 0,
+              'resources:DISK_GB': 0,
+              'resources:MEMORY_MB': 0
+            } }}"
+          # todo: Support mutiple resource classes
+          run_once: true
+
+        - name: Create key pair for baremetal
+          openstack.cloud.keypair:
+              state: present
+              name:  "{{ ironic_provision_key_name }}"
+              # use the key kayobe is using to bootstrap with?
+              public_key_file: "{{ ssh_public_key_path }}"
+
+        - name: Create port
+          openstack.cloud.port:
+            state: "{{ 'absent' if force_server_delete else 'present' }}"
+            name: "{{ inventory_hostname }}"
+            network: "{{ network }}"
+            fixed_ips: "{{ ironic_provision_fixed_ips | default(omit) }}"
+            vnic_type: baremetal
+          delegate_to: localhost
+          register: bmport
+
+        - name: Set unlimited core quota for project
+          openstack.cloud.quota:
+            name: "admin"
+            cores: -1
+
+        # TODO: we should wait till we can reach ssh, via jump host
+        - name: Deploy Server
+          openstack.cloud.server:
+            state: "{{ 'absent' if force_server_delete else 'present' }}"
+            name: "{{ inventory_hostname }}"
+            nics:
+              - port-id: "{{ bmport.port.id }}"
+            image: "{{ image }}"
+            flavor: "{{ flavor }}"
+            key_name: "{{ key_name }}"
+            availability_zone: "::{{ bmnode.id }}"
+            timeout: 1800 # wait 30 mins for build
+            config_drive: yes
+          delegate_to: localhost
+          register: server
+
+        - name: Note when provision has first worked
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --extra kayobe_first_provision={{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when: kayobe_first_provision_done == ""
