@@ -1,0 +1,61 @@
+---
+- name: Recover baremetal machines
+  hosts: baremetal-compute
+  gather_facts: false
+  connection: local
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: localhost
+  tasks:
+    - name: Gather information about baremetal nodes
+      openstack.cloud.baremetal_node_info:
+        name: "{{ inventory_hostname }}"
+      register: bmnode
+
+    - name: Set facts for provision state
+      ansible.builtin.set_fact:
+        bmnode_prov: "{{ bmnode.nodes[0].provision_state }}"
+
+    - name: Recover BMC
+      block:
+        - name: Reboot BMC
+          community.general.redfish_command:
+            category: Manager
+            command: PowerReboot
+            resource_id: 1
+            baseuri: "{{ ironic_redfish_address }}"
+            username: "{{ ironic_redfish_username }}"
+            password: "{{ ironic_redfish_password }}"
+
+        - name: Wait 300 seconds for port 443 to become open
+          ansible.builtin.wait_for:
+            port: 443
+            host: "{{ ironic_redfish_address }}"
+            delay: 20
+            timeout: 300
+
+        - name: Check BMC back up again
+          ansible.builtin.uri:
+            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+          register: uri_output
+          until: uri_output.status == 200
+          delay: 5
+          retries: 24 # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
+      when: bmnode_prov in ['deploy failed', 'error', 'clean failed']
+
+    - name: Manage baremetals in 'clean failed' state
+      ansible.builtin.command:
+        cmd: "{{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }}"
+      when: bmnode_prov in 'clean failed'
+
+    - name: Undeploy baremetals in 'deploy failed' or 'error' state
+      ansible.builtin.command:
+        cmd: "{{ venv }}/bin/openstack baremetal node undeploy {{ inventory_hostname }}"
+      when: bmnode_prov in ['deploy failed', 'error']
+
+- name: Make baremetal nodes available
+  ansible.builtin.import_playbook: ./baremetal-4-clean.yml

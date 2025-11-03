@@ -1,0 +1,83 @@
+---
+- name: Provision baremetal instances
+  hosts: overcloud
+  gather_facts: false
+  tasks:
+    - name: Ensure instance_info is referencing the node conductor
+      block:
+        - name: Gather information about baremetal nodes
+          openstack.cloud.baremetal_node_info:
+            name: "{{ inventory_hostname }}"
+          register: bmnode_raw
+
+        - name: Set fact for baremetal node information
+          ansible.builtin.set_fact:
+            bmnode: "{{ bmnode_raw.nodes | first }}"
+
+        - name: Set fact for conductor
+          ansible.builtin.set_fact:
+            ironic_instance_info_address: "{{ internal_net_ips.get(bmnode.conductor) }}"
+          failed_when: "{{ bmnode is none }}"
+      delegate_to: localhost
+
+    - name: Configure Neutron for deployment
+      block:
+        - name: Gather information about baremetal ports
+          openstack.cloud.baremetal_port_info:
+            node: "{{ inventory_hostname }}"
+          register: bmport
+
+        - name: Set fact for baremetal port information
+          ansible.builtin.set_fact:
+            bmport_pxe: "{{ bmport.baremetal_ports | selectattr('is_pxe_enabled', 'equalto', true) | first }}"
+            bmport_admin: "{{ bmport.baremetal_ports | selectattr('address', 'search', '^7c') | selectattr('local_link_connection', 'defined') | first }}"
+
+        - name: Set fact for Neutron port variables
+          ansible.builtin.set_fact:
+            ironic_port_uuid: "{{ bmport_pxe.id }}"
+            ironic_hs_mac_address: "{{ bmport_pxe.address }}"
+            ironic_oc_mac_address: "{{ bmport_admin.address }}"
+          failed_when:
+            - "{{ bmport_pxe is none }}"
+            - "{{ bmport_admin is none }}"
+
+        - name: Create Neutron port
+          openstack.cloud.port:
+            state: present
+            name: "{{ inventory_hostname }}"
+            network: "{{ baremetal_network | default('provision-net') }}"
+            vnic_type: baremetal
+          register: osport
+
+        - name: Check if VIF attach exists
+          ansible.builtin.shell: |
+            openstack baremetal node vif list \
+            {{ inventory_hostname }}
+          failed_when: false
+          register: vif
+
+        - name: Attach VIF to baremetal node
+          ansible.builtin.shell: |
+            openstack baremetal node vif attach \
+            {{ inventory_hostname }} \
+            {{ osport.port.id }}
+          when: '{{ vif.stdout == "" }}'
+      delegate_to: localhost
+      when: '"neutron" or "flat" in (ironic_network_interface | default("flat"))'
+
+    - name: Deploy instances
+      openstack.cloud.baremetal_node_action:
+        name: "{{ inventory_hostname }}"
+        config_drive: "{{ ironic_config_drive }}"
+        instance_info: "{{ ironic_instance_info }}"
+      delegate_to: localhost
+
+    - name: Wait for sshd to be listening on the node
+      ansible.builtin.wait_for:
+        port: 22
+        host: "{{ admin_oc_net_ips[inventory_hostname] }}"
+        search_regex: OpenSSH
+        timeout: 600
+      vars:
+        ansible_user: "{{ overcloud_bootstrap_user }}"
+      delegate_to: localhost

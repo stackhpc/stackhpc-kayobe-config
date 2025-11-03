@@ -1,0 +1,124 @@
+---
+- name: Check baremetal compute node bmc is up
+  hosts: baremetal
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: localhost
+
+  tasks:
+    - name: Check Ironic variables are defined
+      ansible.builtin.assert:
+        that:
+          - ironic_driver is defined
+          - ironic_driver_info is defined
+          - ironic_properties is defined
+          - ironic_resource_class is defined
+        fail_msg: One or more Ironic variables are undefined.
+
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
+      block:
+
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when:
+            - node_show.rc != 0
+          changed_when: false
+
+        - name: Check if bmc is up
+          ansible.builtin.set_fact:
+            kayobe_bmc_up: "{{ (node_show.stdout | from_json)['extra'].get('kayobe_bmc_up') }}"
+            provision_state: "{{ (node_show.stdout | from_json)['provision_state'] }}"
+
+        - name: Output when bmc last up run
+          ansible.builtin.debug:
+            msg: "BMC for node {{ inventory_hostname }} was up at {{ kayobe_bmc_up }}."
+          when: kayobe_bmc_up != ""
+
+        - name: Check BMC is up
+          ansible.builtin.uri:
+            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+
+        - name: Get firmware inventory (to check redfish auth)
+          community.general.redfish_info:
+            category: Update
+            command: GetFirmwareInventory
+            baseuri: "{{ ironic_redfish_address }}"
+            username: "{{ ironic_redfish_username }}"
+            password: "{{ ironic_redfish_password }}"
+          register: firmware_inventory
+          failed_when: not firmware_inventory.redfish_facts.firmware.ret
+
+        # - name: Print fetched information
+        #   ansible.builtin.debug:
+        #     msg: "{{ firmware_inventory.redfish_facts.firmware | to_nice_json }}"
+
+        - name: Reboot BMC
+          community.general.redfish_command:
+            category: Manager
+            command: PowerReboot
+            resource_id: 1
+            baseuri: "{{ ironic_redfish_address }}"
+            username: "{{ ironic_redfish_username }}"
+            password: "{{ ironic_redfish_password }}"
+          when: kayobe_bmc_up == ""
+
+        - name: Wait 300 seconds for port 443 to become open
+          ansible.builtin.wait_for:
+            port: 443
+            host: "{{ ironic_redfish_address }}"
+            delay: 20
+            timeout: 300
+          when: kayobe_bmc_up == ""
+
+        - name: Check BMC back up again
+          ansible.builtin.uri:
+            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+          register: uri_output
+          until: uri_output.status == 200
+          delay: 5
+          retries: 24 # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
+
+        - name: Note when we are able to reach the bmc, the first time
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --extra kayobe_bmc_up={{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when: kayobe_bmc_up == ""
+
+        - name: Try move from enroll to manageable
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }} --wait 300
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - provision_state == "enroll"

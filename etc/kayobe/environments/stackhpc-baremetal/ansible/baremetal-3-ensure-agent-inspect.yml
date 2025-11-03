@@ -1,0 +1,194 @@
+---
+- name: Check baremetal node bmc is up
+  hosts: baremetal
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: localhost
+
+  tasks:
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+        agent_inspect_timeout: "{{ 60 * 20 }}" # 20 minutes
+      environment: "{{ openstack_auth_env }}"
+      block:
+
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+          register: node_show
+          failed_when:
+            - node_show.rc != 0
+          changed_when: false
+
+        - name: Check BMC is up
+          ansible.builtin.uri:
+            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            method: GET
+            status_code: 200
+            validate_certs: false
+            timeout: 10
+
+        - name: Check for agent inspection details
+          ansible.builtin.set_fact:
+            kayobe_agent_inspect_done: "{{ (node_show.stdout | from_json)['extra'].get('kayobe_agent_inspect_done') }}"
+            inspect_interface: "{{ (node_show.stdout | from_json)['inspect_interface'] }}"
+            network_interface: "{{ (node_show.stdout | from_json)['network_interface'] }}"
+            provision_state: "{{ (node_show.stdout | from_json)['provision_state'] }}"
+
+        - name: Output when agent inspection was done
+          ansible.builtin.debug:
+            msg: "{{ inventory_hostname }} inspected at {{ kayobe_agent_inspect_done }}."
+          when: kayobe_agent_inspect_done != ""
+
+        - name: Fail if not in manageable state
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} has the wrong provision_state: {{ provision_state }}"
+          when:
+            - provision_state not in ["manageable", "inspect failed"]
+            - kayobe_agent_inspect_done == ""
+
+        - name: If we failed inspect, move back to managable
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }} --wait 300
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          # do it slowly due to ironic api issues
+          throttle: 3
+          when:
+            - provision_state == "inspect failed"
+            - kayobe_agent_inspect_done == ""
+
+        - name: Move to agent inspect interface
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --inspect-interface agent
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          # do it slowly due to ironic api issues
+          throttle: 3
+          when:
+            - kayobe_agent_inspect_done == ""
+            - inspect_interface == "redfish"
+
+        - name: Ensure we using the flat network interface and correct network
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface flat --driver-info inspection_network={{ ironic_flat_provisioning_network }} --driver-info cleaning_network={{ ironic_flat_provisioning_network }} --driver-info provision_network={{ ironic_flat_provisioning_network }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          # do it slowly due to ironic api issues
+          throttle: 3
+          when:
+            - kayobe_agent_inspect_done == ""
+
+        - name: Gather information about baremetal ports
+          openstack.cloud.baremetal_port_info:
+            node: "{{ inventory_hostname }}"
+            auth_type: "{{ openstack_auth_type }}"
+            auth: "{{ openstack_auth }}"
+            cacert: "{{ openstack_cacert | default(omit, true) }}"
+            interface: "{{ openstack_interface | default(omit, true) }}"
+          register: bmport
+          delegate_to: localhost
+          when: kayobe_agent_inspect_done == ""
+
+        - name: Disable PXE on all baremetal ports
+          openstack.cloud.baremetal_port:
+            address: "{{ item.address }}"
+            auth_type: "{{ openstack_auth_type }}"
+            auth: "{{ openstack_auth }}"
+            cacert: "{{ openstack_cacert | default(omit, true) }}"
+            interface: "{{ openstack_interface | default(omit, true) }}"
+            node: "{{ inventory_hostname }}"
+            is_pxe_enabled: false
+          loop: "{{ bmport.baremetal_ports }}"
+          when: kayobe_agent_inspect_done == ""
+
+        - name: Re-enable PXE on the first Mellanox ethernet NIC
+          openstack.cloud.baremetal_port:
+            address: "{{ bmport.baremetal_ports | selectattr('address', 'search', item) | map(attribute='address') | list | first }}"
+            auth_type: "{{ openstack_auth_type }}"
+            auth: "{{ openstack_auth }}"
+            cacert: "{{ openstack_cacert | default(omit, true) }}"
+            interface: "{{ openstack_interface | default(omit, true) }}"
+            node: "{{ inventory_hostname }}"
+            is_pxe_enabled: true
+          when:
+           - kayobe_agent_inspect_done == ""
+           - bmport.baremetal_ports | selectattr('address', 'search', item) | list | length > 0
+          # known mellanox ethernet NICs
+          loop:
+           - "^58:a2:e1"
+           - "^a0:88:c2"
+           - "^7c:8c:09"
+           - "^94:6d:ae"
+           - "^50:00:e6"
+           - "^b8:3f:d2"
+           - "^c4:70:bd"
+
+        - name: Wait for inspection
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node inspect {{ inventory_hostname }} --wait {{ agent_inspect_timeout }}
+          register: node_inspect
+          failed_when:
+            - node_inspect.rc != 0
+          changed_when: true
+          when: kayobe_agent_inspect_done == ""
+
+        - name: Move to neutron interface, assuming its a multi-tenant node
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface neutron
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          # do it slowly due to ironic api issues
+          throttle: 3
+          when:
+            - kayobe_agent_inspect_done == ""
+            - ironic_network_interface == "neutron"
+
+        - name: Remove network overrides for multi-tenant nodes
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node unset {{ inventory_hostname }} --driver-info inspection_network --driver-info cleaning_network --driver-info provision_network
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          # do it slowly due to ironic api issues
+          throttle: 3
+          when:
+            - kayobe_agent_inspect_done == ""
+            - ironic_network_interface == "neutron"
+
+        - name: Note when agent inspection is done
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --extra kayobe_agent_inspect_done={{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when: kayobe_agent_inspect_done == ""
