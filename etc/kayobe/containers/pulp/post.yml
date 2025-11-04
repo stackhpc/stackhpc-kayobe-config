@@ -28,6 +28,13 @@
     - stackhpc_pulp_sync_for_local_container_build | bool
     - pulp_settings.changed
 
+- name: Manage Pulp content image data
+  become: true
+  command: >-
+    docker exec -u root pulp
+    bash -c
+      'pulpcore-manager container-handle-image-data'
+
 - name: Ensure Pulp stack user exists
   ansible.builtin.include_role:
     name: stackhpc.pulp.pulp_user
