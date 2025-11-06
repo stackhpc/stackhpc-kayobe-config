@@ -11,7 +11,7 @@
     - baremetal
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
-    controller_host: localhost
+    controller_host: controller0
 
   tasks:
     - name: Show and check baremetal node
@@ -34,7 +34,7 @@
 
         - name: Check BMC is up
           ansible.builtin.uri:
-            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            url: "{{ ironic_driver_info['redfish_address'] + '/redfish/v1' }}"
             method: GET
             status_code: 200
             validate_certs: false
@@ -108,7 +108,6 @@
             cacert: "{{ openstack_cacert | default(omit, true) }}"
             interface: "{{ openstack_interface | default(omit, true) }}"
           register: bmport
-          delegate_to: localhost
           when: kayobe_agent_inspect_done == ""
 
         - name: Disable PXE on all baremetal ports
