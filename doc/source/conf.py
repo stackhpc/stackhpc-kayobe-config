@@ -52,6 +52,7 @@ rst_prolog = """
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
+    'sphinx_immaterial',
     'reno.sphinxext',
     #'sphinx.ext.autodoc',
     'sphinx.ext.extlinks',
@@ -89,7 +90,7 @@ pygments_style = 'native'
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = []
-html_theme = 'default'
+html_theme = 'sphinx_immaterial'
 # html_static_path = ['static']
 
 # Add any paths that contain "extra" files, such as .htaccess or
@@ -97,7 +98,15 @@ html_theme = 'default'
 # html_extra_path = ['_extra']
 
 html_theme_options = {
-    # "show_other_versions": True,
+    "features": [
+        "navigation.expand",
+        "navigation.top",
+        "navigation.footer",
+        "search.suggest",
+        "content.code.copy",
+        "toc.follow",
+        "toc.sticky",
+    ]
 }
 
 # Output file base name for HTML help builder.
