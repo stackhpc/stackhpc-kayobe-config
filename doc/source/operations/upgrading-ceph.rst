@@ -159,6 +159,18 @@ versions``. Once confirmed, run the following command:
 
    ceph osd require-osd-release squid
 
+.. warning::
+
+   There is a `known bug causing OSDs created on Squid to crash
+   <https://tracker.ceph.com/issues/70390>`__. To avoid it, `disable the
+   Elastic Shared Blob feature
+   <https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before
+   any OSDs are created or replaced:
+
+   .. code-block:: bash
+
+      ceph config set osd bluestore_elastic_shared_blobs 0
+
 Upgrade Cephadm
 ===============
 
