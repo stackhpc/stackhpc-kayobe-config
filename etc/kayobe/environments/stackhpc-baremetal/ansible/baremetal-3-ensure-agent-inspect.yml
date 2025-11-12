@@ -2,6 +2,7 @@
 - name: Check baremetal node bmc is up
   hosts: baremetal
   gather_facts: false
+  become: true
   max_fail_percentage: >-
     {{ baremetal_compute_register_max_fail_percentage |
        default(baremetal_compute_max_fail_percentage) |
@@ -15,7 +16,7 @@
 
   tasks:
     - name: Show and check baremetal node
-      delegate_to: "{{ controller_host }}"
+      delegate_to: localhost
       vars:
         # NOTE: Without this, the controller's ansible_host variable will not
         # be respected when using delegate_to.
@@ -99,50 +100,6 @@
           throttle: 3
           when:
             - kayobe_agent_inspect_done == ""
-
-        - name: Gather information about baremetal ports
-          openstack.cloud.baremetal_port_info:
-            node: "{{ inventory_hostname }}"
-            auth_type: "{{ openstack_auth_type }}"
-            auth: "{{ openstack_auth }}"
-            cacert: "{{ openstack_cacert | default(omit, true) }}"
-            interface: "{{ openstack_interface | default(omit, true) }}"
-          register: bmport
-          when: kayobe_agent_inspect_done == ""
-
-        - name: Disable PXE on all baremetal ports
-          openstack.cloud.baremetal_port:
-            address: "{{ item.address }}"
-            auth_type: "{{ openstack_auth_type }}"
-            auth: "{{ openstack_auth }}"
-            cacert: "{{ openstack_cacert | default(omit, true) }}"
-            interface: "{{ openstack_interface | default(omit, true) }}"
-            node: "{{ inventory_hostname }}"
-            is_pxe_enabled: false
-          loop: "{{ bmport.baremetal_ports }}"
-          when: kayobe_agent_inspect_done == ""
-
-        - name: Re-enable PXE on the first Mellanox ethernet NIC
-          openstack.cloud.baremetal_port:
-            address: "{{ bmport.baremetal_ports | selectattr('address', 'search', item) | map(attribute='address') | list | first }}"
-            auth_type: "{{ openstack_auth_type }}"
-            auth: "{{ openstack_auth }}"
-            cacert: "{{ openstack_cacert | default(omit, true) }}"
-            interface: "{{ openstack_interface | default(omit, true) }}"
-            node: "{{ inventory_hostname }}"
-            is_pxe_enabled: true
-          when:
-           - kayobe_agent_inspect_done == ""
-           - bmport.baremetal_ports | selectattr('address', 'search', item) | list | length > 0
-          # known mellanox ethernet NICs
-          loop:
-           - "^58:a2:e1"
-           - "^a0:88:c2"
-           - "^7c:8c:09"
-           - "^94:6d:ae"
-           - "^50:00:e6"
-           - "^b8:3f:d2"
-           - "^c4:70:bd"
 
         - name: Wait for inspection
           ansible.builtin.command:
