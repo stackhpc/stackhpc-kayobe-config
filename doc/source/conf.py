@@ -98,6 +98,25 @@ html_theme = 'sphinx_immaterial'
 # html_extra_path = ['_extra']
 
 html_theme_options = {
+    "palette": [
+
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "toggle": {
+                "icon": "material/weather-sunny",
+                "name": "Switch to dark mode",
+            }
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "toggle": {
+                "icon": "material/weather-night",
+                "name": "Switch to system preference",
+            }
+        },
+    ],
     "features": [
         "navigation.expand",
         "navigation.top",
