@@ -82,7 +82,7 @@ jobs:
       - name: Update and commit Kolla version if needed
         if: steps.latest_kolla_tag.outputs.latest_tag != steps.current_kolla_version.outputs.version
         run: |
-          sed -i "s/stackhpc_kolla_source_version\:.*$/stackhpc_kolla_source_version\: $(echo $TAG | sed 's/\//\\\//g')/g" etc/kayobe/stackhpc.yml
+          sed -i "s/stackhpc_kolla_source_version\:.*$/stackhpc_kolla_source_version\: $(echo $TAG | sed 's|/|\\/|g')/g" etc/kayobe/stackhpc.yml
           echo "- **Kolla** bumped from \`${{ steps.current_kolla_version.outputs.version }}\` to \`${{ steps.latest_kolla_tag.outputs.latest_tag }}\`" >> ../../pr_body.md
           echo "  - Changelog: https://github.com/stackhpc/kolla/releases/tag/${{ steps.latest_kolla_tag.outputs.latest_tag }}" >> ../../pr_body.md
           git add etc/kayobe/stackhpc.yml
@@ -113,7 +113,7 @@ jobs:
       - name: Update and commit Kolla Ansible version if needed
         if: steps.latest_kolla_ansible_tag.outputs.latest_tag != steps.current_kolla_ansible_version.outputs.version
         run: |
-          sed -i "s/stackhpc_kolla_ansible_source_version\:.*$/stackhpc_kolla_ansible_source_version\: $(echo $TAG | sed 's/\//\\\//g')/g" etc/kayobe/stackhpc.yml
+          sed -i "s/stackhpc_kolla_ansible_source_version\:.*$/stackhpc_kolla_ansible_source_version\: $(echo $TAG | sed 's|/|\\/|g')/g" etc/kayobe/stackhpc.yml
           echo "- **Kolla-Ansible** bumped from \`${{ steps.current_kolla_ansible_version.outputs.version }}\` to \`${{ steps.latest_kolla_ansible_tag.outputs.latest_tag }}\`" >> ../../pr_body.md
           echo "  - Changelog: https://github.com/stackhpc/kolla-ansible/releases/tag/${{ steps.latest_kolla_ansible_tag.outputs.latest_tag }}" >> ../../pr_body.md
           git add etc/kayobe/stackhpc.yml
