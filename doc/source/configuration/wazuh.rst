@@ -208,7 +208,7 @@ Reinstall the role if required:
 Secrets
 -------
 
-Wazuh requires that secrets or passwords are set for itself and the services with which it communiticates.
+Wazuh requires that secrets or passwords are set for itself and the services with which it communicates.
 Wazuh secrets playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml``.
 Running this playbook will generate and put pertinent security items into secrets
 vault file which will be placed in ``$KAYOBE_CONFIG_PATH/deployment/wazuh-secrets.yml``.
