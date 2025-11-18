@@ -116,6 +116,8 @@ In the root of your kayobe-config checkout:
 This will output an encrypted backup to ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/octavia-certificates-backup.tar``
 Commit this file to store the backup.
 
+.. _restoring-octavia-certificates-directory:
+
 Restoring octavia-certificates directory when regenerating certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -135,7 +137,7 @@ Rotating client.cert-and-key.pem
 This has a lifetime of 1 year.
 
 1) Follow the steps to restore octavia-certificates so you can reuse the client
-   CA.
+   CA. See :ref:`restoring-octavia-certificates-directory`.
 
 2) Make sure your config allows you to regenerate a certificate with the same
    common name.
