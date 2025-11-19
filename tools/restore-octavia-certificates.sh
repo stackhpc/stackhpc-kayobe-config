@@ -17,4 +17,4 @@ if [ -d $KOLLA_CONFIG_PATH/octavia-certificates ]; then
     exit -1
 fi
 
-cat $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/octavia-certificates-backup.tar | ansible-vault decrypt --vault-password-file $KAYOBE_CONFIG_PATH/../../tools/vault-helper 2>/dev/null | tar -xvf - -C $KOLLA_CONFIG_PATH
+cat $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/octavia-certificates-backup.tar | ansible-vault decrypt --vault-password-file $KAYOBE_CONFIG_PATH/../../tools/vault-helper.sh 2>/dev/null | tar -xvf - -C $KOLLA_CONFIG_PATH

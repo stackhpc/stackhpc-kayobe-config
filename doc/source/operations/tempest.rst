@@ -1,3 +1,5 @@
+.. _running_tempest_with_kayobe_automation:
+
 ======================================
 Running Tempest with Kayobe Automation
 ======================================

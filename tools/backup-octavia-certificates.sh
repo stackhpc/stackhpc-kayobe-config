@@ -19,5 +19,5 @@ fi
 
 pushd $KOLLA_CONFIG_PATH
 ls octavia-certificates
-tar -c -f - octavia-certificates | ansible-vault encrypt --vault-password-file $KAYOBE_CONFIG_PATH/../../tools/vault-helper > $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/octavia-certificates-backup.tar 2>/dev/null
+tar -c -f - octavia-certificates | ansible-vault encrypt --vault-password-file $KAYOBE_CONFIG_PATH/../../tools/vault-helper.sh > $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/octavia-certificates-backup.tar 2>/dev/null
 popd

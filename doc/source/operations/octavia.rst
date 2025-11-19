@@ -70,8 +70,9 @@ Handling TLS certificates
 
 Octavia uses mutual TLS to secure communication between the amphorae and
 Octavia services. It uses a private CA to sign both client and server
-certificates. We use the kolla-ansible built-in support for generating these
-certificates:
+certificates. These certificates need to be generated when first deploying
+Octavia, and will later need to be rotated (details below). We use the
+kolla-ansible built-in support for generating these certificates:
 
 .. code-block:: console
 
@@ -136,10 +137,10 @@ Rotating client.cert-and-key.pem
 
 This has a lifetime of 1 year.
 
-1) Follow the steps to restore octavia-certificates so you can reuse the client
+#. Follow the steps to restore octavia-certificates so you can reuse the client
    CA. See :ref:`restoring-octavia-certificates-directory`.
 
-2) Make sure your config allows you to regenerate a certificate with the same
+#. Make sure your config allows you to regenerate a certificate with the same
    common name.
 
    .. code-block:: console
@@ -147,21 +148,21 @@ This has a lifetime of 1 year.
 
       unique_subject = no
 
-3) Remove the old files relating to the client certificate:
+#. Remove the old files relating to the client certificate:
 
    .. code-block:: console
 
       rm $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/{client.cert-and-key.pem,client.csr.pem,client.cert.pem}
 
-4) Regenerate the certificates
+#. Regenerate the certificates
 
    .. code-block:: console
 
       kayobe kolla ansible run octavia-certificates
 
-5) Backup your octavia-certificates directory (see previous section).
+#. Backup your octavia-certificates directory (see previous section).
 
-6) Copy your new certificate to the correct location:
+#. Copy your new certificate to the correct location:
 
    .. code-block:: console
 
@@ -170,15 +171,16 @@ This has a lifetime of 1 year.
       cp  $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client.cert-and-key.pem .
       ansible-vault encrypt client.cert-and-key.pem --vault-password-file ~/vault
 
-7) Reconfigure octavia
+#. Reconfigure Octavia
 
    .. code-block:: console
 
       kayobe overcloud service reconfigure -kt octavia
 
-8) Run tempest with the `octavia` test list to check it is working.
+#. Run Tempest with the `octavia` test list to check it is working. See
+   :ref:`running_tempest_with_kayobe_automation`.
 
-9) Commit and push any changes.
+#. Commit and push any changes.
 
 Rotating the CAs
 ~~~~~~~~~~~~~~~~
