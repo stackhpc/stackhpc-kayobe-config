@@ -134,7 +134,7 @@ Full method
 
        .. code:: bash
 
-          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rekey-hosts.yml
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/rekey-hosts.yml
 
     2. Ensure you can SSH to other nodes using the new keypair
 
@@ -142,7 +142,7 @@ Full method
 
        .. code:: bash
 
-          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/rekey-hosts.yml -t remove-key -e rekey_remove_existing_key=true
+          kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/rekey-hosts.yml -t remove-key -e rekey_remove_existing_key=true
 
 9.  Update the Pulp password
 
@@ -311,7 +311,7 @@ Full method
 
     .. code:: bash
 
-       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/stop-openstack-services.yml
+       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/stop-openstack-services.yml
 
 16. Flush the Memcached data on all controllers (any old data will now be
     inaccessible)

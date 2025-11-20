@@ -233,17 +233,17 @@ A typical workflow to sync all packages and containers is as follows:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 Once the content has been tested in a test/staging environment, it may be
 promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 Synchronising all Kolla container images can take a long time. A limited list
 of images can be synchronised using the ``stackhpc_pulp_images_kolla_filter``
@@ -253,7 +253,7 @@ For example:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
 
 Initial seed deployment
 -----------------------
@@ -265,8 +265,8 @@ has not yet been deployed. This can be avoided with the following workflow:
 .. code-block:: console
 
    kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
    kayobe seed service deploy
 
 Working with pulp

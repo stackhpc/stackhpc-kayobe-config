@@ -205,3 +205,14 @@ groups:
       description: "{{ $value }} OSD requests are taking too long to process (osd_op_complaint_time exceeded)"
 
 {% endraw %}
+{% if stackhpc_enable_radosgw_usage_exporter | bool %}
+- name: rgws
+  rules:
+  - alert: RadosGWUsageExporterNotServingMetrics
+    expr: absent(radosgw_user_metadata)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: "The RadosGW Usage Exporter has not been serving RGW metrics for more than 5 minutes. The exporter may be unable to reach the RGWs."
+{% endif %}

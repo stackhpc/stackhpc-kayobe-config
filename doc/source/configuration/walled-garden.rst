@@ -79,6 +79,7 @@ proxy:
      - "{{ ('http://' ~ docker_registry) | urlsplit('hostname') if docker_registry else '' }}"
      - "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
      - "{{ lookup('vars', admin_oc_net_name ~ '_ips')[inventory_hostname] }}"
+     - "{{ lookup('vars', internal_net_name ~ '_ips')[groups.controllers.0] }}"
      - "{{ kolla_external_fqdn }}"
      - "{{ kolla_internal_fqdn }}"
 

@@ -27,7 +27,7 @@ after deployment:
 .. code-block:: console
 
     cd $KAYOBE_CONFIG_PATH
-    kayobe playbook run ansible/rsyslog.yml
+    kayobe playbook run ansible/tools/rsyslog.yml
 
 `Prometheus <https://prometheus.io/>`__ comes with a comprehensive set of
 metrics gathered from enabled exporters; every exporter's data is visualised
@@ -76,7 +76,7 @@ on the overcloud hosts:
 .. code-block:: console
 
     (kayobe) [stack@node ~]$ cd etc/kayobe
-    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmon-tools.yml
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/deployment/smartmon-tools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
@@ -194,7 +194,7 @@ via Kayobe.
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/deploy-os-capacity-exporter.yml
 
 If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
@@ -217,7 +217,7 @@ To enable the change:
 
 .. code-block:: console
 
-    kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
+    kayobe playbook run etc/kayobe/ansible/tools/prometheus-network-names.yml
     kayobe overcloud service reconfigure --kt prometheus
 
 This first generates a template based on the prometheus.yml.j2

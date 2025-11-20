@@ -10,7 +10,8 @@ jobs:
     name: Trigger Pulp promotion workflows
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      actions: write
     steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
@@ -43,6 +44,20 @@ jobs:
       - name: Display link to container image promotion workflows
         run: |
           echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
+
+      - name: Trigger overcloud host image promotion
+        run: |
+          gh workflow run \
+          overcloud-host-image-promote.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Display link to overcloud host image promotion workflows
+        run: |
+          echo "::notice Overcloud host image promote workflow: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/overcloud-host-image-promote.yml"
 
       - name: Send message to Slack via Workflow Builder
         uses: slackapi/slack-github-action@v1.26.0

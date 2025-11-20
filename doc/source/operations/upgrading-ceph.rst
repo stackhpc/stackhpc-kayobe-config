@@ -63,7 +63,7 @@ Place the host or batch of hosts into maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml -l <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
@@ -77,13 +77,13 @@ the maximum number of hosts that can safely reboot concurrently.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 Remove the host or batch of hosts from maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml -l <host>
 
 Wait for Ceph health to return to ``HEALTH_OK``:
 
@@ -145,6 +145,32 @@ Watch the cephadm logs:
 
    ceph -W cephadm
 
+After completing the upgrade to Squid, Ceph may show the following warning in
+the output of ``ceph -s``:
+
+.. code-block:: console
+
+   all OSDs are running squid or later but require_osd_release < squid
+
+To resolve this, first verify that all OSDs were upgraded to Squid with ``ceph
+versions``. Once confirmed, run the following command:
+
+.. code-block:: console
+
+   ceph osd require-osd-release squid
+
+.. warning::
+
+   There is a `known bug causing OSDs created on Squid to crash
+   <https://tracker.ceph.com/issues/70390>`__. To avoid it, `disable the
+   Elastic Shared Blob feature
+   <https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before
+   any OSDs are created or replaced:
+
+   .. code-block:: bash
+
+      ceph config set osd bluestore_elastic_shared_blobs 0
+
 Upgrade Cephadm
 ===============
 
@@ -152,7 +178,7 @@ Update the Cephadm package:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml -e cephadm_package_update=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml -e cephadm_package_update=true
 
 Testing
 =======

@@ -179,7 +179,7 @@ Configure aio resources:
 
 .. code-block:: console
 
-   sudo -E docker run -it --rm -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+   sudo -E docker run -it --rm -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/tools/configure-aio-resources.yml
 
 Run Tempest:
 

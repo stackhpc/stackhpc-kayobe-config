@@ -20,7 +20,7 @@ You can then run the playbook to upload the image:
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/octavia-amphora-image-register.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/octavia-amphora-image-register.yml
 
 By default, this will download Amphora image corresponds to OpenStack release from
 StackHPC Release Train.
@@ -42,7 +42,7 @@ With your kayobe environment activated, you can build a new amphora image with:
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-build.yml
+  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/maintenance/octavia-amphora-image-build.yml
 
 The resultant image is based on Ubuntu. By default the image will be built on the
 seed, but it is possible to change the group in the ansible inventory using the
@@ -63,7 +63,7 @@ The default image path is ``/tmp/amphora-x64-haproxy.qcow2``.
 
 .. code-block:: console
 
-  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/octavia-amphora-image-register.yml -e image_path="<path-to-amphora-image>"
+  kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/maintenance/octavia-amphora-image-register.yml -e image_path="<path-to-amphora-image>"
 
 
 Manually deleting broken load balancers

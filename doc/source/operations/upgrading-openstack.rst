@@ -35,58 +35,6 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-RabbitMQ 4.1
-------------
-
-StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
-
-Queue Migration
-~~~~~~~~~~~~~~~
-
-.. warning::
-
-   This migration will stop all services using RabbitMQ and cause an extended
-   API outage while queues are migrated. It should only be performed in a
-   pre-agreed maintenance window.
-
-   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
-   make sure to pause reconciliation of all clusters before the API outage
-   window. See the `Azimuth docs
-   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
-   for instructions.
-
-Set the following variables in your kolla globals file (i.e.
-$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
-
-.. code-block:: yaml
-
-   om_enable_queue_manager: true
-   om_enable_rabbitmq_quorum_queues: true
-   om_enable_rabbitmq_transient_quorum_queue: true
-   om_enable_rabbitmq_stream_fanout: true
-
-Then execute the migration script:
-
-.. code-block:: bash
-
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
-
-RabbitMQ Upgrade
-~~~~~~~~~~~~~~~~
-
-After queue migration is finished, upgrade RabbitMQ to 4.1 by running the following command
-
-.. code-block:: bash
-
-   kayobe kolla ansible run rabbitmq-upgrade 4.1
-
-.. note::
-
-   Until Kolla-Ansible bug `LP#2118452 <https://bugs.launchpad.net/kolla-ansible/+bug/2118452>`__
-   is fixed, add ``--kolla-skip-tags rabbitmq-version-check`` to avoid Kolla-Ansible incorrectly
-   stopping RabbitMQ upgrade from 3.13 to 4.1.
-
 stackhpc.linux collection
 -------------------------
 
@@ -183,10 +131,100 @@ For example:
          - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
       enabled: "{{ seed_pulp_container_enabled | bool }}"
 
+Ansible playbook subdirectories
+--------------------------------------
+
+The playbooks under ``etc/kayobe/ansible`` have been subdivided into different
+categories to make them easier to navigate. This change may result in merge
+conflicts where playbooks have been edited downstream, and broken hooks where
+symlinks have been used.
+
+To mitigate the impact of these changes, two scripts have been added:
+
+* ``tools/get-new-playbook-path.sh`` - Returns the new category of a given
+  playbook. For example ``tools/get-new-playbook-path.sh
+  deploy-os-capacity-exporter.yml`` returns ``deployment/``
+* ``tools/magic-symlink-fix.sh`` - Uses the previous script to attempt to fix
+  any broken symlinks in the kayobe configuration.
+
 Known issues
 ============
 
-* None so far!
+Cinder
+------
+
+`Enhancement of Ceph integration of multiple clusters
+<https://review.opendev.org/c/openstack/kolla-ansible/+/907166>`__
+means the Cinder role now requires ``user`` and ``pool`` set to the each item of kolla dict
+variable ``cinder_ceph_backends`` at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+For example,
+
+.. code:: yaml
+
+   cinder_ceph_backends:
+      - name: rbd-1
+         cluster: ceph
+         user: cinder
+         pool: volumes
+         enabled: true
+      - name: rbd-2
+         cluster: ceph-hdd
+         user: cinder
+         pool: volumes-hdd
+         enabled: true
+
+You can find the name of pools from ``cephadm_pools`` in cephadm.yml and name of the users
+will be ``cinder`` unless changed to otherwise.
+
+The K-A upstream change `#909974 <https://review.opendev.org/c/openstack/kolla-ansible/+/909974>`__
+requires users to manually set Cinder cluster name.
+You can find the current name of the cluster from ``cluster`` variable in
+``DEFAULT`` category in ``cinder.conf``.
+
+For example,
+
+.. code::
+
+   [DEFAULT]
+   cluster = ceph
+
+Match the name of the cluster by setting ``cinder_cluster_name`` in ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments).
+
+.. code:: yaml
+
+   cinder_cluster_name: ceph
+
+CloudKitty
+----------
+
+The Elasticsearch storage driver is no longer compatible with Opensearch storage backend.
+Set CloudKitty storage backend to ``opensearch`` if it was set to be ``elasticsearch`` before.
+This can be set at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
+
+.. code:: yaml
+
+   cloudkitty_storage_backend: opensearch
+
+Ironic
+------
+
+From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
+<https://review.opendev.org/c/openstack/kayobe/+/836999>`__
+for Ironic and follows Ironic's default.
+This can cause your Ironic configuration ``ironic.conf`` to regress.
+Check the configuration difference before applying and re-add your options at
+``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+
+For example,
+
+.. code:: yaml
+
+   [DEFAULT]
+   enabled_network_interfaces = neutron
 
 Security baseline
 =================
@@ -236,9 +274,101 @@ Ubuntu Noble migration
 ----------------------
 
 Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
-must be migrated to Ubuntu 24.04 before upgrading OpenStack services. The
-upgrade process is currently a work in progress.
-.. TODO: Add link to another page describing how to migrate
+must be migrated to Ubuntu 24.04 before upgrading OpenStack services.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+documentation.
+
+
+RabbitMQ Prerequisites
+----------------------
+
+.. warning::
+
+   StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
+   Existing transient queues must be migrated to durable queues with Queue Manager
+   before upgrading to RabbitMQ 4.1.
+
+   This means that queue migration and the RabbitMQ 4.1 upgrade must be completed
+   before upgrading to Epoxy.
+
+Queue Migration
+~~~~~~~~~~~~~~~
+
+.. warning::
+
+   This migration will stop all services using RabbitMQ and cause an extended
+   API outage while queues are migrated. It should only be performed in a
+   pre-agreed maintenance window.
+
+   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
+   make sure to pause reconciliation of all clusters before the API outage
+   window. See the `Azimuth docs
+   <https://azimuth-cloud.github.io/azimuth-config/operations/maintenance/>`__
+   for instructions.
+
+Set the following variables in your kolla globals file (i.e.
+``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
+``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
+
+.. code-block:: yaml
+
+   om_enable_queue_manager: true
+   om_enable_rabbitmq_quorum_queues: true
+   om_enable_rabbitmq_transient_quorum_queue: true
+   om_enable_rabbitmq_stream_fanout: true
+
+Then execute the migration script:
+
+.. code-block:: bash
+
+   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
+
+RabbitMQ Upgrade
+~~~~~~~~~~~~~~~~
+
+After the queue migration is finished, upgrade RabbitMQ to 4.1.
+
+1. Sync and publish latest Kolla container images to ensure local pulp has RabbitMQ 4.1 image.
+   (This can be skipped if local pulp is not used.)
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+
+2. Upgrade RabbitMQ to 4.1 with Kolla-Ansible
+
+   .. code-block:: bash
+
+      kayobe kolla ansible run "rabbitmq-upgrade 4.1"
+
+.. _python-3-12:
+
+Python 3.12
+-----------
+
+From OpenStack 2025.1, Kayobe and Kolla-Ansible require Python 3.12.
+
+Ubuntu 24.04 has a default Python of version 3.12.
+You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
+
+For Rocky Linux 9, install Python 3.12 manually.
+
+.. code-block:: bash
+
+   dnf install python3.12
+
+For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
+created with older Python versions will not work with OpenStack 2025.1.
+
+Create a new Kayobe environment and bootstrap the Ansible control host with Python 3.12.
+Beokay is recommended when creating and managing the local Kayobe environment.
+You can find more information from the :ref:`beokay` documentation.
+
+.. note::
+
+   For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
+   option to specify Beokay to use Python 3.12 as it is not the default.
 
 Preparation
 ===========
@@ -357,12 +487,19 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
+.. warning::
+
+   Python 3.12 is required for OpenStack 2025.1 Kayobe environments.
+   The environment cannot be upgraded for this release, it must be rebuilt.
+   You can find more information at :ref:`python-3-12`
+
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
-release in case it is necessary before the uprade begins.
+release in case it is necessary before the upgrade begins.
 
-In general it is safer to rebuild an environment than upgrade, but for
-completeness the following shows how to upgrade an existing local Kayobe
+In general it is safer to rebuild an environment than upgrade. You can follow
+instructions from the :ref:`beokay` documentation.
+But for completeness the following shows how to upgrade an existing local Kayobe
 environment.
 
 Change to the Kayobe configuration directory:
@@ -434,22 +571,22 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 Once the host package content has been tested in a test/staging environment, it
 may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 To sync container images:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 Build locally customised container images
 -----------------------------------------
@@ -575,7 +712,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed-hypervisor
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed-hypervisor
 
 Upgrading Host Services
 -----------------------
@@ -641,7 +778,7 @@ If the kernel has been upgraded, reboot the seed to pick up the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed
 
 Verify that Bifrost, Ironic and Inspector are running as expected:
 
@@ -779,7 +916,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l wazuh-manager
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l wazuh-manager
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -817,7 +954,7 @@ Run the following playbook to update Wazuh Manager services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -839,7 +976,7 @@ Run the following playbook to update Wazuh Agent services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml
 
 Verify that the agents have conncted to Wazuh Manager correctly by
 :ref:`logging into the Wazuh UI <wazuh-verification>`.
@@ -895,7 +1032,7 @@ the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 .. warning::
 
@@ -906,10 +1043,10 @@ the change:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host package update --packages "*" --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are
@@ -919,7 +1056,7 @@ If the host is a hypervisor, enable the Nova compute service.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-enable.yml --limit <host>
 
 If any VMs were powered off, they may now be powered back on.
 
@@ -975,9 +1112,9 @@ least start with a small number of hosts:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host configure --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are

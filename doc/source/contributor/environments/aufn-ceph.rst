@@ -119,10 +119,10 @@ We can now sync the contents of the local pulp server with that of SMS test pulp
 
 .. parsed-literal::
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
     kayobe seed service deploy
 
 With the seed VM configured, we use Tenks_ to deploy an additional set of VMs on the same baremetal node and configure them as 'virual baremetal' hosts in order to replicate a true multi-node kayobe deployment within a single node.
@@ -146,8 +146,8 @@ These nodes can then be provisioned as overcloud control, compute and storage ho
     kayobe overcloud hardware inspect
     kayobe overcloud provision
     kayobe overcloud host configure
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml
     kayobe overcloud container image pull
     kayobe overcloud service deploy
     source $KOLLA_CONFIG_PATH/public-openrc.sh

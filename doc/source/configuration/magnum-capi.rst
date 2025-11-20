@@ -15,6 +15,8 @@ The Cluster API architecture relies on a CAPI management cluster in order to run
 
 2. It must be reachable from the control plane nodes (either controllers or dedicated network hosts) on which the Magnum containers are running (so that the Magnum can reach the IP listed in the management cluster's ``kubeconfig`` file).
 
+The Magnum Cluster API driver requires that Barbican, Octavia, and Redis are deployed and working in your OpenStack environment. Octavia can be deployed with either the Amphora or OVN drivers, but the OVN driver is recommended for new deployments.
+
 For testing purposes, a simple `k3s <https://k3s.io>`_ cluster would suffice. For production deployments, the recommended solution is to instead set up a separate HA management cluster in an isolated OpenStack project by leveraging the CAPI management cluster configuration used in `Azimuth <https://github.com/stackhpc/azimuth>`_. This approach will provide a resilient HA management cluster with a standard set of component versions that are regularly tested in Azimuth CI.
 The general process for setting up this CAPI management cluster using Azimuth tooling is described here, but the `Azimuth operator documentation <https://stackhpc.github.io/azimuth-config/#deploying-azimuth>`_ should be consulted for additional information if required.
 
@@ -72,7 +74,7 @@ To deploy the CAPI management cluster using this site-specific environment, run
     # Run the provision playbook from the azimuth-ops collection
     # NOTE: THIS COMMAND RUNS A DIFFERENT PLAYBOOK FROM
     # THE STANDARD AZIMUTH DEPLOYMENT INSTRUCTIONS
-    ansible-playbook stackhpc.azimuth_ops.provision_capi_mgmt
+    ansible-playbook azimuth_cloud.azimuth_ops.provision_capi_mgmt
 
 The general running order of the provisioning playbook is the following:
 
@@ -105,7 +107,21 @@ Next, copy the CAPI management cluster's kubeconfig file into your stackhpc-kayo
 
 The presence of a kubeconfig file in the Magnum config directory is used by Kolla to determine whether the CAPI Helm driver should be enabled.
 
-To apply the configuration, run ``kayobe overcloud service reconfigure -kt magnum``.
+If Magnum is already deployed, apply the configuration with ``kayobe overcloud service reconfigure -kt magnum``.
+
+If Magnum is not yet deployed, enable it and its dependencies in your kayobe environment's ``kolla.yml`` file:
+
+.. code-block:: yaml
+    :caption: kolla.yml
+
+    kolla_enable_magnum: true
+    kolla_enable_octavia: true
+    kolla_enable_barbican: true
+    kolla_enable_redis: true
+
+See the `Kolla-Ansible documentation <https://docs.openstack.org/kolla-ansible/latest/reference/networking/octavia.html>`_ for more details on configuring Octavia.
+
+Deploy the services with ``kayobe overcloud service deploy``.
 
 Magnum Cluster Templates
 ========================

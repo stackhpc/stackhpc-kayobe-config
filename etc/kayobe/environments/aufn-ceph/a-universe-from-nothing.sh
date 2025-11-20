@@ -91,10 +91,10 @@ kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
 $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
 
 # Sync package & container repositories.
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 # Re-run full task to set up bifrost_deploy etc. using newly-populated pulp repo
 kayobe seed service deploy
@@ -111,8 +111,8 @@ kayobe overcloud inventory discover
 kayobe overcloud hardware inspect
 kayobe overcloud provision
 kayobe overcloud host configure
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml
 kayobe overcloud container image pull
 kayobe overcloud service deploy
 source $KOLLA_CONFIG_PATH/public-openrc.sh

@@ -29,13 +29,13 @@ Download the setup script:
 
 .. parsed-literal::
 
-   wget https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
+   curl -LO https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-aio/automated-setup.sh
 
 Change the permissions on the script:
 
 .. parsed-literal::
 
-   sudo chmod 700 automated-setup.sh
+   sudo chmod +x automated-setup.sh
 
 Acquire the Ansible Vault password for this repository, and store a
 copy at ``~/vault-pw``.
@@ -44,7 +44,7 @@ Run the setup script:
 
 .. parsed-literal::
 
-   ./automated-setup.sh
+   ./automated-setup.sh deploy_full
 
 The script will pull the current version of Kayobe and this repository, and
 then run the manual setup steps below. The script can be easily edited with the
@@ -62,6 +62,10 @@ following options:
   customised before continuing.
 * ``AIO_RUN_TEMPEST`` (default: ``false``) - Whether to run Tempest Refstack
   after deployment instead of the default VM smoke test.
+* ``USE_OVS`` (default: ``false``) - Whether to disable OVN and deploy using
+  OVS instead.
+* ``VAULT_PASSWORD_FILE`` (default: ``$BASE_PATH/vault-pw``) - Path to a file
+  containing the Kayobe vault password for the environment.
 
 Manual Setup
 ============
@@ -173,13 +177,13 @@ If using an LVM-based image, grow the root volume group.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/growroot.yml
+   kayobe playbook run etc/kayobe/ansible/tools/growroot.yml
 
 On Ubuntu systems, purge the command-not-found package.
 
 .. parsed-literal::
 
-   kayobe playbook run etc/kayobe/ansible/purge-command-not-found.yml
+   kayobe playbook run etc/kayobe/ansible/fixes/purge-command-not-found.yml
 
 Next, configure the host OS & services.
 

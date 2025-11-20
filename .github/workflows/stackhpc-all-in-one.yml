@@ -190,7 +190,10 @@ jobs:
       - name: Terraform Apply
         id: tf_apply
         run: |
-          for attempt in $(seq 5); do
+          # Try up to 6 times to create the infrastructure, destroying and retrying if it fails.
+          # If it fails 3 times, wait 2 hours before trying again.
+          # The cloud is likely just at capacity, so wait until other jobs finish.
+          for attempt in $(seq 6); do
               if terraform apply -auto-approve; then
                   echo "Created infrastructure on attempt $attempt"
                   exit 0
@@ -198,7 +201,12 @@ jobs:
               echo "Failed to create infrastructure on attempt $attempt"
               sleep 10
               terraform destroy -auto-approve
-              sleep 60
+              if [ "$attempt" -eq 3 ]; then
+                  echo "Sleeping for 2 hours after 3 failed attempts..."
+                  sleep 7200
+              else
+                  sleep $(shuf -i 60-180 -n 1)
+              fi
           done
           echo "Failed to create infrastructure after $attempt attempts"
           exit 1
@@ -271,7 +279,7 @@ jobs:
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/fix-hostname.yml
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible${{ inputs.upgrade && '/' || '/fixes/' }}fix-hostname.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -282,7 +290,7 @@ jobs:
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/reboot.yml -e reboot_with_bootstrap_user=true
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible${{ inputs.upgrade && '/' || '/maintenance/' }}reboot.yml -e reboot_with_bootstrap_user=true
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -292,7 +300,7 @@ jobs:
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/growroot.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible${{ inputs.upgrade && '/' || '/tools/' }}growroot.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -322,7 +330,7 @@ jobs:
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible${{ inputs.upgrade && '/' || '/tools/' }}configure-aio-resources.yml
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
@@ -442,7 +450,7 @@ jobs:
             -v $(pwd)/sct-results:/stack/sct-results \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/stackhpc-cloud-tests.yml' \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/tools/stackhpc-cloud-tests.yml' \
             -e sct_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
@@ -456,7 +464,7 @@ jobs:
             -v $(pwd)/diagnostics:/stack/diagnostics \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/diagnostics.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/tools/diagnostics.yml'
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}

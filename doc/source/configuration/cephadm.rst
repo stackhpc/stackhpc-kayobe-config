@@ -99,7 +99,7 @@ Ceph deployment configuration
 -----------------------------
 
 Default variables for configuring Ceph are provided in
-``etc/kayobe/cephadm.yml``. Many of these defaults will be sufficient,
+``etc/kayobe/ceph/cephadm.yml``. Many of these defaults will be sufficient,
 but you will likely need to set ``cephadm_osd_spec`` to define the OSD
 specification.
 
@@ -513,7 +513,7 @@ Deploy the Ceph services:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml
 
 You can check the status of Ceph via Cephadm on the storage nodes:
 
@@ -526,7 +526,7 @@ cephadm.yml playbook to perform post-deployment configuration:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml
 
 The ``cephadm.yml`` playbook imports various other playbooks, which may also be
 run individually to perform specific tasks. Note that if you want to deploy
@@ -535,7 +535,7 @@ will need to set ``cephadm_bootstrap`` to true. For example:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml -e cephadm_bootstrap=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml -e cephadm_bootstrap=true
 
 Configuration generation
 ------------------------
@@ -544,7 +544,7 @@ Generate keys and configuration for Kolla Ansible:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml
 
 This will generate Ceph keys and configuration under
 ``etc/kayobe/environments/<env>/kolla/config/``, which should be

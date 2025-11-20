@@ -215,7 +215,7 @@ into ``$KAYOBE_CONFIG_PATH/overcloud-introspection-data``:
 Using ADVise
 ------------
 
-The Ansible playbook ``advise-run.yml`` can be found at ``$KAYOBE_CONFIG_PATH/ansible/advise-run.yml``.
+The Ansible playbook ``advise-run.yml`` can be found at ``$KAYOBE_CONFIG_PATH/ansible/tools/advise-run.yml``.
 
 The playbook will:
 
@@ -226,7 +226,7 @@ The playbook will:
 .. code-block:: console
 
    cd $KAYOBE_CONFIG_PATH
-   ansible-playbook $KAYOBE_CONFIG_PATH/ansible/advise-run.yml
+   ansible-playbook $KAYOBE_CONFIG_PATH/ansible/tools/advise-run.yml
 
 The playbook has the following optional parameters:
 

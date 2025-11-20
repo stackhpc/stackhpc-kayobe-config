@@ -85,7 +85,7 @@ To manually test the changes, there is a comprehensive guide to set up a Multino
    kayobe seed host command run -b --show-output --command "dnf list installed kernel"
    kayobe seed host command run -b --show-output --command "uname -a"
 
-   kayobe playbook run --limit seed,overcloud $KAYOBE_CONFIG_PATH/ansible/reboot.yml
+   kayobe playbook run --limit seed,overcloud $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml
 
 * The tempest tests run automatically at the end of the multinode deployment script. If you have the time, it is worth fixing any failing tests you can so that there is greater coverage for the package updates. (Also remember to propose these fixes in the relevant repos where applicable.)
 
@@ -128,15 +128,15 @@ Perform a rolling reboot of hosts:
 
    # Reboot controller instances and zeroth compute instance
    (seed-hypervisor) export ANSIBLE_SERIAL=1
-   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit controllers
-   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[0]
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit controllers
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit compute[0]
 
    # Test live migration
    (seed) openstack server create --image cirros --flavor m1.tiny --network external --hypervisor-hostname <Your Hypervisor Hostname> --os-compute-api-version 2.74 server1
    (seed) openstack server migrate --live-migration server1
    (seed) watch openstack server show server1
 
-   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit compute[1]
+   (seed-hypervisor) kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit compute[1]
 
    # Try and migrate back
    (seed) openstack server migrate --live-migration server1

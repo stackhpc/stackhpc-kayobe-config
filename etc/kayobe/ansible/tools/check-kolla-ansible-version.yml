@@ -1,0 +1,46 @@
+---
+- name: Check Kolla-Ansible version
+  tags: kolla-ansible-version-check
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Check version
+      when: stackhpc_enable_kolla_ansible_check | bool
+      check_mode: false
+      block:
+        - name: Get current Kolla-Ansible tag
+          ansible.builtin.command:
+            cmd: git describe --tags
+            chdir: "{{ lookup('ansible.builtin.env', 'KOLLA_SOURCE_PATH') }}"
+          register: kolla_ansible_current_tag
+
+        - name: Get current Kolla-Ansible branch
+          ansible.builtin.command:
+            cmd: git branch --show-current
+            chdir: "{{ lookup('ansible.builtin.env', 'KOLLA_SOURCE_PATH') }}"
+          register: kolla_ansible_current_branch
+
+        - name: Get current Kolla-Ansible commit
+          ansible.builtin.command:
+            cmd: git rev-parse HEAD
+            chdir: "{{ lookup('ansible.builtin.env', 'KOLLA_SOURCE_PATH') }}"
+          register: kolla_ansible_current_commit
+
+        - name: Check installed Kolla-Ansible version is the expected version
+          ansible.builtin.assert:
+            that: >
+              stackhpc_kolla_ansible_source_version in kolla_ansible_current_tag.stdout or
+              stackhpc_kolla_ansible_source_version in kolla_ansible_current_branch.stdout or
+              stackhpc_kolla_ansible_source_version in kolla_ansible_current_commit.stdout
+            fail_msg: |
+              Kolla-Ansible must use the expected version before continuing. Either the
+              tag, branch, or commit should match the expected version.
+
+              Current Kolla-Ansible tag: {{ kolla_ansible_current_tag.stdout }}
+              Current Kolla-Ansible branch: {{ kolla_ansible_current_branch.stdout if kolla_ansible_current_branch.stdout != "" else 'No branch found' }}
+              Current Kolla-Ansible commit: {{ kolla_ansible_current_commit.stdout }}
+              Expected Kolla-Ansible version: {{ stackhpc_kolla_ansible_source_version }}
+
+              Upgrade Kolla-Ansible by running: kayobe control host upgrade
+            success_msg: |
+              Kolla-Ansible running at version: {{ stackhpc_kolla_ansible_source_version }}

@@ -22,18 +22,13 @@ storage backend. Set the following in ``kolla.yml``:
   kolla_enable_influxdb: false
 
 Set Prometheus as the backend for both the collector and fetcher, and
-Elasticsearch as the storage backend. Note that our fork of CloudKitty is
-patched so that the CloudKitty Elasticsearch V2 storage backend will also work
-with an OpenSearch cluster. Proper support for the V2 OpenSearch storage
-backend is still pending in Kolla-Ansible `here
-<https://review.opendev.org/c/openstack/kolla-ansible/+/898555>`__. Set the
-following in ``kolla/globals.yml``:
+OpenSearch as the storage backend. Set the following in ``kolla/globals.yml``:
 
 .. code-block:: yaml
 
   cloudkitty_collector_backend: prometheus
   cloudkitty_fetcher_backend: prometheus
-  cloudkitty_storage_backend: elasticsearch
+  cloudkitty_storage_backend: opensearch
 
 The default collection period is one hour, which is likely too long for most
 systems as CloudKitty charges by the **entire** collection period if any usage
