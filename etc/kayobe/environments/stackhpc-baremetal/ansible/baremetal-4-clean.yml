@@ -11,7 +11,7 @@
     - baremetal
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
-    controller_host: localhost
+    controller_host: "{{ groups['controllers'][0] }}"
     cleaning_timeout: "{{ 60 * 20 }}" # 20 minutes
 
   tasks:
@@ -21,7 +21,6 @@
         # NOTE: Without this, the controller's ansible_host variable will not
         # be respected when using delegate_to.
         ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
-        agent_inspect_timeout: "{{ 60 * 20 }}" # 20 minutes
       environment: "{{ openstack_auth_env }}"
       block:
 
@@ -35,7 +34,7 @@
 
         - name: Check BMC is up
           ansible.builtin.uri:
-            url: "{{ ironic_driver_info['redfish_address'] + '/redfish/v1' }}"
+            url: "{{ ironic_driver_info['redfish_address'] }}/redfish/v1"
             method: GET
             status_code: 200
             validate_certs: false

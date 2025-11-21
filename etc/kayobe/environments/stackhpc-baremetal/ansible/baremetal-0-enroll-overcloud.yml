@@ -1,7 +1,7 @@
 ---
 
 - name: Register baremetal compute nodes
-  hosts: localhost
+  hosts:  "{{ groups['controllers'][0] }}"
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
   tasks:
@@ -27,7 +27,8 @@
     - baremetal
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
-    controller_host: localhost
+    #todo: extract this as a variable
+    controller_host: "{{ groups['controllers'][0] }}"
   tasks:
     - name: Check Ironic variables are defined
       ansible.builtin.assert:

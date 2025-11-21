@@ -30,6 +30,21 @@
       delegate_to: localhost
       run_once: true
 
+    - name: Define vBMC network
+      community.libvirt.virt_net:
+        command: define
+        name: vbmc-net
+        xml: "{{ lookup('template', sushy_directory  + '/vbmc-net.xml.j2') }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Start vBMC network
+      community.libvirt.virt_net:
+        state: active
+        name: vbmc-net
+      delegate_to: localhost
+      run_once: true
+
     - import_role:
         name: stackhpc.libvirt-vm
       vars:
@@ -45,7 +60,9 @@
                 capacity: '20GB'
                 pool: 'default'
             interfaces:
-              - network: 'breth1'
+              - network: 'vbmc-net'
+                mac: '{{ bikolla_mac_addresses[inventory_hostname] }}'
+                alias: vnet1
             start: false
             autostart: false
             boot_firmware: uefi

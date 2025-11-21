@@ -2,7 +2,6 @@
 - name: Check baremetal node bmc is up
   hosts: baremetal
   gather_facts: false
-  become: true
   max_fail_percentage: >-
     {{ baremetal_compute_register_max_fail_percentage |
        default(baremetal_compute_max_fail_percentage) |
@@ -12,11 +11,11 @@
     - baremetal
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
-    controller_host: controller0
+    controller_host: "{{ groups['controllers'][0] }}"
 
   tasks:
     - name: Show and check baremetal node
-      delegate_to: localhost
+      delegate_to: "{{ controller_host }}"
       vars:
         # NOTE: Without this, the controller's ansible_host variable will not
         # be respected when using delegate_to.

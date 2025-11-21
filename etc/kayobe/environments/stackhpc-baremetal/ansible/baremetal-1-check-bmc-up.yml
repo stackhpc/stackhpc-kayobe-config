@@ -11,7 +11,7 @@
     - baremetal
   vars:
     venv: "{{ virtualenv_path }}/openstack-cli"
-    controller_host: localhost
+    controller_host: "{{ groups['controllers'][0] }}"
 
   tasks:
     - name: Check Ironic variables are defined
@@ -65,6 +65,7 @@
             baseuri: "{{ ironic_redfish_address }}"
             username: "{{ ironic_redfish_username }}"
             password: "{{ ironic_redfish_password }}"
+          when: ironic_redfish_username is defined
           register: firmware_inventory
           failed_when: not firmware_inventory.redfish_facts.firmware.ret
 
@@ -80,19 +81,23 @@
             baseuri: "{{ ironic_redfish_address }}"
             username: "{{ ironic_redfish_username }}"
             password: "{{ ironic_redfish_password }}"
-          when: kayobe_bmc_up == ""
+          when:
+            - kayobe_bmc_up == ""
+            - ironic_redfish_username is defined
 
-        - name: Wait 300 seconds for port 443 to become open
-          ansible.builtin.wait_for:
-            port: 443
-            host: "{{ ironic_redfish_address }}"
-            delay: 20
-            timeout: 300
-          when: kayobe_bmc_up == ""
+        # - name: Wait 300 seconds for port 443 to become open
+        #   ansible.builtin.wait_for:
+        #     port: 443
+        #     host: "{{ ironic_redfish_address }}"
+        #     delay: 20
+        #     timeout: 300
+        #   when:
+        #     - kayobe_bmc_up == ""
+        #     - ironic_redfish_username is defined
 
         - name: Check BMC back up again
           ansible.builtin.uri:
-            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            url: "{{ ironic_driver_info['redfish_address'] }}/redfish/v1"
             method: GET
             status_code: 200
             validate_certs: false
