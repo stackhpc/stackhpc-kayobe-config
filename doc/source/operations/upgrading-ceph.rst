@@ -171,6 +171,21 @@ versions``. Once confirmed, run the following command:
 
       ceph config set osd bluestore_elastic_shared_blobs 0
 
+Finally, verify the value of ``ceph osd get-require-min-compat-client``. On
+older Ceph deployments, it may still be set to ``jewel``, which would prevent
+using the `upmap balancer mode
+<https://docs.ceph.com/en/latest/rados/operations/balancer/#modes>`__ which
+requires ``luminous`` or later. Similarly, the more recent `read balancer
+<https://docs.ceph.com/en/latest/rados/operations/read-balancer/>`__ requires
+``reef``.
+
+Run ``ceph features`` to identify client versions and consider setting the
+minimum to an appropriate value:
+
+.. code-block:: console
+
+   ceph osd set-require-min-compat-client reef
+
 Upgrade Cephadm
 ===============
 
