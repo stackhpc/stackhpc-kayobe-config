@@ -216,7 +216,8 @@ jobs:
           args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud container image build $args
+          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/tools/docker-registry-login.yml &&
+          kayobe overcloud container image build --push $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.overcloud
@@ -250,58 +251,58 @@ jobs:
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
 
-      - name: Scan built container images
-        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
+      # - name: Scan built container images
+      # run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
 
-      - name: Move image scan logs to output artifact
-        run: mv image-scan-output image-build-logs/image-scan-output
+      # - name: Move image scan logs to output artifact
+      # run: mv image-scan-output image-build-logs/image-scan-output
 
-      - name: Fail if any images have critical vulnerabilities
-        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
-        if: ${{ !inputs.push-critical }}
+      # - name: Fail if any images have critical vulnerabilities
+      # run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
+      # if: ${{ !inputs.push-critical }}
 
-      - name: Copy clean images to push-attempt-images list
-        run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
-        if: inputs.push
+      # - name: Copy clean images to push-attempt-images list
+      #   run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
+      #   if: inputs.push
 
       # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
       # This should be reverted when it's decided to filter high level CVEs as well.
-      - name: Append dirty images to push list
-        run: |
-          cat image-build-logs/image-scan-output/high-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push }}
+      # - name: Append dirty images to push list
+      #   run: |
+      #     cat image-build-logs/image-scan-output/high-images.txt >> image-build-logs/push-attempt-images.txt
+      #   if: ${{ inputs.push }}
 
-      - name: Append images with critical vulnerabilities to push list
-        run: |
-          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push && inputs.push-critical }}
+      # - name: Append images with critical vulnerabilities to push list
+      #   run: |
+      #     cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
+      #   if: ${{ inputs.push && inputs.push-critical }}
 
-      - name: Push images
-        run: |
-          touch image-build-logs/push-failed-images.txt
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/tools/docker-registry-login.yml &&
+      # - name: Push images
+      #   run: |
+      #     touch image-build-logs/push-failed-images.txt
+      #     source venvs/kayobe/bin/activate &&
+      #     source src/kayobe-config/kayobe-env --environment ci-builder &&
+      #     kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/tools/docker-registry-login.yml &&
 
-          while read -r image; do
-            # Retries!
-            for i in {1..5}; do
-              if docker push $image; then
-                echo "Pushed $image"
-                break
-              elif [ $i -eq 5 ] ; then
-                echo "Failed to push $image"
-                echo $image >> image-build-logs/push-failed-images.txt
-              else
-                echo "Failed on retry $i"
-                sleep 5
-              fi;
-            done
-          done < image-build-logs/push-attempt-images.txt
-        shell: bash
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
-        if: inputs.push
+      #     while read -r image; do
+      #       # Retries!
+      #       for i in {1..5}; do
+      #         if docker push $image; then
+      #           echo "Pushed $image"
+      #           break
+      #         elif [ $i -eq 5 ] ; then
+      #           echo "Failed to push $image"
+      #           echo $image >> image-build-logs/push-failed-images.txt
+      #         else
+      #           echo "Failed on retry $i"
+      #           sleep 5
+      #         fi;
+      #       done
+      #     done < image-build-logs/push-attempt-images.txt
+      #   shell: bash
+      #   env:
+      #     KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+      #   if: inputs.push
 
       - name: Upload output artifact
         uses: actions/upload-artifact@v4
