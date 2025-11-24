@@ -47,8 +47,11 @@ The following types of hosts will be covered in the future:
 
 .. warning::
 
-   Ceph node upgrades have not yet been performed outside of a virtualised test
-   environment. Proceed with caution.
+   Due to `Bug 66389 <https://tracker.ceph.com/issues/66389>`__ any Ceph
+   host that is upgraded to Noble without first upgrading to at least
+   Reef v18.2.5 will not be able to rejoin the cluster. Noble upgrade
+   for host running Ceph daemons will have to be postponed until the
+   Ceph cluster has been upgraded to at least v18.2.5.
 
 Prerequisites
 =============
@@ -353,6 +356,7 @@ Storage
 Potential issues
 ----------------
 
+-  Ensure running at Ceph v18.2.5 or greater.
 -  It is recommended that you upgrade the bootstrap host last.
 -  Before upgrading the bootstrap host, it can be beneficial to backup
    ``/etc/ceph`` and ``/var/lib/ceph``, as sometimes the keys, config, etc.
