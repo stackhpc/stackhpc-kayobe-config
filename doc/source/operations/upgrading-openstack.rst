@@ -377,10 +377,10 @@ You can find more information from the :ref:`beokay` documentation.
 Kayobe Automation
 ~~~~~~~~~~~~~~~~~
 
-For CI, Kayobe Automation image also needs to be rebuilt with Python 3.12.
-Running the workflow from ``.github/workflows/build-kayobe-docker-image.yml``
-(For GitLab CI, use the workflow from ``.gitlab/workflows/build-kayobe-docker-image.yml``)
-will automatically rebuild the image with Python 3.12.
+For deployments using Kayobe Automation CI, the Kayobe Docker image also needs
+to be rebuilt with Python 3.12. In GitHub, run the ``Build Kayobe Docker
+Image`` workflow. In GitLab, run the ``build_kayobe_image`` pipeline. In either
+case, the image will automatically be rebuilt with Python 3.12.
 
 Preparation
 ===========
