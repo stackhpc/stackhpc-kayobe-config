@@ -223,10 +223,6 @@ It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
 
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml
 
-.. note:: Use ``ansible-vault`` to view the secrets:
-
-  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/deployment/wazuh-secrets.yml``
-
 Edit the playbook and variables to your needs:
 
 Wazuh manager configuration
