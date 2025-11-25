@@ -426,8 +426,7 @@ Check CIS benchmark output in agent section.
 
 Removal
 -------
-In cases where the Wazuh server needs to be purged and it is not hosted on an infra-vm you can use the
-following playbook to remove all Wazuh components from the host.
+The following playbook can be used to purge all Wazuh components from a host. This is particularly useful for Wazuh servers that are not hosted on an infra-vm.
 
 ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/wazuh-purge.yml``
 
