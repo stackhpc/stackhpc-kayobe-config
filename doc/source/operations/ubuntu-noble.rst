@@ -355,7 +355,8 @@ Storage
 Potential issues
 ----------------
 
--  Ensure the Ceph cluster is running at least Reef v18.2.5. Upgrading hosts with an older Ceph version will cause daemons to fail.
+-  Ensure the Ceph cluster is running at least Reef v18.2.5.
+   Upgrading hosts with an older Ceph version will cause daemons to fail.
 -  It is recommended that you upgrade the bootstrap host last.
 -  Before upgrading the bootstrap host, it can be beneficial to backup
    ``/etc/ceph`` and ``/var/lib/ceph``, as sometimes the keys, config, etc.
