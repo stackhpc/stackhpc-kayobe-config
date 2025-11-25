@@ -424,6 +424,13 @@ Verification
 The Wazuh agents should register with the Wazuh manager. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
 
+Removal
+-------
+In cases where the Wazuh server needs to be purged and it is not hosted on an infra-vm you can use the
+following playbook to remove all Wazuh components from the host.
+
+``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/wazuh-purge.yml``
+
 Additional resources
 --------------------
 
