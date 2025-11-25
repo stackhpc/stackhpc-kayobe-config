@@ -360,6 +360,8 @@ kolla_build_blocks:
   grafana_plugins_install: |
     RUN grafana-cli plugins install vonage-status-panel \
         && grafana-cli plugins install grafana-opensearch-datasource
+  ironic_condcutor_header: |
+    ADD additions-archive /
   ironic_inspector_header: |
     ADD additions-archive /
 
@@ -371,6 +373,8 @@ kolla_build_blocks:
 # override, append or remove. The value should be a list.
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
+    - /additions/*
+  ironic_condcutor_pip_packages_append:
     - /additions/*
   ironic_inspector_pip_packages_append:
     - /additions/*
