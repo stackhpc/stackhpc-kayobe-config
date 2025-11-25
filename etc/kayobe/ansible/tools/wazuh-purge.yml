@@ -14,7 +14,10 @@
         state: stopped
         enabled: no
         daemon_reload: true
-      ignore_errors: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
 
     - name: Remove wazuh-dashboard and files
       ansible.builtin.package:
@@ -36,7 +39,10 @@
         state: stopped
         enabled: no
         daemon_reload: true
-      ignore_errors: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
 
     - name: Remove wazuh-manager and files
       ansible.builtin.package:
@@ -54,7 +60,10 @@
         state: stopped
         enabled: no
         daemon_reload: true
-      ignore_errors: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
 
     - name: Remove filebeat and files
       ansible.builtin.package:
@@ -76,7 +85,10 @@
         state: stopped
         enabled: no
         daemon_reload: true
-      ignore_errors: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
 
     - name: Remove wazuh-indexer and files
       ansible.builtin.package:
