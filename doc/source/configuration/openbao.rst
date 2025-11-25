@@ -466,6 +466,7 @@ Pulp TLS
 .. warning::
 
    For clouds in production consider the impact of enabling TLS on specific hosts as Docker daemon will be restarted and this will disrupt deployments of Ceph Reef and older.
+   As Vault is deprecated and will be removed in future releases this process only works for OpenBao
 
 To enable TLS for Pulp we first need to generate the certificates and the proceed to configure all hosts that use Pulp to add the root CA to their truststore.
 
@@ -481,9 +482,10 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
 
-3. Enable TLS for Pulp in pulp.yml
+3. Enable TLS for Pulp
 
    .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/pulp.yml
 
       # Whether to enable TLS for Pulp.
       pulp_enable_tls: true
