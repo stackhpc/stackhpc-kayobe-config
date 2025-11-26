@@ -89,6 +89,43 @@
             --raid-interface agent {{ inventory_hostname }}
           when:
             - kayobe_clean_done == ""
+            - ironic_target_raid_config is defined
+
+        - name: Move to neutron interface, assuming its a multi-tenant node
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface neutron
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "neutron"
+
+        - name: Move to flat interface, if required
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface flat --driver-info inspection_network={{ ironic_flat_provisioning_network }} --driver-info cleaning_network={{ ironic_flat_provisioning_network }} --driver-info provision_network={{ ironic_flat_provisioning_network }}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "flat"
+
+        - name: Remove network overrides for multi-tenant nodes
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node unset {{ inventory_hostname }} --driver-info inspection_network --driver-info cleaning_network --driver-info provision_network
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - kayobe_clean_done == ""
+            - ironic_network_interface == "neutron"
 
         - name: Clean node and make it available
           ansible.builtin.command:
