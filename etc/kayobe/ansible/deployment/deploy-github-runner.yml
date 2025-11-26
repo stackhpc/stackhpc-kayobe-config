@@ -7,11 +7,11 @@
     - role: geerlingguy.docker
   tasks:
     - name: Set custom_env fact if any proxy variable is defined
-      set_fact:
+      ansible.builtin.set_fact:
         custom_env: |
           http_proxy={{ http_proxy | default('') }}
           https_proxy={{ https_proxy | default('') }}
-          no_proxy={{ (['localhost', '127.0.0.1', '127.0.0.2'] + (no_proxy | default([]))) | join(',') }}
+          no_proxy={{ (['localhost', '127.0.0.1', '127.0.0.2'] + (no_proxy | default([]))) | unique | join(',') }}
       when: >
         http_proxy is defined or
         https_proxy is defined or
