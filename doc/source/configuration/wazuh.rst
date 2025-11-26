@@ -424,7 +424,7 @@ Verification
 The Wazuh agents should register with the Wazuh manager. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
 
-Wazuh manager Removal
+Wazuh manager removal
 ---------------------
 
 The following playbook can be used to purge all Wazuh manager components from a host. This is particularly useful for Wazuh manager servers that are not hosted on an infra-vm.
