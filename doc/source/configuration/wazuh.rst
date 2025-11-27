@@ -205,8 +205,27 @@ Reinstall the role if required:
 
 ``kayobe control host bootstrap``
 
+Secrets
+-------
 
-Edit the playbook and variables to your needs:
+Wazuh requires that secrets or passwords are set for itself and the services with which it communicates.
+Wazuh secrets playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml``.
+Running this playbook will generate and put pertinent security items into secrets
+vault file which will be placed in ``$KAYOBE_CONFIG_PATH/deployment/wazuh-secrets.yml``.
+If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/deployment/wazuh-secrets.yml``
+Remember to encrypt!
+
+Wazuh secrets template is located in ``$KAYOBE_CONFIG_PATH/ansible/templates/wazuh-secrets.yml.j2``.
+It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
+
+
+.. code-block:: console
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml
+
+.. note:: Use ``ansible-vault`` to view the secrets:
+
+  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/deployment/wazuh-secrets.yml``
 
 Wazuh manager configuration
 ---------------------------
@@ -241,28 +260,6 @@ You may need to modify some of the variables, including:
     - $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 You'll need to run ``wazuh-manager.yml`` playbook again to apply customisation.
-
-Secrets
--------
-
-Wazuh requires that secrets or passwords are set for itself and the services with which it communiticates.
-Wazuh secrets playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml``.
-Running this playbook will generate and put pertinent security items into secrets
-vault file which will be placed in ``$KAYOBE_CONFIG_PATH/deployment/wazuh-secrets.yml``.
-If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/deployment/wazuh-secrets.yml``
-Remember to encrypt!
-
-Wazuh secrets template is located in ``$KAYOBE_CONFIG_PATH/ansible/templates/wazuh-secrets.yml.j2``.
-It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
-
-
-.. code-block:: console
-
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml
-
-.. note:: Use ``ansible-vault`` to view the secrets:
-
-  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/deployment/wazuh-secrets.yml``
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
