@@ -21,7 +21,14 @@ rm -rf image-scan-output
 mkdir -p image-scan-output
 
 # Get built container images
-docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" > $1-scanned-container-images.txt
+output_file="$1-scanned-container-images.txt"
+
+docker image ls \
+  --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
+  --format "{{.Repository}}:{{.Tag}}" \
+  > "$output_file"
+
+cat "$output_file"
 
 # Make a file of imagename:tag
 images=$(grep --invert-match --no-filename ^REPOSITORY $1-scanned-container-images.txt | sed 's/ \+/:/g' | cut -f 1,2 -d:)
