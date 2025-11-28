@@ -25,15 +25,18 @@
       when: kolla_enable_ovn | bool
       block:
         - name: Find the OVN NB DB leader
-          ansible.builtin.command: docker exec ovn_nb_db ovn-nbctl get-connection
+          ansible.builtin.command: >-
+            docker exec ovn_nb_db
+            ovs-appctl -t /var/run/ovn/ovnnb_db.ctl
+            cluster/status OVN_Northbound
           changed_when: false
           failed_when: false
-          register: ovn_check_result
+          register: ovn_cluster_status
           check_mode: false
 
         - name: Group hosts by leader/follower role
           ansible.builtin.group_by:
-            key: ovn_nb_{{ 'leader' if ovn_check_result.rc == 0 else 'follower' }}
+            key: "{{ 'ovn_nb_leader' if 'Role: leader' in ovn_cluster_status.stdout else 'ovn_nb_follower' }}"
           changed_when: false
 
         - name: Assert one leader exists

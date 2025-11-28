@@ -150,24 +150,6 @@ To mitigate the impact of these changes, two scripts have been added:
 Known issues
 ============
 
-Pulp Upgrade
-------------
-
-It was found that if pulp is upgraded from 3.43.1 to 3.81.0, most of pulp
-APIs become unusable because of a bug related to missing response header
-when docker clients expect it.
-
-Generally pulp is considered to be safe to completely destroy and re-deploy.
-So, users are encouraged to upgrade pulp in this method.
-
-If your pulp has custom built images, we recommended either not doing pulp
-upgrade by pinning pulp version at ``seed_pulp_container.pulp.tag`` in
-``$KAYOBE_CONFIG_PATH/seed.yml`` (``$KAYOBE_CONFIG_PATH/environments/<env>/seed.yml``
-if using environments) to 3.43.1,
-
-or pulling all custom built images before destroying pulp then push them again
-after pulp upgrade is done.
-
 Cinder
 ------
 

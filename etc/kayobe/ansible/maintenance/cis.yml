@@ -1,5 +1,5 @@
 ---
-- name: Security hardening
+- name: CIS - Prerequisites
   hosts: cis-hardening
   become: true
   tags:
@@ -31,12 +31,18 @@
         - "{{ kayobe_ansible_user }}"
         - "{{ kolla_ansible_user }}"
 
+- name: Security hardening
+  hosts: cis-hardening
+  become: true
+  tags:
+    - cis
+  tasks:
     - name: Run CIS hardening role (RHEL 9)
       ansible.builtin.include_role:
         name: ansible-lockdown.rhel9_cis
       when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '9'
 
-    - name: Run CIS hardening role (Ubuntu 22)
+    - name: Run CIS hardening role (Ubuntu 24)
       ansible.builtin.include_role:
-        name: ansible-lockdown.ubuntu22_cis
-      when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '22'
+        name: ansible-lockdown.ubuntu24_cis
+      when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '24'
