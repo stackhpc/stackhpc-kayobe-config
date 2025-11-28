@@ -20,6 +20,12 @@
         state: present
       when: ansible_facts.distribution == 'Ubuntu'
 
+    - name: Gather passwd entries
+      ansible.builtin.getent:
+        database: passwd
+      become: true
+      changed_when: false
+
     - name: Ensure service accounts have no expiry options set
       # This is to workaround an issue where we set the expiry to 365 days on kayobe
       # service accounts in a previous iteration of the CIS benchmark hardening
@@ -30,6 +36,7 @@
       with_items:
         - "{{ kayobe_ansible_user }}"
         - "{{ kolla_ansible_user }}"
+      when: item in ansible_facts.getent_passwd
 
 - name: Security hardening
   hosts: cis-hardening
