@@ -73,3 +73,5 @@ Run the setup script:
 .. parsed-literal::
 
    ./automated-deployment.sh
+
+foo
