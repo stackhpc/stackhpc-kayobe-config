@@ -496,6 +496,20 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
       kayobe seed service reconfigure -t seed-deploy-containers -kt none
 
+5. Set CA for docker registry
+
+   .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/container-engine.yml
+
+      # CA of docker registry
+      docker_registry_ca: "{{ kayobe_env_config_path ~ '/openbao/OS-TLS-INT.crt' if pulp_enable_tls | bool else '' }}"
+
+6. Perform host configure to reconfigure APT, DNF and docker/podman settings
+
+   .. code-block::
+
+      kayobe overcloud host configure -t dnf,apt,container-engine
+
 Barbican integration
 ====================
 
