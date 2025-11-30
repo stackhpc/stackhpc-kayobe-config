@@ -45,8 +45,14 @@ file_prep() {
 
 # Gather image lists
 get_images() {
-  docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" > $1-scanned-container-images.txt
-  grep --invert-match --no-filename ^REPOSITORY $1-scanned-container-images.txt | sed 's/ \+/:/g' | cut -f 1,2 -d:
+  local output_file="$1-scanned-container-images.txt"
+  
+  docker image ls \
+    --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
+    --format "{{.Repository}}:{{.Tag}}" \
+    > "$output_file"
+    
+  cat "$output_file"
 }
 
 # Generate ignored vulnerabilities file

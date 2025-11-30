@@ -255,7 +255,7 @@ generate_openstack_env_script() {
 
 python3 -m venv $BASE_PATH/venvs/openstack
 $BASE_PATH/venvs/openstack/bin/pip install -U pip
-$BASE_PATH/venvs/openstack/bin/pip install -U python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/stackhpc/$OPENSTACK_RELEASE/upper-constraints.txt
+$BASE_PATH/venvs/openstack/bin/pip install -U python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/$OPENSTACK_RELEASE/upper-constraints.txt
 cat > $BASE_PATH/openstack-env.sh <<EOF
 
 source $BASE_PATH/venvs/openstack/bin/activate
