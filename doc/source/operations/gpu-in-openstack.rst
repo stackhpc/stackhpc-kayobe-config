@@ -65,7 +65,7 @@ configuration or trigger the playbook manually:
 
     kayobe overcloud host configure --limit compute_a100,compute_v100,compute_multi_gpu
     # OR
-    kayobe playbook run --playbook $KAYOBE_CONFIG_PATH/ansible/maintenance/pci-passthrough.yml --limit compute_a100,compute_v100,compute_multi_gpu
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/pci-passthrough.yml --limit compute_a100,compute_v100,compute_multi_gpu
 
 The playbook will apply the necessary configuraion and reboot the hosts if
 required.
