@@ -71,6 +71,7 @@ The playbook will apply the necessary configuraion and reboot the hosts if
 required.
 
 Once host configuration is complete, deploy Nova:
+
 .. code-block:: console
 
     kayobe overcloud service deploy -kt nova
