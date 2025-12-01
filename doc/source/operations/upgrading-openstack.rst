@@ -132,7 +132,7 @@ For example:
       enabled: "{{ seed_pulp_container_enabled | bool }}"
 
 Ansible playbook subdirectories
---------------------------------------
+-------------------------------
 
 The playbooks under ``etc/kayobe/ansible`` have been subdivided into different
 categories to make them easier to navigate. This change may result in merge
@@ -146,6 +146,10 @@ To mitigate the impact of these changes, two scripts have been added:
   deploy-os-capacity-exporter.yml`` returns ``deployment/``
 * ``tools/magic-symlink-fix.sh`` - Uses the previous script to attempt to fix
   any broken symlinks in the kayobe configuration.
+
+If playbooks are referenced in different methods other than symlinks, they'll
+need to be manually resolved by operators. (e.g. Shell scripts running
+playbooks with file paths, ``import_playbook`` command in custom playbooks)
 
 Known issues
 ============
@@ -369,6 +373,14 @@ You can find more information from the :ref:`beokay` documentation.
 
    For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
    option to specify Beokay to use Python 3.12 as it is not the default.
+
+Kayobe Automation
+~~~~~~~~~~~~~~~~~
+
+For deployments using Kayobe Automation CI, the Kayobe Docker image also needs
+to be rebuilt with Python 3.12. In GitHub, run the ``Build Kayobe Docker
+Image`` workflow. In GitLab, run the ``build_kayobe_image`` pipeline. In either
+case, the image will automatically be rebuilt with Python 3.12.
 
 Preparation
 ===========

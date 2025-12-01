@@ -1,0 +1,105 @@
+---
+# This is the playbook version of the wazuh purge tool from:
+# https://github.com/stackhpc/wazuh-server-purge
+
+- name: Purge Wazuh Server Components
+  hosts: wazuh-manager
+  become: true
+  become_user: root
+  tasks:
+# Dashboard
+    - name: Disable and stop wazuh-dashboard service
+      ansible.builtin.systemd_service:
+        name: wazuh-dashboard
+        state: stopped
+        enabled: no
+        daemon_reload: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
+
+    - name: Remove wazuh-dashboard and files
+      ansible.builtin.package:
+        name: wazuh-dashboard
+        state: absent
+
+    - name: Remove wazuh-dashboard directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/wazuh-dashboard
+        - /usr/share/wazuh-dashboard
+        - /etc/wazuh-dashboard
+# Manager
+    - name: Remove wazuh-manager service
+      ansible.builtin.systemd_service:
+        name: wazuh-manager
+        state: stopped
+        enabled: no
+        daemon_reload: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
+
+    - name: Remove wazuh-manager and files
+      ansible.builtin.package:
+        name: wazuh-manager
+        state: absent
+
+    - name: Remove wazuh-manager directories
+      ansible.builtin.file:
+        path: /var/ossec
+        state: absent
+# Filebeat
+    - name: Disable and stop filebeat service
+      ansible.builtin.systemd_service:
+        name: filebeat
+        state: stopped
+        enabled: no
+        daemon_reload: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
+
+    - name: Remove filebeat and files
+      ansible.builtin.package:
+        name: filebeat
+        state: absent
+
+    - name: Remove filebeat directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/filebeat
+        - /usr/share/filebeat
+        - /etc/filebeat
+# Indexer
+    - name: Disable and stop wazuh-indexer service
+      ansible.builtin.systemd_service:
+        name: wazuh-indexer
+        state: stopped
+        enabled: no
+        daemon_reload: true
+      register: svc_result
+      failed_when:
+        - svc_result.failed
+        - "'Could not find the requested service' not in svc_result.msg"
+
+    - name: Remove wazuh-indexer and files
+      ansible.builtin.package:
+        name: wazuh-indexer
+        state: absent
+
+    - name: Remove wazuh-indexer directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/wazuh-indexer
+        - /usr/share/wazuh-indexer
+        - /etc/wazuh-indexer
