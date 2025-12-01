@@ -191,6 +191,7 @@ The ADVise tool assumes that hardware introspection data has already been gather
 The ``extra-hardware`` disk builder element enabled when building the IPA image for the required data to be available.
 
 To build ipa image with extra-hardware  you need to edit ``ipa.yml`` and add this:
+
 .. code-block:: console
 
    # Whether to build IPA images from source.
