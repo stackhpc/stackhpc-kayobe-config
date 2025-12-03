@@ -36,7 +36,7 @@
 
         - name: Check BMC back up again
           ansible.builtin.uri:
-            url: "https://{{ ironic_driver_info['redfish_address'] }}"
+            url: "{{ ironic_redfish_address + '/redfish/v1' }}"
             method: GET
             status_code: 200
             validate_certs: false
@@ -44,7 +44,7 @@
           register: uri_output
           until: uri_output.status == 200
           delay: 5
-          retries: 24 # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
+          retries: 24  # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
       when: bmnode_prov in ['deploy failed', 'error', 'clean failed']
 
     - name: Manage baremetals in 'clean failed' state

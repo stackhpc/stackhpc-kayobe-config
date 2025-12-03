@@ -34,10 +34,13 @@
         name: stackhpc.libvirt-vm
       vars:
         libvirt_vm_arch: x86_64
+        libvirt_vm_default_uuid_deterministic: true
         libvirt_vms:
           - state: present
             name: "{{ inventory_hostname }}"
-            xml_file: "{{ sushy_directory }}/vbmc-node.xml.j2"
+            memory_mb: '4660'
+            vcpus: '2'
+            cpu_mode: 'host-model'
             volumes:
               - name: '{{ inventory_hostname }}.qcow2'
                 device: 'disk'
@@ -45,7 +48,10 @@
                 capacity: '20GB'
                 pool: 'default'
             interfaces:
-              - network: 'breth1'
+              - network: 'default'
+                source:
+                  dev: 'breth1'
+                  mode: 'bridge'
             start: false
             autostart: false
             boot_firmware: uefi

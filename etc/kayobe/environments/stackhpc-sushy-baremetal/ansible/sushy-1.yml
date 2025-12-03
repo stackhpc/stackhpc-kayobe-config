@@ -1,0 +1,26 @@
+---
+- name: Set up Sushy Host
+  hosts: "{{ sushy_host | default('localhost') }}"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Install package dependencies
+      ansible.builtin.dnf:
+        name:
+          - qemu-kvm
+          - libvirt
+          - libvirt-devel
+          - python3-devel
+        state: present
+
+    - name: Start and enable the QEMU service
+      ansible.builtin.systemd_service:
+        name: virtqemud
+        state: started
+        enabled: true
+
+    - name: Start and enable the virtual storage service
+      ansible.builtin.systemd_service:
+        name: virtstoraged
+        state: started
+        enabled: true

@@ -18,7 +18,7 @@
       ansible.builtin.assert:
         that:
           - ironic_driver is defined
-          - ironic_driver_info is defined
+          - ironic_redfish_address is defined
           - ironic_properties is defined
           - ironic_resource_class is defined
         fail_msg: One or more Ironic variables are undefined.
@@ -52,60 +52,34 @@
 
         - name: Check BMC is up
           ansible.builtin.uri:
-            url: "{{ ironic_driver_info['redfish_address'] + '/redfish/v1' }}"
+            url: "{{ ironic_redfish_address + '/redfish/v1' }}"
             method: GET
             status_code: 200
             validate_certs: false
             timeout: 10
 
-        - name: Get firmware inventory (to check redfish auth)
-          community.general.redfish_info:
-            category: Update
-            command: GetFirmwareInventory
-            baseuri: "{{ ironic_redfish_address }}"
-            username: "{{ ironic_redfish_username }}"
-            password: "{{ ironic_redfish_password }}"
-          when: ironic_redfish_username is defined
-          register: firmware_inventory
-          failed_when: not firmware_inventory.redfish_facts.firmware.ret
-
-        # - name: Print fetched information
-        #   ansible.builtin.debug:
-        #     msg: "{{ firmware_inventory.redfish_facts.firmware | to_nice_json }}"
-
-        - name: Reboot BMC
-          community.general.redfish_command:
-            category: Manager
-            command: PowerReboot
-            resource_id: 1
-            baseuri: "{{ ironic_redfish_address }}"
-            username: "{{ ironic_redfish_username }}"
-            password: "{{ ironic_redfish_password }}"
-          when:
-            - kayobe_bmc_up == ""
-            - ironic_redfish_username is defined
-
-        # - name: Wait 300 seconds for port 443 to become open
-        #   ansible.builtin.wait_for:
-        #     port: 443
-        #     host: "{{ ironic_redfish_address }}"
-        #     delay: 20
-        #     timeout: 300
+        # #TODO(ClaudiaWatson): add an optional BMC reboot into the flow
+        # - name: Reboot BMC
+        #   community.general.redfish_command:
+        #     category: Manager
+        #     command: PowerReboot
+        #     username: "{{ ironic_redfish_username }}"
+        #     password: "{{ ironic_redfish_password }}"
         #   when:
         #     - kayobe_bmc_up == ""
         #     - ironic_redfish_username is defined
 
         - name: Check BMC back up again
           ansible.builtin.uri:
-            url: "{{ ironic_driver_info['redfish_address'] }}/redfish/v1"
+            url: "{{ ironic_redfish_address + '/redfish/v1' }}"
             method: GET
             status_code: 200
             validate_certs: false
             timeout: 10
           register: uri_output
           until: uri_output.status == 200
-          delay: 5
-          retries: 24 # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
+          delay: 2
+          retries: 5  # Retries for 5 * 2 seconds = 10 seconds
 
         - name: Note when we are able to reach the bmc, the first time
           ansible.builtin.command:
