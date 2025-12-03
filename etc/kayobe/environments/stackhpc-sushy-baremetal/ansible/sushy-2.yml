@@ -18,34 +18,6 @@
       community.general.dnf_config_manager:
         name: devel
         state: enabled
-
-    - name: Install package dependencies
-      ansible.builtin.dnf:
-        name:
-          - qemu-kvm
-          - libvirt
-          - libvirt-devel
-          - python3-devel
-        state: present
-
-    - name: Start and enable the QEMU service
-      ansible.builtin.systemd_service:
-        name: virtqemud
-        state: started
-        enabled: true
-
-    - name: Start and enable the virtual stroage service
-      ansible.builtin.systemd_service:
-        name: virtstoraged
-        state: started
-        enabled: true
-
-    - name: Start and enable the virtual network service
-      ansible.builtin.systemd_service:
-        name: virtnetworkd
-        state: started
-        enabled: true
-
     - name: Create Sushy virtualenv
       ansible.builtin.pip:
         name:

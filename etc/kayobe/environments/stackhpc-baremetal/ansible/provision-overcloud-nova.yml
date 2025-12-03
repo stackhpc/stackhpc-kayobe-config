@@ -47,8 +47,6 @@
           when:
             - bmnode.provision_state not in ["active", "available"]
 
-## flavor creation only seems to show in openstack flavor list when
-## is_public: true, deploy server still can't find flavor.
         - name: Create flavor for baremetal
           openstack.cloud.compute_flavor:
             state: present
@@ -69,10 +67,10 @@
 
         - name: Create key pair for baremetal
           openstack.cloud.keypair:
-              state: present
-              name:  "{{ ironic_provision_key_name }}"
-              # use the key kayobe is using to bootstrap with?
-              public_key_file: "{{ ssh_public_key_path }}"
+            state: present
+            name: "{{ ironic_provision_key_name }}"
+            # use the key kayobe is using to bootstrap with?
+            public_key_file: "{{ ssh_public_key_path }}"
 
         - name: Create port
           openstack.cloud.port:
@@ -100,7 +98,7 @@
             flavor: "{{ flavor }}"
             key_name: "{{ key_name }}"
             availability_zone: "::{{ bmnode.id }}"
-            timeout: 1800 # wait 30 mins for build
+            timeout: 1800  # wait 30 mins for build
             config_drive: yes
           delegate_to: localhost
           register: server

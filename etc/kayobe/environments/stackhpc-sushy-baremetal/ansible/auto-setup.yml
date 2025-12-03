@@ -7,23 +7,23 @@
     KAYOBE_CONFIG_PATH: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}"
 
   tasks:
-    - name: Run Sushy Emulator playbook
+    - name: Run Sushy 1 playbook
       ansible.builtin.shell: |
           source "$VIRTUAL_ENV/bin/activate"
-          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/sushy-emulator.yml"
+          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/sushy-1.yml"
       args:
         executable: /bin/bash
 
-    - name: Run Generate mac addresses playbook
-      ansible.builtin.shell: |
-          source "$VIRTUAL_ENV/bin/activate"
-          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/generate-mac-addresses.yml"
-      args:
-        executable: /bin/bash
-
-    - name: Run Create virtual baremetal playbook
+    - name: Run Create Virtual Baremetal playbook
       ansible.builtin.shell: |
           source "$VIRTUAL_ENV/bin/activate"
           kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/create-virtual-baremetal.yml"
+      args:
+        executable: /bin/bash
+
+    - name: Run Sushy 2 playbook
+      ansible.builtin.shell: |
+          source "$VIRTUAL_ENV/bin/activate"
+          kayobe playbook run "$KAYOBE_CONFIG_PATH/environments/stackhpc-sushy-baremetal/ansible/sushy-2.yml"
       args:
         executable: /bin/bash
