@@ -220,6 +220,7 @@ Create a new playbook or update an existing on to apply the roles:
        - name: reboot
          set_fact:
            kayobe_needs_reboot: true
+
    - name: Reboot when required
      hosts: iommu:vgpu
      tags:
