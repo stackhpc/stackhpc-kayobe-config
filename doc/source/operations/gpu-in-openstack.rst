@@ -281,41 +281,41 @@ Configure the VGPU devices:
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/inventory/group_vars/compute_vgpu/vgpu
 
-    #nvidia-692 GRID A100D-4C
-    #nvidia-693 GRID A100D-8C
-    #nvidia-694 GRID A100D-10C
-    #nvidia-695 GRID A100D-16C
-    #nvidia-696 GRID A100D-20C
-    #nvidia-697 GRID A100D-40C
-    #nvidia-698 GRID A100D-80C
-    #nvidia-699 GRID A100D-1-10C
-    #nvidia-700 GRID A100D-2-20C
-    #nvidia-701 GRID A100D-3-40C
-    #nvidia-702 GRID A100D-4-40C
-    #nvidia-703 GRID A100D-7-80C
-    #nvidia-707 GRID A100D-1-10CME
-    vgpu_definitions:
-        # Configuring a MIG backed VGPU
-        - pci_address: "0000:17:00.0"
-          virtual_functions:
-            - mdev_type: nvidia-700
-              index: 0
-            - mdev_type: nvidia-700
-              index: 1
-            - mdev_type: nvidia-700
-              index: 2
-            - mdev_type: nvidia-699
-              index: 3
-          mig_devices:
-            "1g.10gb": 1
-            "2g.20gb": 3
-        # Configuring a card in a time-sliced configuration (non-MIG backed)
-        - pci_address: "0000:65:00.0"
-          virtual_functions:
-            - mdev_type: nvidia-697
-              index: 0
-            - mdev_type: nvidia-697
-              index: 1
+   #nvidia-692 GRID A100D-4C
+   #nvidia-693 GRID A100D-8C
+   #nvidia-694 GRID A100D-10C
+   #nvidia-695 GRID A100D-16C
+   #nvidia-696 GRID A100D-20C
+   #nvidia-697 GRID A100D-40C
+   #nvidia-698 GRID A100D-80C
+   #nvidia-699 GRID A100D-1-10C
+   #nvidia-700 GRID A100D-2-20C
+   #nvidia-701 GRID A100D-3-40C
+   #nvidia-702 GRID A100D-4-40C
+   #nvidia-703 GRID A100D-7-80C
+   #nvidia-707 GRID A100D-1-10CME
+   vgpu_definitions:
+       # Configuring a MIG backed VGPU
+       - pci_address: "0000:17:00.0"
+         virtual_functions:
+           - mdev_type: nvidia-700
+             index: 0
+           - mdev_type: nvidia-700
+             index: 1
+           - mdev_type: nvidia-700
+             index: 2
+           - mdev_type: nvidia-699
+             index: 3
+         mig_devices:
+           "1g.10gb": 1
+           "2g.20gb": 3
+       # Configuring a card in a time-sliced configuration (non-MIG backed)
+       - pci_address: "0000:65:00.0"
+         virtual_functions:
+           - mdev_type: nvidia-697
+             index: 0
+           - mdev_type: nvidia-697
+             index: 1
 
 .. _NVIDIA Kolla Ansible Configuration:
 
@@ -330,34 +330,34 @@ Map through the kayobe inventory groups into kolla:
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/kolla.yml
 
-    kolla_overcloud_inventory_top_level_group_map:
-      control:
-        groups:
-          - controllers
-      network:
-        groups:
-          - network
-      compute_cpu:
-        groups:
-          - compute_cpu
-      compute_gpu:
-        groups:
-          - compute_gpu
-      compute_multi_instance_gpu:
-        groups:
-          - compute_multi_instance_gpu
-      compute_vgpu:
-        groups:
-          - compute_vgpu
-      compute:
-        groups:
-          - compute
-      monitoring:
-        groups:
-          - monitoring
-      storage:
-        groups:
-          "{{ kolla_overcloud_inventory_storage_groups }}"
+   kolla_overcloud_inventory_top_level_group_map:
+     control:
+       groups:
+         - controllers
+     network:
+       groups:
+         - network
+     compute_cpu:
+       groups:
+         - compute_cpu
+     compute_gpu:
+       groups:
+         - compute_gpu
+     compute_multi_instance_gpu:
+       groups:
+         - compute_multi_instance_gpu
+     compute_vgpu:
+       groups:
+         - compute_vgpu
+     compute:
+       groups:
+         - compute
+     monitoring:
+       groups:
+         - monitoring
+     storage:
+       groups:
+         "{{ kolla_overcloud_inventory_storage_groups }}"
 
 Where the ``compute_<suffix>`` groups have been added to the kayobe defaults.
 
@@ -413,21 +413,21 @@ Below is a snippet of openstack-config for defining a project, and a security gr
       port_range_min: 7070
       port_range_max: 7070
 
-    secgroup_nvidia_dls:
-      name: nvidia-dls
-      project: "{{ project_cloud_services.name }}"
-      rules: "{{ secgroup_rules_nvidia_dls }}"
+  secgroup_nvidia_dls:
+    name: nvidia-dls
+    project: "{{ project_cloud_services.name }}"
+    rules: "{{ secgroup_rules_nvidia_dls }}"
 
-    openstack_security_groups:
-      - "{{ secgroup_nvidia_dls }}"
+  openstack_security_groups:
+    - "{{ secgroup_nvidia_dls }}"
 
-    project_cloud_services:
-      name: "cloud-services"
-      description: "Internal Cloud services"
-      project_domain: default
-      user_domain: default
-      users: []
-      quotas: "{{ quotas_project }}"
+  project_cloud_services:
+    name: "cloud-services"
+    description: "Internal Cloud services"
+    project_domain: default
+    user_domain: default
+    users: []
+    quotas: "{{ quotas_project }}"
 
 Booting the VM:
 
@@ -526,7 +526,7 @@ Disk image builder recipe to automatically license VGPU on boot
 element to configure the nvidia-gridd service in VGPU mode. This allows you to boot VMs that automatically license themselves.
 Snippets of ``openstack-config`` that allow you to do this are shown below:
 
-.. code-block:: shell
+.. code-block:: yaml
 
   image_rocky9_nvidia:
     name: "Rocky9-NVIDIA"
