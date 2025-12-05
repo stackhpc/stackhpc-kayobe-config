@@ -79,21 +79,15 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml \
-       -e stackhpc_pulp_sync_ubuntu_jammy=true \
-       -e stackhpc_pulp_sync_ubuntu_noble=true
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml \
-       -e stackhpc_pulp_sync_ubuntu_jammy=true \
-       -e stackhpc_pulp_sync_ubuntu_noble=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml -e stackhpc_pulp_sync_ubuntu_noble=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml -e stackhpc_pulp_sync_ubuntu_noble=true
 
 Once the host package content has been tested in a test/staging environment, it
 may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml \
-       -e stackhpc_pulp_sync_ubuntu_jammy=true \
-       -e stackhpc_pulp_sync_ubuntu_noble=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml -e stackhpc_pulp_sync_ubuntu_noble=true
 
 To sync container images:
 
