@@ -58,10 +58,10 @@
       vars:
         cloud_facts:
           internet_connectivity: "{{ hostvars | group_hostvars_by_var('internet_connectivity') }}"
-          seed_node_is_vm: "{{ hostvars[groups['seed'][0]]['seed_node_is_vm'] | default('N/A') if groups ['seed'] else 'N/A' }}"
+          seed_node_is_vm: "{{ hostvars[groups['seed'][0]]['seed_node_is_vm'] | default('N/A') if groups['seed'] else 'N/A' }}"
           distributions: "{{ hostvars | group_hostvars_by_var('distribution') }}"
           dist_releases: "{{ hostvars | group_hostvars_by_var('distribution_release') }}"
-          kernel_versions: "{{ hostvars | group_hostvars_by_var('kernel_version','stdout') }}"
+          kernel_versions: "{{ hostvars | group_hostvars_by_var('kernel_version', 'stdout') }}"
           deployed_containers: "{{ hostvars | get_hostvars_by_host('containers_list', 'stdout_lines') | default({}) }}"
           openstack_release: "{{ openstack_release }}"
           openstack_release_name: "{{ openstack_release_codename }}"
