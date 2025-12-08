@@ -17,6 +17,7 @@ class OSRelease:
 @dataclass
 class OpenStackRelease:
     version: str
+    previous_version: str
     os_releases: t.List[OSRelease]
 
 
@@ -33,9 +34,9 @@ UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
 UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
-    OpenStackRelease("2023.1", [ROCKY_9, UBUNTU_JAMMY]),
-    OpenStackRelease("2024.1", [ROCKY_9, UBUNTU_JAMMY]),
-    OpenStackRelease("2025.1", [ROCKY_9, UBUNTU_NOBLE]),
+    OpenStackRelease("2023.1", "zed", [ROCKY_9, UBUNTU_JAMMY]),
+    OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
+    OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
 VERSION_HIERARCHY = ["zed", "2023.1", "2024.1", "2025.1"]
@@ -43,7 +44,17 @@ VERSION_HIERARCHY = ["zed", "2023.1", "2024.1", "2025.1"]
 
 def main() -> None:
     scenario = random_scenario()
-    inputs = generate_inputs(scenario)
+    inputs = {
+        "os_distribution": scenario.os_release.distribution,
+        "os_release": scenario.os_release.release,
+        "ssh_username": scenario.os_release.ssh_username,
+        "neutron_plugin": scenario.neutron_plugin,
+        "upgrade": scenario.upgrade,
+        "stackhpc_kayobe_config_version": get_branch(scenario.openstack_release.version),
+        "stackhpc_kayobe_config_previous_version": get_branch(scenario.openstack_release.previous_version),
+        "terraform_kayobe_multinode_version": get_tkm_version(scenario.openstack_release.version),
+        "terraform_kayobe_multinode_previous_version": get_tkm_version(scenario.openstack_release.previous_version),
+    }
     for name, value in inputs.items():
         write_output(name, value)
 
@@ -56,36 +67,15 @@ def random_scenario() -> Scenario:
     return Scenario(openstack_release, os_release, neutron_plugin, upgrade)
 
 
-def generate_inputs(scenario: Scenario) -> t.Dict[str, str]:
-    branch = get_branch(scenario.openstack_release.version)
-    previous_branch = get_branch(
-        VERSION_HIERARCHY[
-            VERSION_HIERARCHY.index(scenario.openstack_release.version) - 1
-        ]
-    )
-    terraform_kayobe_multinode_version = get_tkm_version(
-        scenario.openstack_release.version
-    )
-    inputs = {
-        "os_distribution": scenario.os_release.distribution,
-        "os_release": scenario.os_release.release,
-        "ssh_username": scenario.os_release.ssh_username,
-        "neutron_plugin": scenario.neutron_plugin,
-        "upgrade": scenario.upgrade,
-        "stackhpc_kayobe_config_version": branch,
-        "stackhpc_kayobe_config_previous_version": previous_branch,
-        "terraform_kayobe_multinode_version": terraform_kayobe_multinode_version,
-    }
-    return inputs
-
-
 def get_branch(version: str) -> str:
     return f"stackhpc/{version}"
 
 
 def get_tkm_version(version: str) -> str:
-    if version in ["zed", "2023.1"]:
+    if version == "zed":
         return "ea61ea1730e179e05e8f0e58b759267664c555e7"
+    elif version in ["2023.1", "2024.1"]:
+        return "stackhpc/2024.1" # This version is targeted to support Caracal or older releases
     else:
         return "main"
 
