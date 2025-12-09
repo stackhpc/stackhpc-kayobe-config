@@ -186,52 +186,6 @@ path using ``file`` as the url scheme e.g:
 
 See :ref:`NVIDIA Role Configuration`.
 
-.. _NVIDIA OS Configuration:
-
-OS Configuration
-----------------
-
-Host OS configuration is done by using roles in the `stackhpc.linux <https://github.com/stackhpc/ansible-collection-linux>`_ ansible collection.
-
-Create a new playbook or update an existing on to apply the roles:
-
-.. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/ansible/host-configure.yml
-
-   ---
-   - hosts: iommu
-     tags:
-       - iommu
-     tasks:
-       - import_role:
-           name: stackhpc.linux.iommu
-     handlers:
-       - name: reboot
-         set_fact:
-           kayobe_needs_reboot: true
-
-   - hosts: vgpu
-     tags:
-       - vgpu
-     tasks:
-       - import_role:
-           name: stackhpc.linux.vgpu
-     handlers:
-       - name: reboot
-         set_fact:
-           kayobe_needs_reboot: true
-
-   - name: Reboot when required
-     hosts: iommu:vgpu
-     tags:
-       - reboot
-     tasks:
-       - name: Reboot
-         reboot:
-           reboot_timeout: 3600
-         become: true
-         when: kayobe_needs_reboot | default(false) | bool
-
 Ansible Inventory Configuration
 -------------------------------
 
