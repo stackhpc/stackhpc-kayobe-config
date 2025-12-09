@@ -186,52 +186,6 @@ path using ``file`` as the url scheme e.g:
 
 See :ref:`NVIDIA Role Configuration`.
 
-.. _NVIDIA OS Configuration:
-
-OS Configuration
-----------------
-
-Host OS configuration is done by using roles in the `stackhpc.linux <https://github.com/stackhpc/ansible-collection-linux>`_ ansible collection.
-
-Create a new playbook or update an existing on to apply the roles:
-
-.. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/ansible/host-configure.yml
-
-   ---
-   - hosts: iommu
-     tags:
-       - iommu
-     tasks:
-       - import_role:
-           name: stackhpc.linux.iommu
-     handlers:
-       - name: reboot
-         set_fact:
-           kayobe_needs_reboot: true
-
-   - hosts: vgpu
-     tags:
-       - vgpu
-     tasks:
-       - import_role:
-           name: stackhpc.linux.vgpu
-     handlers:
-       - name: reboot
-         set_fact:
-           kayobe_needs_reboot: true
-
-   - name: Reboot when required
-     hosts: iommu:vgpu
-     tags:
-       - reboot
-     tasks:
-       - name: Reboot
-         reboot:
-           reboot_timeout: 3600
-         become: true
-         when: kayobe_needs_reboot | default(false) | bool
-
 Ansible Inventory Configuration
 -------------------------------
 
@@ -276,7 +230,39 @@ hosts can automatically be mapped to these groups by configuring
 Role Configuration
 ------------------
 
-Configure the VGPU devices:
+Look up the supported VGPU devices (here we use an H100 as an example).
+``0000:06:00.0`` is the PCI address of the GPU itself. You can find this with
+``lspci | grep NVIDIA``.
+
+.. code-block:: bash
+
+  # Find the supported mdev types
+  ls /sys/class/mdev_bus/0000\:06\:00.0/mdev_supported_types/
+  nvidia-1130  nvidia-1131  nvidia-1132  nvidia-1133  nvidia-1134  nvidia-1135  nvidia-1136  nvidia-1137  nvidia-1138  nvidia-1139  nvidia-1140  nvidia-1141  nvidia-1142  nvidia-1143  nvidia-1144
+
+  # Find the names of these types.
+  cat /sys/class/mdev_bus/0000\:06\:00.0/mdev_supported_types/*/name
+  NVIDIA H100XM-1-10CME
+  NVIDIA H100XM-1-10C
+  NVIDIA H100XM-1-20C
+  NVIDIA H100XM-2-20C
+  NVIDIA H100XM-3-40C
+  NVIDIA H100XM-4-40C
+  NVIDIA H100XM-7-80C
+  NVIDIA H100XM-4C
+  NVIDIA H100XM-5C
+  NVIDIA H100XM-8C
+  NVIDIA H100XM-10C
+  NVIDIA H100XM-16C
+  NVIDIA H100XM-20C
+  NVIDIA H100XM-40C
+  NVIDIA H100XM-80C
+
+See
+`the NVIDIA VGPU user guide <https://docs.nvidia.com/vgpu/19.0/grid-vgpu-user-guide/index.html>`__`
+for details on device types.
+
+Configure the VGPU devices (here we use an A100 as a different example).
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/inventory/group_vars/compute_vgpu/vgpu
