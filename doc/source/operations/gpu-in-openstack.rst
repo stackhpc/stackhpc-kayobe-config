@@ -230,7 +230,7 @@ hosts can automatically be mapped to these groups by configuring
 Role Configuration
 ------------------
 
-Lookup the supported VGPU devices (here we use an H100 as an example).
+Look up the supported VGPU devices (here we use an H100 as an example).
 ``0000:06:00.0`` is the PCI address of the GPU itself. You can find this with
 ``lspci | grep NVIDIA``.
 
@@ -259,9 +259,11 @@ Lookup the supported VGPU devices (here we use an H100 as an example).
   NVIDIA H100XM-80C
 
 
-Configure the VGPU devices (here we use an A100 as a different example). See
+See
 `the NVIDIA VGPU user guide <https://docs.nvidia.com/vgpu/15.0/grid-vgpu-user-guide/index.html>`__`
 for details on device types.
+
+Configure the VGPU devices (here we use an A100 as a different example). 
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/inventory/group_vars/compute_vgpu/vgpu
