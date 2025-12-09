@@ -258,12 +258,11 @@ Look up the supported VGPU devices (here we use an H100 as an example).
   NVIDIA H100XM-40C
   NVIDIA H100XM-80C
 
-
 See
 `the NVIDIA VGPU user guide <https://docs.nvidia.com/vgpu/15.0/grid-vgpu-user-guide/index.html>`__`
 for details on device types.
 
-Configure the VGPU devices (here we use an A100 as a different example). 
+Configure the VGPU devices (here we use an A100 as a different example).
 
 .. code-block:: yaml
    :caption: $KAYOBE_CONFIG_PATH/inventory/group_vars/compute_vgpu/vgpu
