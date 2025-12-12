@@ -56,11 +56,17 @@ stackhpc_overcloud_dib_env_vars_default:
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
 
+# NB: use --build-arg to pass arguments only to the Dockerfile.
+# Use stackhpc_overcloud_dib_env_vars_ark keys directly for elements (eg 80-cleanup-and-restore-repofiles)
 stackhpc_overcloud_dib_env_vars_ark:
   DIB_CONTAINERFILE_BUILDOPTS: >-
     --build-arg=ROCKY_USE_CUSTOM_DNF_MIRRORS=true
     --build-arg=ROCKY_CUSTOM_DNF_MIRROR_URLS={{ [stackhpc_repo_rocky_9_baseos_url, stackhpc_repo_rocky_9_appstream_url] | join(',') }}
   DIB_DISTRIBUTION_MIRROR: "{{ stackhpc_repo_ubuntu_noble_url if os_distribution == 'ubuntu' else '' }}"
+  # DIB_ROCKY_CONTAINER_STACKHPC_RESTORE_UPSTREAM_REPOFILES=true is important for
+  # the multinode workflow, where we need to install packages (tmux) in cloudinit
+  # or deploy-openstack-config.yml: /etc/yum.repos.d is empty in the built image.
+  DIB_ROCKY_CONTAINER_STACKHPC_RESTORE_UPSTREAM_REPOFILES: true
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
