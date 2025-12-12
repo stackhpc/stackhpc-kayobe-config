@@ -2,11 +2,10 @@
 - name: Install and set up SMART monitoring tools
   hosts: overcloud
   tasks:
-    - name: Ensure smartmontools, jq, nvme-cli and cron/cronie are installed
+    - name: Ensure smartmontools, jq, and cron/cronie are installed
       ansible.builtin.package:
         name:
           - smartmontools
-          - nvme-cli
           - jq
           - "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'cronie' }}"
         state: present
@@ -54,7 +53,7 @@
         enabled: true
       become: true
 
-    - name: Copy smartmon.py and nvmemon.sh from scripts folder
+    - name: Copy smartmon.py from scripts folder
       ansible.builtin.copy:
         src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/scripts/{{ item }}"
         dest: /usr/local/bin/{{ item }}
@@ -63,7 +62,6 @@
         mode: "0700"
       loop:
         - smartmon.py
-        - nvmemon.sh
       become: true
 
     - name: Set PATH Variable for cron
@@ -84,17 +82,6 @@
           mv -f /var/lib/docker/volumes/textfile/_data/smartmon.prom.temp /var/lib/docker/volumes/textfile/_data/smartmon.prom
       become: true
 
-    - name: Schedule cronjob to run nvmemon.sh every 5 minutes and save output to file
-      ansible.builtin.cron:
-        name: SMART metrics for drive monitoring using nvmemon.sh
-        user: root
-        minute: "*/5"
-        job: >-
-          umask 0022 && /usr/local/bin/nvmemon.sh >
-          /var/lib/docker/volumes/textfile/_data/nvmemon.prom.temp &&
-          mv -f /var/lib/docker/volumes/textfile/_data/nvmemon.prom.temp /var/lib/docker/volumes/textfile/_data/nvmemon.prom
-      become: true
-
     - name: Remove old cronjobs if present
       ansible.builtin.cron:
         name: SMART metrics for drive monitoring using {{ item }}
@@ -104,11 +91,15 @@
       loop:
         - smartmon
         - nvmemon
+        - nvmemon.sh
 
-    - name: Remove old smartmon.sh if present
+    - name: Remove old monitoring scripts if present
       ansible.builtin.file:
-        path: /usr/local/bin/smartmon.sh
+        path: /usr/local/bin/{{ item }}
         state: absent
+      loop:
+        - smartmon.sh
+        - nvmemon.sh
       become: true
 
 - name: Gather NVMe drives and generate dwpd ratings
