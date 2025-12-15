@@ -2,6 +2,7 @@
 # The test scenario is randomly selected.
 # The inputs are printed to stdout in GitHub step output key=value format.
 
+import argparse
 from dataclasses import dataclass
 import random
 import typing as t
@@ -43,6 +44,16 @@ VERSION_HIERARCHY = ["zed", "2023.1", "2024.1", "2025.1"]
 
 
 def main() -> None:
+
+    parser = argparse.ArgumentParser(
+        description='Randomly picks a multinode scenario to execute')
+    parser.add_argument(
+        '--output-summary', '-s',
+        type=argparse.FileType('w', encoding='UTF-8'),
+        default=None,
+        help="Generate a markdown table with selected inputs, can be '-' for stdout")
+    args = parser.parse_args()
+
     scenario = random_scenario()
     inputs = {
         "os_distribution": scenario.os_release.distribution,
@@ -57,6 +68,8 @@ def main() -> None:
     }
     for name, value in inputs.items():
         write_output(name, value)
+    if args.output_summary:
+        write_summary(inputs, args.output_summary)
 
 
 def random_scenario() -> Scenario:
@@ -82,6 +95,14 @@ def get_tkm_version(version: str) -> str:
 
 def write_output(name: str, value: str) -> None:
     print(f"{name}={value}")
+
+
+def write_summary(inputs: dict, output: t.TextIO):
+    print(
+        '| Input  | Value |\n'
+        '| -----: | :---- |', file=output)
+    for key, value in inputs.items():
+        print(f'| **{key}** | `{value}`  |', file=output)
 
 
 if __name__ == "__main__":
