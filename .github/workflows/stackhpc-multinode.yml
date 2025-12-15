@@ -46,17 +46,52 @@ name: Multinode
         description: How long to break execution for (minutes) (note that instances are cleaned up after 12h)
         type: number
         default: 60
+      use_my_ssh_key:
+        description: authorise my github ssh keys on Ansible control host
+        default: 'true'
+        type: boolean
       ssh_key:
-        description: SSH public key to authorise on Ansible control host
+        description: SSH public key to authorise on Ansible control host (if different from github ssh keys)
         type: string
       terraform_kayobe_multinode_version:
         description: terraform-kayobe-multinode version
         type: string
         default: main
 jobs:
+  github_user_ssh_keys:
+    name: Retrieve actor github ssh keys
+    runs-on: ubuntu-latest
+    # Map a step output to a job output, this allows other jobs to be gated on the filter results
+    outputs:
+        ssh_keys: ${{ steps.compute_ssh_keys.outputs.ssh_keys }}
+    steps:
+      - name: Retrieve github user ssh keys or use provided ones
+        id: compute_ssh_keys
+        run: |
+          # encode array using jq: https://jstrieb.github.io/posts/github-actions-multiline-outputs/
+          if ${{ inputs.use_my_ssh_key }} && [ -z "${{ inputs.ssh_key }}" ]; then
+            echo "Fetching ssh keys for ${{ github.actor }}"
+            ssh_keys="$(gh api /users/${{ github.actor }}/keys --jq '[.[].key]' | jq --compact-output)"
+            if [ -z "${ssh_keys}" ]; then
+              echo "E: Unable to get '${{ github.actor }}' ssh keys (quotes added for clarity)"
+              exit 1
+            fi
+          elif [ -n "${{ inputs.ssh_key }}" ]; then
+            # single string to JSON array
+            ssh_keys="$(jq --raw-input --compact-output '.|[.]' <<<"${{ inputs.ssh_key }}")"
+          else
+            ssh_keys=''
+          fi
+          echo "ssh_keys=${ssh_keys}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Show ssh_keys
+        run: |
+          echo "${{ steps.compute_ssh_keys.outputs.ssh_keys }}"
   multinode:
     name: Multinode
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.5.0
+    needs: github_user_ssh_keys
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@multi_ssh_keys
     with:
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.os_distribution }}
@@ -67,7 +102,7 @@ jobs:
       break_on: ${{ inputs.break_on }}
       # Workaround loss of number type using fromJSON: https://github.com/orgs/community/discussions/67182
       break_duration: ${{ fromJSON(inputs.break_duration) }}
-      ssh_key: ${{ inputs.ssh_key }}
+      ssh_keys: ${{ needs.github_user_ssh_keys.outputs.ssh_keys }}
       stackhpc_kayobe_config_version: ${{ github.ref_name }}
       # NOTE(upgrade): Reference the PREVIOUS and CURRENT releases here.
       stackhpc_kayobe_config_previous_version: ${{ inputs.upgrade == 'major' && 'stackhpc/2024.1' || 'stackhpc/2025.1' }}
