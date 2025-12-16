@@ -47,7 +47,7 @@ name: Multinode
         type: number
         default: 60
       use_my_ssh_key:
-        description: authorise my github ssh keys on Ansible control host
+        description: Authorise my GitHub SSH keys on Ansible control host
         default: 'true'
         type: boolean
       ssh_key:
@@ -59,13 +59,13 @@ name: Multinode
         default: main
 jobs:
   github_user_ssh_keys:
-    name: Retrieve actor github ssh keys
+    name: Retrieve actor GitHub SSH keys
     runs-on: ubuntu-latest
     # Map a step output to a job output, this allows other jobs to be gated on the filter results
     outputs:
         ssh_keys: ${{ steps.compute_ssh_keys.outputs.ssh_keys }}
     steps:
-      - name: Retrieve github user ssh keys or use provided ones
+      - name: Retrieve GitHub user SSH keys or use provided ones
         id: compute_ssh_keys
         run: |
           # encode array using jq: https://jstrieb.github.io/posts/github-actions-multiline-outputs/
