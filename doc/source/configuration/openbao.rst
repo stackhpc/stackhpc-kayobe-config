@@ -460,6 +460,56 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
 
+Pulp TLS
+========
+
+.. warning::
+
+   For clouds in production consider the impact of enabling TLS on specific hosts as Docker daemon will be restarted and this will disrupt deployments of Ceph Reef and older.
+   As Vault is deprecated and will be removed in future releases this process only works for OpenBao
+
+To enable TLS for Pulp we first need to generate the certificates and the proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+
+1. Generate the certificate
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-generate-certificate.yml
+
+2. Copy CA to truststore
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
+
+3. Enable TLS for Pulp
+
+   .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/pulp.yml
+
+      # Whether to enable TLS for Pulp.
+      pulp_enable_tls: true
+
+4. Redeploy Pulp
+
+   .. code-block::
+
+      kayobe seed service reconfigure -t seed-deploy-containers -kt none
+
+5. Set CA for docker registry
+
+   .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/container-engine.yml
+
+      # CA of docker registry
+      docker_registry_ca: "{{ kayobe_env_config_path ~ '/openbao/OS-TLS-INT.crt' if pulp_enable_tls | bool else '' }}"
+
+6. Perform host configure to reconfigure APT, DNF and docker/podman settings
+
+   .. code-block::
+
+      kayobe overcloud host configure -t dnf,apt,container-engine
+
 Barbican integration
 ====================
 
