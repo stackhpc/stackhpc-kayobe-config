@@ -4,12 +4,12 @@ set -eu
 
 if [ -z ${KAYOBE_CONFIG_PATH:+x} ]; then
     1>&2 echo 'Please source kayobe-env'
-    exit -1
+    exit 1
 fi
 
 if [ -z ${KAYOBE_VAULT_PASSWORD:+x} ]; then
     1>&2 echo 'Please set Kayobe vault password'
-    exit -1
+    exit 1
 fi
 
 if [ -d $KOLLA_CONFIG_PATH/octavia-certificates ]; then
