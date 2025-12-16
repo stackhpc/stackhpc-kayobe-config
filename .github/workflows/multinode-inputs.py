@@ -51,7 +51,7 @@ def main() -> None:
         '--output-summary', '-s',
         type=argparse.FileType('w', encoding='UTF-8'),
         default=None,
-        help="Generate a markdown table with selected inputs, can be '-' for stdout")
+        help="Write a markdown summary table of selected inputs to a file (use '-' to write to stdout)")
     args = parser.parse_args()
 
     scenario = random_scenario()
