@@ -2,20 +2,21 @@
 # This playbook uploads MariaDB backups to an AWS S3 object store.
 # Can be linked as a post hook for overcloud-database-backup.
 
-- hosts: controllers[0]
+- name: Upload MariaDB backups to S3
+  hosts: controllers[0]
   vars:
     backup_directory: "/var/lib/docker/volumes/mariadb_backup/_data"
     kayobe_venv: "{{ virtualenv_path }}/kayobe"
   tasks:
     - name: Ensure AWS S3 module prerequisites are available
-      pip:
+      ansible.builtin.pip:
         name:
           - boto3
           - botocore
         virtualenv: "{{ kayobe_venv }}"
 
     - name: Build backup file list
-      find:
+      ansible.builtin.find:
         paths: "{{ backup_directory }}"
       become: True
       register: backups
