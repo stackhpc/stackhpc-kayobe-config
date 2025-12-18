@@ -92,6 +92,12 @@ The general running order of the provisioning playbook is the following:
 
 Once the seed VM has been provisioned, it can be accessed via SSH by running ``./bin/seed-ssh`` from the root of the azimuth-config repository. Within the seed VM, the k3s cluster and the HA cluster can both be accessed using the pre-installed ``kubectl`` and ``helm`` command line tools. Both of these tools will target the k3s cluster by default; however, the ``kubeconfig`` file for the HA cluster can be found in the seed's home directory (named e.g. ``kubeconfig-capi-mgmt-<site-specific-name>.yaml``).
 
+This file can contain two types of authentication configuration:
+
+- Certificate-based authentication which is valid for a limited period (typically one year). The certificate must be manually refreshed before it expires, which can lead to undesirable operational overhead.
+
+- A service account and corresponding token-based kubeconfig with appropriate Kubernetes RBAC permissions. This method provides a long-lived, non-expiring authentication and should be preferred where possible. This option can be enabled by setting `capi_cluster_service_account_enabled: true` in the azimuth-config repository (this is the default behaviour when using the capi-mgmt mixin environment).
+
 .. note::
 
     The provision playbook is responsible for copying the HA ``kubeconfig`` to this location *after* the HA cluster is up and running. If you need to access the HA cluster while it is still deploying, the ``kubeconfig`` file can be found stored as a Kubernetes secret on the k3s cluster.
