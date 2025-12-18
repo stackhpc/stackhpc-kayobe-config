@@ -37,4 +37,4 @@ backup``:
 .. code-block:: bash
 
    mkdir -p $KAYOBE_CONFIG_PATH/hooks/overcloud-database-backup/post.d/
-   ln -s ../../../ansible/upload-database-backup-s3.yml $KAYOBE_CONFIG_PATH/hooks/overcloud-database-backup/post.d/10-upload-database-backup-s3.yml
+   ln -s ../../../ansible/tools/upload-database-backup-s3.yml $KAYOBE_CONFIG_PATH/hooks/overcloud-database-backup/post.d/10-upload-database-backup-s3.yml
