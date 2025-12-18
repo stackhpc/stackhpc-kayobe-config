@@ -28,7 +28,8 @@ jobs:
       - name: Generate inputs for multinode workflow
         id: generate-inputs
         run: |
-          python3 .github/workflows/multinode-inputs.py >> $GITHUB_OUTPUT
+          python3 .github/workflows/multinode-inputs.py -s "$GITHUB_STEP_SUMMARY" \
+            | tee -a "$GITHUB_OUTPUT"
 
       - name: Display generated inputs
         run: |
