@@ -11,7 +11,7 @@ set -u
 
 # Check that trivy is installed
 if ! trivy --version; then
-  echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.49.1'
+  echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.67.2'
 fi
 
 # Clear any previous outputs
@@ -21,10 +21,12 @@ rm -rf image-scan-output
 mkdir -p image-scan-output
 
 # Get built container images
-docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2" > $1-scanned-container-images.txt
+images=$(docker image ls \
+  --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
+  --format "{{.Repository}}:{{.Tag}}")
 
-# Make a file of imagename:tag
-images=$(grep --invert-match --no-filename ^REPOSITORY $1-scanned-container-images.txt | sed 's/ \+/:/g' | cut -f 1,2 -d:)
+# Save list of images to file
+echo "$images" > "$1-scanned-container-images.txt"
 
 # Ensure output files exist
 touch image-scan-output/clean-images.txt image-scan-output/dirty-images.txt image-scan-output/critical-images.txt

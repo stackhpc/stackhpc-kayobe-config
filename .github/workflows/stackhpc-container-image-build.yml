@@ -104,7 +104,7 @@ jobs:
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: arc-skc-container-image-builder-runner
+    runs-on: arc-skc-container-image-builder-runner-sms
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -144,7 +144,7 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.67.2
 
       - name: Install yq
         run: |
@@ -164,7 +164,7 @@ jobs:
       - name: Install Docker Python SDK
         run: |
           sudo pip install docker 'requests<2.32.0'
-      
+
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
