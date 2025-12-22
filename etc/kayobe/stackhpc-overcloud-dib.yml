@@ -33,6 +33,7 @@ stackhpc_overcloud_dib_elements:
   - "{% if os_distribution == 'ubuntu' %}lvm{% endif %}"
   - "openssh-server"
   - "{% if os_distribution == 'ubuntu' %}sudoers{% endif %}"
+  - "devuser"
 
 # StackHPC overcloud DIB image environment variables.
 stackhpc_overcloud_dib_env_vars: "{{ stackhpc_overcloud_dib_env_vars_default | combine(stackhpc_overcloud_dib_env_vars_ark if stackhpc_build_overcloud_image_from_pulp_package_mirrors | bool else {}) }}"
@@ -55,6 +56,8 @@ stackhpc_overcloud_dib_env_vars_default:
   YUM: dnf
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
+  DIB_DEV_USER_PWDLESS_SUDO: "yes"
+  DIB_DEV_USER_PASSWORD: Wv7Z7YP2QvmNAk0jGZXQJkpP28ve
 
 # NB: use --build-arg to pass arguments only to the Dockerfile.
 # Use stackhpc_overcloud_dib_env_vars_ark keys directly for elements (eg 80-cleanup-and-restore-repofiles)
