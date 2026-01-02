@@ -28,18 +28,6 @@
           - urllib3
         state: present
 
-    - name: Upload an artifact
-      pulp.squeezer.artifact:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        file: "{{ found_files.files[0].path }}"
-        state: present
-      register: upload_result
-      until: upload_result is success
-      retries: 3
-      delay: 60
-
     - name: Get sha256 hash
       ansible.builtin.stat:
         path: "{{ found_files.files[0].path }}"
@@ -58,46 +46,6 @@
         checksum_algorithm: sha256
       register: checksum_stats
 
-    - name: Upload checksum artifact
-      pulp.squeezer.artifact:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        file: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
-        state: present
-      register: checksum_upload_result
-      until: checksum_upload_result is success
-      retries: 3
-      delay: 60
-      when: upload_checksum
-
-    - name: Create file content from artifact
-      pulp.squeezer.file_content:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        sha256: "{{ file_stats.stat.checksum }}"
-        relative_path: "{{ found_files.files[0].path | basename }}"
-        state: present
-      register: file_content_result
-      until: file_content_result is success
-      retries: 3
-      delay: 5
-
-    - name: Create checksum content from artifact
-      pulp.squeezer.file_content:
-        pulp_url: "{{ remote_pulp_url }}"
-        username: "{{ remote_pulp_username }}"
-        password: "{{ remote_pulp_password }}"
-        sha256: "{{ checksum_stats.stat.checksum }}"
-        relative_path: "{{ found_files.files[0].path | basename }}.sha256"
-        state: present
-      register: checksum_content_result
-      until: checksum_content_result is success
-      retries: 3
-      delay: 5
-      when: upload_checksum
-
     - name: Ensure file repo exists
       pulp.squeezer.file_repository:
         pulp_url: "{{ remote_pulp_url }}"
@@ -110,31 +58,33 @@
       retries: 3
       delay: 5
 
-    - name: Add content to file repo
-      pulp.squeezer.file_repository_content:
+    - name: Upload artifact
+      pulp.squeezer.file_content:
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
+        file: "{{ found_files.files[0].path }}"
+        sha256: "{{ file_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}"
+        state: present
         repository: "{{ repository_name }}"
-        present_content:
-          - relative_path: "{{ found_files.files[0].path | basename }}"
-            sha256: "{{ file_stats.stat.checksum }}"
-      register: file_repo_content_result
-      until: file_repo_content_result is success
+      register: file_content_result
+      until: file_content_result is success
       retries: 3
       delay: 5
 
-    - name: Add checksum content to file repo
-      pulp.squeezer.file_repository_content:
+    - name: Upload checksum
+      pulp.squeezer.file_content:
         pulp_url: "{{ remote_pulp_url }}"
         username: "{{ remote_pulp_username }}"
         password: "{{ remote_pulp_password }}"
+        file: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+        sha256: "{{ checksum_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}.sha256"
+        state: present
         repository: "{{ repository_name }}"
-        present_content:
-          - relative_path: "{{ found_files.files[0].path | basename }}.sha256"
-            sha256: "{{ checksum_stats.stat.checksum }}"
-      register: checksum_repo_content_result
-      until: checksum_repo_content_result is success
+      register: checksum_content_result
+      until: checksum_content_result is success
       retries: 3
       delay: 5
       when: upload_checksum
