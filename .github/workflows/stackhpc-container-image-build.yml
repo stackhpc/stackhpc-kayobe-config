@@ -250,7 +250,8 @@ jobs:
 #        if: inputs.push
 
       - name: Copy all images to push list
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}" > image-build-logs/push-attempt-images.txt
+        run: |
+          docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }} --format "{{.Repository}}:{{.Tag}}" "> image-build-logs/push-attempt-images.txt
         if: inputs.push
 
       # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
