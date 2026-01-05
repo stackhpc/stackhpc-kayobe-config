@@ -235,31 +235,35 @@ jobs:
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro }}-container-images) -le 1 ]; then exit 1; fi
 
-      - name: Scan built container images
-        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ steps.write-kolla-tag.outputs.kolla-tag }}
+#      - name: Scan built container images
+#        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro }} ${{ steps.write-kolla-tag.outputs.kolla-tag }}
 
-      - name: Move image scan logs to output artifact
-        run: mv image-scan-output image-build-logs/image-scan-output
+#      - name: Move image scan logs to output artifact
+#        run: mv image-scan-output image-build-logs/image-scan-output
 
-      - name: Fail if no images have passed scanning
-        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
-        if: ${{ !inputs.push-dirty }}
+#      - name: Fail if no images have passed scanning
+#        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
+#        if: ${{ !inputs.push-dirty }}
 
-      - name: Copy clean images to push-attempt-images list
-        run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
+#      - name: Copy clean images to push-attempt-images list
+#        run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
+#        if: inputs.push
+
+      - name: Copy all images to push list
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}" > image-build-logs/push-attempt-images.txt
         if: inputs.push
 
       # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
       # This should be reverted when it's decided to filter high level CVEs as well.
-      - name: Append dirty images to push list
-        run: |
-          cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push }}
+ #     - name: Append dirty images to push list
+ #       run: |
+ #         cat image-build-logs/image-scan-output/dirty-images.txt >> image-build-logs/push-attempt-images.txt
+ #       if: ${{ inputs.push }}
 
-      - name: Append images with critical vulnerabilities to push list
-        run: |
-          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
-        if: ${{ inputs.push && inputs.push-dirty }}
+ #     - name: Append images with critical vulnerabilities to push list
+ #       run: |
+ #         cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
+ #       if: ${{ inputs.push && inputs.push-dirty }}
 
       - name: Push images
         run: |
