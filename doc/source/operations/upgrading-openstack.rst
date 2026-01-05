@@ -241,7 +241,6 @@ Errors like this will be logged::
 A proper fix is still WIP, in the meantime these errors can be resolved with this script:
 `<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
 
-
 Security baseline
 =================
 
