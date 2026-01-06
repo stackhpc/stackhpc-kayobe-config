@@ -116,7 +116,7 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget skopeo
 
       - name: Install gh
         run: |
@@ -276,10 +276,15 @@ jobs:
           while read -r image; do
             # Retries!
             for i in {1..5}; do
-              if docker push $image; then
-                echo "Pushed $image"
-                break
-              elif [ $i -eq 5 ] ; then
+              temp_image="/tmp/image.tar"
+              if docker save $image -o $temp_image; then
+                echo "Saved image $image under $temp_image"
+                if skopeo copy --format oci docker-archive:"$temp_image" docker://"$image"; then
+                  echo "Pushed $image"
+                  break
+                fi;
+              fi;
+              if [ $i -eq 5 ] ; then
                 echo "Failed to push $image"
                 echo $image >> image-build-logs/push-failed-images.txt
               else
@@ -287,6 +292,7 @@ jobs:
                 sleep 5
               fi;
             done
+            rm -f "$temp_image"
           done < image-build-logs/push-attempt-images.txt
         shell: bash
         env:
