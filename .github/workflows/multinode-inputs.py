@@ -87,10 +87,10 @@ def get_branch(version: str) -> str:
 def get_tkm_version(version: str) -> str:
     if version == "zed":
         return "ea61ea1730e179e05e8f0e58b759267664c555e7"
-    elif version in ["2023.1", "2024.1"]:
-        return "stackhpc/2024.1" # This version is targeted to support Caracal or older releases
-    else:
+    elif version == "2025.1":
         return "main"
+    else:
+        return get_branch(version)
 
 
 def write_output(name: str, value: str) -> None:
