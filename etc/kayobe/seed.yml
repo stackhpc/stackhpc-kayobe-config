@@ -3,7 +3,8 @@
 # Seed node configuration.
 
 # User with which to access the seed via SSH during bootstrap, in order to
-# setup the Kayobe user account. Default is {{ os_distribution }}.
+# setup the Kayobe user account. Default is 'cloud-user' if os_distribution is
+# set to centos, otherwise 'os_distribution'.
 #seed_bootstrap_user:
 
 ###############################################################################
@@ -155,9 +156,10 @@ seed_redfish_exporter_container:
 # Example:
 # seed_containers:
 #   squid:
-#     image: "stackhpc/squid:3.5.20-1"
+#     image: "docker.io/stackhpc/squid"
 #     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
+#     tag: "3.5.20-1"
 #
 seed_containers: >-
   {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
