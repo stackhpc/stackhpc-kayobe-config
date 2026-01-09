@@ -17,6 +17,17 @@
         file: "{{ kayobe_env_config_path }}/openbao/seed-openbao-keys.json"
         name: openbao_keys
 
+    - name: Check OpenBao seal status
+      ansible.builtin.uri:
+        url: "{{ openbao_api_addr }}/v1/sys/seal-status"
+        return_content: true
+      register: openbao_seal_status
+
+    - name: Assert that OpenBao is unsealed
+      ansible.builtin.assert:
+        that: not openbao_seal_status.json.sealed
+        fail_msg: "OpenBao is sealed. Please unseal it before continuing."
+
     - name: Issue Pulp certificate
       hashivault_pki_cert_issue:  # noqa: fqcn
         url: "{{ openbao_api_addr }}"
