@@ -494,7 +494,7 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
    .. code-block::
 
-      kayobe seed service reconfigure -t seed-deploy-containers -kt none
+      kayobe seed service deploy -t seed-deploy-containers -kt none
 
 5. Set CA for docker registry
 
