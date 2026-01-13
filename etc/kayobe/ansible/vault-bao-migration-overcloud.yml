@@ -39,37 +39,25 @@
       ansible.builtin.include_role:
         name: stackhpc.hashicorp.vault_bao_migration
       vars:
-        consul_docker_image: "{{ overcloud_consul_docker_image }}"
-        consul_docker_tag: "{{ overcloud_consul_docker_tag }}"
-        consul_bind_interface: "{{ secret_store_bind_interface }}"
-        hashicorp_registry_url: "{{ overcloud_hashicorp_registry_url }}"
-        hashicorp_registry_username: "{{ overcloud_hashicorp_registry_username }}"
-        hashicorp_registry_password: "{{ overcloud_hashicorp_registry_password }}"
-        vault_root_token: "{{ secret_store_keys.root_token }}"
-        vault_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
-        vault_bind_address: "{{ secret_store_bind_address }}"
-        vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
-        vault_config_dir: /opt/kayobe/vault
-        vault_cluster_name: overcloud
-        vault_docker_image: "{{ overcloud_vault_docker_image }}"
-        vault_docker_tag: "{{ overcloud_vault_docker_tag }}"
-        vault_write_keys_file: true
-        vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
-        vault_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
-        vault_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
+        migration_consul_docker_image: "{{ seed_consul_docker_image }}"
+        migration_common_root_token: "{{ secret_store_keys.root_token }}"
+        migration_common_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
+        migration_common_bind_addr: "{{ secret_store_bind_address }}"
+        migration_common_api_addr: "{{ secret_store_api_address }}"
+        migration_vault_config_dir: /opt/kayobe/vault
+        migration_common_cluster_name: overcloud
+        migration_vault_docker_image: "{{ seed_vault_docker_image }}"
+        migration_vault_docker_tag: "{{ seed_vault_docker_tag }}"
         vault_unseal_timeout: 10
-        openbao_bind_addr: "{{ secret_store_bind_address }}"
-        openbao_api_addr: "{{ secret_store_api_address }}"
-        openbao_registry_url: "{{ overcloud_openbao_registry_url }}"
-        openbao_registry_username: "{{ overcloud_openbao_registry_username }}"
-        openbao_registry_password: "{{ overcloud_openbao_registry_password }}"
-        openbao_config_dir: /opt/kayobe/openbao
-        openbao_cluster_name: overcloud
-        openbao_docker_image: "{{ overcloud_openbao_docker_image }}"
-        openbao_docker_tag: "{{ overcloud_openbao_docker_tag }}"
-        openbao_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
-        openbao_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
-        openbao_tls_ca: "OS-TLS-INT.crt"
+        migration_openbao_config_dir: /opt/kayobe/openbao
+        migration_openbao_docker_image: "{{ seed_openbao_docker_image }}"
+        migration_openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
+        migration_common_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
+        migration_common_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
+        migration_common_tls_ca: "OS-TLS-INT.crt"
+        migration_openbao_registry_url: "{{ overcloud_openbao_registry_url }}"
+        migration_openbao_registry_username: "{{ overcloud_openbao_registry_username }}"
+        migration_openbao_registry_password: "{{ overcloud_openbao_registry_password }}"
     
 - name: Migrate Vault to Openbao
   import_playbook: stackhpc.hashicorp.ha_vault_bao_migration
@@ -78,29 +66,22 @@
     secret_store_bind_interface: "{{ internal_net_name | net_interface }}"
     secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
     secret_store_api_address: "https://{{ secret_store_bind_address }}:8200"
-    vault_root_token: "{{ secret_store_keys.root_token }}"
-    vault_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
-    vault_bind_address: "{{ secret_store_bind_address }}"
-    vault_api_addr: "https://{{ internal_net_name | net_ip }}:8200"
-    vault_config_dir: /opt/kayobe/vault
-    vault_cluster_name: overcloud
-    vault_docker_image: "{{ overcloud_vault_docker_image }}"
-    vault_docker_tag: "{{ overcloud_vault_docker_tag }}"
-    vault_write_keys_file: true
-    vault_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/overcloud-vault-keys.json"
-    vault_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
-    vault_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
-    vault_tls_ca: "OS-TLS-INT.crt"
+    migration_consul_docker_image: "{{ seed_consul_docker_image }}"
+    migration_common_root_token: "{{ secret_store_keys.root_token }}"
+    migration_common_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
+    migration_common_bind_addr: "{{ secret_store_bind_address }}"
+    migration_common_api_addr: "{{ secret_store_api_address }}"
+    migration_vault_config_dir: /opt/kayobe/vault
+    migration_common_cluster_name: overcloud
+    migration_vault_docker_image: "{{ seed_vault_docker_image }}"
+    migration_vault_docker_tag: "{{ seed_vault_docker_tag }}"
     vault_unseal_timeout: 10
-    openbao_bind_addr: "{{ secret_store_bind_address }}"
-    openbao_api_addr: "{{ secret_store_api_address }}"
-    openbao_registry_url: "{{ overcloud_openbao_registry_url }}"
-    openbao_registry_username: "{{ overcloud_openbao_registry_username }}"
-    openbao_registry_password: "{{ overcloud_openbao_registry_password }}"
-    openbao_config_dir: /opt/kayobe/openbao
-    openbao_cluster_name: overcloud
-    openbao_docker_image: "{{ overcloud_openbao_docker_image }}"
-    openbao_docker_tag: "{{ overcloud_openbao_docker_tag }}"
-    openbao_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
-    openbao_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
-    openbao_tls_ca: "OS-TLS-INT.crt"
+    migration_openbao_config_dir: /opt/kayobe/openbao
+    migration_openbao_docker_image: "{{ seed_openbao_docker_image }}"
+    migration_openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
+    migration_common_tls_cert: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.crt"
+    migration_common_tls_key: "{% if kolla_internal_fqdn != kolla_internal_vip_address %}{{ kolla_internal_fqdn }}{% else %}overcloud{% endif %}.key"
+    migration_common_tls_ca: "OS-TLS-INT.crt"
+    migration_openbao_registry_url: "{{ overcloud_openbao_registry_url }}"
+    migration_openbao_registry_username: "{{ overcloud_openbao_registry_username }}"
+    migration_openbao_registry_password: "{{ overcloud_openbao_registry_password }}"
