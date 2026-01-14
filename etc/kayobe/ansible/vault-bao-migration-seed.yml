@@ -29,21 +29,23 @@
         file: "{{ kayobe_env_config_path }}/{{ stackhpc_ca_secret_store }}/seed-{{ stackhpc_ca_secret_store }}-keys.json"
         name: secret_store_keys
     
-    - name: Apply vault_bao_migration role
-      ansible.builtin.include_role:
-        name: stackhpc.hashicorp.vault_bao_migration
-      vars:
-        migration_consul_docker_image: "{{ seed_consul_docker_image }}"
-        migration_common_root_token: "{{ secret_store_keys.root_token }}"
-        migration_common_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
-        migration_common_bind_addr: "{{ secret_store_bind_address }}"
-        migration_common_api_addr: "{{ secret_store_api_address }}"
-        migration_vault_config_dir: /opt/kayobe/vault
-        migration_common_cluster_name: seed
-        migration_vault_docker_image: "{{ seed_vault_docker_image }}"
-        migration_vault_docker_tag: "{{ seed_vault_docker_tag }}"
-        vault_unseal_timeout: 10
-        migration_openbao_config_dir: /opt/kayobe/openbao
-        migration_openbao_docker_image: "{{ seed_openbao_docker_image }}"
-        migration_openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
-        
+- name: Migrate Vault to Openbao
+  import_playbook: stackhpc.hashicorp.vault_bao_migration
+  vars:
+    vault_hosts_group: seed
+    secret_store_bind_interface: lo
+    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
+    secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
+    migration_consul_docker_image: "{{ seed_consul_docker_image }}"
+    migration_common_root_token: "{{ secret_store_keys.root_token }}"
+    migration_common_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
+    migration_common_bind_addr: "{{ secret_store_bind_address }}"
+    migration_common_api_addr: "{{ secret_store_api_address }}"
+    migration_vault_config_dir: /opt/kayobe/vault
+    migration_common_cluster_name: seed
+    migration_vault_docker_image: "{{ seed_vault_docker_image }}"
+    migration_vault_docker_tag: "{{ seed_vault_docker_tag }}"
+    vault_unseal_timeout: 10
+    migration_openbao_config_dir: /opt/kayobe/openbao
+    migration_openbao_docker_image: "{{ seed_openbao_docker_image }}"
+    migration_openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
