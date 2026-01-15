@@ -157,7 +157,12 @@ jobs:
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          sudo pip install docker
+          . /etc/os-release
+          if [[ $VERSION_ID == 22.04 ]]; then
+              sudo pip install docker
+          else
+              sudo pip install docker --break-system-packages
+          fi
 
       - name: Configure localhost as a seed
         run: |
