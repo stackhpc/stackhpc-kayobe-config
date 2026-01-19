@@ -260,6 +260,7 @@ jobs:
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output
+        if: ${{ !cancelled() }}
 
       - name: Fail if any images have critical vulnerabilities
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
