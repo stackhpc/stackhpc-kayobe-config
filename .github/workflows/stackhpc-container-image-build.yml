@@ -82,14 +82,14 @@ jobs:
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
-          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," | tee -a "$GITHUB_OUTPUT"
 
       # Generate a tag to apply to all built container images.
       # Without this, each kayobe * container image build command would use a different tag.
       - name: Generate container datetime tag
         id: datetime_tag
         run: |
-          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" | tee -a "$GITHUB_OUTPUT"
 
       # Dynamically define job matrix.
       # We need a separate matrix entry for each distribution, when the relevant input is true.
@@ -110,7 +110,7 @@ jobs:
           # remove trailing comma
           output="${output%,}"
           output+="]}"
-          echo "matrix=$output" >> $GITHUB_OUTPUT
+          echo "matrix=$output" | tee -a "$GITHUB_OUTPUT"
 
       - name: Display container datetime tag
         run: |
@@ -184,7 +184,7 @@ jobs:
 
       - name: Get Kolla tag
         id: write-kolla-tag
-        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
+        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ needs.generate-tag.outputs.datetime_tag }}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Configure localhost as a seed
         run: |
@@ -250,7 +250,7 @@ jobs:
         if: inputs.seed && matrix.distro.arch == 'amd64'
 
       - name: Get built container images
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" > ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" | tee "${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images"
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
