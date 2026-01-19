@@ -58,24 +58,26 @@ get_images() {
 # Generate ignored vulnerabilities file
 generate_trivy_ignore() {
   local imagename=$1
-  local global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
-  local image_vulnerabilities=$(yq .$imagename'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  local global_vulnerabilities
+  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  local image_vulnerabilities
+  image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
 
   touch .trivyignore
   for vulnerability in $global_vulnerabilities; do
-    echo $vulnerability >> .trivyignore
+    echo "$vulnerability" >> .trivyignore
   done
   for vulnerability in $image_vulnerabilities; do
-    echo $vulnerability >> .trivyignore
+    echo "$vulnerability" >> .trivyignore
   done
 }
 
 # Put results into CSV
 generate_summary_csv() {
-  local imagename=$1
-  local filename=$2
+  local scan="$1"
+  local summary="$2"
 
-  echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > image-scan-output/${imagename}/${filename}-summary.csv
+  echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > "$summary"
 
   jq -r '.Results[]
       | select(.Vulnerabilities)
@@ -94,16 +96,15 @@ generate_summary_csv() {
           ]
         )
       | .[]
-      | @csv' image-scan-output/${imagename}/${filename}-scan.json >> image-scan-output/${imagename}/${filename}-summary.csv
+      | @csv' "$scan" >> "$summary"
 }
 
 # Categorise images based on severity
 categorise_image() {
-  local imagename=$1
-  local filename=$2
-  local image=$3
+  local summary="$1"
+  local image="$2"
 
-  if [ $(grep "CRITICAL" image-scan-output/${imagename}/${filename}-summary.csv -c) -gt 0 ]; then
+  if [ "$(grep "CRITICAL" "$summary" -c)" -gt 0 ]; then
     echo "${image}" >> image-scan-output/critical-images.txt
   else
     echo "${image}" >> image-scan-output/high-images.txt
@@ -112,45 +113,78 @@ categorise_image() {
 
 # Generate SBOM, return correct scan command for SBOM
 generate_sbom() {
-  local imagename=$1
-  local filename=$2
-  local image=$3
+  local sbom="$1"
+  local scan="$2"
+  local image="$3"
   trivy image \
+        --debug \
         --format spdx-json \
-        --output image-scan-output/${imagename}/${filename}-sbom.json \
-        $image > /dev/null 2>&1
-  echo "trivy sbom $scan_common_args \
-        --output image-scan-output/${imagename}/${filename}-scan.json \
-        image-scan-output/${imagename}/${filename}-sbom.json"
+        --output "$sbom" \
+        "$image" &> "$sbom.log"
+  if [ ! -e "$sbom" ]; then
+    (
+      echo "ERROR: trivy image didn't produce the sbom file $sbom for $image" 1>&2
+      echo "==== trivy log ===="
+      cat "$sbom.log"
+    ) 1>&2
+    exit 1
+  elif grep -q FATAL "$sbom.log"; then
+    (
+      echo "ERROR: trivy image encountered a fatal error producing $sbom for $image"
+      echo "==== trivy log ===="
+      cat "$sbom.log"
+      echo "==== sbom.json ===="
+      cat "$sbom"
+    ) 1>&2
+    exit 1
+  else
+    echo "trivy sbom $scan_common_args --output $scan $sbom"
+  fi
 }
 
 # Scan images, generate SBOMs if requested
 scan_image() {
   local image=$1
-  local filename=$(basename $image | sed 's/:/\./g')
-  local imagename=$(echo $filename | cut -d "." -f 1 | sed 's/-/_/g')
+  local filename
+  filename=$(basename "$image" | sed 's/:/\./g')
+  local imagename
+  imagename=$(echo "$filename" | cut -d "." -f 1 | sed 's/-/_/g')
+  local sbom="image-scan-output/${imagename}/${filename}-sbom.json"
+  local scan="image-scan-output/${imagename}/${filename}-scan.json"
+  local summary="image-scan-output/${imagename}/${filename}-summary.csv"
 
-  mkdir -p image-scan-output/$imagename
-  generate_trivy_ignore $imagename
+  mkdir -p "image-scan-output/$imagename"
+  generate_trivy_ignore "$imagename"
 
   # If SBOM is required, generate it first and scan the results, otherwise we
   # scan the image directly.
   if $generate_sbom; then
     echo "Generating SBOM for $imagename"
-    scan_command=$(generate_sbom $imagename $filename $image)
+    scan_command="$(generate_sbom "$sbom" "$scan" "$image")"
   else
-    scan_command="trivy image $scan_common_args \
-                  --output image-scan-output/${imagename}/${filename}-scan.json $image"
+    scan_command="trivy image $scan_common_args --output $scan $image"
   fi
 
   # Run scan against image or SBOM, format output. If no results, delete files.
   echo "Scanning $imagename for vulnerabilities"
-  if $scan_command > /dev/null 2>&1; then
-    rm -f image-scan-output/${imagename}/${filename}-scan.json
+  if $scan_command >& "$scan.log"; then
+    rm -f "$scan"
     echo "${image}" >> image-scan-output/clean-images.txt
+  elif [ ! -f "$scan" ]; then
+    (
+      echo "ERROR: trivy scan encountered and error producing $scan"
+      echo "Command: $scan_command"
+      echo "==== trivy log ===="
+      cat "$scan.log"
+      if $generate_sbom; then
+        echo "==== sbom.json ===="
+        cat "$sbom"
+      fi
+    ) 1>&2
+    exit 1
   else
-    generate_summary_csv $imagename $filename
-    categorise_image $imagename $filename $image
+    generate_summary_csv "$scan" "$summary"
+    categorise_image "$summary" "$image"
   fi
 }
 
@@ -170,9 +204,9 @@ main() {
   check_deps_installed
   file_prep
 
-  images=$(get_images $1 $2)
+  images=$(get_images "$1" "$2")
   for image in $images; do
-    scan_image $image
+    scan_image "$image"
   done
 }
 
