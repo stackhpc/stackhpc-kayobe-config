@@ -8,6 +8,12 @@
     secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
     secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
   tasks:
+    - name: Fail if secret store is already configured to be OpenBao
+      fail:
+        msg: Please check if OpenBao is already running on the host.
+             If it's not, please set the variable 'stackhpc_ca_secret_store' to 'vault'
+      when: stackhpc_ca_secret_store == "openbao"
+
     - name: Set a fact about the virtualenv on the remote system
       ansible.builtin.set_fact:
         virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
