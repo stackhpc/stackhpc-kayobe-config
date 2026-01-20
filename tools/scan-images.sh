@@ -121,6 +121,7 @@ generate_sbom() {
         --format spdx-json \
         --output "$sbom" \
         "$image" &> "$sbom.log"
+  rm "$sbom"
   if [ ! -e "$sbom" ]; then
     (
       echo "ERROR: trivy image didn't produce the sbom file $sbom for $image" 1>&2
