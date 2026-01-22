@@ -45,8 +45,10 @@ The following types of hosts will be covered in the future:
 
 .. warning::
 
-   Ceph node upgrades have not yet been performed outside of a virtualised test
-   environment. Proceed with caution.
+   Due to `Bug 66389 <https://tracker.ceph.com/issues/66389>`__, do not upgrade
+   Ceph hosts to Noble until the Ceph cluster has been upgraded to at least
+   Reef v18.2.5. Upgrading a host prematurely will prevent its Ceph daemons
+   from starting, and it will not be able to rejoin the cluster.
 
 Prerequisites
 =============
@@ -78,14 +80,14 @@ To sync host packages:
 .. code-block:: console
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml -e stackhpc_pulp_sync_ubuntu_jammy=true -e stackhpc_pulp_sync_ubuntu_noble=true
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml -e stackhpc_pulp_sync_ubuntu_jammy=true -e stackhpc_pulp_sync_ubuntu_noble=true
 
 Once the host package content has been tested in a test/staging environment, it
 may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml -e stackhpc_pulp_sync_ubuntu_jammy=true -e stackhpc_pulp_sync_ubuntu_noble=true
 
 To sync container images:
 
@@ -351,6 +353,8 @@ Storage
 Potential issues
 ----------------
 
+-  Ensure the Ceph cluster is running at least Reef v18.2.5.
+   Upgrading hosts with an older Ceph version will cause daemons to fail.
 -  It is recommended that you upgrade the bootstrap host last.
 -  Before upgrading the bootstrap host, it can be beneficial to backup
    ``/etc/ceph`` and ``/var/lib/ceph``, as sometimes the keys, config, etc.
