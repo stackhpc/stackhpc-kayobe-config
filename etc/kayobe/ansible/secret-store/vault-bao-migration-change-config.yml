@@ -12,7 +12,7 @@
         src: "{{ kayobe_env_config_path }}/vault/"
         dest: "{{ kayobe_env_config_path }}/openbao/"
         remote_src: true
-        mode: '0775'
+        mode: preserve
       when:
         - vault_dir.stat.exists
         - vault_dir.stat.isdir
@@ -30,7 +30,7 @@
         src: "{{ kayobe_env_config_path }}/openbao/{{ item.src }}"
         dest: "{{ kayobe_env_config_path }}/openbao/{{ item.dest }}"
         remote_src: true
-        mode: '0600'
+        mode: preserve
       loop:
         - { src: seed-vault-keys.json, dest: seed-openbao-keys.json }
         - { src: overcloud-vault-keys.json, dest: overcloud-openbao-keys.json }
