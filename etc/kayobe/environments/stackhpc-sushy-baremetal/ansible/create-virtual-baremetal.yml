@@ -35,11 +35,13 @@
       vars:
         libvirt_vm_arch: x86_64
         libvirt_vm_default_uuid_deterministic: true
+        libvirt_vm_engine: 'kvm'
         libvirt_vms:
           - state: present
             name: "{{ inventory_hostname }}"
             memory_mb: '4660'
             vcpus: '2'
+            machine: 'pc-q35-rhel9.0.0'
             cpu_mode: 'host-model'
             volumes:
               - name: '{{ inventory_hostname }}.qcow2'
@@ -48,10 +50,11 @@
                 capacity: '20GB'
                 pool: 'default'
             interfaces:
-              - network: 'default'
+              - type: bridge
                 source:
-                  dev: 'breth1'
-                  mode: 'bridge'
+                  bridge: breth1
+                  dev: breth1
+                model: virtio
             start: false
             autostart: false
             boot_firmware: uefi
