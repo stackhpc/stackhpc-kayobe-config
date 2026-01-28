@@ -11,7 +11,7 @@ set -u
 
 # Check that trivy is installed
 if ! trivy --version; then
-  echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.49.1'
+  echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.68.2'
 fi
 
 # Clear any previous outputs
