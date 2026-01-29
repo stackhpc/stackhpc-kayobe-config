@@ -53,14 +53,10 @@
         - seed-vault-keys.json
         - overcloud-vault-keys.json
 
-    - name: Ensure stackhpc.yml exists under environment directory
-      ansible.builtin.file:
-        path: "{{ kayobe_env_config_path }}/stackhpc.yml"
-        state: touch
-        mode: '0664'
-
     - name: Set stackhpc_ca_secret_store to openbao
       ansible.builtin.lineinfile:
         path: "{{ kayobe_env_config_path }}/stackhpc.yml"
         regexp: "stackhpc_ca_secret_store.+"
         line: "stackhpc_ca_secret_store: openbao"
+        create: true
+        mode: '0664'
