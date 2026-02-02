@@ -87,8 +87,8 @@ Copy the relevant certificates into your kayobe-config:
    cd ${KAYOBE_CONFIG_PATH}/environments/$KAYOBE_ENVIRONMENT/kolla/config/octavia
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client_ca.cert.pem .
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client.cert-and-key.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.cert.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.key.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.cert.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.key.pem .
 
 Encrypt any files containing the keys:
 
@@ -232,7 +232,7 @@ Access the database from a controller:
 .. code-block:: console
 
   docker exec -it mariadb bash
-  mysql -u root -p  octavia
+  mysql -u octavia -p  octavia
   # Enter the database password when prompted.
 
 List the load balancers to find the ID of the broken one(s):
