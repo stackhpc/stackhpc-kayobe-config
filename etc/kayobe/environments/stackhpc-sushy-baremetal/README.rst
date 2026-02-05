@@ -17,7 +17,7 @@ Set up for AIO testing:
 
 * ``kayobe overcloud post configure``
 
-Auto-step script used to set up Sushy and create virtual baremetal within libvirt using the
+Auto-setup script used to set up Sushy and create virtual baremetal within libvirt using the
 `stackhpc ansible libvirt vm role <https://github.com/stackhpc/ansible-role-libvirt-vm>`_ .
 
 ``kayobe playbook run environments/stackhpc-sushy-baremetal/ansible/auto-setup.yml``

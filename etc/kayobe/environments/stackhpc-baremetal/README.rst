@@ -6,15 +6,15 @@ and cleaning of baremetal nodes in Ironic. It is designed to be idempotent
 and safe to re-run.
 
 The purpose of this environment is to enroll baremetal nodes in Ironic,
-verify the nodes BMC (redfish) connection, then perform refish and agent-based
+verify that a connection can be made to the BMCs of the nodes using Redfish, then perform Redfish and agent-based
 inspection, and finally clean the nodes and make them available.
 
 Inventory
 ---------
 
-Baremetal nodes are defined in the inventory located ``stackhpc-baremetal/inventory/hosts`` file
-This inventory can be hand-written or generated (eg from a python script).
-Each nodes must have the required Ironic and Redfish variables.
+Baremetal nodes are defined in the inventory located ``stackhpc-baremetal/inventory/hosts`` file.
+This inventory can be hand-written or generated (e.g. from a Python script).
+Each node must have the required Ironic and Redfish variables.
 These variables can be set in ``inventory/group_vars/baremetal-redfish/ironic``
 
 Enable the Environment
