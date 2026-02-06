@@ -153,8 +153,8 @@ long enough).
 
 .. code-block:: bash
 
-   sudo docker stop keepalived
-   sudo docker start keepalived
+   sudo systemctl stop kolla-keepalived-container.service
+   sudo systemctl start kolla-keepalived-container.service
 
 Always back up the overcloud DB before starting:
 
