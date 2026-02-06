@@ -1,29 +1,30 @@
-#! /usr/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
-if [[ ! $KAYOBE_PATH ]]; then
+if [[ -z "$KAYOBE_PATH" ]]; then
     echo "Environment variable \$KAYOBE_PATH is not defined"
     exit 2
 fi
 
-if [[ ! $KAYOBE_CONFIG_PATH ]]; then
+if [[ -z "$KAYOBE_CONFIG_PATH" ]]; then
     echo "Environment variable \$KAYOBE_CONFIG_PATH is not defined"
     exit 2
 fi
 
-if [[ ! $ANSIBLE_ROLES_PATH ]]; then
+if [[ -z "$ANSIBLE_ROLES_PATH" ]]; then
     set -x
-    export ANSIBLE_ROLES_PATH=$KAYOBE_PATH/ansible/roles
+    export ANSIBLE_ROLES_PATH="$KAYOBE_PATH/ansible/roles"
     set +x
 else
     set -x
-    export ANSIBLE_ROLES_PATH=$ANSIBLE_ROLES_PATH:$KAYOBE_PATH/ansible/roles
+    export ANSIBLE_ROLES_PATH="$ANSIBLE_ROLES_PATH:$KAYOBE_PATH/ansible/roles"
     set +x
 fi
 
 set -x
 
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release=noble --limit seed-hypervisor
+kayobe playbook run "$KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml" \
+    -e os_release=noble --limit seed-hypervisor
 
 kayobe seed hypervisor host configure -e os_release=noble
