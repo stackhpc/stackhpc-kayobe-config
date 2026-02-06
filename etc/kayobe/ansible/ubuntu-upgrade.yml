@@ -54,18 +54,7 @@
       become: true
       when: file_status.stat.exists
 
-    # NOTE: We cannot use apt_repository here because definitions must exist within the standard repos.list
-    - name: Ensure Noble repo definitions exist in sources.list
-      ansible.builtin.blockinfile:
-        path: /etc/apt/sources.list
-        block: |
-          deb {{ stackhpc_repo_ubuntu_noble_url }} noble main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_noble_url }} noble-updates main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_noble_url }} noble-backports main restricted universe multiverse
-          deb {{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main restricted universe multiverse
-      become: true
-
-    - name: Enusre /tmp is mounted with exec
+    - name: Ensure /tmp is mounted with exec
       ansible.posix.mount:
         path: /tmp
         opts: exec
@@ -80,6 +69,17 @@
         group: root
       become: true
       when: inventory_hostname in groups['ceph']
+
+    # NOTE: We cannot use apt_repository here because definitions must exist within the standard repos.list
+    - name: Ensure Noble repo definitions exist in sources.list
+      ansible.builtin.blockinfile:
+        path: /etc/apt/sources.list
+        block: |
+          deb {{ stackhpc_repo_ubuntu_noble_url }} noble main restricted universe multiverse
+          deb {{ stackhpc_repo_ubuntu_noble_url }} noble-updates main restricted universe multiverse
+          deb {{ stackhpc_repo_ubuntu_noble_url }} noble-backports main restricted universe multiverse
+          deb {{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main restricted universe multiverse
+      become: true
 
 - name: Upgrade hosts from Ubuntu Jammy 22.04 to Noble 24.04
   hosts: overcloud:infra-vms:seed:seed-hypervisor
@@ -242,7 +242,7 @@
         filter: "{{ kayobe_ansible_setup_filter }}"
         gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
-    - name: Assert that hosts are now using Ubuntu 24
+    - name: Assert that hosts are now using Ubuntu 24.04
       ansible.builtin.assert:
         that:
           - ansible_facts.distribution_major_version == '24'
