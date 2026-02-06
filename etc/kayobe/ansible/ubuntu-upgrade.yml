@@ -139,18 +139,76 @@
       ansible.builtin.setup:
         filter: "{{ kayobe_ansible_setup_filter }}"
         gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+
+- name: Run the Kayobe network configuration playbook, to ensure definitions are not lost on reboot
+  import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tags: post
 
 - name: Run the Kayobe kayobe-target-venv playbook to ensure kayobe venv exists on remote host
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/kayobe-target-venv.yml"
   tags: post
 
+- name: Clean up old repos
+  hosts: overcloud:infra-vms:seed:seed-hypervisor
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tags:
+    - post
+    - cleanup-repos
+  tasks:
+    - name: Ensure Noble repo definitions do not exist in sources.list
+      ansible.builtin.blockinfile:
+        path: "{{ item }}"
+        state: absent
+      become: true
+      loop:
+        - /etc/apt/sources.list
+
+    - name: Ensure Kolla Ansible Docker repo definition does not exist
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/docker.list
+        state: absent
+      become: true
+      when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
+
+    # Make a backup, in case of having broken apt configuration.
+    - name: Backup upstream ubuntu.sources
+      ansible.builtin.copy:
+        src: /etc/apt/sources.list.d/ubuntu.sources
+        dest: /etc/apt/ubuntu.sources.bak
+        backup: true
+        remote_src: true
+      become: true
+      when: hostvars[inventory_hostname].stackhpc_repos_enabled
+      tags: post
+
+    - name: Ensure only Kayobe defined apt repositories are defined
+      ansible.builtin.file:
+        path: "/etc/apt/{{ item }}"
+        state: absent
+      loop:
+        - sources.list.distUpgrade
+        - sources.list.d/third-party.sources
+        - sources.list.d/ubuntu.sources
+      become: true
+      when: hostvars[inventory_hostname].stackhpc_repos_enabled
+      tags: post
+
 - name: Run the Kayobe apt playbook to ensure Noble repositories are set on remote host
   import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/apt.yml"
-  tags: post
+  tags:
+    - post
+    - post-cleanup
 
 - name: Fix broken packages after upgrade
   hosts: overcloud:infra-vms:seed:seed-hypervisor
-  tags: post
+  tags:
+    - post
+    - post-cleanup
   tasks:
     - name: Ensure iproute2 is installed
       ansible.builtin.apt:
@@ -171,30 +229,15 @@
         filter: "{{ kayobe_ansible_setup_filter }}"
         gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
 
-- name: Run the Kayobe network configuration playbook, to ensure definitions are not lost on reboot
-  import_playbook: "{{ lookup('ansible.builtin.env', 'VIRTUAL_ENV') }}/share/kayobe/ansible/network.yml"
-  tags: post
-
 - name: Reboot and confirm the host is upgraded to Noble 24.04
   hosts: overcloud:infra-vms:seed:seed-hypervisor
   vars:
     ansible_python_interpreter: /usr/bin/python3
     reboot_timeout_s: "{{ 20 * 60 }}"
-  tags: post
+  tags:
+    - post
+    - post-cleanup
   tasks:
-    - name: Ensure Noble repo definitions do not exist in sources.list
-      ansible.builtin.blockinfile:
-        path: /etc/apt/sources.list
-        state: absent
-      become: true
-
-    - name: Ensure Kolla Ansible Docker repo definition does not exist
-      ansible.builtin.file:
-        path: /etc/apt/sources.list.d/docker.list
-        state: absent
-      become: true
-      when: apt_repositories | selectattr('url', 'match', '.*docker-ce.*') | list | length > 0
-
     - name: Reboot and wait
       ansible.builtin.reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
@@ -209,27 +252,6 @@
           - /usr/bin
           - /usr/local/sbin
       become: true
-
-    # Make a backup, in case of having broken apt configuration.
-    - name: Backup upstream ubuntu.sources
-      ansible.builtin.copy:
-        src: /etc/apt/sources.list.d/ubuntu.sources
-        dest: /etc/apt/ubuntu.sources.bak
-        backup: true
-        remote_src: true
-      become: true
-      when: hostvars[inventory_hostname].stackhpc_repos_enabled
-
-    - name: Ensure only Kayobe defined apt repositories are defined
-      ansible.builtin.file:
-        path: "/etc/apt/{{ item }}"
-        state: absent
-      loop:
-        - sources.list.distUpgrade
-        - sources.list.d/third-party.sources
-        - sources.list.d/ubuntu.sources
-      become: true
-      when: hostvars[inventory_hostname].stackhpc_repos_enabled
 
     - name: Ensure all packages are in Noble version
       ansible.builtin.apt:
