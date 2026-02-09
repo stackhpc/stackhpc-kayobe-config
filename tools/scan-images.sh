@@ -63,7 +63,7 @@ generate_trivy_ignore() {
   local image_vulnerabilities
   image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
 
-  touch .trivyignore
+  truncate -s 0 .trivyignore  # ensure we start from a clean slate
   for vulnerability in $global_vulnerabilities; do
     echo "$vulnerability" >> .trivyignore
   done
