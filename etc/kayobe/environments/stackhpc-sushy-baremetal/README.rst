@@ -1,7 +1,7 @@
 Sushy Baremetal Environment
 ===========================
 This environment creates a virtual baremetal node using libvirt and Sushy Redfish Emulator.
-The libvirt VM is exposed via a Redfish endpoint provided by Sushy which allow the node
+The libvirt VM is exposed via a Redfish endpoint provided by Sushy which allows the node
 to be enrolled and managed by Openstack Ironic.
 This environment is based on the CI-AIO and stackhpc-baremetal environments.
 
