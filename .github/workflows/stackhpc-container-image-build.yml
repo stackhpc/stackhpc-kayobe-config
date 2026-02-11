@@ -177,7 +177,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Create build logs output directory
         run: mkdir image-build-logs
@@ -194,7 +194,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.overcloud
 
       - name: Copy overcloud container image build logs to output directory
@@ -212,7 +212,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.seed
 
       - name: Copy seed container image build logs to output directory
@@ -275,7 +275,7 @@ jobs:
           done < image-build-logs/push-attempt-images.txt
         shell: bash
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.push
 
       - name: Upload output artifact
