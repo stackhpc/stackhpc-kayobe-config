@@ -12,7 +12,7 @@ on:
         type: boolean
         default: true
     secrets:
-      KAYOBE_VAULT_PASSWORD:
+      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
       CLOUDS_YAML:
         required: true
@@ -24,7 +24,7 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
-  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 jobs:
   overcloud-host-image-build:
     name: Build overcloud host images
@@ -200,7 +200,7 @@ jobs:
           kayobe seed host command run \
           --command "sudo dnf config-manager --set-enabled crb && sudo dnf -y install epel-release && sudo dnf -y install zstd debootstrap kpartx cloud-init" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Create bifrost_httpboot Docker volume
         run: |
@@ -208,7 +208,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "sudo mkdir -p /var/lib/docker/volumes/bifrost_httpboot/_data" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Build a Rocky Linux 9 overcloud host image
         id: build_rocky_9
@@ -221,7 +221,7 @@ jobs:
           -e os_release="9" \
           -e stackhpc_overcloud_dib_name=overcloud-rocky-9
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9
 
       - name: Show last error logs
@@ -231,7 +231,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_rocky_9.outcome == 'failure'
 
       - name: Upload Rocky Linux 9 overcloud host image to Ark
@@ -245,7 +245,7 @@ jobs:
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
 
       - name: Upload Rocky Linux 9 overcloud host image to Dev Cloud
@@ -273,7 +273,7 @@ jobs:
           -e os_release="jammy" \
           -e stackhpc_overcloud_dib_name=overcloud-ubuntu-jammy
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-jammy
 
       - name: Show last error logs
@@ -283,7 +283,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-jammy/overcloud-ubuntu-jammy.stdout" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_ubuntu_jammy.outcome == 'failure'
 
       - name: Upload Ubuntu Jammy 22.04 overcloud host image to Ark
@@ -297,7 +297,7 @@ jobs:
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-jammy && steps.build_ubuntu_jammy.outcome == 'success'
 
       - name: Upload Ubuntu Jammy overcloud host image to Dev Cloud
