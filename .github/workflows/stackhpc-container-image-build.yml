@@ -271,7 +271,7 @@ jobs:
         if: ${{ !cancelled() }}
 
       - name: Fail if any images have critical vulnerabilities
-        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
+        run: if [ -e image-build-logs/image-scan-output/critical-images.txt ] && [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
         if: ${{ !inputs.push-critical }}
 
       - name: Copy clean images to push-attempt-images list
@@ -330,7 +330,7 @@ jobs:
         if: ${{ steps.build_overcloud_images.outcome == 'failure' || steps.build_seed_images.outcome == 'failure' }}
 
       - name: Fail when images failed to push
-        run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
+        run: if [ -e image-build-logs/push-failed-images.txt ] && [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
         if: ${{ inputs.push && !cancelled() }}
 
       # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
@@ -341,7 +341,7 @@ jobs:
       #   if: ${{ !inputs.push-critical && !cancelled() }}
 
       - name: Fail when critical vulnerabilities are found
-        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
+        run: if [ -e image-build-logs/image-scan-output/critical-images.txt ] && [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
         if: ${{ !inputs.push-critical && !cancelled() }}
 
       - name: Remove locally built images for this run
