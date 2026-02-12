@@ -23,7 +23,7 @@ on:
           - SMS Lab
           - Leafcloud
     secrets:
-      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
+      KAYOBE_VAULT_PASSWORD:
         required: true
       CLOUDS_YAML:
         required: true
@@ -122,7 +122,7 @@ jobs:
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
 
       - name: Upload Rocky Linux 9 overcloud host image to Cloud
@@ -167,7 +167,7 @@ jobs:
           -e os_distribution="ubuntu" \
           -e os_release="noble"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
         if: inputs.ubuntu-noble && steps.ubuntu_noble_image_exists.outcome == 'failure'
 
       - name: Upload Ubuntu Noble 24.04 overcloud host image to Cloud
