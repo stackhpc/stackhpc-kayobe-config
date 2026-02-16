@@ -21,6 +21,7 @@
   vars:
     venv: "{{ virtualenv_path }}/octavia-amphora"
     image_path: "/tmp/amphora-x64-haproxy.qcow2"
+    openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution in ['centos', 'rocky'] else '/etc/ssl/certs/ca-certificates.crt' }}"
   tasks:
     - name: Get image checksum
       vars:
@@ -89,14 +90,25 @@
       vars:
         ansible_python_interpreter: "{{ venv }}/bin/python"
         ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
-      ansible.builtin.command:
-        cmd: >-
-          {{ venv }}/bin/openstack image set amphora-x64-haproxy --name amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}
+      openstack.cloud.image:
+        auth_type: password
+        auth: "{{ openstack_auth }}"
+        ca_cert: "{{ openstack_cacert }}"
+        interface: "{{ openstack_interface }}"
+        id: "{{ image_info.images[0].id }}"
+        name: "amphora-x64-haproxy-{{ ansible_facts.date_time.iso8601_basic_short }}" # Change the name
+        tags: ["amphora"]
+        container_format: bare
+        disk_format: qcow2
+        is_public: false
+        filename: "{{ image_path }}"
+        properties:
+          hw_architecture: x86_64
+          hw_rng_model: virtio
       when:
         - image_info.images | length != 0
         - image_info.images[0].checksum != image_checksum.stat.checksum
       changed_when: true
-      environment: "{{ openstack_auth_env }}"
       delegate_to: "{{ groups['controllers'][0] }}"
 
     - name: Ensure new Octavia Amphora image is registered
