@@ -28,7 +28,9 @@
         fail_msg: >-
           This playbook is only designed for Rocky Linux 9.6 hosts. Ensure
           that you are limiting it to only run on Rocky Linux 9.6 hosts and
-          os_distribution is set to rocky.
+          os_distribution is set to rocky. This can be bypassed by setting the
+          skip_rocky_96_version_check variable to true.
+      when: not skip_rocky_96_version_check | default(false) | bool
 
     - name: Ensure doca kernel repo is up to date
       ansible.builtin.dnf:
@@ -68,7 +70,7 @@
         state: latest
       become: true
 
-    - name: Upgrade all
+    - name: Update all packages (this can take a long time)
       ansible.builtin.dnf:
         name: "*"
         state: latest
