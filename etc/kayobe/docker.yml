@@ -38,6 +38,15 @@ docker_registry_insecure: "{{ 'https' not in stackhpc_repo_mirror_url }}"
 # Enable live-restore on docker daemon
 docker_daemon_live_restore: true
 
+# Avoid docker 29 for the moment in Caracal
+docker_packages_version: "{{ '-28.*' if os_distribution == 'rocky' else ('=5:28*' if os_release == 'noble' else '=5:27*') }}"
+# variable from https://github.com/stackhpc/ansible-role-docker/blob/master/defaults/main.yml
+docker_packages:
+  - "docker-ce{{ docker_packages_version }}"
+  - "docker-ce-cli{{ docker_packages_version }}"
+  - "docker-ce-rootless-extras{{ docker_packages_version }}"
+  - "containerd.io"
+
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes
