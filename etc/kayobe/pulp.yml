@@ -199,7 +199,7 @@ stackhpc_pulp_distribution_deb_production: >-
 # Content comes in from release repositories, via pinned repo versions.
 
 # Whether to sync Rocky Linux 9 packages.
-stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' }}"
+stackhpc_pulp_sync_rocky_9: "{{ os_distribution == 'rocky' and os_release == '9' }}"
 # Rocky 9 minor version number. Supported values: 6, 7. Default is 7
 stackhpc_pulp_repo_rocky_9_minor_version: '7'
 # Rocky 9 Snapshot versions. The defaults use the appropriate version from
@@ -234,6 +234,31 @@ stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version: "{{ lookup('va
 # Whether to sync packages common to all RHEL 9 derivatives.
 stackhpc_pulp_sync_el_9: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
+# Whether to sync Rocky Linux 10 packages.
+stackhpc_pulp_sync_rocky_10: "{{ os_distribution == 'rocky' and os_release == '10' }}"
+# Rocky 10 minor version number. Supported values: 1. Default is 1
+stackhpc_pulp_repo_rocky_10_minor_version: '1'
+# Rocky 10 Snapshot versions. The defaults use the appropriate version from
+# pulp-repo-versions.yml for the selected minor release.
+
+# Rocky 10 Snapshot versions
+stackhpc_pulp_repo_rocky_10_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_appstream' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_10_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_baseos' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_10_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_extras' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_10_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_crb' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_rocky_10_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_highavailability' ~ arch_suffix ~ '_version') }}"
+
+# Rocky 10 Multiarch repositories
+stackhpc_pulp_repo_multiarch_centos_stream_10_nfv_openvswitch_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_10_openstack_epoxy_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_openstack_epoxy' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_10_storage_ceph_squid_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_centos_stream_10_docker_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_docker' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rhel_10_mariadb_10_11_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_10_mariadb_10_11' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_epel_10_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10' ~ arch_suffix ~ '_version') }}"
+
+# Whether to sync packages common to all RHEL 10 derivatives.
+stackhpc_pulp_sync_el_10: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
 # Default configuration, which each element of stackhpc_pulp_rpm_repos
 # is combined with
 stackhpc_pulp_rpm_repos_default_config:
@@ -247,24 +272,54 @@ stackhpc_pulp_rpm_repos_default_config:
   state: present
 
 stackhpc_pulp_rpm_repos:
-  # Grafana and RabbitMQ repositories - version 8/9 agnositic
+  # Repositories common to both Rocky 9 and 10
   - name: Grafana
     url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
     distribution_name: "grafana-"
     base_path: "grafana/oss/rpm/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
 
   - name: RabbitMQ - Erlang - RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
     distribution_name: "rhel9-rabbitmq-erlang-"
     base_path: "rabbitmq/erlang/el/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
 
   - name: RabbitMQ - Server - RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/noarch/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
     distribution_name: "rhel9-rabbitmq-server-"
     base_path: "rabbitmq/rabbitmq-server/el/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+
+  - name: TreasureData 5 for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
+    distribution_name: "rhel-9-treasuredata-5-"
+    base_path: "treasuredata/5/redhat/9/x86_64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+
+  - name: InfluxDB for RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
+    distribution_name: "rhel-9-influxdb-"
+    base_path: "influxdb/rhel/9/x86_64/stable/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+
+  - name: OpenSearch 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
+    distribution_name: "opensearch-2-x-"
+    base_path: "opensearch/2.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+
+  - name: OpenSearch Dashboards 2.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
+    distribution_name: "opensearch-dashboards-2-x-"
+    base_path: "opensearch-dashboards/2.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+
+  - name: ProxySQL 2.7 for AlmaLinux 9
+    url: "{{ stackhpc_release_pulp_content_url }}/ProxySQL/proxysql-2.7.x/almalinux/9/{{ stackhpc_pulp_repo_almalinux_9_proxysql_2_7_version }}"
+    distribution_name: "almalinux-9-proxysql-2.7-"
+    base_path: "ProxySQL/proxysql-2.7.x/almalinux/9/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
 
   # Base Rocky 9 repositories
   - name: Rocky Linux 9 - AppStream
@@ -352,34 +407,10 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
 
   # Additional RHEL 9 repositories
-  - name: TreasureData 5 for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
-    distribution_name: "rhel-9-treasuredata-5-"
-    base_path: "treasuredata/5/redhat/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
   - name: MariaDB 10.11 for RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
     distribution_name: "rhel-9-mariadb-10-11-"
     base_path: "mariadb-10.11/yum/rhel/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
-  - name: InfluxDB for RHEL 9
-    url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
-    distribution_name: "rhel-9-influxdb-"
-    base_path: "influxdb/rhel/9/x86_64/stable/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
-  - name: OpenSearch 2.x
-    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
-    distribution_name: "opensearch-2-x-"
-    base_path: "opensearch/2.x/yum/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
-
-  - name: OpenSearch Dashboards 2.x
-    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/2.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
-    distribution_name: "opensearch-dashboards-2-x-"
-    base_path: "opensearch-dashboards/2.x/yum/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
   - name: DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL {{ doca_rocky_9_minor_dot }}
@@ -394,11 +425,91 @@ stackhpc_pulp_rpm_repos:
     base_path: "doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/x86_64/"
     required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
 
-  - name: ProxySQL 2.7 for AlmaLinux 9
-    url: "{{ stackhpc_release_pulp_content_url }}/ProxySQL/proxysql-2.7.x/almalinux/9/{{ stackhpc_pulp_repo_almalinux_9_proxysql_2_7_version }}"
-    distribution_name: "almalinux-9-proxysql-2.7-"
-    base_path: "ProxySQL/proxysql-2.7.x/almalinux/9/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+  # Base Rocky 10 repositories
+  - name: Rocky Linux 10 - AppStream
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_appstream_version }}"
+    distribution_name: "rocky-10-appstream-"
+    base_path: "rocky/10/AppStream/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
+  - name: Rocky Linux 10 - BaseOS
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_baseos_version }}"
+    distribution_name: "rocky-10-baseos-"
+    base_path: "rocky/10/BaseOS/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
+  - name: Rocky Linux 10 - Extras
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_extras_version }}"
+    distribution_name: "rocky-10-extras-"
+    base_path: "rocky/10/extras/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
+  - name: Rocky Linux 10 - CRB
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_crb_version }}"
+    distribution_name: "rocky-10-crb-"
+    base_path: "rocky/10/CRB/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
+  - name: Rocky Linux 10 - HighAvailability
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_version }}"
+    distribution_name: "rocky-10-highavailability-"
+    base_path: "rocky/10/highavailability/x86_64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+
+  # Additional CentOS Stream 10 repositories
+  - name: CentOS Stream 10 - NFV OpenvSwitch
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch_version }}"
+    distribution_name: "centos-stream-10-nfv-openvswitch-"
+    base_path: "centos/10-stream/nfv/x86_64/openvswitch-2/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: CentOS Stream 10 - OpenStack Epoxy
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/cloud/x86_64/openstack-epoxy/{{ stackhpc_pulp_repo_centos_stream_10_openstack_epoxy_version }}"
+    distribution_name: "centos-stream-10-openstack-epoxy-"
+    base_path: "centos/10-stream/cloud/x86_64/openstack-epoxy/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: CentOS Stream 10 - Ceph Squid
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/storage/x86_64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid_version }}"
+    distribution_name: "centos-stream-10-ceph-squid-"
+    base_path: "centos/10-stream/storage/x86_64/ceph-squid/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  # EPEL 10 repository
+  - name: Extra Packages for Enterprise Linux 10 - x86_64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/10/Everything/x86_64/{{ stackhpc_pulp_repo_epel_10_version }}"
+    distribution_name: "extra-packages-for-enterprise-linux-10-x86_64-"
+    base_path: "epel/10/Everything/x86_64/"
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+
+  # ELRepo 10 repository
+  - name: ELRepo.org Community Enterprise Linux Repository - el10
+    url: "{{ stackhpc_release_pulp_content_url }}/elrepo/elrepo/el10/x86_64/{{ stackhpc_pulp_repo_elrepo_10_version }}"
+    distribution_name: elrepo-el10-x86_64-
+    base_path: elrepo/elrepo/el10/x86_64/
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+
+  # Third-party repositories
+  - name: Docker CE for CentOS 10
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/10/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_10_docker_version }}"
+    distribution_name: "docker-ce-for-centos-10-"
+    base_path: "docker-ce/centos/10/x86_64/stable/"
+    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+
+  # Additional RHEL 10 repositories
+  - name: MariaDB 10.11 for RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_10_11_version }}"
+    distribution_name: "rhel-10-mariadb-10-11-"
+    base_path: "mariadb-10.11/yum/rhel/10/x86_64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: DOCA Online Repo 3.2.1 - RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/doca/3.2.1/rhel10/x86_64/{{ stackhpc_pulp_repo_doca_3_2_1_rhel10_x86_64_version }}"
+    distribution_name: "doca-3.2.1-rhel10-"
+    base_path: "doca/3.2.1/rhel10/x86_64/"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool }}"
 
 # RPM repositories
 stackhpc_pulp_repository_rpm_repos: >-
@@ -576,6 +687,7 @@ stackhpc_pulp_images_kolla:
 stackhpc_kolla_unbuildable_images:
   ubuntu-noble: []
   rocky-9: []
+  rocky-10: []
 
 # Whitespace-separated list of regular expressions matching Kolla image names.
 # Usage is similar to kolla-build CLI arguments.
