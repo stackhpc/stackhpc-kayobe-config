@@ -206,14 +206,16 @@ def load_kolla_image_tags() -> KollaImageTags:
         return kolla_image_tags
 
     kayobe_environment = os.environ.get("KAYOBE_ENVIRONMENT", "<unset>")
-    print("Failed to find kolla-image-tags.yml. Checked files:")
-    for tags_file in checked_files:
-        print(f"  - {tags_file}")
-    print(f"KAYOBE_ENVIRONMENT={kayobe_environment}")
-    print("Expected YAML structure:")
-    print("  kolla_image_tags:")
-    print("    openstack:")
-    print("      rocky-9: <tag>")
+    checked = "\n".join(f"  - {f}" for f in checked_files)
+    print(
+        f"Failed to find kolla-image-tags.yml. Checked files:\n{checked}\n"
+        f"KAYOBE_ENVIRONMENT={kayobe_environment}\n"
+        "Expected YAML structure:\n"
+        "  kolla_image_tags:\n"
+        "    openstack:\n"
+        "      rocky-9: <tag>",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
