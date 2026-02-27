@@ -358,9 +358,6 @@ kolla_build_blocks:
   bifrost_base_header: |
     ADD additions-archive /
     ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
-  grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel \
-        && grafana-cli plugins install grafana-opensearch-datasource
   ironic_inspector_header: |
     ADD additions-archive /
 
@@ -373,6 +370,8 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  grafana_plugins_append:
+    - vonage-status-panel
   ironic_inspector_pip_packages_append:
     - /additions/*
   magnum_base_pip_packages_override:
