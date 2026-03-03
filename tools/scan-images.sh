@@ -46,12 +46,12 @@ file_prep() {
 # Gather image lists
 get_images() {
   local output_file="$1-scanned-container-images.txt"
-  
+
   docker image ls \
     --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
     --format "{{.Repository}}:{{.Tag}}" \
     > "$output_file"
-    
+
   cat "$output_file"
 }
 
@@ -63,7 +63,7 @@ generate_trivy_ignore() {
   local image_vulnerabilities
   image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
 
-  touch .trivyignore
+  truncate -s 0 .trivyignore  # ensure we start from a clean slate
   for vulnerability in $global_vulnerabilities; do
     echo "$vulnerability" >> .trivyignore
   done

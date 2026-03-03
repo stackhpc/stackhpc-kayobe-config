@@ -103,7 +103,7 @@ jobs:
 
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.upgrade && env.PREVIOUS_BRANCH || inputs.github_ref }}
@@ -139,7 +139,7 @@ jobs:
           fi
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Initialise terraform
         run: terraform init
@@ -396,7 +396,7 @@ jobs:
         if: inputs.upgrade
 
       - name: Checkout current release config
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.github_ref }}
@@ -490,7 +490,7 @@ jobs:
         if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}
 
       - name: Upload test result artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
           path: |
