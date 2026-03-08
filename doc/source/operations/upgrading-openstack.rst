@@ -314,6 +314,14 @@ Then execute the migration script:
 
    $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
 
+.. note::
+
+   After migrating to durable queues, messages are sent to all receivers, but
+   only one will respond. This results in high numbers of messages staying in
+   the ready state, so the Prometheus alert ``RabbitMQTooMuchReady`` will start
+   firing. This alert can be ignored, and will be removed when Prometheus is
+   reconfigured.
+
 RabbitMQ Upgrade
 ~~~~~~~~~~~~~~~~
 
