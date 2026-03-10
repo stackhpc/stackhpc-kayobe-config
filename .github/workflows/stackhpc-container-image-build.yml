@@ -8,6 +8,11 @@ on:
         type: string
         required: false
         default: ""
+      service-group:
+        description: Whether to build images by service group (If false images are built by regex match)
+        type: boolean
+        required: true
+        default: false
       overcloud:
         description: Build container images for overcloud services?
         type: boolean
@@ -142,7 +147,7 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv python3-yaml curl jq wget
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -198,11 +203,18 @@ jobs:
       - name: Create build logs output directory
         run: mkdir image-build-logs
 
+      - name: Get list of images of selected services
+        id: process-regex
+        run: |
+          output=$(src/kayobe-config/tools/kolla-images.py get-service-images --kolla-ansible-path src/kolla-ansible --services "${{ inputs.regexes }}")
+          echo images=$output | tee -a "$GITHUB_OUTPUT"
+        if: inputs.service-group
+
       - name: Build kolla overcloud images
         id: build_overcloud_images
         continue-on-error: true
         run: |
-          args="${{ inputs.regexes }}"
+          args="${{ inputs.service-group && steps.process-regex.outputs.images || inputs.regexes }}"
           if [[ "${{ matrix.distro.arch }}" == 'aarch64' ]]; then
             args="$args -e kolla_base_arch=${{ matrix.distro.arch }}"
           fi
