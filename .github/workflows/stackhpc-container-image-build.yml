@@ -154,6 +154,21 @@ jobs:
         with:
           path: src/kayobe-config
 
+      - name: Get Kolla-Ansible version
+        id: get-kolla-ansible-version
+        run: |
+          output=$(grep -wrh stackhpc_kolla_ansible_source_version: src/kayobe-config/etc/kayobe/ | head -1 | awk {'print $2'})
+          echo kolla_ansible_version=$output | tee -a "$GITHUB_OUTPUT"
+        if: inputs.service-group
+
+      - name: Checkout Kolla-Ansible
+        uses: actions/checkout@v6
+        with:
+          repository: stackhpc/kolla-ansible
+          ref: ${{ steps.get-kolla-ansible-version.outputs.kolla_ansible_version }}
+          path: src/kolla-ansible
+        if: inputs.service-group
+
       - name: Make sure dockerd is running and test Docker
         run: |
           docker ps
