@@ -116,6 +116,10 @@ def parse_args() -> argparse.Namespace:
     subparser = subparsers.add_parser("check-hierarchy", help="Check tag variable hierarchy against kolla-ansible")
     subparser.add_argument("--kolla-ansible-path", required=True, help="Path to kolla-ansible repostory checked out to correct branch")
 
+    subparser = subparsers.add_parser("get-service-images", help="Get space separated list of images used by services in kolla-ansible")
+    subparser.add_argument("--kolla-ansible-path", required=True, help="Path to kolla-ansible repostory checked out to correct branch")
+    subparser.add_argument("--services", default=None, required=False, help="Space separated list of services to get a list of images")
+
     subparser = subparsers.add_parser("check-tags", help="Check specified tags for each image exist in the Ark registry")
     subparser.add_argument("--registry", required=True, help="Hostname of container image registry")
     subparser.add_argument("--namespace", required=True, help="Namespace in container image registry")
@@ -335,13 +339,19 @@ def check_image_map(kolla_ansible_path: str):
         sys.exit(1)
 
 
-def check_hierarchy(kolla_ansible_path: str):
-    """Check the tag variable hierarchy against Kolla Ansible variables."""
+def get_hierarchy(kolla_ansible_path: str) -> yaml:
+    """Return the tag variable hierarchy against Kolla Ansible variables"""
     cmd = """git grep -h '^[a-z0-9_]*_tag:' ansible/roles/*/defaults/main.yml"""
     hierarchy_str = subprocess.check_output(cmd, shell=True, cwd=os.path.realpath(kolla_ansible_path))
     hierarchy = yaml.safe_load(hierarchy_str)
     # This one is not a container:
     hierarchy.pop("octavia_amp_image_tag")
+    return hierarchy
+
+
+def check_hierarchy(kolla_ansible_path: str):
+    """Check the tag variable hierarchy against Kolla Ansible variables."""
+    hierarchy = get_hierarchy(kolla_ansible_path)
     tag_var_re = re.compile(r"^([a-z0-9_]+)_tag$")
     parent_re = re.compile(r"{{[\s]*([a-z0-9_]+)_tag[\s]*}}")
     hierarchy = {
@@ -361,6 +371,28 @@ def check_hierarchy(kolla_ansible_path: str):
         print(f"{tag_var} -> {parent} != {expected}")
     if errors:
         sys.exit(1)
+
+
+def get_service_images(kolla_ansible_path: str, services: str):
+    """Get space separated list of images used by selected services in Kolla Ansible"""
+    hierarchy = get_hierarchy(kolla_ansible_path)
+    services_list = []
+    if services:
+        services_list = services.split(" ")
+    reversed_hierarchy = []
+    child_re = re.compile(r"^([a-z0-9_]+)_tag$")
+    parent_re = re.compile(r"{{[\s]*([a-z0-9_]+)_tag[\s]*}}")
+    for child, parent in hierarchy.items():
+        child_name = child_re.match(child).group(1)
+        parent_name = parent_re.match(parent).group(1)
+        if(
+            parent_name == "openstack" or
+           (len(services_list) > 0 and parent_name not in services_list)
+           ):
+            continue
+        reversed_hierarchy.append(child_name)
+    images_str = " ".join(reversed_hierarchy).replace("_", "-")
+    print(images_str)
 
 
 def list_containers(base_distros: List[str]):
@@ -414,6 +446,8 @@ def main():
         check_image_map(args.kolla_ansible_path)
     elif args.command == "check-hierarchy":
         check_hierarchy(args.kolla_ansible_path)
+    elif args.command == "get-service-images":
+        get_service_images(args.kolla_ansible_path, args.services)
     elif args.command == "check-tags":
         check_tags(base_distros, kolla_image_tags, args.registry, args.namespace)
     elif args.command == "list-containers":
