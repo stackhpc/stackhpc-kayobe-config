@@ -9,7 +9,9 @@
     - name: Query images and tags
       ansible.builtin.command:
         cmd: >-
-          {{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../../tools/kolla-images.py list-tags
+          {{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/../../tools/kolla-images.py
+          list-tags
+          {{ '--environment-overrides' if stackhpc_kolla_image_tags_env_overrides_enabled | default(false) | bool else '' }}
       register: kolla_images_result
       changed_when: false
 

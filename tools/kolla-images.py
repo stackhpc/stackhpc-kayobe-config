@@ -34,8 +34,9 @@ import yaml
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
 # where the key is the OS distro and the value is the tag to deploy.
-# Tags are loaded from etc/kayobe/kolla-image-tags.yml and optionally
-# overridden by etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla-image-tags.yml.
+# Tags are loaded from etc/kayobe/kolla-image-tags.yml and optionally, when
+# environment overrides are enabled, overridden by
+# etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla-image-tags.yml.
 KollaImageTags = Dict[str, Dict[str, str]]
 
 # Maps a Kolla image to a list of containers that use the image.
@@ -110,6 +111,15 @@ SUPPORTED_BASE_DISTROS = [
 ]
 
 
+def add_environment_overrides_argument(subparser: argparse.ArgumentParser) -> None:
+    """Add an opt-in flag for loading env-specific kolla image tag overrides."""
+    subparser.add_argument(
+        "--environment-overrides",
+        action="store_true",
+        help="Load environment-specific kolla-image-tags.yml overrides when KAYOBE_ENVIRONMENT is set",
+    )
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser()
@@ -125,14 +135,17 @@ def parse_args() -> argparse.Namespace:
     subparser = subparsers.add_parser("check-tags", help="Check specified tags for each image exist in the Ark registry")
     subparser.add_argument("--registry", required=True, help="Hostname of container image registry")
     subparser.add_argument("--namespace", required=True, help="Namespace in container image registry")
+    add_environment_overrides_argument(subparser)
 
     subparsers.add_parser("list-containers", help="List supported containers based on pulp.yml")
 
     subparsers.add_parser("list-images", help="List supported images based on pulp.yml")
 
-    subparsers.add_parser("list-tags", help="List tags for each image based on kolla-image-tags.yml")
+    subparser = subparsers.add_parser("list-tags", help="List tags for each image based on kolla-image-tags.yml")
+    add_environment_overrides_argument(subparser)
 
-    subparsers.add_parser("list-tag-vars", help="List Kolla Ansible tag variables")
+    subparser = subparsers.add_parser("list-tag-vars", help="List Kolla Ansible tag variables")
+    add_environment_overrides_argument(subparser)
 
     return parser.parse_args()
 
@@ -176,20 +189,20 @@ def merge_kolla_image_tags(base: KollaImageTags, override: KollaImageTags) -> Ko
     return merged
 
 
-def get_kolla_image_tag_files() -> Tuple[pathlib.Path, Optional[pathlib.Path]]:
-    """Return main and environment-specific kolla image tags files."""
+def get_kolla_image_tag_files(use_environment_overrides: bool) -> Tuple[pathlib.Path, Optional[pathlib.Path]]:
+    """Return main and optional environment-specific kolla image tags files."""
     main_tags_file = get_abs_path("etc/kayobe/kolla-image-tags.yml")
-    kayobe_environment = os.environ.get("KAYOBE_ENVIRONMENT")
-    if kayobe_environment:
+    if use_environment_overrides and os.environ.get("KAYOBE_ENVIRONMENT"):
+        kayobe_environment = os.environ["KAYOBE_ENVIRONMENT"]
         env_tags_file = get_abs_path(f"etc/kayobe/environments/{kayobe_environment}/kolla-image-tags.yml")
     else:
         env_tags_file = None
     return main_tags_file, env_tags_file
 
 
-def load_kolla_image_tags() -> KollaImageTags:
+def load_kolla_image_tags(use_environment_overrides: bool = False) -> KollaImageTags:
     """Load and merge Kolla image tags from main and env-specific files."""
-    main_tags_file, env_tags_file = get_kolla_image_tag_files()
+    main_tags_file, env_tags_file = get_kolla_image_tag_files(use_environment_overrides)
     checked_files = [main_tags_file]
     if env_tags_file is not None:
         checked_files.append(env_tags_file)
@@ -466,24 +479,27 @@ def list_tag_vars(kolla_image_tags: KollaImageTags):
 
 def main():
     args = parse_args()
-    kolla_image_tags = load_kolla_image_tags()
     base_distros = args.base_distros.split(",")
-
-    validate(kolla_image_tags)
 
     if args.command == "check-image-map":
         check_image_map(args.kolla_ansible_path)
     elif args.command == "check-hierarchy":
         check_hierarchy(args.kolla_ansible_path)
     elif args.command == "check-tags":
+        kolla_image_tags = load_kolla_image_tags(use_environment_overrides=args.environment_overrides)
+        validate(kolla_image_tags)
         check_tags(base_distros, kolla_image_tags, args.registry, args.namespace)
     elif args.command == "list-containers":
         list_containers(base_distros)
     elif args.command == "list-images":
         list_images(base_distros)
     elif args.command == "list-tags":
+        kolla_image_tags = load_kolla_image_tags(use_environment_overrides=args.environment_overrides)
+        validate(kolla_image_tags)
         list_tags(base_distros, kolla_image_tags)
     elif args.command == "list-tag-vars":
+        kolla_image_tags = load_kolla_image_tags(use_environment_overrides=args.environment_overrides)
+        validate(kolla_image_tags)
         list_tag_vars(kolla_image_tags)
     else:
         sys.exit(1)
