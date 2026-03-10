@@ -1,13 +1,19 @@
 ---
 features:
   - |
-    Add support for environment-specific Kolla image tag overrides.
+    Add opt-in support for environment-specific Kolla image tag overrides.
 
     ``tools/kolla-images.py`` now loads image tags from
     ``etc/kayobe/kolla-image-tags.yml`` and, when ``KAYOBE_ENVIRONMENT`` is set,
-    also loads
+    can also load
     ``etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla-image-tags.yml``.
 
-    Environment values are merged on top of the base file, so per-environment
-    tag overrides take precedence while unspecified tags continue to inherit
-    from the base configuration.
+    Environment values are merged on top of the base file when
+    ``--environment-overrides`` is used, so per-environment tag overrides take
+    precedence while unspecified tags continue to inherit from the base
+    configuration.
+
+    StackHPC Kayobe Config keeps this disabled by default. Set
+    ``stackhpc_kolla_image_tags_env_overrides_enabled: true`` to enable
+    environment-specific overrides in rendered Kolla globals and Pulp tag
+    selection.
