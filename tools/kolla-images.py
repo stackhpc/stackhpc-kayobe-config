@@ -377,21 +377,37 @@ def get_service_images(kolla_ansible_path: str, services: str):
     """Get space separated list of images used by selected services in Kolla Ansible"""
     hierarchy = get_hierarchy(kolla_ansible_path)
     services_list = []
+    is_filtered = False
     if services:
         services_list = services.split(" ")
-    reversed_hierarchy = []
+        is_filtered = True
+    images_list = []
     child_re = re.compile(r"^([a-z0-9_]+)_tag$")
     parent_re = re.compile(r"{{[\s]*([a-z0-9_]+)_tag[\s]*}}")
+    parents_no_child_set = set()
     for child, parent in hierarchy.items():
         child_name = child_re.match(child).group(1)
         parent_name = parent_re.match(parent).group(1)
-        if(
-            parent_name == "openstack" or
-           (len(services_list) > 0 and parent_name not in services_list)
-           ):
-            continue
-        reversed_hierarchy.append(child_name)
-    images_str = " ".join(reversed_hierarchy).replace("_", "-")
+        # This is parent
+        if parent_name == "openstack":
+            # And part of the query or no services specified
+            if is_filtered and child_name in services_list or not is_filtered:
+                parents_no_child_set.add(child_name) # Add to parent list
+            continue # Then move on
+        # This service is not part of the query
+        if is_filtered and parent_name not in services_list:
+            continue # ignore
+        # Child found
+        if parent_name in parents_no_child_set:
+            parents_no_child_set.discard(parent_name) # Remove parent that has child
+        images_list.append(child_name) # Add the child to the list
+    # Add parent with no child
+    images_list += list(parents_no_child_set)
+    # NOTE(seunghun1ee): Currently K-A has inconsistency on mariadb tag on 2025.1 release
+    # Adding manually
+    if is_filtered and "mariadb" in services_list or not is_filtered:
+        images_list.append("mariadb")
+    images_str = " ".join(images_list).replace("_", "-")
     print(images_str)
 
 
