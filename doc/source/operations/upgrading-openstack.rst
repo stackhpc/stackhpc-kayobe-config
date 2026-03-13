@@ -566,6 +566,19 @@ To upgrade the Ansible control host:
 
    kayobe control host upgrade
 
+Upgrading Pulp
+--------------
+
+The local Pulp server needs to be upgraded before synchronising 2025.1
+container images. The following command will deploy the latest Pulp container
+without upgrading Bifrost:
+
+.. code-block:: console
+
+   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+
+Note that this will also update any other enabled seed containers, such as Squid.
+
 Syncing Release Train artifacts
 -------------------------------
 
