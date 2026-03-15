@@ -14,7 +14,7 @@
 # ln -s ../../../ansible/fixes/fix-houston.yml 90-fix-houston.yml
 
 - name: Create Systemd Unit to workaround 'tc mirred to Houston' error
-  hosts: network,compute
+  hosts: "{{ houston_hosts | default('network:compute') }}"
   become: true
 
   tasks:
