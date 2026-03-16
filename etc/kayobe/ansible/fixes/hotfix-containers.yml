@@ -24,7 +24,7 @@
         - container_hotfix_container_regex == "" or container_hotfix_command == "" and container_hotfix_files == []
 
     - name: Get list of containers to hotfix
-      ansible.builtin.command: '{{ kolla_container_engine | default("docker") }} ps --format {% raw %}"{{ .Names }}"{% endraw %}'
+      ansible.builtin.command: '{{ container_engine | default("docker") }} ps --format {% raw %}"{{ .Names }}"{% endraw %}'
       register: host_containers
 
     - name: Set fact for containers list
@@ -64,6 +64,6 @@
         state: absent
 
     - name: Restart containers if requested
-      ansible.builtin.command: "{{ kolla_container_engine | default('docker') }} restart {{ item }}"
+      ansible.builtin.command: "{{ container_engine | default('docker') }} restart {{ item }}"
       loop: "{{ containers_list | regex_findall(container_hotfix_container_regex, multiline=True) | list | unique }}"
       when: container_hotfix_restart_containers

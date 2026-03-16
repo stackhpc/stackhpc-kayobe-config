@@ -10,7 +10,7 @@
 - name: Set the Pulp admin password
   become: true
   command: >-
-    {{ kolla_container_engine | default("docker") }} exec -u root pulp
+    {{ container_engine | default("docker") }} exec -u root pulp
     bash -c
       "pulpcore-manager reset-admin-password -p \"{{ pulp_password }}\""
   no_log: true
@@ -21,7 +21,7 @@
 - name: Manage Pulp content checksums
   become: true
   command: >-
-    {{ kolla_container_engine | default("docker") }} exec -u root pulp
+    {{ container_engine | default("docker") }} exec -u root pulp
     bash -c
       'pulpcore-manager handle-artifact-checksums'
   when:
@@ -31,7 +31,7 @@
 - name: Manage Pulp content image data
   become: true
   command: >-
-    {{ kolla_container_engine | default("docker") }} exec -u root pulp
+    {{ container_engine | default("docker") }} exec -u root pulp
     bash -c
       'pulpcore-manager container-handle-image-data'
 
