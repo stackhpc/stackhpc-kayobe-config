@@ -196,8 +196,8 @@ From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
 for Ironic and follows Ironic's default.
 This can cause your Ironic configuration ``ironic.conf`` to regress.
 Check the configuration difference before applying and re-add your options at
-``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+``$KAYOBE_CONFIG_PATH/kolla/config/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/config/ironic.conf`` if using environments)
 
 For example,
 
