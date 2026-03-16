@@ -4,14 +4,15 @@
 # container on overcloud hosts.  It is intended to be used in scenarios where
 # neutron_openvswitch_agent was updated to a version without iptables-nft.
 
-- hosts: overcloud
+- name: Flushes legacy iptables rules on ML2/OVS deployments
+  hosts: overcloud
   gather_facts: false
   tasks:
     - name: Gather service facts
       ansible.builtin.service_facts:
 
     - name: End play for hosts without openvswitch agent
-      meta: end_host
+      ansible.builtin.meta: end_host
       when: "'kolla-neutron_openvswitch_agent-container.service' not in ansible_facts.services"
 
     - name: Flush iptables-legacy in neutron_openvswitch_agent container
