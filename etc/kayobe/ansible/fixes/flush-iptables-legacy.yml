@@ -1,0 +1,34 @@
+---
+
+# This playbook flushes iptables-legacy rules in the neutron_openvswitch_agent container on overcloud hosts.
+# It is intended to be used in scenarios where neutron_openvswitch_agent was updated to a version without
+# iptables-nft.
+
+- hosts: overcloud
+  gather_facts: false
+  tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: End play for hosts without openvswitch agent
+      meta: end_host
+      when: "'kolla-neutron_openvswitch_agent-container.service' not in ansible_facts.services"
+
+    - name: Flush iptables-legacy in neutron_openvswitch_agent container
+      ansible.builtin.shell: |
+        set -euo pipefail
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P INPUT ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P FORWARD ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P OUTPUT ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t nat -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t nat -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t mangle -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t mangle -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t raw -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t raw -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t filter -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t filter -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -X
+      args:
+        executable: /bin/bash
