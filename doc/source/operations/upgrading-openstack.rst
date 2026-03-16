@@ -196,8 +196,8 @@ From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
 for Ironic and follows Ironic's default.
 This can cause your Ironic configuration ``ironic.conf`` to regress.
 Check the configuration difference before applying and re-add your options at
-``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+``$KAYOBE_CONFIG_PATH/kolla/config/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/config/ironic.conf`` if using environments)
 
 For example,
 
@@ -565,6 +565,19 @@ To upgrade the Ansible control host:
 .. code-block:: console
 
    kayobe control host upgrade
+
+Upgrading Pulp
+--------------
+
+The local Pulp server needs to be upgraded before synchronising 2025.1
+container images. The following command will deploy the latest Pulp container
+without upgrading Bifrost:
+
+.. code-block:: console
+
+   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+
+Note that this will also update any other enabled seed containers, such as Squid.
 
 Syncing Release Train artifacts
 -------------------------------
