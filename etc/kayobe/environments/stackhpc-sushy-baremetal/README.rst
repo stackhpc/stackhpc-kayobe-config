@@ -41,12 +41,14 @@ Auto-setup playbook used to set up Sushy and create virtual baremetal within lib
 
 This auto-setup playbook runs two separate playbooks:
 
-* ``sushy-setup.yml`` - Installs libvirt and required dependencies, creates a Python virtual environment
-for Sushy, templates the configuration, and enables the ``sushyemud`` service.
+* ``sushy-setup.yml`` - Installs libvirt and required dependencies, creates a Python virtual
+environment for Sushy, templates the configuration, and enables the ``sushyemud`` service.
 
-* ``create-virtual-baremetal.yml`` - Defines and starts the libvirt storage pool, installs required Python
-libraries, and uses the ``stackhpc.libvirt-vm`` role to create the virtual baremetal nodes.
+* ``create-virtual-baremetal.yml`` - Defines and starts the libvirt storage pool, installs required
+Python libraries, and uses the ``stackhpc.libvirt-vm`` role to create the virtual baremetal nodes.
 
-Scripts from the baremetal env can be run to enroll, inspect and clean virtual baremetal nodes.
+Once the virtual baremetal is created from the previous step and configured in Sushy, the enrollment
+process which is used for other baremetal can begin. Scripts from the baremetal env can be run
+to enroll, inspect and clean virtual baremetal nodes.
 
 ``kayobe playbook run environments/stackhpc-baremetal/ansible/baremetal-all.yml``

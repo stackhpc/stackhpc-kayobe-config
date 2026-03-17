@@ -21,7 +21,7 @@ Enable the Environment
 -----------------------
 
 This environment is intended to be layered on top of a base Kayobe environment
-(e.g. ``ci-aio``), so that baremetal-specific defaults override those provided
+(e.g. ``ci-aio`` or a production environment), so that baremetal-specific defaults override those provided
 by the base environment.
 Create a ``.kayobe-environment`` file in the base of stackhpc-baremetal environment and add your
 base environment as a dependency, for example if using CI-AIO as a base environment::
@@ -45,11 +45,11 @@ Workflow Overview
 
 The workflow is executed in the following order when ``baremetal-all.yml`` is run:
 
-1. **Enroll nodes** – create Ironic nodes and move them to ``manageable``
-2. **Check BMC is up** – verify Redfish connection
-3. **Redfish inspection** – discover hardware
-4. **Agent inspection** – collect LLDP
-5. **Clean and provide** – clean nodes and move them to ``available``
+1. **Enroll nodes** - create Ironic nodes and move them to ``manageable``
+2. **Check BMC is up** - verify Redfish connection
+3. **Redfish inspection** - discover hardware
+4. **Agent inspection** - collect LLDP
+5. **Clean and provide** - clean nodes and move them to ``available``
 
 
 Progress is tracked using the Ironic node ``extra`` field:
