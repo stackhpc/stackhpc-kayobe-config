@@ -4,9 +4,13 @@
 # container on overcloud hosts.  It is intended to be used in scenarios where
 # neutron_openvswitch_agent was updated to a version without iptables-nft.
 
+# NOTE(wszumski): Also had to run a rabbitmq reset after flushing. Potentially
+# we could do a more targetted restart of containers.
+
 - name: Flushes legacy iptables rules on ML2/OVS deployments
   hosts: overcloud
   gather_facts: false
+  become: true
   tasks:
     - name: Gather service facts
       ansible.builtin.service_facts:
@@ -20,6 +24,7 @@
         set -euo pipefail
         {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy-save | grep neutron
       register: save_result
+      failed_when: false
       args:
         executable: /bin/bash
 

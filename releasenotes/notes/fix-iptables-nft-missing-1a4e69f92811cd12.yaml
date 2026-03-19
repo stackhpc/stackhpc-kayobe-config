@@ -1,17 +1,27 @@
 ---
 fixes:
   - |
-    Fixes an issue where neutron security rules were creating legacy iptables
-    rules.  The expectation was that these would be created as nf_tables rules
-    using the iptables-nft compatability package. This matches the behaviour in
-    the ``2024.1`` release.
+    Fixed an issue where Neutron security group rules were being created as
+    legacy iptables rules instead of nftables rules. The expected behaviour is
+    that these rules are created using the iptables-nft compatibility package,
+    matching the behaviour introduced in the ``2024.1`` release.
+
 upgrade:
   - |
-    In ML2/OVS deployments, neutron security group rules will be installed in
-    nf_tables to match the behaviour in the ``2024.1`` release.  The
-    ``neutron_legacy_iptables`` kolla-ansible variable can be set to ``true``
-    if you still wish to use legacy iptables. Otherwise, please run the
-    ``$KAYOBE_CONFIG_PATH/ansible/fixes/flush-iptables-legacy.yml`` playbook
-    after upgrading the neutron containers to prevent iptables-legacy
-    conflicting with iptables-nft rules. If you upgrading to this release or
-    newer, you do not have to run the playbook.
+    In ML2/OVS deployments, Neutron security group rules will now be installed
+    in nftables to align with the behaviour from the ``2024.1`` release. If you
+    are running a ``2025.1`` release older than this one, please run the
+    following commands **after upgrading the Neutron containers** to avoid
+    conflicts between iptables-legacy and iptables-nft rules (this operation
+    will cause downtime)::
+
+        kayobe playbook run \
+          $KAYOBE_CONFIG_PATH/ansible/fixes/flush-iptables-legacy.yml \
+          $KAYOBE_CONFIG_PATH/ansible/fixes/rabbitmq-reset.yml
+
+    You can check if Neutron has installed legacy iptables rules by running::
+
+        iptables-save-legacy | grep neutron
+
+    If you are upgrading directly to this release or a newer one, no action is
+    required.
