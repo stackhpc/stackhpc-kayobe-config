@@ -45,8 +45,8 @@ jobs:
     uses: ./.github/workflows/runner-selector.yml
     with:
       runner_env: ${{ inputs.runner_env }}
-  overcloud-host-image-build:
-    name: Build overcloud host images
+  create-tag:
+    name: Create a tag to be added to resulting images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
@@ -54,23 +54,9 @@ jobs:
       - runner-selection
     permissions:
       actions: write
+    outputs:
+      host_image_tag: ${{ steps.host_image_tag.outputs.host_image_tag }}
     steps:
-      - name: Validate inputs
-        run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
-            echo "At least one distribution must be selected"
-            exit 1
-          fi
-
-      - name: Install Package
-        uses: ConorMacBride/install-package@main
-        with:
-          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq gh
-
-      - name: Start the SSH service
-        run: |
-          sudo /etc/init.d/ssh start
-
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -88,9 +74,41 @@ jobs:
         run: |
           echo "host_image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
+  overcloud-host-image-build:
+    name: Build overcloud host images
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
+      - create-tag
+    permissions:
+      actions: write
+    steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+
       - name: Display overcloud host image tag
         run: |
-          echo "${{ steps.host_image_tag.outputs.host_image_tag }}"
+          echo "${{ needs.create-tag.outputs.host_image_tag }}"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          path: src/kayobe-config
+
+      - name: Install Package
+        uses: ConorMacBride/install-package@main
+        with:
+          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq gh
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
 
       - name: Install Kayobe
         run: |
@@ -259,7 +277,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -273,7 +291,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-9-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
@@ -287,7 +305,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
@@ -327,7 +345,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.qcow2" \
-          -e image_name=overcloud-rocky-10-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-10-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -341,7 +359,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.qcow2" \
-          -e image_name=overcloud-rocky-10-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-rocky-10-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
@@ -355,7 +373,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-rocky-10 \
-          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
           -e os_distribution="rocky" \
@@ -395,7 +413,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
@@ -409,7 +427,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
           -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ steps.host_image_tag.outputs.host_image_tag }}
+          -e image_name=overcloud-ubuntu-noble-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
@@ -423,7 +441,7 @@ jobs:
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
-          -e artifact_tag=${{ steps.host_image_tag.outputs.host_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
           -e os_distribution="ubuntu" \
@@ -470,9 +488,9 @@ jobs:
           update-overcloud-host-image-tags.yml \
           --repo stackhpc/stackhpc-kayobe-config \
           --ref $BRANCH_NAME \
-          $(if [[ "${{ inputs.rocky9 }}" == "true" ]]; then echo "-f rocky9_tag=${{ steps.host_image_tag.outputs.host_image_tag }}"; fi) \
-          $(if [[ "${{ inputs.rocky10 }}" == "true" ]]; then echo "-f rocky10_tag=${{ steps.host_image_tag.outputs.host_image_tag }}"; fi) \
-          $(if [[ "${{ inputs.ubuntu-noble }}" == "true" ]]; then echo "-f ubuntu_noble_tag=${{ steps.host_image_tag.outputs.host_image_tag }}"; fi)
+          $(if [[ "${{ inputs.rocky9 }}" == "true" ]]; then echo "-f rocky9_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi) \
+          $(if [[ "${{ inputs.rocky10 }}" == "true" ]]; then echo "-f rocky10_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi) \
+          $(if [[ "${{ inputs.ubuntu-noble }}" == "true" ]]; then echo "-f ubuntu_noble_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
