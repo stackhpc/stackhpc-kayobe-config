@@ -18,7 +18,7 @@ Redeploy the loadbalancer, Neutron, Nova, and Ironic:
 
 .. code-block:: console
 
-   kayobe overcloud service deploy -kt loadbalancer,ironic,nova
+   kayobe overcloud service deploy -kt loadbalancer,ironic,nova,neutron
 
 Cleaning
 ^^^^^^^^
