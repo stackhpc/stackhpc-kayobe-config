@@ -74,30 +74,6 @@ should switch to the `native
 <https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
 Prometheus Teams integration.
 
-Keystone LDAP TLS configuration
--------------------------------
-
-Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
-if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
-authentication will fail if this configuration is absent. See `upstream
-Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
-for more details.
-
-OS Capacity exporter and dashboard enabled by default
------------------------------------------------------
-
-The OS Capacity exporter will automatically be deployed after the upgrade.
-During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
-will also be updated to use the exporter. If you want to disable this, change
-the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
-
-.. code-block:: yaml
-
-   # Whether the OpenStack Capacity exporter is enabled.
-   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
-   # targets being templated during deployment.
-   stackhpc_enable_os_capacity: false
-
 Prometheus blackbox exporter endpoints
 --------------------------------------
 
@@ -220,8 +196,8 @@ From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
 for Ironic and follows Ironic's default.
 This can cause your Ironic configuration ``ironic.conf`` to regress.
 Check the configuration difference before applying and re-add your options at
-``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+``$KAYOBE_CONFIG_PATH/kolla/config/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/config/ironic.conf`` if using environments)
 
 For example,
 
@@ -337,6 +313,14 @@ Then execute the migration script:
 .. code-block:: bash
 
    $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
+
+.. note::
+
+   After migrating to durable queues, messages are sent to all receivers, but
+   only one will respond. This results in high numbers of messages staying in
+   the ready state, so the Prometheus alert ``RabbitMQTooMuchReady`` will start
+   firing. This alert can be ignored, and will be removed when Prometheus is
+   reconfigured.
 
 RabbitMQ Upgrade
 ~~~~~~~~~~~~~~~~
@@ -581,6 +565,19 @@ To upgrade the Ansible control host:
 .. code-block:: console
 
    kayobe control host upgrade
+
+Upgrading Pulp
+--------------
+
+The local Pulp server needs to be upgraded before synchronising 2025.1
+container images. The following command will deploy the latest Pulp container
+without upgrading Bifrost:
+
+.. code-block:: console
+
+   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+
+Note that this will also update any other enabled seed containers, such as Squid.
 
 Syncing Release Train artifacts
 -------------------------------

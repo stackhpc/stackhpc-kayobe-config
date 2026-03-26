@@ -17,7 +17,7 @@
   vars:
     # we don't build kernel modules for each version, eg 5.14.0-611.13.1 has been built,
     # but not 5.14.0-611.20.1.
-    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[stackhpc_pulp_repo_rocky_9_minor_version] }}"
+    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[stackhpc_pulp_repo_rocky_9_minor_version | string] }}"
   tasks:
     - name: Assert that hosts are running Rocky Linux 9.6
       ansible.builtin.assert:
@@ -28,7 +28,9 @@
         fail_msg: >-
           This playbook is only designed for Rocky Linux 9.6 hosts. Ensure
           that you are limiting it to only run on Rocky Linux 9.6 hosts and
-          os_distribution is set to rocky.
+          os_distribution is set to rocky. This can be bypassed by setting the
+          skip_rocky_96_version_check variable to true.
+      when: not skip_rocky_96_version_check | default(false) | bool
 
     - name: Ensure doca kernel repo is up to date
       ansible.builtin.dnf:
@@ -68,7 +70,7 @@
         state: latest
       become: true
 
-    - name: Upgrade all
+    - name: Update all packages (this can take a long time)
       ansible.builtin.dnf:
         name: "*"
         state: latest

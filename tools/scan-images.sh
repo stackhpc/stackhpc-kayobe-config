@@ -27,7 +27,7 @@ usage() {
 # Check dependencies are installed, print installation instructions otherwise
 check_deps_installed() {
   if ! trivy --version > /dev/null; then
-    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.68.2'
+    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2'
     exit 1
   fi
   if ! yq --version > /dev/null; then
@@ -46,12 +46,12 @@ file_prep() {
 # Gather image lists
 get_images() {
   local output_file="$1-scanned-container-images.txt"
-  
+
   docker image ls \
     --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
     --format "{{.Repository}}:{{.Tag}}" \
     > "$output_file"
-    
+
   cat "$output_file"
 }
 
@@ -63,7 +63,7 @@ generate_trivy_ignore() {
   local image_vulnerabilities
   image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
 
-  touch .trivyignore
+  truncate -s 0 .trivyignore  # ensure we start from a clean slate
   for vulnerability in $global_vulnerabilities; do
     echo "$vulnerability" >> .trivyignore
   done

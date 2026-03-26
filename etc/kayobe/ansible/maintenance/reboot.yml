@@ -5,6 +5,7 @@
   gather_facts: false
   vars:
     reboot_timeout_s: "{{ 20 * 60 }}"
+    post_reboot_delay_s: 5 # Extra delay to ensure SSH is working reliably
     reboot_with_bootstrap_user: false
     ansible_user: "{{ bootstrap_user if reboot_with_bootstrap_user | bool else kayobe_ansible_user }}"
     ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no' if reboot_with_bootstrap_user | bool else '' }}"
@@ -32,7 +33,8 @@
     - name: Reboot and wait
       become: true
       ansible.builtin.reboot:
-        reboot_timeout: "{{ reboot_timeout_s }}"
+        post_reboot_delay: "{{ post_reboot_delay_s | int }}"
+        reboot_timeout: "{{ reboot_timeout_s | int }}"
         search_paths:
           # Systems running molly-guard hang waiting for confirmation before rebooting without this.
           - /lib/molly-guard

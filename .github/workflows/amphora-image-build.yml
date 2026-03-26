@@ -11,7 +11,7 @@ on:
           - SMS Lab
           - Leafcloud
     secrets:
-      KAYOBE_VAULT_PASSWORD:
+      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
       CLOUDS_YAML:
         required: true
@@ -23,7 +23,7 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
-  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -49,7 +49,7 @@ jobs:
           sudo /etc/init.d/ssh start
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: src/kayobe-config
 
@@ -80,7 +80,7 @@ jobs:
           pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Initialise terraform
         run: terraform init
@@ -196,7 +196,7 @@ jobs:
           kayobe seed host command run \
           --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Create Amphora image output directory
         run: |
@@ -205,7 +205,7 @@ jobs:
           kayobe seed host command run \
           --command "mkdir -p /opt/kayobe/images/amphora" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Build Octavia Amphora image
         id: build_amphora
@@ -214,7 +214,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/maintenance/octavia-amphora-image-build.yml -e amphora_image_dest=/opt/kayobe/images/amphora/amphora-x64-haproxy.qcow2
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Show last error logs
         continue-on-error: true
@@ -223,7 +223,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "tail -200 /var/log/octavia-amphora-image-build.log" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_amphora.outcome == 'failure'
 
       - name: Upload Octavia Amphora image to Ark
@@ -238,7 +238,7 @@ jobs:
           -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
           -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_amphora.outcome == 'success'
 
       - name: Copy logs back to runner
@@ -255,7 +255,7 @@ jobs:
         if: steps.build_amphora.outcome == 'failure'
 
       - name: Upload logs & image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: amphora-image-build-log
           path: ./artifact

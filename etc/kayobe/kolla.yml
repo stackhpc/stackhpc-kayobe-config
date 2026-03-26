@@ -148,6 +148,10 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-mlnx.git
     reference: stackhpc/{{ openstack_release }}
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
     location: https://github.com/stackhpc/networking-mlnx.git
@@ -358,9 +362,6 @@ kolla_build_blocks:
   bifrost_base_header: |
     ADD additions-archive /
     ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
-  grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel \
-        && grafana-cli plugins install grafana-opensearch-datasource
   ironic_inspector_header: |
     ADD additions-archive /
 
@@ -373,6 +374,8 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  grafana_plugins_append:
+    - vonage-status-panel
   ironic_inspector_pip_packages_append:
     - /additions/*
   magnum_base_pip_packages_override:
@@ -845,7 +848,11 @@ kolla_enable_prometheus: true
 
 # Extra items to add to kolla_openstack_custom_config_rules_default
 # to produce kolla_openstack_custom_config_rules.
-#kolla_openstack_custom_config_rules_extra:
+kolla_openstack_custom_config_rules_extra:
+  # Files ending with .example should not be copied
+  - glob: "**/*.example"
+    strategy: noop
+    priority: 1
 
 ###############################################################################
 # Passwords and credentials.

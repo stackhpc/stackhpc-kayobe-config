@@ -19,7 +19,7 @@ on:
           - SMS Lab
           - Leafcloud
     secrets:
-      KAYOBE_VAULT_PASSWORD:
+      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
       CLOUDS_YAML:
         required: true
@@ -31,7 +31,7 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-builder
-  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 jobs:
   runner-selection:
     uses: ./.github/workflows/runner-selector.yml
@@ -57,7 +57,7 @@ jobs:
           sudo /etc/init.d/ssh start
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: src/kayobe-config
 
@@ -86,7 +86,7 @@ jobs:
           pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Initialise terraform
         run: terraform init
@@ -196,7 +196,7 @@ jobs:
           -e seed_bootstrap_user=ubuntu \
           --skip-tags network,apt,docker,docker-registry
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Install dependencies
         run: |
@@ -205,7 +205,7 @@ jobs:
           kayobe seed host command run \
           --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Build a Ubuntu 24.04 Noble IPA image
         id: build_ubuntu_noble_ipa
@@ -219,7 +219,7 @@ jobs:
           -e ipa_ci_builder_distribution="ubuntu" \
           -e ipa_ci_builder_release="noble"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble
 
       - name: Show last error logs
@@ -229,7 +229,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_ubuntu_noble_ipa.outcome == 'failure'
 
       - name: Upload Ubuntu 24.04 Noble IPA kernel image to Ark
@@ -245,7 +245,7 @@ jobs:
           -e os_release="noble" \
           -e file_regex='*.kernel'
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
 
       - name: Upload Ubuntu 24.04 Noble IPA ramdisk image to Ark
@@ -261,7 +261,7 @@ jobs:
           -e os_release="noble" \
           -e file_regex='*.initramfs'
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
 
       - name: Build a Rocky 9 IPA image
@@ -276,7 +276,7 @@ jobs:
           -e ipa_ci_builder_distribution="rocky" \
           -e ipa_ci_builder_release="9"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9
 
       - name: Show last error logs
@@ -286,7 +286,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: steps.build_rocky_9_ipa.outcome == 'failure'
 
       - name: Upload Rocky 9 IPA kernel image to Ark
@@ -302,7 +302,7 @@ jobs:
           -e os_release="9" \
           -e file_regex='*.kernel'
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9 && steps.build_rocky_9_ipa.outcome == 'success'
 
       - name: Upload Rocky 9 IPA ramdisk image to Ark
@@ -318,7 +318,7 @@ jobs:
           -e os_release="9" \
           -e file_regex='*.initramfs'
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9 && steps.build_rocky_9_ipa.outcome == 'success'
 
       - name: Copy logs back
@@ -329,7 +329,7 @@ jobs:
         if: always()
 
       - name: Upload logs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Build logs
           path: ./logs
