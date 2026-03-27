@@ -150,15 +150,6 @@ jobs:
         run: |
           curl -sL https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64.tar.gz | tar xz && sudo mv yq_linux_amd64 /usr/bin/yq
 
-      - name: Install Kayobe
-        run: |
-          mkdir -p venvs &&
-          pushd venvs &&
-          python3 -m venv kayobe &&
-          source kayobe/bin/activate &&
-          pip install -U pip &&
-          pip install ../src/kayobe
-
       # Required for Pulp auth proxy deployment and Docker registry login.
       # Normally installed during host configure.
       - name: Install Docker Python SDK
@@ -169,6 +160,19 @@ jobs:
           else
               sudo pip install docker 'requests<2.32.0' --break-system-packages
           fi
+
+      - name: Use supported Python version of the OpenStack release
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.10' # Latest supported Python runtime for 2023.1
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install ../src/kayobe
 
       - name: Get Kolla tag
         id: write-kolla-tag
