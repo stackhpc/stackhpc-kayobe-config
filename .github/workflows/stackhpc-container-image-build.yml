@@ -165,12 +165,16 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10' # Latest supported Python runtime for 2023.1
+
+      - name: Find Python location
+        run: echo $(which python3.10)
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
           pushd venvs &&
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
+          echo $(python3 --version) &&
           pip install -U pip &&
           pip install ../src/kayobe
 
