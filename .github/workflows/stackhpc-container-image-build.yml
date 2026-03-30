@@ -166,8 +166,9 @@ jobs:
         with:
           python-version: '3.10' # Latest supported Python runtime for 2023.1
 
-      - name: Find Python location
-        run: echo $(which python3.10)
+      - name: Get Python location
+        id: get-python-location
+        run: echo "location=$(which python3.10)" >> $GITHUB_OUTPUT
       - name: Install Kayobe
         run: |
           mkdir -p venvs &&
@@ -188,7 +189,7 @@ jobs:
           # A 'seed' host used for building images.
           # Use localhost for container image builds.
           [seed]
-          localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+          localhost ansible_connection=local ansible_python_interpreter=${{ steps.get-python-location.outputs.location }}
           EOF
 
       # See etc/kayobe/ansible/roles/pulp_auth_proxy/README.md for details.
