@@ -165,9 +165,9 @@ jobs:
         run: |
           . /etc/os-release
           if [[ $VERSION_ID == 22.04 ]]; then
-              pip install docker 'requests<2.32.0'
+              ${{ steps.get-python-location.outputs.location }} -m pip install docker 'requests<2.32.0'
           else
-              pip install docker 'requests<2.32.0' --break-system-packages
+              ${{ steps.get-python-location.outputs.location }} -m pip install docker 'requests<2.32.0' --break-system-packages
           fi
 
       - name: Install Kayobe
