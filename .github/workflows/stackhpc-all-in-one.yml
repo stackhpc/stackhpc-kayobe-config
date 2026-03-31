@@ -85,10 +85,10 @@ jobs:
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
       PREVIOUS_BRANCH: stackhpc/zed
     steps:
-      - name: Install Package
-        uses: ConorMacBride/install-package@main
-        with:
-          apt: git unzip nodejs openssh-client
+      - name: Install Package dependencies
+        run: |
+          sudo apt update &&
+          sudo apt install -y git unzip nodejs openssh-client
 
       # If testing upgrade, checkout previous release, otherwise checkout current branch
       - name: Checkout ${{ inputs.upgrade && 'previous release' || 'current' }} config
