@@ -1,16 +1,8 @@
 ---
-name: Promote overcloud host image
+name: Promote Amphora image
 on:
   workflow_dispatch:
     inputs:
-      rocky9:
-        description: Promote Rocky Linux 9
-        type: boolean
-        default: true
-      ubuntu-jammy:
-        description: Promote Ubuntu 22.04 Jammy
-        type: boolean
-        default: true
       image_tag:
         description: Tag to promote
         type: string
@@ -18,18 +10,11 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
-  overcloud-host-image-promote:
-    name: Promote overcloud host image
+  amphora-image-promote:
+    name: Promote Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-22.04
     steps:
-      - name: Validate inputs
-        run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-jammy }} == 'false' ]]; then
-            echo "At least one distribution must be selected"
-            exit 1
-          fi
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
@@ -40,13 +25,6 @@ jobs:
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
         working-directory: src/kayobe-config
-
-      - name: Clone StackHPC Kayobe repository
-        uses: actions/checkout@v4
-        with:
-          repository: stackhpc/kayobe
-          ref: refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}
-          path: src/kayobe
 
       - name: Setup networking
         run: |
@@ -70,7 +48,7 @@ jobs:
           python3 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
-          pip install ../src/kayobe
+          pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Bootstrap the control host
         run: |
@@ -78,30 +56,14 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
-      - name: Promote Rocky Linux 9 overcloud host image artifact
+      - name: Promote Amphora image artifact
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
-          -e image_path='/opt/kayobe/images/overcloud-rocky-linux-9' \
-          -e os_distribution='rocky' \
-          -e os_release='9'
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
+          -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
+          -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
         env:
-          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
+          ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9
-
-      - name: Promote Ubuntu Jammy 22.04 overcloud host image artifact
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp-host-image-promote.yml \
-          -e image_path='/opt/kayobe/images/overcloud-ubuntu-jammy' \
-          -e os_distribution='ubuntu' \
-          -e os_release='jammy'
-        env:
-          OVERCLOUD_HOST_IMAGE_TAG: ${{ inputs.image_tag }}
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.ubuntu-jammy
