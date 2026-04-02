@@ -58,7 +58,7 @@ jobs:
       host_image_tag: ${{ steps.host_image_tag.outputs.host_image_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -97,14 +97,14 @@ jobs:
           echo "${{ needs.create-tag.outputs.host_image_tag }}"
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
-      - name: Install Package
-        uses: ConorMacBride/install-package@main
-        with:
-          apt: git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq gh
+      - name: Install Package dependencies
+        run: |
+          sudo apt update &&
+          sudo apt install -y git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq gh
 
       - name: Start the SSH service
         run: |
@@ -120,7 +120,7 @@ jobs:
           pip install -r ../src/kayobe-config/requirements.txt
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
 
       - name: Initialise terraform
         run: terraform init
@@ -467,7 +467,7 @@ jobs:
             steps.build_ubuntu_noble.outcome == 'failure'
 
       - name: Upload logs artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: Build logs
           path: ./logs
@@ -502,8 +502,9 @@ jobs:
         if: inputs.create_skc_pr
 
       - name: Send message to Slack via Workflow Builder
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
+          webhook-type: "incoming-webhook"
           payload: |
             {
               "channel-id": "${{ env.SLACK_CHANNEL_ID }}",
