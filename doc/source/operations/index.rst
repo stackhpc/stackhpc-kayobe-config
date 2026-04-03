@@ -13,6 +13,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    database-backups
    gpu-in-openstack
    bifrost-hardware-inventory-management
+   dell-firmware-update
    hotfix-playbook
    migrating-vm
    nova-compute-ironic
