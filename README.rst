@@ -5,6 +5,10 @@ StackHPC Kayobe Configuration
 This repository provides a base Kayobe configuration for the 2025.1 Epoxy
 release of StackHPC OpenStack.
 
+**Note: This repository is maintained for StackHPC and its customers. While it
+is not intended for direct external deployment, specific OpenStack
+configuration elements may be extracted or adapted for your own use.**
+
 Documentation is hosted on `readthedocs.io
 <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2025.1/index.html>`__,
 and includes release notes.
