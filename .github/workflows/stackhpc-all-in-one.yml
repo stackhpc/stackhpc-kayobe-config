@@ -479,12 +479,19 @@ jobs:
         id: diagnostics
         run: |
           mkdir -p diagnostics
+          # Depending on when the failure happened, the diagnostics playbook
+          # may be in different locations.
+          if [ -f etc/kayobe/ansible/tools/diagnostics.yml ]; then
+            DIAGNOSTICS_PLAYBOOK='$KAYOBE_CONFIG_PATH/ansible/tools/diagnostics.yml'
+          else
+            DIAGNOSTICS_PLAYBOOK='$KAYOBE_CONFIG_PATH/ansible/diagnostics.yml'
+          fi
           sudo -E docker run -t --rm \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -v $(pwd)/diagnostics:/stack/diagnostics \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
-            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh '$KAYOBE_CONFIG_PATH/ansible/tools/diagnostics.yml'
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh "$DIAGNOSTICS_PLAYBOOK"
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}
