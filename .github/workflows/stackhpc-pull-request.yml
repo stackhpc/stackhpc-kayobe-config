@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       pull-requests: read
+      packages: none
     name: Check changed files
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     outputs:
@@ -71,6 +72,9 @@ jobs:
 
   build-kayobe-image:
     name: Build Kayobe Image
+    permissions:
+      contents: read
+      packages: write # required by docker/build-push-action
     needs:
       - check-changes
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
@@ -80,6 +84,7 @@ jobs:
 
   check-tags:
     name: Check container image tags
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
@@ -92,6 +97,7 @@ jobs:
 
   all-in-one-ubuntu-jammy-ovs:
     name: aio (Ubuntu Jammy OVS)
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
@@ -126,6 +132,7 @@ jobs:
 
   all-in-one-rocky-9-ovs:
     name: aio (Rocky 9 OVS)
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
@@ -143,6 +150,7 @@ jobs:
 
   all-in-one-rocky-9-ovn:
     name: aio (Rocky 9 OVN)
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
@@ -162,6 +170,7 @@ jobs:
 
   all-in-one-upgrade-ubuntu-jammy-ovs:
     name: aio upgrade (Ubuntu Jammy OVS)
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
@@ -180,6 +189,7 @@ jobs:
 
   all-in-one-upgrade-rocky-9-ovn:
     name: aio upgrade (Rocky 9 OVN)
+    permissions: {}
     needs:
       - check-changes
       - build-kayobe-image
