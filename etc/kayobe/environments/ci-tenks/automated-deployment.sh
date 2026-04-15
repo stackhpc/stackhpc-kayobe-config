@@ -19,7 +19,9 @@ if [[ ! -f $BASE_PATH/vault-pw ]]; then
     exit 1
 fi
 
+set +x
 export KAYOBE_VAULT_PASSWORD=$(cat $BASE_PATH/vault-pw)
+set -x
 
 # Install git and tmux.
 if $(which dnf 2>/dev/null >/dev/null); then
