@@ -7,6 +7,10 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
+      rocky9-aarch64:
+        description: Build Rocky Linux 9 aarch64
+        type: boolean
+        default: true
       ubuntu-noble:
         description: Build Ubuntu 24.04 Noble
         type: boolean
@@ -38,24 +42,18 @@ jobs:
     with:
       runner_env: ${{ inputs.runner_env }}
 
-  ipa-image-build:
-    name: Build IPA images
+  create-tag:
+    name: Create a tag to be added to resulting images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
     permissions: {}
+    outputs:
+      openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
+      ipa_image_tag: ${{ steps.ipa_image_tag.outputs.ipa_image_tag }}
     steps:
-      - name: Install Package dependencies
-        run: |
-          sudo apt update &&
-          sudo apt install -y git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
-
-      - name: Start the SSH service
-        run: |
-          sudo /etc/init.d/ssh start
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -72,9 +70,33 @@ jobs:
         run: |
           echo "ipa_image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
+  ipa-image-build:
+    name: Build IPA images
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
+      - create-tag
+    permissions: {}
+    steps:
+      - name: Install Package dependencies
+        run: |
+          sudo apt update &&
+          sudo apt install -y git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: src/kayobe-config
+
       - name: Display IPA image tag
         run: |
-          echo "${{ steps.ipa_image_tag.outputs.ipa_image_tag }}"
+          echo "${{ needs.create-tag.outputs.ipa_image_tag }}"
 
       - name: Install Kayobe
         run: |
@@ -240,7 +262,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/ipa \
           -e artifact_type=ipa-images \
-          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
           -e os_distribution="ubuntu" \
           -e os_release="noble" \
           -e file_regex='*.kernel'
@@ -256,7 +278,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/ipa \
           -e artifact_type=ipa-images \
-          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
           -e os_distribution="ubuntu" \
           -e os_release="noble" \
           -e file_regex='*.initramfs'
@@ -297,7 +319,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/ipa \
           -e artifact_type=ipa-images \
-          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
           -e os_distribution="rocky" \
           -e os_release="9" \
           -e file_regex='*.kernel'
@@ -313,7 +335,7 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
           -e artifact_path=/opt/kayobe/images/ipa \
           -e artifact_type=ipa-images \
-          -e artifact_tag=${{ steps.ipa_image_tag.outputs.ipa_image_tag }} \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
           -e os_distribution="rocky" \
           -e os_release="9" \
           -e file_regex='*.initramfs'
@@ -340,6 +362,254 @@ jobs:
           exit 1
         if: steps.build_rocky_9_ipa.outcome == 'failure' ||
             steps.build_ubuntu_noble_ipa.outcome == 'failure'
+
+      - name: Destroy
+        run: terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: always()
+
+  ipa-image-build-aarch64:
+    name: Build Rocky 9 aarch64 IPA image
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.rocky9-aarch64 && inputs.runner_env == 'SMS Lab'
+    environment: ${{ inputs.runner_env }}
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
+    needs:
+      - runner-selection
+      - create-tag
+    permissions: {}
+    steps:
+      - name: Install Package dependencies
+        run: |
+          sudo apt update &&
+          sudo apt install -y git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
+
+      - name: Start the SSH service
+        run: |
+          sudo /etc/init.d/ssh start
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: src/kayobe-config
+
+      - name: Display IPA image tag
+        run: |
+          echo "${{ needs.create-tag.outputs.ipa_image_tag }}"
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+
+      - name: Initialise terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate SSH keypair
+        run: ssh-keygen -f id_rsa -N ''
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate clouds.yaml
+        run: |
+          cat << EOF > clouds.yaml
+          ${{ secrets.CLOUDS_YAML }}
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat << EOF > terraform.tfvars
+          ssh_public_key = "id_rsa.pub"
+          ssh_username = "ubuntu"
+          aio_vm_name = "skc-ipa-image-builder-arm64"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE_ARM64 }}"
+          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
+          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
+          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
+          aio_vm_interface = "ens3"
+          aio_vm_volume_size = "${{ vars.HOST_IMAGE_BUILD_VOLUME }}"
+          EOF
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Terraform Apply
+        run: |
+          for attempt in $(seq 5); do
+              if terraform apply -auto-approve; then
+                  echo "Created infrastructure on attempt $attempt"
+                  exit 0
+              fi
+              echo "Failed to create infrastructure on attempt $attempt"
+              sleep 10
+              terraform destroy -auto-approve
+              sleep 60
+          done
+          echo "Failed to create infrastructure after $attempt attempts"
+          exit 1
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          OS_CLOUD: ${{ vars.OS_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+
+      - name: Get Terraform outputs
+        id: tf_outputs
+        run: |
+          terraform output -json
+        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+
+      - name: Write Terraform outputs
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml
+          ${{ steps.tf_outputs.outputs.stdout }}
+          EOF
+
+      - name: Write Terraform network config
+        run: |
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-builder/tf-network-allocation.yml
+          ---
+          aio_ips:
+            builder: "{{ access_ip_v4.value }}"
+          EOF
+
+      - name: Write Terraform network interface config
+        run: |
+          mkdir -p src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed
+          rm -f src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          cat << EOF > src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
+          admin_interface: "{{ access_interface.value }}"
+          aio_interface: "{{ access_interface.value }}"
+          EOF
+
+      - name: Manage SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/authorized_keys
+          cat src/kayobe-config/terraform/aio/id_rsa.pub >> ~/.ssh/authorized_keys
+          cp src/kayobe-config/terraform/aio/id_rsa* ~/.ssh/
+
+      - name: Bootstrap the control host
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe control host bootstrap
+
+      - name: Configure the seed host (Builder VM)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host configure \
+          -e seed_bootstrap_user=ubuntu \
+          --skip-tags network,apt,docker,docker-registry
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+
+      - name: Install dependencies
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run \
+          --command "sudo apt update && sudo apt -y install gcc git libffi-dev python3-dev python-is-python3 python3-venv" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+
+      - name: Build a Rocky 9 aarch64 IPA image
+        id: build_rocky_9_ipa_aarch64
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud deployment image build --force-rebuild \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e ipa_ci_builder_distribution="rocky" \
+          -e ipa_ci_builder_release="9" \
+          -e ipa_ci_builder_arch="aarch64"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/ipa/ipa.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_rocky_9_ipa_aarch64.outcome == 'failure'
+
+      - name: Upload Rocky 9 aarch64 IPA kernel image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_type=ipa-images \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
+          -e repository_name="ipa-images-${{ needs.create-tag.outputs.openstack_release }}-rocky-9-aarch64" \
+          -e pulp_base_path="ipa-images/${{ needs.create-tag.outputs.openstack_release }}/rocky/9/aarch64" \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e file_regex='ipa.kernel'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_rocky_9_ipa_aarch64.outcome == 'success'
+
+      - name: Upload Rocky 9 aarch64 IPA ramdisk image to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/ipa \
+          -e artifact_type=ipa-images \
+          -e artifact_tag=${{ needs.create-tag.outputs.ipa_image_tag }} \
+          -e repository_name="ipa-images-${{ needs.create-tag.outputs.openstack_release }}-rocky-9-aarch64" \
+          -e pulp_base_path="ipa-images/${{ needs.create-tag.outputs.openstack_release }}/rocky/9/aarch64" \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
+          -e file_regex='ipa.initramfs'
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_rocky_9_ipa_aarch64.outcome == 'success'
+
+      - name: Copy logs back
+        continue-on-error: true
+        run: |
+          mkdir logs
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
+        if: always()
+
+      - name: Upload logs artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: Build logs aarch64
+          path: ./logs
+
+      - name: Fail if the aarch64 IPA image build failed
+        run: |
+          echo "Build failed. See workflow artifacts for details." &&
+          exit 1
+        if: steps.build_rocky_9_ipa_aarch64.outcome == 'failure'
 
       - name: Destroy
         run: terraform destroy -auto-approve
