@@ -7,7 +7,7 @@
 
 # Script for a full deployment.
 
-set -eu
+set -eux
 
 BASE_PATH=~
 KAYOBE_BRANCH=stackhpc/2025.1
@@ -79,6 +79,18 @@ sudo $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networ
 
 # Bootstrap the Ansible control host.
 kayobe control host bootstrap
+
+# Write interface details to Kayobe configuration. These are required for host configure.
+export ADMIN_IFACE=$(ip -4 route show default | awk '{for(i=1;i<NF;i++) if($i=="dev") {print $(i+1); exit}}')
+cat << EOF >> $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed-hypervisor/network-interfaces
+admin_interface: $ADMIN_IFACE
+EOF
+
+export ADMIN_IP=$(ip -4 addr show dev "$ADMIN_IFACE" | awk '$1 == "inet" {split($2, a, "/"); print a[1]; exit}')
+cat << EOF >> $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/network-allocation.yml
+admin_ips:
+  seed-hypervisor: $ADMIN_IP
+EOF
 
 # Configure the seed hypervisor host.
 kayobe seed hypervisor host configure
