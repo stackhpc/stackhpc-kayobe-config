@@ -29,7 +29,7 @@ In ``etc/kayobe/inventory/group_vars/overcloud/time``:
    # Following deployment we include the OpenStack VIP
 
    chrony_ntp_servers:
-     - server: "http://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:3128"
+     - server: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
 
 Proxy
 =====
