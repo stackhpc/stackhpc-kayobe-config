@@ -164,9 +164,9 @@ jobs:
           aio_vm_interface = "${{ env.VM_INTERFACE }}"
           aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
-          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
-          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
-          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
+          aio_vm_flavor = "${{ vars.AIO_FLAVOR }}"
+          aio_vm_network = "${{ vars.AIO_NETWORK }}"
+          aio_vm_subnet = "${{ vars.AIO_SUBNET }}"
           aio_vm_volume_size = "${{ env.VM_VOLUME_SIZE }}"
           aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
@@ -176,7 +176,7 @@ jobs:
           VM_NAME: "skc-ci-aio-${{ inputs.neutron_plugin }}-${{ github.run_id }}"
           VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
           VM_INTERFACE: ${{ inputs.vm_interface }}
-          VM_VOLUME_SIZE: ${{ inputs.upgrade && '75' || '50' }}
+          VM_VOLUME_SIZE: ${{ inputs.upgrade && '100' || '50' }}
           VM_TAGS: '["skc-ci-aio", "PR=${{ github.event.number }}"]'
 
       - name: Terraform Plan
