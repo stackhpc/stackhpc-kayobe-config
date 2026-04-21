@@ -8,15 +8,19 @@ stackhpc_download_overcloud_host_images: false
 # Whether or not to build overcloud host images from Ark
 stackhpc_build_overcloud_image_from_pulp_package_mirrors: false
 
+# Architecture of the Release Train overcloud host images to consume.
+# Valid values are amd64 and aarch64.
+stackhpc_overcloud_host_image_arch: amd64
+
 # The overcloud host image source, defined by os_distribution, os_release,
 # and the current stable version.
 stackhpc_overcloud_host_image_url: "{{ stackhpc_release_pulp_content_url_with_auth }}/kayobe-images/\
-                                    {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}/\
+                                    {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_overcloud_host_image_arch == 'aarch64' else '' }}/\
                                     {{ stackhpc_overcloud_host_image_version }}/\
                                     overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
 
 # Overcloud host image version tag selection
 stackhpc_overcloud_host_image_version: >-
-  {{ stackhpc_rocky_9_overcloud_host_image_version if os_distribution == 'rocky' and os_release == '9' else
-  stackhpc_rocky_10_overcloud_host_image_version if os_distribution == 'rocky' and os_release == '10' else
-  stackhpc_ubuntu_noble_overcloud_host_image_version if os_distribution == 'ubuntu' and os_release == 'noble' }}
+  {{ lookup('vars', 'stackhpc_' ~ os_distribution ~ '_' ~ os_release ~
+     '_overcloud_host_image_version' ~
+     ('_aarch64' if os_distribution == 'rocky' and stackhpc_overcloud_host_image_arch == 'aarch64' else '')) }}
