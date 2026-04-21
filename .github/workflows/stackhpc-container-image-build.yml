@@ -235,19 +235,26 @@ jobs:
         continue-on-error: true
         run: |
           args="-e kolla_base_distro=${{ matrix.distro.name }}"
+          if [[ "${{ matrix.distro.arch }}" == 'aarch64' ]]; then
+            args="$args -e kolla_base_arch=${{ matrix.distro.arch }}"
+          fi
           args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
-          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          if [[ "${{ matrix.distro.name }}" == 'rocky' ]]; then
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}-${{ matrix.distro.arch }}"
+          else
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          fi
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.seed && matrix.distro.arch == 'amd64'
+        if: inputs.seed
 
       - name: Copy seed container image build logs to output directory
         run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
-        if: inputs.seed && matrix.distro.arch == 'amd64'
+        if: inputs.seed
 
       - name: Get built container images
         run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" | tee "${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images"
