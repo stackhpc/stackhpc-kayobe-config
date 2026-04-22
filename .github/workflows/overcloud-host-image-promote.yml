@@ -7,10 +7,18 @@ on:
         description: Promote Rocky Linux 9
         type: boolean
         default: true
+      rocky9-aarch64:
+        description: Promote Rocky Linux 9 aarch64
+        type: boolean
+        default: false
       rocky10:
         description: Promote Rocky Linux 10
         type: boolean
         default: true
+      rocky10-aarch64:
+        description: Promote Rocky Linux 10 aarch64
+        type: boolean
+        default: false
       ubuntu-noble:
         description: Promote Ubuntu 24.04 Noble
         type: boolean
@@ -25,7 +33,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky9-aarch64 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.rocky10-aarch64 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -85,6 +93,20 @@ jobs:
         working-directory: src/kayobe-config
         if: inputs.rocky10
 
+      - name: Gather Rocky Linux 9 aarch64 overcloud host image tag
+        id: rocky9_aarch64_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version_aarch64: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+        if: inputs.rocky9-aarch64
+
+      - name: Gather Rocky Linux 10 aarch64 overcloud host image tag
+        id: rocky10_aarch64_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_10_overcloud_host_image_version_aarch64: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+        working-directory: src/kayobe-config
+        if: inputs.rocky10-aarch64
+
       - name: Gather Ubuntu Noble overcloud host image tag
         id: ubuntu_noble_image_tag
         run: |
@@ -119,6 +141,38 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky10
+
+      - name: Promote Rocky Linux 9 aarch64 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
+          -e artifact_type="kayobe-images" \
+          -e os_distribution='rocky' \
+          -e os_release='9' \
+          -e promotion_tag=${{ steps.rocky9_aarch64_image_tag.outputs.image_tag }} \
+          -e repository_name="kayobe-images-${{ steps.openstack_release.outputs.openstack_release }}-rocky-9-aarch64" \
+          -e pulp_base_path="kayobe-images/${{ steps.openstack_release.outputs.openstack_release }}/rocky/9/aarch64"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky9-aarch64
+
+      - name: Promote Rocky Linux 10 aarch64 overcloud host image artifact
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
+          -e artifact_type="kayobe-images" \
+          -e os_distribution='rocky' \
+          -e os_release='10' \
+          -e promotion_tag=${{ steps.rocky10_aarch64_image_tag.outputs.image_tag }} \
+          -e repository_name="kayobe-images-${{ steps.openstack_release.outputs.openstack_release }}-rocky-10-aarch64" \
+          -e pulp_base_path="kayobe-images/${{ steps.openstack_release.outputs.openstack_release }}/rocky/10/aarch64"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10-aarch64
 
       - name: Promote Ubuntu Noble 24.04 overcloud host image artifact
         run: |

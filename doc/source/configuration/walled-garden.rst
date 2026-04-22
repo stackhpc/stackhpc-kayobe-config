@@ -29,7 +29,7 @@ In ``etc/kayobe/inventory/group_vars/overcloud/time``:
    # Following deployment we include the OpenStack VIP
 
    chrony_ntp_servers:
-     - server: "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+     - server: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
 
 Proxy
 =====
@@ -62,7 +62,7 @@ proxy:
    ---
    # HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
-   http_proxy: "http://{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}:3128"
+   http_proxy: "http://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:3128"
 
    # HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
