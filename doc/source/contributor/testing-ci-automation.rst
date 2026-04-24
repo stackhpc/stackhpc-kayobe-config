@@ -230,8 +230,9 @@ A Pulp authentication proxy container is deployed on the runner that provides
 unauthenticated access to the package repositories in Ark. This avoids leaking
 Ark credentials into the built container images.
 
-Once built, images are scanned for vulnerabilities using `Trivy
-<https://trivy.dev/>`_. Any critical vulnerabilities will break the build,
+Once built, images are scanned for vulnerabilities using `Grype
+<https://github.com/anchore/grype>`_ and `Syft
+<https://github.com/anchore/syft>`_. Any critical vulnerabilities will break the build,
 unless the ``push-dirty`` input is true.
 
 If the ``push`` input is true, images are pushed to Ark, and a `container sync
