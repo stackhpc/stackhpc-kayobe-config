@@ -10,8 +10,8 @@ stackhpc_pulp_doca_version: "{{ stackhpc_pulp_doca_version_matrix[stackhpc_pulp_
 
 # Available and tested versions of the pre-compiled doca-ofed kernel modules
 stackhpc_doca_kernel_version_matrix:
-    "6": 5.14.0.570.21.1.el9.6.x86.64
-    "7": 5.14.0.611.41.1.el9.7.x86.64
+    "6": 5.14.0.570.21.1.el9.6
+    "7": 5.14.0.611.41.1.el9.7
 
 ###############################################################################
 # Pulp configuration for DOCA OFED
@@ -24,11 +24,13 @@ doca_rocky_9_minor_dot: "{% if stackhpc_pulp_doca_version is version('3.2.0', '>
 # eg stackhpc_pulp_repo_doca_2_9_3_rhel9_6_version or stackhpc_pulp_repo_doca_3_2_2_rhel9_version
 doca_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel{{ doca_rocky_9_minor_dot | replace('.', '_') }}_version"
 doca_modules_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_version"
+doca_modules_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_aarch64_version"
 
 # DOCA Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml
 stackhpc_pulp_repo_rhel9_doca_version: "{{ lookup('vars', doca_version_lookup_var) }}"
 stackhpc_pulp_repo_rhel9_doca_modules_version: "{{ lookup('vars', doca_modules_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel9_doca_modules_aarch64_version: "{{ lookup('vars', doca_modules_aarch64_version_lookup_var) }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

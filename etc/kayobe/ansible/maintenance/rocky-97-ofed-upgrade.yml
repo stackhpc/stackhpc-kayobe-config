@@ -17,7 +17,8 @@
   vars:
     # we don't build kernel modules for each version, eg 5.14.0-611.13.1 has been built,
     # but not 5.14.0-611.20.1.
-    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[stackhpc_pulp_repo_rocky_9_minor_version | string] }}"
+    doca_kernel_arch: "{{ 'x86.64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[stackhpc_pulp_repo_rocky_9_minor_version | string] }}.{{ doca_kernel_arch }}"
   tasks:
     - name: Assert that hosts are running Rocky Linux 9.6
       ansible.builtin.assert:

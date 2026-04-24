@@ -5,11 +5,21 @@
     venv: "/opt/kayobe/venvs/kayobe"
     doca_extract_path: "/home/stack/doca"
   tasks:
+    - name: Get OFED module repo
+      ansible.builtin.set_fact:
+        doca_modules_repos: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | selectattr('base_path', 'search', '/' ~ kolla_base_arch ~ '/') | list }}"
+
+    - name: Assert OFED module repo is unique
+      ansible.builtin.assert:
+        that:
+          - doca_modules_repos | length == 1
+        fail_msg: "Expected exactly one OFED module repo for {{ kolla_base_arch }}"
+
     - name: Get OFED module repo variables
       ansible.builtin.set_fact:
-        doca_modules_repo_name: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='name') | join('') }}"
-        doca_modules_repo_base_path: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='base_path') | join('') }}"
-        doca_modules_repo_distribution_name: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | map(attribute='distribution_name') | join('') }}"
+        doca_modules_repo_name: "{{ doca_modules_repos.0.name }}"
+        doca_modules_repo_base_path: "{{ doca_modules_repos.0.base_path }}"
+        doca_modules_repo_distribution_name: "{{ doca_modules_repos.0.distribution_name }}"
 
     - name: Install python dependencies
       ansible.builtin.pip:
