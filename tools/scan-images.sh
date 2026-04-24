@@ -2,21 +2,14 @@
 set -eo pipefail
 
 # Disable telemetry and version check:
-# https://github.com/aquasecurity/trivy/discussions/8945
-export TRIVY_DISABLE_TELEMETRY=true
-export TRIVY_SKIP_VERSION_CHECK=true
+export GRYPE_CHECK_FOR_APP_UPDATE=false
+export SYFT_CHECK_FOR_APP_UPDATE=false
 
 # Global variables
 scan_common_args=" \
-                  --exit-code 1 \
-                  --scanners vuln \
-                  --format json \
-                  --severity HIGH,CRITICAL \
-                  --ignore-unfixed \
-                  --db-repository ghcr.io/aquasecurity/trivy-db:2 \
-                  --db-repository public.ecr.aws/aquasecurity/trivy-db \
-                  --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
-                  --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db "
+                  --fail-on high \
+                  --output json \
+                  --only-fixed "
 
 # Print usage instructions and error with wrong inputs
 usage() {
@@ -26,11 +19,15 @@ usage() {
 
 # Check dependencies are installed, print installation instructions otherwise
 check_deps_installed() {
-  if ! trivy --version > /dev/null; then
-    echo 'Please install trivy: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2'
+  if ! grype --version > /dev/null 2>&1; then
+    echo 'Please install grype: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin'
     exit 1
   fi
-  if ! yq --version > /dev/null; then
+  if ! syft --version > /dev/null 2>&1; then
+    echo 'Please install syft: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin'
+    exit 1
+  fi
+  if ! yq --version > /dev/null 2>&1; then
     echo 'Please install yq: sudo dnf/apt install yq'
     exit 1
   fi
@@ -55,20 +52,20 @@ get_images() {
   cat "$output_file"
 }
 
-# Generate ignored vulnerabilities file
-generate_trivy_ignore() {
+# Generate grype configuration file
+generate_grype_config() {
   local imagename=$1
   local global_vulnerabilities
-  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
   local image_vulnerabilities
-  image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
 
-  truncate -s 0 .trivyignore  # ensure we start from a clean slate
+  echo "ignore:" > .grype.yaml
   for vulnerability in $global_vulnerabilities; do
-    echo "$vulnerability" >> .trivyignore
+    echo "  - vulnerability: $vulnerability" >> .grype.yaml
   done
   for vulnerability in $image_vulnerabilities; do
-    echo "$vulnerability" >> .trivyignore
+    echo "  - vulnerability: $vulnerability" >> .grype.yaml
   done
 }
 
@@ -79,20 +76,18 @@ generate_summary_csv() {
 
   echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > "$summary"
 
-  jq -r '.Results[]
-      | select(.Vulnerabilities)
-      | .Vulnerabilities
-      | map(select(.PkgName | test("kernel") | not ))
-      | group_by(.VulnerabilityID)
+  jq -r '.matches
+      | map(select(.artifact.name | test("kernel") | not ))
+      | group_by(.vulnerability.id)
       | map(
         [
-          (map(.PkgName) | unique | join(";")),
-          (map(.PkgPath | select( . != null )) | join(";")),
-          .[0].PkgID,
-          .[0].VulnerabilityID,
-          .[0].FixedVersion,
-          .[0].PrimaryURL,
-          .[0].Severity
+          (map(.artifact.name) | unique | join(";")),
+          (map(.artifact.locations[]?.path // empty) | unique | join(";")),
+          .[0].artifact.purl,
+          .[0].vulnerability.id,
+          (.[0].vulnerability.fix.versions | join(";")),
+          (.[0].vulnerability.urls | first),
+          (.[0].vulnerability.severity | ascii_upcase)
           ]
         )
       | .[]
@@ -111,34 +106,24 @@ categorise_image() {
   fi
 }
 
-# Generate SBOM, return correct scan command for SBOM
+# Generate SBOM using syft, return correct scan command for SBOM
 generate_sbom() {
   local sbom="$1"
   local scan="$2"
   local image="$3"
-  trivy image \
-        --debug \
-        --format spdx-json \
-        --output "$sbom" \
-        "$image" &> "$sbom.log"
-  if [ ! -e "$sbom" ]; then
+  syft "$image" \
+        -o spdx-json \
+        > "$sbom" 2> "$sbom.log"
+
+  if [ ! -s "$sbom" ]; then
     (
-      echo "ERROR: trivy image didn't produce the sbom file $sbom for $image" 1>&2
-      echo "==== trivy log ===="
+      echo "ERROR: syft didn't produce the sbom file $sbom for $image" 1>&2
+      echo "==== syft log ===="
       cat "$sbom.log"
-    ) 1>&2
-    exit 1
-  elif grep -q FATAL "$sbom.log"; then
-    (
-      echo "ERROR: trivy image encountered a fatal error producing $sbom for $image"
-      echo "==== trivy log ===="
-      cat "$sbom.log"
-      echo "==== sbom.json ===="
-      cat "$sbom"
     ) 1>&2
     exit 1
   else
-    echo "trivy sbom $scan_common_args --output $scan $sbom"
+    echo "grype $sbom $scan_common_args"
   fi
 }
 
@@ -154,7 +139,7 @@ scan_image() {
   local summary="image-scan-output/${imagename}/${filename}-summary.csv"
 
   mkdir -p "image-scan-output/$imagename"
-  generate_trivy_ignore "$imagename"
+  generate_grype_config "$imagename"
 
   # If SBOM is required, generate it first and scan the results, otherwise we
   # scan the image directly.
@@ -162,19 +147,21 @@ scan_image() {
     echo "Generating SBOM for $imagename"
     scan_command="$(generate_sbom "$sbom" "$scan" "$image")"
   else
-    scan_command="trivy image $scan_common_args --output $scan $image"
+    scan_command="grype $image $scan_common_args"
   fi
 
   # Run scan against image or SBOM, format output. If no results, delete files.
   echo "Scanning $imagename for vulnerabilities"
-  if $scan_command >& "$scan.log"; then
+  if $scan_command > "$scan" 2> "$scan.log"; then
     rm -f "$scan"
     echo "${image}" >> image-scan-output/clean-images.txt
-  elif [ ! -f "$scan" ]; then
+  # return code is 2 if a vulnerability is found with a severity higher than
+  # configured
+  elif [ $? -ne 2 ]; then
     (
-      echo "ERROR: trivy scan encountered an error producing $scan"
+      echo "ERROR: grype scan encountered an error producing $scan"
       echo "Command: $scan_command"
-      echo "==== trivy log ===="
+      echo "==== grype log ===="
       cat "$scan.log"
       if $generate_sbom; then
         echo "==== sbom.json ===="
@@ -184,7 +171,11 @@ scan_image() {
     exit 1
   else
     generate_summary_csv "$scan" "$summary"
-    categorise_image "$summary" "$image"
+    if [ "$(tail -n +2 "$summary" | wc -l)" -eq 0 ]; then
+       echo "${image}" >> image-scan-output/clean-images.txt
+    else
+       categorise_image "$summary" "$image"
+    fi
   fi
 }
 
