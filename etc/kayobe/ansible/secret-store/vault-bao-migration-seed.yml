@@ -9,7 +9,7 @@
     secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
   tasks:
     - name: Fail if secret store is already configured to be OpenBao
-      fail:
+      ansible.builtin.fail:
         msg: Please check if OpenBao is already running on the host.
              If it's not, please set the variable 'stackhpc_ca_secret_store' to 'vault'
       when: stackhpc_ca_secret_store == "openbao"
@@ -36,7 +36,7 @@
         name: secret_store_keys
 
 - name: Migrate Vault to Openbao
-  import_playbook: stackhpc.hashicorp.vault_bao_migration
+  ansible.builtin.import_playbook: stackhpc.hashicorp.vault_bao_migration
   vars:
     vault_hosts_group: seed
     secret_store_bind_interface: lo
