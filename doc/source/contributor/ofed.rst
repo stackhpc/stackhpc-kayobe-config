@@ -31,6 +31,7 @@ build-ofed
 ----------
 
 Currently we only support building Rocky Linux 9 OFED kernel module packages.
+The workflow can build packages for ``x86_64`` and ``aarch64``.
 
 The Build OFED module workflow will check that the filesystem is configured (noexec disabled)
 to allow the DOCA build script to run. The workflow will also install any necessary dependencies
