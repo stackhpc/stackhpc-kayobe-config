@@ -13,16 +13,16 @@ route:
   routes:
     - matchers:
         - severity=~"critical|alert"
-      receiver: 'msteamvs2-critical-notifications'
+      receiver: 'msteamsv2-critical-notifications'
 
 receivers:
   - name: 'msteamsv2-notifications'
     msteamsv2_configs:
-    - webhook_url: '{{ secrets_msteams_notification_channel_url | default('https://prod-01.westeurope.logic.azure.com/workflows/') }}'
+    - webhook_url: '{{ secrets_msteams_notification_channel_url | ansible.builtin.mandatory(msg="secrets_msteams_notification_channel_url is undefined. Please add this variable to secrets.yml when using the Microsoft Teams Alertmanager integration.") }}'
       send_resolved: true
   - name: 'msteamsv2-critical-notifications'
     msteamsv2_configs:
-    - webhook_url: '{{ secrets_msteams_notification_critical_channel_url | default('https://prod-01.westeurope.logic.azure.com/workflows/') }}'
+    - webhook_url: '{{ secrets_msteams_notification_critical_channel_url | ansible.builtin.mandatory(msg="secrets_msteams_notification_critical_channel_url is undefined. Please add this variable to secrets.yml when using the Microsoft Teams Alertmanager integration.") }}'
       send_resolved: true
 
 templates:

@@ -29,7 +29,7 @@ In ``etc/kayobe/inventory/group_vars/overcloud/time``:
    # Following deployment we include the OpenStack VIP
 
    chrony_ntp_servers:
-     - server: "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+     - server: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}"
 
 Proxy
 =====
@@ -45,14 +45,6 @@ seed:
    # HTTP(S) requests from control plane hosts.
    seed_squid_container_enabled: true
 
-In some environments we have found that squid’s preference for IPv6 can
-cause problems. It can be forced to prefer IPv4, by adding the following
-in ``etc/kayobe/containers/squid_proxy/squid.conf``:
-
-.. code::
-
-   dns_v4_first on
-
 In ``etc/kayobe/inventory/group_vars/overcloud/proxy`` (and any other
 groups that need to use the proxy), configure overcloud hosts to use the
 proxy:
@@ -62,7 +54,7 @@ proxy:
    ---
    # HTTP proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.
-   http_proxy: "http://{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}:3128"
+   http_proxy: "http://{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:3128"
 
    # HTTPS proxy URL (format: http(s)://[user:password@]proxy_name:port). By
    # default no proxy is used.

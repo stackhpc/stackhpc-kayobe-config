@@ -23,6 +23,11 @@ kolla_source_version: "{{ stackhpc_kolla_source_version }}"
 # Path in which to generate kolla configuration.
 #kolla_build_config_path:
 
+# View debug logs, like source downloads, during image build.
+kolla_build_extra_config: |
+  [DEFAULT]
+  debug = True
+
 ###############################################################################
 # Kolla-ansible installation.
 
@@ -85,7 +90,7 @@ kolla_base_distro_and_version: "{{ kolla_base_distro }}-{{ kolla_base_distro_ver
 # case Quay.io will be used.
 #kolla_docker_registry:
 
-# Docker namespace to use for Kolla images. Default is 'kolla'.
+# Docker namespace to use for Kolla images. Default is 'openstack.kolla'.
 kolla_docker_namespace: stackhpc
 
 # Username to use to access a docker registry. Default is not set, in which
@@ -135,13 +140,22 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
-  keystone-base:
+  magnum-conductor-plugin-helm:
+    version: "v4.1.4"
+    sha256:
+      amd64: 70b2c30a19da4db264dfd68c8a3664e05093a361cefd89572ffb36f8abfa3d09
+      arm64: 13d03672be289045d2ff00e4e345d61de1c6f21c1257a45955a30e8ae036d8f1
+  neutron-base-plugin-networking-generic-switch:
     type: git
-    location: https://github.com/stackhpc/keystone.git
+    location: https://github.com/stackhpc/networking-generic-switch.git
     reference: stackhpc/{{ openstack_release }}
   neutron-server-plugin-networking-mlnx:
     type: git
     location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
     reference: stackhpc/{{ openstack_release }}
   nova-compute-plugin-networking-mlnx:
     type: git
@@ -349,9 +363,6 @@ kolla_build_blocks:
   bifrost_base_header: |
     ADD additions-archive /
     ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
-  grafana_plugins_install: |
-    RUN grafana-cli plugins install vonage-status-panel \
-        && grafana-cli plugins install grafana-opensearch-datasource
   ironic_inspector_header: |
     ADD additions-archive /
 
@@ -364,6 +375,8 @@ kolla_build_blocks:
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
+  grafana_plugins_append:
+    - vonage-status-panel
   ironic_inspector_pip_packages_append:
     - /additions/*
   magnum_base_pip_packages_override:
@@ -504,22 +517,8 @@ kolla_build_args: {}
 #         kolla-ansible group.
 # NOTE(Alex-Welsh): If you want to extend the map rather than replace it, you
 # must include the Kayobe defaults in the mapping.
-# Standard Kayobe defaults:
-#  compute:
-#    groups:
-#      - "compute"
-#  control:
-#    groups:
-#      - "controllers"
-#  monitoring:
-#    groups:
-#      - "controllers"
-#  network:
-#    groups:
-#      - "controllers"
-#  storage:
-#    groups:
-#      - "controllers"
+# The standard Kayobe defaults can be found here:
+# https://github.com/stackhpc/kayobe/blob/stackhpc/<release>/ansible/inventory/group_vars/all/kolla
 #kolla_overcloud_inventory_top_level_group_map:
 
 # List of names of top level kolla-ansible groups. Any of these groups which
@@ -850,7 +849,11 @@ kolla_enable_prometheus: true
 
 # Extra items to add to kolla_openstack_custom_config_rules_default
 # to produce kolla_openstack_custom_config_rules.
-#kolla_openstack_custom_config_rules_extra:
+kolla_openstack_custom_config_rules_extra:
+  # Files ending with .example should not be copied
+  - glob: "**/*.example"
+    strategy: noop
+    priority: 1
 
 ###############################################################################
 # Passwords and credentials.

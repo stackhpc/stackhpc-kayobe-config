@@ -7,6 +7,10 @@ on:
         description: Upload Rocky Linux 9
         type: boolean
         default: true
+      rocky10:
+        description: Upload Rocky Linux 10
+        type: boolean
+        default: true
       ubuntu-noble:
         description: Upload Ubuntu 24.04 Noble
         type: boolean
@@ -23,7 +27,7 @@ on:
           - SMS Lab
           - Leafcloud
     secrets:
-      KAYOBE_VAULT_PASSWORD:
+      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
       CLOUDS_YAML:
         required: true
@@ -50,7 +54,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -60,7 +64,7 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -122,7 +126,7 @@ jobs:
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
 
       - name: Upload Rocky Linux 9 overcloud host image to Cloud
@@ -140,6 +144,51 @@ jobs:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
+
+      - name: Output Rocky Linux 10 image tag
+        id: rocky_10_image_tag
+        run: |
+          echo image_tag=$(grep stackhpc_rocky_10_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+
+      - name: Check if image exists already
+        id: rocky_10_image_exists
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image show \
+          overcloud-rocky-10-${{ steps.rocky_10_image_tag.outputs.image_tag }}
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        continue-on-error: true
+
+      - name: Download Rocky Linux 10 overcloud host image from Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ${{ inputs.kayobe-environment }} &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-host-image-download.yml \
+          -e os_distribution="rocky" \
+          -e os_release="10"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10 && steps.rocky_10_image_exists.outcome == 'failure'
+
+      - name: Upload Rocky Linux 10 overcloud host image to Cloud
+        run: |
+          source venvs/kayobe/bin/activate &&
+          openstack image create \
+          overcloud-rocky-10-${{ steps.rocky_10_image_tag.outputs.image_tag }} \
+          --container-format bare \
+          --disk-format qcow2 \
+          --file /tmp/rocky-10.qcow2 \
+          --private \
+          --progress
+        env:
+          OS_CLOUD: openstack
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.rocky10 && steps.rocky_10_image_exists.outcome == 'failure'
 
       - name: Output Ubuntu Noble image tag
         id: ubuntu_noble_image_tag
@@ -167,7 +216,7 @@ jobs:
           -e os_distribution="ubuntu" \
           -e os_release="noble"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble && steps.ubuntu_noble_image_exists.outcome == 'failure'
 
       - name: Upload Ubuntu Noble 24.04 overcloud host image to Cloud

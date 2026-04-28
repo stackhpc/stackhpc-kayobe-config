@@ -22,6 +22,7 @@ kolla_enable_letsencrypt: true
 kolla_enable_magnum: true
 kolla_enable_manila: true
 kolla_enable_mariabackup: true
+kolla_enable_multipathd: true
 kolla_enable_neutron_bgp_dragent: true
 kolla_enable_neutron_mlnx: true
 kolla_enable_neutron_sriov: true
@@ -39,14 +40,14 @@ kolla_build_neutron_ovs: true
 # Use Ark's package repositories to install packages.
 stackhpc_repo_mirror_auth_proxy_enabled: true
 stackhpc_repo_mirror_url: "{{ stackhpc_repo_mirror_auth_proxy_url if stackhpc_repo_mirror_auth_proxy_enabled | bool else stackhpc_release_pulp_url }}"
-stackhpc_repo_mirror_username: "skc-ci-aio"
+stackhpc_repo_mirror_username: "skc-ci-builder-reader-epoxy"
 stackhpc_repo_mirror_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
-  31386366383365666135336331663635396237623139306362633933636233613765663731666338
-  3633633736333936383439623066653663333964343234350a393137383537316164323837386437
-  36613139323161643766666565643739373037623363636234343965343436653261326238393566
-  3837336661653962340a316631366463623138623530373133336665376433633437306631383666
-  30333461333535363433363336663664316634343432633766346564323833346663
+  65636537343838353264663035636132643731623934336130383138666165636237306435613132
+  6232663665396235313966613536356464323435336663360a316533633863613936636237336430
+  36326461313633636365663064666366393432613131373430363264656565636264313336646563
+  6666323161633439630a363063646664313332323636646237633130383738353431363230626664
+  32313963333964623233303961353066633937323030613235626462316662653439
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
@@ -80,6 +81,9 @@ stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_h
 stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version }}"
 stackhpc_repo_rhel9_doca_version: "{{ stackhpc_pulp_repo_rhel9_doca_version }}"
 
+stackhpc_repo_rocky_10_baseos_version: "{{ stackhpc_pulp_repo_rocky_10_baseos_version }}"
+stackhpc_repo_rocky_10_appstream_version: "{{ stackhpc_pulp_repo_rocky_10_appstream_version }}"
+
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true
 
@@ -91,11 +95,11 @@ stackhpc_docker_registry: "{{ stackhpc_release_pulp_url | regex_replace('^https?
 stackhpc_docker_registry_username: "release-train-ci"
 stackhpc_docker_registry_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
-  38356134376436656165303634626531653836366233383531343439646433376334396438373735
-  3135643664353934356237376134623235356137383263300a333165386562396134633534376532
-  34386133383366326639353432386235336132663839333337323739633434613934346462363031
-  3265323831663964360a643962346231386462323236373963633066393736323234303833363535
-  3664
+  62653437333237376336336264366133326434326333326332346561313837306462396163343962
+  3565316433336436366630393865383030623732313765330a333962633233613965303636333939
+  61323663383139303332636266643766343961306234316532663533616132303335366139636137
+  6263313063363636360a386464363933363263613365373533643036333730616532636264633338
+  39383762313638303835666235663864653938306339663235356538666261653638
 
 # Username and password of the overcloud host image repository.
 stackhpc_release_pulp_username: "{{ stackhpc_docker_registry_username }}"
@@ -103,9 +107,7 @@ stackhpc_release_pulp_password: "{{ stackhpc_docker_registry_password }}"
 
 # Build during IPA builder workflow
 ipa_build_images: true
-ipa_build_dib_env_extra:
-  DISTRO_NAME: "{{ ipa_ci_builder_distribution | default('ubuntu') }}"
-  DIB_RELEASE: "{{ ipa_ci_builder_release | default('noble') }}"
+ipa_build_dib_env_extra: "{{ {'DISTRO_NAME': ipa_ci_builder_distribution | default('ubuntu'), 'DIB_RELEASE': ipa_ci_builder_release | default('noble')} | combine({'ARCH': ipa_ci_builder_arch} if ipa_ci_builder_arch is defined else {}) }}"
 
 # Ensure Ark repos are disabled during CI runs, this is due to
 # builder being a member of the 'overcloud' group for IPA builds.

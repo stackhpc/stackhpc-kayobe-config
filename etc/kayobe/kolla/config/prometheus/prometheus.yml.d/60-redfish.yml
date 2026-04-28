@@ -16,7 +16,7 @@ scrape_configs:
      - target_label: __address__
        replacement: "{{ lookup('vars', admin_oc_net_name ~ '_ips')[groups.seed.0] }}:9610"
     static_configs:
-{% for host in groups.get('redfish_exporter_targets', []) %}
+{% for host in (groups.get('redfish_exporter_targets', []) | sort) %}
       - targets:
           - '{{ hostvars[host]["redfish_exporter_target_address"] }}'
         labels:

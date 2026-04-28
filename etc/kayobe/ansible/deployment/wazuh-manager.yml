@@ -134,8 +134,15 @@
       ansible.builtin.file:
         path: "/usr/share/filebeat/module/wazuh/alerts/manifest.yml"
         mode: "go-w"
+      notify:
+        - Restart filebeat
 
   handlers:
+    - name: Restart filebeat
+      ansible.builtin.service:
+        name: filebeat
+        state: restarted
+
     - name: Restart wazuh
       ansible.builtin.service:
         name: wazuh-manager

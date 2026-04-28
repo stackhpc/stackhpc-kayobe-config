@@ -63,7 +63,7 @@ approach this on both sides.
 Beokay
 ------
 
-`Beokay <https://github.com/stackhpc/beokay>` is a tool to manage Kayobe
+`Beokay <https://github.com/stackhpc/beokay>`__ is a tool to manage Kayobe
 environments. This can create new StackHPC Kayobe environments and
 ensure StackHPC Kayobe Configuration dependencies are from the correct repositories and
 are up-to-date:

@@ -3,7 +3,7 @@
 # Also restarts all OpenStack services using RabbitMQ.
 
 - name: Stop OpenStack services
-  hosts: controllers:compute:storage
+  hosts: "{{ rabbitmq_reset_service_hosts | default('controllers:compute:storage') }}"
   become: true
   gather_facts: false
   tasks:
@@ -18,7 +18,7 @@
         executable: "/bin/bash"
 
 - name: Reset RabbitMQ
-  hosts: controllers
+  hosts: "{{ rabbitmq_reset_hosts | default('controllers') }}"
   become: true
   gather_facts: false
   vars:
@@ -69,10 +69,10 @@
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'
 
     - name: Wait for all nodes to join the cluster
-      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ groups['controllers'] | length }}'
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ ansible_play_hosts | length }}'
 
 - name: Restart OpenStack services
-  hosts: controllers:compute:storage
+  hosts: "{{ rabbitmq_reset_service_hosts | default('controllers:compute:storage') }}"
   become: true
   gather_facts: false
   tasks:
