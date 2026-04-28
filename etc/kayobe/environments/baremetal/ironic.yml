@@ -124,12 +124,6 @@ kolla_ironic_enabled_vendor_interfaces:
 # vendor_interface field set.
 kolla_ironic_default_vendor_interface:
 
-# Name of the Neutron network to use for cleaning.
-kolla_ironic_cleaning_network: "{{ kolla_ironic_provisioning_network if cleaning_net_name == provision_wl_net_name else 'cleaning-net' }}"
-
-# Name of the Neutron network to use for provisioning.
-kolla_ironic_provisioning_network: 'provision-net'
-
 # List of default kernel parameters to append for baremetal PXE boot.
 kolla_ironic_pxe_append_params_default:
   - nofb
@@ -137,5 +131,5 @@ kolla_ironic_pxe_append_params_default:
   - vga=normal
   - console=tty0
   - console=ttyS0,115200n8
-  - "ipa-ntp-server={{ provision_wl_net_name | net_ip(inventory_hostname=groups['controllers'][0]) }}"
+  - "ipa-ntp-server={{ lookup('vars', provision_wl_net_name ~ '_ips')[groups.controllers.0] }}"
   - "ipa-insecure=1"
