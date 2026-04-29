@@ -60,13 +60,17 @@ generate_grype_config() {
   local image_vulnerabilities
   image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
 
-  echo "ignore:" > .grype.yaml
-  for vulnerability in $global_vulnerabilities; do
-    echo "  - vulnerability: $vulnerability" >> .grype.yaml
-  done
-  for vulnerability in $image_vulnerabilities; do
-    echo "  - vulnerability: $vulnerability" >> .grype.yaml
-  done
+  if [[ -n "$global_vulnerabilities" || -n "$image_vulnerabilities" ]]; then
+    echo "ignore:" > .grype.yaml
+    for vulnerability in $global_vulnerabilities; do
+      echo "  - vulnerability: $vulnerability" >> .grype.yaml
+    done
+    for vulnerability in $image_vulnerabilities; do
+      echo "  - vulnerability: $vulnerability" >> .grype.yaml
+    done
+  else
+    echo "ignore: []" > .grype.yaml
+  fi
 }
 
 # Put results into CSV
