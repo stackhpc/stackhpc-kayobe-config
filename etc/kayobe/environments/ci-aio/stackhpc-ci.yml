@@ -8,18 +8,14 @@ kolla_docker_namespace: stackhpc-dev
 ###############################################################################
 # StackHPC configuration.
 
+# AIOs currently run on SMS, and pull packages and containers through an
+# authenticating caching proxy.
 # Host and port of a package repository mirror.
-# Build and deploy the development Pulp service repositories.
-# Use Ark's package repositories to install packages.
-stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
-stackhpc_repo_mirror_username: "skc-ci-aio-epoxy"
-stackhpc_repo_mirror_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  66666132666635313565646233353065623465316332323337356366303262363437353162643430
-  3138303131313865646532633063666539306332663933340a386131316664663238633534623862
-  65303835626463356666623563333464623630633936663162353935633132376634666463633139
-  3363383033613330360a356639333463643461353462346466633365626333393331633833326634
-  64366233653036333032323334353332643735623264376137383564383361303462
+stackhpc_aio_proxy_address: "192.168.46.157"
+stackhpc_repo_mirror_url: "http://{{ stackhpc_aio_proxy_address }}:80"
+# Host and port of container registry.
+stackhpc_docker_registry: "{{ stackhpc_aio_proxy_address }}:5000"
+docker_registry_insecure: true
 
 # Build against released Pulp repository versions.
 stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
@@ -57,17 +53,17 @@ stackhpc_repo_rhel9_doca_modules_version: "{{ stackhpc_pulp_repo_rhel9_doca_modu
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true
 
-# Host and port of container registry.
-# Push built images to the development Pulp service registry.
-stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
-stackhpc_docker_registry_username: "{{ stackhpc_repo_mirror_username }}"
-stackhpc_docker_registry_password: "{{ stackhpc_repo_mirror_password }}"
-
 # Override Pulp credentials to allow querying container image tags in the
 # check-tags.yml custom playbook.
 pulp_url: "{{ stackhpc_repo_mirror_url }}"
-pulp_username: "{{ stackhpc_repo_mirror_username }}"
-pulp_password: "{{ stackhpc_repo_mirror_password }}"
+pulp_username: "skc-ci-aio-epoxy"
+pulp_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  66666132666635313565646233353065623465316332323337356366303262363437353162643430
+  3138303131313865646532633063666539306332663933340a386131316664663238633534623862
+  65303835626463356666623563333464623630633936663162353935633132376634666463633139
+  3363383033613330360a356639333463643461353462346466633365626333393331633833326634
+  64366233653036333032323334353332643735623264376137383564383361303462
 
 # Ensure Blackbox monitoring configuration is generated correctly
 seed_pulp_container_enabled: false
