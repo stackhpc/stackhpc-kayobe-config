@@ -321,6 +321,9 @@ stackhpc_pulp_rpm_repos:
     base_path: "ProxySQL/proxysql-2.7.x/almalinux/9/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
 
+
+{% if dupa %}
+
   # Base Rocky 9 repositories
   - name: Rocky Linux 9 - AppStream
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
@@ -351,6 +354,9 @@ stackhpc_pulp_rpm_repos:
     distribution_name: "rocky-9-highavailability-"
     base_path: "rocky/9/highavailability/x86_64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+
+
+{% endif %}
 
   - name: Rocky Linux 9 - SIG Security Common
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
