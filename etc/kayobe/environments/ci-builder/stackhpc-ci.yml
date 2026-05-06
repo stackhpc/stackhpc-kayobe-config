@@ -107,7 +107,7 @@ stackhpc_release_pulp_password: "{{ stackhpc_docker_registry_password }}"
 
 # Build during IPA builder workflow
 ipa_build_images: true
-ipa_build_dib_env_extra: "{{ {'DISTRO_NAME': ipa_ci_builder_distribution | default('ubuntu'), 'DIB_RELEASE': ipa_ci_builder_release | default('noble')} | combine({'ARCH': ipa_ci_builder_arch} if ipa_ci_builder_arch is defined else {}) }}"
+ipa_build_dib_env_extra: "{{ {'DISTRO_NAME': ipa_build_distro} | combine({'ARCH': ipa_build_arch} if ipa_build_arch is defined else {}) }}"
 
 # Ensure Ark repos are disabled during CI runs, this is due to
 # builder being a member of the 'overcloud' group for IPA builds.
