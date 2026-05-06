@@ -12,6 +12,15 @@ kolla_base_distro_version: "{% raw %}{{ kolla_base_distro_version_default_map[ko
 # Convenience variable for base distro and version string.
 kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
 
+# Override the version map used, so we can deploy Rocky 10 container images
+# on Rocky 10 hosts.
+kolla_base_distro_version_default_map: {
+  "centos": "stream9",
+  "debian": "bookworm",
+  "rocky": "{{ os_release }}",
+  "ubuntu": "noble",
+}
+
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
 # where the key is the OS distro and the value is the tag to deploy.
