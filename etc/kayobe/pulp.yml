@@ -208,12 +208,27 @@ stackhpc_pulp_repo_rocky_9_minor_version: '7'
 # Define the architecture suffix
 arch_suffix: "{{ '_aarch64' if kolla_base_arch == 'aarch64' else '' }}"
 
-# Rocky 9 Snapshot versions
-stackhpc_pulp_repo_rocky_9_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_baseos' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_9_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_appstream' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_9_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_extras' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_9_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_crb' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_highavailability' ~ arch_suffix ~ '_version') }}"
+# Rocky 9 selected-architecture snapshot versions.
+# NOTE(bbezak): Existing CI build and repo URL configuration uses these
+# variables as selected-architecture aliases that follow kolla_base_arch.
+# Pulp repo sync should use the explicit architecture-specific variables below.
+stackhpc_pulp_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_baseos_x86_64_version }}"
+stackhpc_pulp_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstream_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_appstream_x86_64_version }}"
+stackhpc_pulp_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_extras_x86_64_version }}"
+stackhpc_pulp_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_crb_x86_64_version }}"
+stackhpc_pulp_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_9_highavailability_x86_64_version }}"
+
+# Rocky 9 architecture-specific snapshot versions.
+stackhpc_pulp_repo_rocky_9_baseos_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_baseos_version') }}"
+stackhpc_pulp_repo_rocky_9_appstream_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_appstream_version') }}"
+stackhpc_pulp_repo_rocky_9_extras_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_extras_version') }}"
+stackhpc_pulp_repo_rocky_9_crb_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_crb_version') }}"
+stackhpc_pulp_repo_rocky_9_highavailability_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_highavailability_version') }}"
+stackhpc_pulp_repo_rocky_9_baseos_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_baseos_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_9_appstream_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_appstream_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_9_extras_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_extras_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_9_crb_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_crb_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_9_highavailability_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_9_' ~ stackhpc_pulp_repo_rocky_9_minor_version ~ '_highavailability_aarch64_version') }}"
 
 # Rocky 9 Multiarch repositories
 #NOTE(bbezak): Versioned Erlang repos (aarch64 only). Fallback to generic Erlang version if not defined.
@@ -234,6 +249,11 @@ stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version: "{{ lookup('va
 # Whether to sync packages common to all RHEL 9 derivatives.
 stackhpc_pulp_sync_el_9: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
 
+# RPM architectures to sync from StackHPC Ark Pulp into local Pulp.
+# Valid values are "x86_64" and "aarch64".
+stackhpc_pulp_rpm_architectures:
+  - x86_64
+
 # Whether to sync Rocky Linux 10 packages.
 stackhpc_pulp_sync_rocky_10: "{{ os_distribution == 'rocky' and os_release == '10' }}"
 # Rocky 10 minor version number. Supported values: 1. Default is 1
@@ -241,12 +261,27 @@ stackhpc_pulp_repo_rocky_10_minor_version: '1'
 # Rocky 10 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 
-# Rocky 10 Snapshot versions
-stackhpc_pulp_repo_rocky_10_appstream_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_appstream' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_10_baseos_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_baseos' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_10_extras_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_extras' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_10_crb_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_crb' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_rocky_10_highavailability_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_highavailability' ~ arch_suffix ~ '_version') }}"
+# Rocky 10 selected-architecture snapshot versions.
+# NOTE(bbezak): Existing CI build and repo URL configuration uses these
+# variables as selected-architecture aliases that follow kolla_base_arch.
+# Pulp repo sync should use the explicit architecture-specific variables below.
+stackhpc_pulp_repo_rocky_10_appstream_version: "{{ stackhpc_pulp_repo_rocky_10_appstream_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_10_appstream_x86_64_version }}"
+stackhpc_pulp_repo_rocky_10_baseos_version: "{{ stackhpc_pulp_repo_rocky_10_baseos_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_10_baseos_x86_64_version }}"
+stackhpc_pulp_repo_rocky_10_extras_version: "{{ stackhpc_pulp_repo_rocky_10_extras_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_10_extras_x86_64_version }}"
+stackhpc_pulp_repo_rocky_10_crb_version: "{{ stackhpc_pulp_repo_rocky_10_crb_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_10_crb_x86_64_version }}"
+stackhpc_pulp_repo_rocky_10_highavailability_version: "{{ stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version if kolla_base_arch == 'aarch64' else stackhpc_pulp_repo_rocky_10_highavailability_x86_64_version }}"
+
+# Rocky 10 architecture-specific snapshot versions.
+stackhpc_pulp_repo_rocky_10_appstream_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_appstream_version') }}"
+stackhpc_pulp_repo_rocky_10_baseos_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_baseos_version') }}"
+stackhpc_pulp_repo_rocky_10_extras_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_extras_version') }}"
+stackhpc_pulp_repo_rocky_10_crb_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_crb_version') }}"
+stackhpc_pulp_repo_rocky_10_highavailability_x86_64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_highavailability_version') }}"
+stackhpc_pulp_repo_rocky_10_appstream_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_appstream_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_10_baseos_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_baseos_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_10_extras_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_extras_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_10_crb_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_crb_aarch64_version') }}"
+stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_highavailability_aarch64_version') }}"
 
 # Rocky 10 Multiarch repositories
 stackhpc_pulp_repo_multiarch_centos_stream_10_nfv_openvswitch_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch' ~ arch_suffix ~ '_version') }}"
@@ -283,7 +318,19 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
     distribution_name: "rhel9-rabbitmq-erlang-"
     base_path: "rabbitmq/erlang/el/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: RabbitMQ - Erlang 26 - RHEL 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang-26/el/9/aarch64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_26_aarch64_version }}"
+    distribution_name: "rhel9-rabbitmq-erlang-26-aarch64-"
+    base_path: "rabbitmq/erlang-26/el/9/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: RabbitMQ - Erlang 27 - RHEL 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang-27/el/9/aarch64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_27_aarch64_version }}"
+    distribution_name: "rhel9-rabbitmq-erlang-27-aarch64-"
+    base_path: "rabbitmq/erlang-27/el/9/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: RabbitMQ - Server - RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/noarch/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
@@ -295,13 +342,19 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_version }}"
     distribution_name: "rhel-9-treasuredata-5-"
     base_path: "treasuredata/5/redhat/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: TreasureData 5 for RHEL 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/treasuredata/lts/5/redhat/9/aarch64/{{ stackhpc_pulp_repo_rhel_9_treasuredata_5_aarch64_version }}"
+    distribution_name: "rhel-9-treasuredata-5-aarch64-"
+    base_path: "treasuredata/5/redhat/9/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: InfluxDB for RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/influxdb/rhel/9/x86_64/stable/{{ stackhpc_pulp_repo_rhel_9_influxdb_version }}"
     distribution_name: "rhel-9-influxdb-"
     base_path: "influxdb/rhel/9/x86_64/stable/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and (stackhpc_pulp_sync_el_9 | bool or stackhpc_pulp_sync_el_10 | bool) and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: OpenSearch 2.x
     url: "{{ stackhpc_release_pulp_content_url }}/opensearch/2.x/yum/{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
@@ -323,65 +376,125 @@ stackhpc_pulp_rpm_repos:
 
   # Base Rocky 9 repositories
   - name: Rocky Linux 9 - AppStream
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_appstream_x86_64_version }}"
     distribution_name: "rocky-9-appstream-"
     base_path: "rocky/9/AppStream/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - AppStream - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/AppStream/aarch64/os/{{ stackhpc_pulp_repo_rocky_9_appstream_aarch64_version }}"
+    distribution_name: "rocky-9-appstream-aarch64-"
+    base_path: "rocky/9/AppStream/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 9 - BaseOS
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_baseos_x86_64_version }}"
     distribution_name: "rocky-9-baseos-"
     base_path: "rocky/9/BaseOS/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - BaseOS - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/BaseOS/aarch64/os/{{ stackhpc_pulp_repo_rocky_9_baseos_aarch64_version }}"
+    distribution_name: "rocky-9-baseos-aarch64-"
+    base_path: "rocky/9/BaseOS/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 9 - Extras
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_extras_x86_64_version }}"
     distribution_name: "rocky-9-extras-"
     base_path: "rocky/9/extras/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - Extras - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/extras/aarch64/os/{{ stackhpc_pulp_repo_rocky_9_extras_aarch64_version }}"
+    distribution_name: "rocky-9-extras-aarch64-"
+    base_path: "rocky/9/extras/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 9 - CRB
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_crb_x86_64_version }}"
     distribution_name: "rocky-9-crb-"
     base_path: "rocky/9/CRB/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - CRB - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/CRB/aarch64/os/{{ stackhpc_pulp_repo_rocky_9_crb_aarch64_version }}"
+    distribution_name: "rocky-9-crb-aarch64-"
+    base_path: "rocky/9/CRB/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 9 - HighAvailability
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_9_highavailability_x86_64_version }}"
     distribution_name: "rocky-9-highavailability-"
     base_path: "rocky/9/highavailability/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - HighAvailability - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/highavailability/aarch64/os/{{ stackhpc_pulp_repo_rocky_9_highavailability_aarch64_version }}"
+    distribution_name: "rocky-9-highavailability-aarch64-"
+    base_path: "rocky/9/highavailability/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 9 - SIG Security Common
     url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/x86_64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_version }}"
     distribution_name: rocky-9-sig-security-common-
     base_path: "rocky/sig/9/security/x86_64/security-common/"
-    required: "{{ stackhpc_pulp_sync_rocky_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 9 - SIG Security Common - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/sig/9/security/aarch64/security-common/{{ stackhpc_pulp_repo_rocky_9_sig_security_common_aarch64_version }}"
+    distribution_name: rocky-9-sig-security-common-aarch64-
+    base_path: "rocky/sig/9/security/aarch64/security-common/"
+    required: "{{ stackhpc_pulp_sync_rocky_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional CentOS Stream 9 repositories
   - name: CentOS Stream 9 - NFV OpenvSwitch
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_version }}"
     distribution_name: "centos-stream-9-nfv-openvswitch-"
     base_path: "centos/9-stream/nfv/x86_64/openvswitch-2/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 9 - NFV OpenvSwitch - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/nfv/aarch64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_9_nfv_openvswitch_aarch64_version }}"
+    distribution_name: "centos-stream-9-nfv-openvswitch-aarch64-"
+    base_path: "centos/9-stream/nfv/aarch64/openvswitch-2/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: CentOS Stream 9 - OpenStack Epoxy
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/x86_64/openstack-epoxy/{{ stackhpc_pulp_repo_centos_stream_9_openstack_epoxy_version }}"
     distribution_name: "centos-stream-9-openstack-epoxy-"
     base_path: "centos/9-stream/cloud/x86_64/openstack-epoxy/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 9 - OpenStack Epoxy - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/cloud/aarch64/openstack-epoxy/{{ stackhpc_pulp_repo_centos_stream_9_openstack_epoxy_aarch64_version }}"
+    distribution_name: "centos-stream-9-openstack-epoxy-aarch64-"
+    base_path: "centos/9-stream/cloud/aarch64/openstack-epoxy/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: CentOS 9 - OpsTools - collectd
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/opstools/x86_64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_9_opstools_version }}"
     distribution_name: "centos-9-opstools-collectd-"
     base_path: "centos/9-stream/opstools/x86_64/collectd-5/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS 9 - OpsTools - collectd - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/opstools/aarch64/collectd-5/{{ stackhpc_pulp_repo_centos_stream_9_opstools_aarch64_version }}"
+    distribution_name: "centos-9-opstools-collectd-aarch64-"
+    base_path: "centos/9-stream/opstools/aarch64/collectd-5/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: CentOS Stream 9 - Ceph Squid
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/x86_64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_version }}"
     distribution_name: "centos-stream-9-ceph-squid-"
     base_path: "centos/9-stream/storage/x86_64/ceph-squid/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 9 - Ceph Squid - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/aarch64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_aarch64_version }}"
+    distribution_name: "centos-stream-9-ceph-squid-aarch64-"
+    base_path: "centos/9-stream/storage/aarch64/ceph-squid/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # EPEL 9 repository
   - name: Extra Packages for Enterprise Linux 9 - x86_64
@@ -389,7 +502,14 @@ stackhpc_pulp_rpm_repos:
     distribution_name: "extra-packages-for-enterprise-linux-9-x86_64-"
     base_path: "epel/9/Everything/x86_64/"
     sync_policy: mirror_content_only
-    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Extra Packages for Enterprise Linux 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/9/Everything/aarch64/{{ stackhpc_pulp_repo_epel_9_aarch64_version }}"
+    distribution_name: "extra-packages-for-enterprise-linux-9-aarch64-"
+    base_path: "epel/9/Everything/aarch64/"
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # ELRepo 9 repository
   - name: ELRepo.org Community Enterprise Linux Repository - el9
@@ -397,95 +517,162 @@ stackhpc_pulp_rpm_repos:
     distribution_name: elrepo-el9-x86_64-
     base_path: elrepo/elrepo/el9/x86_64/
     sync_policy: mirror_content_only
-    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: ELRepo.org Community Enterprise Linux Repository - el9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/elrepo/elrepo/el9/aarch64/{{ stackhpc_pulp_repo_elrepo_9_aarch64_version }}"
+    distribution_name: elrepo-el9-aarch64-
+    base_path: elrepo/elrepo/el9/aarch64/
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Third-party repositories
   - name: Docker CE for CentOS 9
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/9/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_9_docker_version }}"
     distribution_name: "docker-ce-for-centos-9-"
     base_path: "docker-ce/centos/9/x86_64/stable/"
-    required: "{{ stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Docker CE for CentOS 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/9/aarch64/stable/{{ stackhpc_pulp_repo_centos_stream_9_docker_aarch64_version }}"
+    distribution_name: "docker-ce-for-centos-9-aarch64-"
+    base_path: "docker-ce/centos/9/aarch64/stable/"
+    required: "{{ stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional RHEL 9 repositories
   - name: MariaDB 10.11 for RHEL 9
     url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/9/x86_64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_version }}"
     distribution_name: "rhel-9-mariadb-10-11-"
     base_path: "mariadb-10.11/yum/rhel/9/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: MariaDB 10.11 for RHEL 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/9/aarch64/{{ stackhpc_pulp_repo_rhel_9_mariadb_10_11_aarch64_version }}"
+    distribution_name: "rhel-9-mariadb-10-11-aarch64-"
+    base_path: "mariadb-10.11/yum/rhel/9/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL {{ doca_rocky_9_minor_dot }}
     url: "{{ stackhpc_release_pulp_content_url }}/doca/{{ stackhpc_pulp_doca_version }}/rhel{{ doca_rocky_9_minor_dot }}/x86_64/{{ stackhpc_pulp_repo_rhel9_doca_version }}"
     distribution_name: "doca-{{ stackhpc_pulp_doca_version }}-rhel{{ doca_rocky_9_minor_dot }}-"
     base_path: "doca/{{ stackhpc_pulp_doca_version }}/rhel{{ doca_rocky_9_minor_dot }}/x86_64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL {{ doca_rocky_9_minor_dot }} aarch64
     url: "{{ stackhpc_release_pulp_content_url }}/doca/{{ stackhpc_pulp_doca_version }}/rhel{{ doca_rocky_9_minor_dot }}/aarch64/{{ stackhpc_pulp_repo_rhel9_doca_aarch64_version }}"
     distribution_name: "doca-{{ stackhpc_pulp_doca_version }}-rhel{{ doca_rocky_9_minor_dot }}-aarch64-"
     base_path: "doca/{{ stackhpc_pulp_doca_version }}/rhel{{ doca_rocky_9_minor_dot }}/aarch64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: OFED Kernel modules for DOCA {{ stackhpc_pulp_doca_version }} - RHEL 9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}
     url: "{{ stackhpc_release_pulp_content_url }}/doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/x86_64/{{ stackhpc_pulp_repo_rhel9_doca_modules_version }}"
     distribution_name: "doca-modules-{{ stackhpc_pulp_doca_version }}-rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}-"
     base_path: "doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/x86_64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: OFED Kernel modules for DOCA {{ stackhpc_pulp_doca_version }} - RHEL 9.{{ stackhpc_pulp_repo_rocky_9_minor_version }} aarch64
     url: "{{ stackhpc_release_pulp_content_url }}/doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/aarch64/{{ stackhpc_pulp_repo_rhel9_doca_modules_aarch64_version }}"
     distribution_name: "doca-modules-{{ stackhpc_pulp_doca_version }}-rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}-aarch64-"
     base_path: "doca-modules/{{ stackhpc_pulp_doca_version }}/rhel9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}/aarch64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Base Rocky 10 repositories
   - name: Rocky Linux 10 - AppStream
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_appstream_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/AppStream/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_appstream_x86_64_version }}"
     distribution_name: "rocky-10-appstream-"
     base_path: "rocky/10/AppStream/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 10 - AppStream - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/AppStream/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_appstream_aarch64_version }}"
+    distribution_name: "rocky-10-appstream-aarch64-"
+    base_path: "rocky/10/AppStream/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - BaseOS
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_baseos_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/BaseOS/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_baseos_x86_64_version }}"
     distribution_name: "rocky-10-baseos-"
     base_path: "rocky/10/BaseOS/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 10 - BaseOS - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/BaseOS/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_baseos_aarch64_version }}"
+    distribution_name: "rocky-10-baseos-aarch64-"
+    base_path: "rocky/10/BaseOS/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - Extras
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_extras_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/extras/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_extras_x86_64_version }}"
     distribution_name: "rocky-10-extras-"
     base_path: "rocky/10/extras/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 10 - Extras - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/extras/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_extras_aarch64_version }}"
+    distribution_name: "rocky-10-extras-aarch64-"
+    base_path: "rocky/10/extras/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - CRB
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_crb_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/CRB/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_crb_x86_64_version }}"
     distribution_name: "rocky-10-crb-"
     base_path: "rocky/10/CRB/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 10 - CRB - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/CRB/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_crb_aarch64_version }}"
+    distribution_name: "rocky-10-crb-aarch64-"
+    base_path: "rocky/10/CRB/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - HighAvailability
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_x86_64_version }}"
     distribution_name: "rocky-10-highavailability-"
     base_path: "rocky/10/highavailability/x86_64/os/"
-    required: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Rocky Linux 10 - HighAvailability - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version }}"
+    distribution_name: "rocky-10-highavailability-aarch64-"
+    base_path: "rocky/10/highavailability/aarch64/os/"
+    required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional CentOS Stream 10 repositories
   - name: CentOS Stream 10 - NFV OpenvSwitch
     url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/nfv/x86_64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch_version }}"
     distribution_name: "centos-stream-10-nfv-openvswitch-"
     base_path: "centos/10-stream/nfv/x86_64/openvswitch-2/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 10 - NFV OpenvSwitch - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/nfv/aarch64/openvswitch-2/{{ stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch_aarch64_version }}"
+    distribution_name: "centos-stream-10-nfv-openvswitch-aarch64-"
+    base_path: "centos/10-stream/nfv/aarch64/openvswitch-2/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: CentOS Stream 10 - OpenStack Epoxy
     url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/cloud/x86_64/openstack-epoxy/{{ stackhpc_pulp_repo_centos_stream_10_openstack_epoxy_version }}"
     distribution_name: "centos-stream-10-openstack-epoxy-"
     base_path: "centos/10-stream/cloud/x86_64/openstack-epoxy/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 10 - OpenStack Epoxy - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/cloud/aarch64/openstack-epoxy/{{ stackhpc_pulp_repo_centos_stream_10_openstack_epoxy_aarch64_version }}"
+    distribution_name: "centos-stream-10-openstack-epoxy-aarch64-"
+    base_path: "centos/10-stream/cloud/aarch64/openstack-epoxy/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: CentOS Stream 10 - Ceph Squid
     url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/storage/x86_64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid_version }}"
     distribution_name: "centos-stream-10-ceph-squid-"
     base_path: "centos/10-stream/storage/x86_64/ceph-squid/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: CentOS Stream 10 - Ceph Squid - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/storage/aarch64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid_aarch64_version }}"
+    distribution_name: "centos-stream-10-ceph-squid-aarch64-"
+    base_path: "centos/10-stream/storage/aarch64/ceph-squid/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # EPEL 10 repository
   - name: Extra Packages for Enterprise Linux 10 - x86_64
@@ -493,7 +680,14 @@ stackhpc_pulp_rpm_repos:
     distribution_name: "extra-packages-for-enterprise-linux-10-x86_64-"
     base_path: "epel/10/Everything/x86_64/"
     sync_policy: mirror_content_only
-    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Extra Packages for Enterprise Linux 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/10/Everything/aarch64/{{ stackhpc_pulp_repo_epel_10_aarch64_version }}"
+    distribution_name: "extra-packages-for-enterprise-linux-10-aarch64-"
+    base_path: "epel/10/Everything/aarch64/"
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # ELRepo 10 repository
   - name: ELRepo.org Community Enterprise Linux Repository - el10
@@ -501,33 +695,52 @@ stackhpc_pulp_rpm_repos:
     distribution_name: elrepo-el10-x86_64-
     base_path: elrepo/elrepo/el10/x86_64/
     sync_policy: mirror_content_only
-    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: ELRepo.org Community Enterprise Linux Repository - el10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/elrepo/elrepo/el10/aarch64/{{ stackhpc_pulp_repo_elrepo_10_aarch64_version }}"
+    distribution_name: elrepo-el10-aarch64-
+    base_path: elrepo/elrepo/el10/aarch64/
+    sync_policy: mirror_content_only
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Third-party repositories
   - name: Docker CE for CentOS 10
     url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/10/x86_64/stable/{{ stackhpc_pulp_repo_centos_stream_10_docker_version }}"
     distribution_name: "docker-ce-for-centos-10-"
     base_path: "docker-ce/centos/10/x86_64/stable/"
-    required: "{{ stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Docker CE for CentOS 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/docker-ce/centos/10/aarch64/stable/{{ stackhpc_pulp_repo_centos_stream_10_docker_aarch64_version }}"
+    distribution_name: "docker-ce-for-centos-10-aarch64-"
+    base_path: "docker-ce/centos/10/aarch64/stable/"
+    required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional RHEL 10 repositories
   - name: MariaDB 10.11 for RHEL 10
     url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_10_11_version }}"
     distribution_name: "rhel-10-mariadb-10-11-"
     base_path: "mariadb-10.11/yum/rhel/10/x86_64/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: MariaDB 10.11 for RHEL 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_mariadb_10_11_aarch64_version }}"
+    distribution_name: "rhel-10-mariadb-10-11-aarch64-"
+    base_path: "mariadb-10.11/yum/rhel/10/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo 3.2.2 - RHEL 10
     url: "{{ stackhpc_release_pulp_content_url }}/doca/3.2.2/rhel10/x86_64/{{ stackhpc_pulp_repo_doca_3_2_2_rhel10_x86_64_version }}"
     distribution_name: "doca-3.2.2-rhel10-"
     base_path: "doca/3.2.2/rhel10/x86_64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo 3.2.2 - RHEL 10 aarch64
     url: "{{ stackhpc_release_pulp_content_url }}/doca/3.2.2/rhel10/aarch64/{{ stackhpc_pulp_repo_doca_3_2_2_rhel10_aarch64_version }}"
     distribution_name: "doca-3.2.2-rhel10-aarch64-"
     base_path: "doca/3.2.2/rhel10/aarch64/"
-    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool }}"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
 # RPM repositories
 stackhpc_pulp_repository_rpm_repos: >-

@@ -97,6 +97,16 @@ Package repositories
 Rocky Linux 9 and Ubuntu Noble package repositories are synced based on the
 value of ``os_distribution`` and ``os_release``.
 
+RPM repository syncs default to the ``x86_64`` architecture. To sync
+``aarch64`` repositories instead, or to sync both architectures, set
+``stackhpc_pulp_rpm_architectures`` in ``etc/kayobe/pulp.yml``. For example:
+
+.. code-block:: yaml
+
+   stackhpc_pulp_rpm_architectures:
+     - x86_64
+     - aarch64
+
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
 in ``etc/kayobe/pulp-repo-versions.yml``. This file is managed by the StackHPC
