@@ -27,7 +27,7 @@ Those groups are usually defined in ``$KAYOBE_CONFIG_PATH/inventory/groups``.
 Running Cephadm playbooks
 -------------------------
 
-In kayobe-config repository, under ``$KAYOBE_CONFIG_PATH/ansible`` there is a set of
+In kayobe-config repository, under ``$KAYOBE_CONFIG_PATH/ansible/ceph/`` there is a set of
 Cephadm based playbooks utilising stackhpc.cephadm Ansible Galaxy collection.
 
 ``cephadm.yml`` runs the end to end process of Cephadm deployment and
