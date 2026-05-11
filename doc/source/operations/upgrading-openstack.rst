@@ -1030,7 +1030,7 @@ or powered off:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-{disable,drain}.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-{disable,drain}.yml --limit <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
