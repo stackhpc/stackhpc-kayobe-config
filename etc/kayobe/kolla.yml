@@ -244,8 +244,98 @@ stackhpc_epel_9_repos:
     file: "epel.repo"
     tag: "epel"
 
-base_centos_repo_overrides_post_yum_list: "{{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}"
-stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos }}"
+# Repositories for Rocky Linux 10
+stackhpc_rocky_10_repos:
+  - url: "{{ stackhpc_repo_rocky_10_baseos_url }}"
+    file: "rocky.repo"
+    tag: "baseos"
+  - url: "{{ stackhpc_repo_rocky_10_appstream_url }}"
+    file: "rocky.repo"
+    tag: "appstream"
+  - url: "{{ stackhpc_repo_rocky_10_extras_url }}"
+    file: "rocky-extras.repo"
+    tag: "extras"
+
+# NOTE(owenjones): Whether to feed in the .repo file needed for previous LTS
+# versions of OVN/OVS - for now always include this in Rocky 10,
+# when we switch over to newer LTS versions this might need some more conditions
+stackhpc_enable_ovn_lts_repo: "{{ kolla_base_distro_and_version == 'rocky-10' }}"
+
+# Additional repositories for Rocky Linux 10
+stackhpc_rocky_10_additional_repos:
+  - url: "{{ stackhpc_repo_centos_stream_10_nfv_openvswitch_url }}"
+    file: "CentOS-NFV-OpenvSwitch.repo"
+    tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_10_openstack_epoxy_url }}"
+    file: "CentOS-OpenStack-epoxy.repo"
+    tag: "centos-openstack-epoxy"
+  - url: "{{ stackhpc_repo_rocky_10_crb_url }}"
+    file: "rocky.repo"
+    tag: "crb"
+  - url: "{{ stackhpc_repo_rocky_10_highavailability_url }}"
+    file: "rocky-addons.repo"
+    tag: "highavailability"
+  # NOTE(owenjones): Remove this when previous OVN/OVS LTS versions
+  # no longer required
+  - url: "{{ stackhpc_repo_centos_stream_10_ovn_lts_url }}"
+    file: "ovn-lts-centos-stream-10.repo"
+    tag: "StackHPC-OVN-LTS"
+
+# List of third-party repositories for Rocky Linux 10
+stackhpc_rocky_10_third_party_repos:
+  - url: "{{ stackhpc_repo_grafana_url }}"
+    file: "grafana.repo"
+    tag: "grafana"
+  - url: "{{ stackhpc_repo_rhel_9_treasuredata_5_url }}"
+    file: "td.repo"
+    tag: "treasuredata"
+  - url: "{{ stackhpc_repo_rhel_10_mariadb_10_11_url }}"
+    file: "mariadb.repo"
+    tag: "mariadb"
+  - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
+    file: "influxdb.repo"
+    tag: "influxdb"
+  - url: "{{ stackhpc_repo_centos_stream_10_storage_ceph_squid_url }}"
+    file: "CentOS-Ceph-Squid.repo"
+    tag: "centos-ceph-squid"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_26_url }}"
+    file: "copr-rabbitmq-erlang-26.repo"
+    tag: "copr-rabbitmq-erlang-26"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_27_url }}"
+    file: "copr-rabbitmq-erlang-27.repo"
+    tag: "copr-rabbitmq-erlang-27"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
+    file: "rabbitmq_rabbitmq-server.repo"
+    tag: "rabbitmq_rabbitmq-server"
+  - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-2.x"
+  - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-dashboards-2.x"
+  - url: "{{ stackhpc_repo_almalinux_9_proxysql_2_7_url }}"
+    file: "proxysql.repo"
+    tag: "proxysql"
+
+# List of EPEL 10
+stackhpc_epel_10_repos:
+  - url: "{{ stackhpc_repo_epel_10_url }}"
+    file: "epel.repo"
+    tag: "epel"
+
+base_centos_repo_overrides_post_yum_list: >-
+  {% if kolla_base_distro_and_version == 'rocky-9' -%}
+    {{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}
+  {%- elif kolla_base_distro_and_version == 'rocky-10' -%}
+    {{ stackhpc_rocky_10_repos + stackhpc_epel_10_repos + stackhpc_rocky_10_additional_repos + stackhpc_rocky_10_third_party_repos }}
+  {%- else -%}
+    []
+  {%- endif %}
+
+stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos if kolla_base_distro_and_version == 'rocky-9' else stackhpc_rocky_10_repos if kolla_base_distro_and_version == 'rocky-10' else [] }}"
 
 # Apt sources.list entry prefix.
 # If using an authenticating Pulp proxy we need to trust the repository because
@@ -306,6 +396,18 @@ kolla_build_blocks:
         tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
         tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
     {% endif %}
+    {% if stackhpc_enable_ovn_lts_repo | bool %}
+    echo -e "[StackHPC-OVN-LTS]\n\
+    name=Copr repo for ovn-lts owned by @ovn-lts\n\
+    baseurl=https://download.copr.fedorainfracloud.org/results/@ovn-lts/ovn-lts/centos-stream-\$releasever-\$basearch/\n\
+    type=rpm-md\n\
+    skip_if_unavailable=True\n\
+    gpgcheck=1\n\
+    gpgkey=https://download.copr.fedorainfracloud.org/results/@ovn-lts/ovn-lts/pubkey.gpg\n\
+    repo_gpgcheck=0\n\
+    enabled=1\n\
+    enabled_metadata=1\n" > /etc/yum.repos.d/ovn-lts-centos-stream-10.repo && \
+    {% endif %}
     {% for repo in base_centos_repo_overrides_post_yum_list %}
     if [ -f /etc/yum.repos.d/{{ repo.file }} ]; then \
         sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
@@ -320,7 +422,9 @@ kolla_build_blocks:
         # https://git.centos.org/rpms/rdo-openvswitch/blob/c9s-sig-cloud-openstack-epoxy/f/SPECS/rdo-openvswitch.spec#L10),
         # which would replace our NFV OVS and OVN 24.03 LTS with 24.09. Hence exclude RDO OVN/OVS.
         && \
-        sed -i '/^\[centos-openstack-epoxy\]/a excludepkgs=*rdo-ovn*,*rdo-openvswitch*' /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo \
+        if [ -f /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo ]; then \
+          sed -i '/^\[centos-openstack-epoxy\]/a excludepkgs=*rdo-ovn*,*rdo-openvswitch*' /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo; \
+        fi \
     {% endif %}
   # With the UCA keyring installed we can now add all repos.
   base_ubuntu_package_sources_list: |
@@ -343,6 +447,11 @@ kolla_build_blocks:
           tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
           rm -rf /etc/yum.repos.d.backup/; \
         fi && \
+        {% if stackhpc_enable_ovn_lts_repo | bool %}
+        if [ -f /etc/yum.repos.d/ovn-lts-centos-stream-10.repo ]; then \
+          rm /etc/yum.repos.d/ovn-lts-centos-stream-10.repo; \
+        fi && \
+        {% endif %}
         if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
           echo "Found repository mirror in Yum repositories"; \
           exit 1; \
@@ -384,66 +493,123 @@ kolla_build_customizations_common:
     - magnum-capi-helm==1.3.0
   neutron_server_packages_append:
     - python3-libvirt
-    - python3-ethtool
   nova_compute_packages_append:
     - python3-libvirt
-    - python3-ethtool
   neutron_mlnx_agent_pip_packages_override:
     - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
-kolla_build_customizations_rocky:
-  base_centos_yum_repo_packages_append:
-    - centos-release-ceph-squid
-  base_centos_yum_repo_packages_remove:
-    - centos-release-ceph-reef
-  base_centos_yum_repos_to_disable_remove:
-    - centos-ceph-reef
-    - epel
-    - centos9-nfv-ovs
-    - centos9-opstools
-    - centos9-rabbitmq
-    - centos9-storage
-  kolla_toolbox_packages_remove:
-    - openvswitch
-  kolla_toolbox_packages_append:
-    - openvswitch3.3
-  manila_base_packages_remove:
-    - openvswitch
-  manila_base_packages_append:
-    - openvswitch3.3
-  neutron_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  neutron_base_packages_append:
-    - openvswitch3.3
-    - python3-openvswitch3.3
-  nova_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  nova_base_packages_append:
-    - openvswitch3.3
-    - python3-openvswitch3.3
-  nova_libvirt_packages_remove:
-    - openvswitch
-  octavia_base_packages_remove:
-    - python3-openvswitch
-  openvswitch_base_packages_remove:
-    - openvswitch
-    - python3-openvswitch
-  openvswitch_base_packages_append:
-    - openvswitch3.3
-    - python3-openvswitch3.3
-  ovn_base_packages_override:
-    - ovn24.03
-  ovn_controller_packages_override:
-    - ovn24.03-host
-  ovn_nb_db_server_packages_override:
-    - ovn24.03-central
-  ovn_northd_packages_override:
-    - ovn24.03-central
-  ovn_sb_db_server_packages_override:
-    - ovn24.03-central
 
-kolla_build_customizations_ubuntu: {}
+stackhpc_kolla_build_customizations:
+  rocky-9:
+    base_centos_yum_repo_packages_append:
+      - centos-release-ceph-squid
+    base_centos_yum_repo_packages_remove:
+      - centos-release-ceph-reef
+    base_centos_yum_repos_to_disable_remove:
+      - centos-ceph-reef
+      - epel
+      - centos9-nfv-ovs
+      - centos9-opstools
+      - centos9-rabbitmq
+      - centos9-storage
+    kolla_toolbox_packages_remove:
+      - openvswitch
+    kolla_toolbox_packages_append:
+      - openvswitch3.3
+    manila_base_packages_remove:
+      - openvswitch
+    manila_base_packages_append:
+      - openvswitch3.3
+    neutron_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    neutron_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    neutron_server_packages_append:
+      - python3-ethtool
+    nova_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    nova_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    nova_compute_packages_append:
+      - python3-ethtool
+    nova_libvirt_packages_remove:
+      - openvswitch
+    octavia_base_packages_remove:
+      - python3-openvswitch
+    openvswitch_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    openvswitch_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    ovn_base_packages_override:
+      - ovn24.03
+    ovn_controller_packages_override:
+      - ovn24.03-host
+    ovn_nb_db_server_packages_override:
+      - ovn24.03-central
+    ovn_northd_packages_override:
+      - ovn24.03-central
+    ovn_sb_db_server_packages_override:
+      - ovn24.03-central
+  rocky-10:
+    base_centos_yum_repos_to_disable_remove:
+      - epel
+      - centos-nfv-openvswitch
+    kolla_toolbox_packages_remove:
+      - openvswitch3.5
+    kolla_toolbox_packages_append:
+      - openvswitch
+    manila_base_packages_remove:
+      - openvswitch3.5
+    manila_base_packages_append:
+      - openvswitch
+    neutron_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    neutron_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    nova_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    nova_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    nova_libvirt_packages_remove:
+      - openvswitch3.5
+    nova_libvirt_packages_append:
+      - openvswitch
+    octavia_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    octavia_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    openvswitch_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    openvswitch_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    ovn_base_packages_override:
+      - ovn24.03
+    ovn_controller_packages_override:
+      - ovn24.03-host
+    ovn_nb_db_server_packages_override:
+      - ovn24.03-central
+    ovn_northd_packages_override:
+      - ovn24.03-central
+    ovn_sb_db_server_packages_override:
+      - ovn24.03-central
+  ubuntu-noble:
+    neutron_server_packages_append:
+      - python3-ethtool
+    nova_compute_packages_append:
+      - python3-ethtool
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -451,7 +617,7 @@ kolla_build_customizations_ubuntu: {}
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-kolla_build_customizations: "{{ kolla_build_customizations_common | combine(kolla_build_customizations_rocky if kolla_base_distro == 'rocky' else kolla_build_customizations_ubuntu) }}"
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(stackhpc_kolla_build_customizations[kolla_base_distro_and_version] | default({})) }}"
 
 # Dict mapping Kolla Dockerfile ARG names to their values.
 kolla_build_args: {}

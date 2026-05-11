@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: true
+      rocky-linux-10:
+        description: Build Rocky Linux 10 images?
+        type: boolean
+        required: false
+        default: true
       ubuntu-noble:
         description: Build Ubuntu Noble 24.04 images?
         type: boolean
@@ -66,7 +71,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.rocky-linux-10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -103,6 +108,10 @@ jobs:
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
               output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64'},"
+          fi
+          if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64'},"
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
               output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
@@ -346,7 +355,7 @@ jobs:
   create-manifests:
     # Only for Rocky Linux for now
     name: Create Multiarch Docker Manifests
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-9
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && (inputs.rocky-linux-9 || inputs.rocky-linux-10)
     runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     permissions: {}
     needs:
