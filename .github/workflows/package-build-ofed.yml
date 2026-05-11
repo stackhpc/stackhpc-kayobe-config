@@ -235,7 +235,9 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe seed host configure --skip-tags network,docker,docker-registry
+          kayobe seed host configure --skip-tags network,docker,docker-registry \
+          -e os_distribution="rocky" \
+          -e os_release="9"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -243,7 +245,9 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes"
+          kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes" \
+          -e os_distribution="rocky" \
+          -e os_release="9"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -285,7 +289,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/push-ofed.yml \
-          -e "ofed_tag=${{ needs.create-tag.outputs.ofed_tag }}"
+          -e "ofed_tag=${{ needs.create-tag.outputs.ofed_tag }}" \
+          -e os_release="9"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -462,6 +467,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe seed host configure --skip-tags network,docker,docker-registry \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
           -e kolla_base_arch="aarch64"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
@@ -471,6 +478,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes" \
+          -e os_distribution="rocky" \
+          -e os_release="9" \
           -e kolla_base_arch="aarch64"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
@@ -515,6 +524,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/push-ofed.yml \
           -e "ofed_tag=${{ needs.create-tag.outputs.ofed_tag }}" \
+          -e os_release="9"
           -e kolla_base_arch="aarch64"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}

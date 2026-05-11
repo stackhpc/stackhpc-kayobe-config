@@ -75,6 +75,9 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
     "prometheus-server": [
         "prometheus_server",
     ],
+    "valkey-server": [
+        "valkey",
+    ],
 }
 
 # Maps a container to the parent tag variable in the hierarchy.
@@ -101,6 +104,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 # List of supported base distributions and versions.
 SUPPORTED_BASE_DISTROS = [
     "rocky-9",
+    "rocky-10",
     "ubuntu-noble",
 ]
 
