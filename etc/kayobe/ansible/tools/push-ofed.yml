@@ -21,28 +21,17 @@
         doca_modules_repo_base_path: "{{ doca_modules_repos.0.base_path }}"
         doca_modules_repo_distribution_name: "{{ doca_modules_repos.0.distribution_name }}"
 
-    - name: Install python dependencies
+    - name: Install pip packages
       ansible.builtin.pip:
-        name: pulp-cli
-
-    - name: Ensure Pulp configuration directory exists
-      ansible.builtin.file:
-        path: /home/stack/.config/pulp/
-        state: directory
-        recurse: true
-
-    - name: Setup Pulp credentials
-      ansible.builtin.blockinfile:
-        path: /home/stack/.config/pulp/cli.toml
-        create: true
-        block: |
-          [cli]
-          base_url = '{{ stackhpc_release_pulp_url }}'
-          verify_ssl = true
-          format = "json"
-          username = '{{ stackhpc_release_pulp_username }}'
-          password = '{{ stackhpc_release_pulp_password }}'
-      no_log: true
+        name:
+          - pyopenssl
+          - ndg-httpsclient
+          - pyasn1
+          - urllib3
+          - packaging
+          - pulp-glue<0.34.0,>=0.33.0
+          - pulp-glue-deb<0.4.0,>=0.3.0
+        state: present
 
     - name: Find DOCA kernel repo package
       ansible.builtin.shell:
@@ -60,15 +49,16 @@
       retries: "{{ pulp_timeout_retries | default(3) }}"
 
     - name: Upload OFED RPMs to Pulp
-      ansible.builtin.shell:
-        cmd: |
-          {{ venv }}/bin/pulp \
-          rpm content \
-          --type package upload \
-          --repository '{{ doca_modules_repo_name }}' \
-          --file {{ item }} \
-          --no-publish \
+      pulp.squeezer.rpm_package:
+        pulp_url: "{{ stackhpc_release_pulp_url }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        file: "{{ item }}"
+        chunk_size: 4194304
+        repository: "{{ doca_modules_repo_name }}"
+        state: present
       with_items: "{{ doca_kernel_repo.stdout_lines }}"
+      register: package
 
     - name: Create Pulp publication for OFED
       pulp.squeezer.rpm_publication:
