@@ -193,6 +193,15 @@ dnf_custom_repos_rocky_9:
     gpgcheck: yes
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  security:
+    baseurl: "{{ stackhpc_repo_rocky_9_security_url }}"
+    description: "Rocky Linux $releasever - Security"
+    enabled: "{{ dnf_enable_rocky_security | bool }}"
+    file: rocky-security
+    gpgkey: "{{ rocky_9_gpg_key }}"
+    gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   security-common:
     baseurl: "{{ stackhpc_repo_rocky_9_sig_security_common_url }}"
     description: "Rocky Linux $releasever - SIG Security Common"
@@ -275,6 +284,9 @@ dnf_enable_docker: true
 # Whether to create a repo file for DOCA. This affects RedHat-based
 # systems only.
 dnf_install_doca: "{{ 'mlnx' in group_names }}"
+
+# Whether to enable the Rocky Linux security repository.
+dnf_enable_rocky_security: false
 
 ###############################################################################
 # DNF Automatic configuration.
