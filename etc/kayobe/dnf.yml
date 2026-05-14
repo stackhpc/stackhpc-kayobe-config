@@ -198,7 +198,7 @@ dnf_custom_repos_rocky_9:
     description: "Rocky Linux $releasever - Security"
     enabled: "{{ dnf_enable_rocky_security | bool }}"
     file: rocky-security
-    gpgkey: "{{ rocky_9_gpg_key }}"
+    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
     gpgcheck: yes
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
@@ -241,6 +241,15 @@ dnf_custom_repos_rocky_10:
     baseurl: "{{ stackhpc_repo_rocky_10_extras_url }}"
     description: "Rocky Linux $releasever - Extras"
     file: rocky-extras
+    gpgkey: "{{ dnf_rocky_10_gpg_key_url }}"
+    gpgcheck: yes
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  security:
+    baseurl: "{{ stackhpc_repo_rocky_10_security_url }}"
+    description: "Rocky Linux $releasever - Security"
+    enabled: "{{ dnf_enable_rocky_security | bool }}"
+    file: rocky-security
     gpgkey: "{{ dnf_rocky_10_gpg_key_url }}"
     gpgcheck: yes
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
