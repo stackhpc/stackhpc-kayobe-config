@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Determine OpenStack release
         id: openstack_release
@@ -153,7 +153,7 @@ jobs:
           sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -318,7 +318,7 @@ jobs:
         if: inputs.push
 
       - name: Upload output artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ matrix.distro.arch }}-logs
           path: image-build-logs
@@ -362,21 +362,21 @@ jobs:
       - runner-selection
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 
       - name: Combine pushed images lists
         run: |
           find . -name 'push-attempt-images.txt' -exec cat {} + > all-pushed-images.txt
 
       - name: Log in to container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ark.stackhpc.com
           username: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_USER }}
           password: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_PASS }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -384,7 +384,7 @@ jobs:
         run: src/kayobe-config/tools/multiarch-manifests.sh
 
       - name: Upload manifest logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: manifest-logs
           path: |
