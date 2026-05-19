@@ -107,11 +107,11 @@ jobs:
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
-              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64'},"
+              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
           fi
           if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
-              output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64'},"
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
               output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
@@ -134,7 +134,7 @@ jobs:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ${{ matrix.distro.arch == 'aarch64'
-      && fromJson('["self-hosted","sms","arm64"]')
+      && fromJson(format('["self-hosted", "{0}", "arm64"]', matrix.distro.runner))
       || needs.runner-selection.outputs.runner_name_container_image_build }}
     timeout-minutes: 720
     permissions: {}
