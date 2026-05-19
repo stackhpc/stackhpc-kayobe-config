@@ -494,7 +494,7 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh "$DIAGNOSTICS_PLAYBOOK"
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-        if: ${{ !cancelled() && steps.tf_apply.outcome == 'success' }}
+        if: ${{ steps.tf_apply.outcome == 'success' }}
 
       - name: Upload test result artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -504,7 +504,7 @@ jobs:
             diagnostics/
             tempest-artifacts/
             sct-results/
-        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
+        if: ${{ (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
       - name: Fail if any tests failed
         run: |
