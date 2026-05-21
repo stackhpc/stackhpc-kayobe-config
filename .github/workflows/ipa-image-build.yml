@@ -71,8 +71,8 @@ jobs:
           echo "ipa_image_tag=$(date +${{ steps.openstack_release.outputs.openstack_release }}-%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
   ipa-image-build:
-    name: Build IPA images
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    name: Build IPA images (x86_64)
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && (inputs.rocky9 || inputs.ubuntu-noble)
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
@@ -130,15 +130,19 @@ jobs:
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
-          aio_vm_name = "skc-ipa-image-builder"
+          aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
           aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
           aio_vm_volume_size = "${{ vars.HOST_IMAGE_BUILD_VOLUME }}"
+          aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          VM_NAME: "skc-ipa-image-builder-${{ github.run_id }}"
+          VM_TAGS: '["skc-host-image-build"]'
 
       - name: Terraform Plan
         run: terraform plan
@@ -236,10 +240,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud deployment image build --force-rebuild \
-          -e os_distribution="ubuntu" \
-          -e os_release="noble" \
-          -e ipa_ci_builder_distribution="ubuntu" \
-          -e ipa_ci_builder_release="noble"
+          -e ipa_build_distro="ubuntu" \
+          -e ipa_build_release="noble"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble
@@ -286,6 +288,13 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble && steps.build_ubuntu_noble_ipa.outcome == 'success'
 
+      - name: Copy logs back
+        continue-on-error: true
+        run: |
+          mkdir -p logs/ubuntu-noble
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/ubuntu-noble/
+        if: inputs.ubuntu-noble
+
       - name: Build a Rocky 9 IPA image
         id: build_rocky_9_ipa
         continue-on-error: true
@@ -293,10 +302,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud deployment image build --force-rebuild \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e ipa_ci_builder_distribution="rocky" \
-          -e ipa_ci_builder_release="9"
+          -e ipa_build_distro="centos" \
+          -e ipa_build_release="9-stream"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9
@@ -346,9 +353,9 @@ jobs:
       - name: Copy logs back
         continue-on-error: true
         run: |
-          mkdir logs
-          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
-        if: always()
+          mkdir -p logs/rocky-9
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/rocky-9/
+        if: inputs.rocky9
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -373,7 +380,7 @@ jobs:
         if: always()
 
   ipa-image-build-aarch64:
-    name: Build Rocky 9 aarch64 IPA image
+    name: Build IPA images (aarch64)
     if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.rocky9-aarch64 && inputs.runner_env == 'SMS Lab'
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
@@ -432,15 +439,19 @@ jobs:
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
-          aio_vm_name = "skc-ipa-image-builder-arm64"
+          aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE_ARM64 }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
           aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
           aio_vm_interface = "ens3"
           aio_vm_volume_size = "${{ vars.HOST_IMAGE_BUILD_VOLUME }}"
+          aio_vm_tags = ${{ env.VM_TAGS }}
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
+        env:
+          VM_NAME: "skc-ipa-image-builder-arm64-${{ github.run_id }}"
+          VM_TAGS: '["skc-host-image-build"]'
 
       - name: Terraform Plan
         run: terraform plan
@@ -538,13 +549,12 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud deployment image build --force-rebuild \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e ipa_ci_builder_distribution="rocky" \
-          -e ipa_ci_builder_release="9" \
-          -e ipa_ci_builder_arch="aarch64"
+          -e ipa_build_distro="centos" \
+          -e ipa_build_release="9-stream" \
+          -e ipa_build_arch="aarch64"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky9-aarch64
 
       - name: Show last error logs
         continue-on-error: true
@@ -595,9 +605,9 @@ jobs:
       - name: Copy logs back
         continue-on-error: true
         run: |
-          mkdir logs
-          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/
-        if: always()
+          mkdir -p logs/rocky-9
+          scp -r ubuntu@$(jq -r .access_ip_v4.value src/kayobe-config/etc/kayobe/environments/ci-builder/tf-outputs.yml):/opt/kayobe/images/*/*.std* ./logs/rocky-9/
+        if: inputs.rocky9-aarch64
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
