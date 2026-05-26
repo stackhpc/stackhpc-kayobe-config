@@ -7,6 +7,28 @@
     - cephadm
     - cephadm-deploy
   tasks:
+    # note(owenjones): the Ceph release signing key still uses SHA-1, which requires us to
+    # downgrade to the LEGACY policy on Rocky 10 until a new key is published.
+    # A later Ceph release might fix this - https://tracker.ceph.com/issues/74861
+    - name: Discover currently active crypto policy (Rocky 10)
+      ansible.builtin.command:
+        cmd: update-crypto-policies --show
+      become: true
+      register: crypto_policy
+      when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '10'
+    - name: Set crypto policy to LEGACY (Rocky 10)
+      ansible.builtin.command:
+        cmd: update-crypto-policies --set LEGACY
+      become: true
+      when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '10'
     - name: Apply Cephadm role
-      ansible.builtin.import_role:
-        name: stackhpc.cephadm.cephadm
+      block:
+        - name: Apply Cephadm role
+          ansible.builtin.import_role:
+            name: stackhpc.cephadm.cephadm
+      always:
+        - name: Revert crypto policy to {{ crypto_policy.stdout }} (Rocky 10)
+          ansible.builtin.command:
+            cmd: update-crypto-policies --set {{ crypto_policy.stdout }}
+          become: true
+          when: ansible_facts.os_family == 'RedHat' and ansible_facts.distribution_major_version == '10'
