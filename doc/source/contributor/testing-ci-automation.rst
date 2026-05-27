@@ -286,8 +286,9 @@ and `variables
 <https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment>`_
 are used to allow running jobs on different clouds.
 
-``KAYOBE_VAULT_PASSWORD`` is a repository-scoped GitHub secret containing the
-Ansible Vault password for the ``ci-builder`` Kayobe environment.
+``KAYOBE_VAULT_PASSWORD_CI_BUILDER`` is a repository-scoped GitHub secret
+containing the Ansible Vault password for the ``ci-builder`` Kayobe
+environment.
 
 The following GitHub secrets are defined in each GitHub environment:
 

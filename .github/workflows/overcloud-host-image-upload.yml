@@ -16,7 +16,7 @@ on:
         type: string
         default: "ci-builder"
     secrets:
-      KAYOBE_VAULT_PASSWORD:
+      KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
       CLOUDS_YAML:
         required: true
@@ -115,7 +115,7 @@ jobs:
           -e os_distribution="rocky" \
           -e os_release="9"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
 
       - name: Upload Rocky Linux 9 overcloud host image to Cloud
@@ -160,7 +160,7 @@ jobs:
           -e os_distribution="ubuntu" \
           -e os_release="jammy"
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-jammy && steps.ubuntu_jammy_image_exists.outcome == 'failure'
 
       - name: Upload Ubuntu Jammy 22.04 overcloud host image to Cloud

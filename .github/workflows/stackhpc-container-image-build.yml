@@ -144,7 +144,7 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.49.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2
 
       - name: Install yq
         run: |
@@ -163,8 +163,13 @@ jobs:
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          sudo pip install docker 'requests<2.32.0'
-      
+          . /etc/os-release
+          if [[ $VERSION_ID == 22.04 ]]; then
+              sudo pip install docker 'requests<2.32.0'
+          else
+              sudo pip install docker 'requests<2.32.0' --break-system-packages
+          fi
+
       - name: Get Kolla tag
         id: write-kolla-tag
         run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro }}-${{ matrix.distro == 'rocky' && '9' || 'jammy' }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
@@ -187,7 +192,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-auth-proxy.yml -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Create build logs output directory
         run: mkdir image-build-logs
@@ -204,7 +209,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
           CI_GITHUB_USERNAME: "stackhpc-ci"
           CI_GITHUB_TOKEN: ${{ secrets.TEMP_STACKHPC_CI_CLONE_REPO_TOKEN }}
         if: inputs.overcloud
@@ -224,7 +229,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.seed
 
       - name: Copy seed container image build logs to output directory
@@ -287,7 +292,7 @@ jobs:
           done < image-build-logs/push-attempt-images.txt
         shell: bash
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.push
 
       - name: Upload output artifact
