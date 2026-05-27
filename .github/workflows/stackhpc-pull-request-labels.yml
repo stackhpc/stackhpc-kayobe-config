@@ -1,0 +1,40 @@
+name: Auto-label Pull Requests
+'on':
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+
+      - name: Add waiting-review label (New Ready PR)
+        if: (github.event.action == 'opened' || github.event.action == 'reopened') && github.event.pull_request.draft == false
+        run: gh pr edit "$PR_NUMBER" --add-label "waiting-review"
+
+      - name: Add waiting-author-response label (New Draft PR)
+        if: (github.event.action == 'opened' || github.event.action == 'reopened') && github.event.pull_request.draft == true
+        run: gh pr edit "$PR_NUMBER" --add-label "waiting-author-response"
+
+      - name: Switch labels when PR becomes Ready for Review
+        if: github.event.action == 'ready_for_review'
+        run: |
+          gh pr edit "$PR_NUMBER" --remove-label "waiting-author-response" || true
+          gh pr edit "$PR_NUMBER" --add-label "waiting-review"
+
+      - name: Switch labels when PR is converted back to Draft
+        if: github.event.action == 'converted_to_draft'
+        run: |
+          gh pr edit "$PR_NUMBER" --remove-label "waiting-review" || true
+          gh pr edit "$PR_NUMBER" --add-label "waiting-author-response"
