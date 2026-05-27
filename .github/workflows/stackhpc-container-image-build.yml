@@ -116,8 +116,16 @@ jobs:
       - name: Install package dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
+          sudo apt install -y build-essential python3-pip git unzip nodejs curl jq wget
 
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          enable-cache: true
+      
+      - name: Install Python 3.9
+        run: uv python install 3.9
+      
       - name: Install gh
         run: |
           sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
@@ -154,7 +162,7 @@ jobs:
         run: |
           mkdir -p venvs &&
           pushd venvs &&
-          python3 -m venv kayobe &&
+          python3.9 -m venv kayobe &&
           source kayobe/bin/activate &&
           pip install -U pip &&
           pip install ../src/kayobe
