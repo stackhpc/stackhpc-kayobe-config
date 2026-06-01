@@ -70,3 +70,18 @@ external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 
 # Test cinder cluster
 cinder_cluster_name: "stackhpc_test_cinder_cluster"
+
+# RGW configuration
+ceph_rgw_swift_compatibility: false
+ceph_rgw_swift_account_in_url: true
+
+ceph_rgw_hosts:
+  - host: "{{ hostvars[groups['rgws'][0]].ansible_hostname }}"
+    ip: "{{ lookup('vars', storage_net_name ~ '_ips')[groups.rgws.0] }}"
+    port: 8100
+  - host: "{{ hostvars[groups['rgws'][1]].ansible_hostname }}"
+    ip: "{{ lookup('vars', storage_net_name ~ '_ips')[groups.rgws.1] }}"
+    port: 8100
+  - host: "{{ {{ hostvars[groups['rgws'][2]].ansible_hostname }} }}"
+    ip: "{{ lookup('vars', storage_net_name ~ '_ips')[groups.rgws.2] }}"
+    port: 8100
