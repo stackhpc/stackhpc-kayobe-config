@@ -91,7 +91,8 @@ pygments_style = 'native'
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = []
 html_theme = 'sphinx_immaterial'
-# html_static_path = ['static']
+html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 # Add any paths that contain "extra" files, such as .htaccess or
 # robots.txt.

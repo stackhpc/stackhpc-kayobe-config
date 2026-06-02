@@ -24,12 +24,32 @@ These should be set as follows:
 
    s3_mariadb_backup_url: "<s3-endpoint>"
    s3_mariadb_backup_bucket: "<s3-bucket-name>"
+   # Optional. Set when the target is a Ceph S3 endpoint.
+   s3_mariadb_backup_s3_is_ceph: true
+   # Optional. Set to false when server-side encryption is unsupported.
+   s3_mariadb_backup_encrypt: false
 
 .. code-block:: yaml
    :caption: ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/secrets.yml``
 
    secrets_s3_mariadb_backup_access_key: "<s3-access-key>"
    secrets_s3_mariadb_backup_secret_key: "<s3-secret-access-key"
+
+.. note::
+
+   If backing up to a Ceph cluster that does not support `server-side encryption
+   <https://docs.ceph.com/en/latest/radosgw/encryption/>`__, set:
+
+   .. code-block:: yaml
+
+      s3_mariadb_backup_encrypt: false
+
+   The characteristic error message if encryption is enabled but unsupported is:
+
+   .. code-block:: text
+      :class: wrap-long-lines
+
+      msg: 'Unable to complete PUT operation.: Failed to upload /var/lib/docker/volumes/mariadb_backup/_data/mysqlbackup-29-10-2024-1730194327.qp.xbc.xbs.gz to mybucket/mysqlbackup-29-10-2024-1730194327.qp.xbc.xbs.gz: An error occurred (InvalidRequest) when calling the CreateMultipartUpload operation: Unknown'
 
 You may also want to hook this to run after ``kayobe overcloud database
 backup``:
