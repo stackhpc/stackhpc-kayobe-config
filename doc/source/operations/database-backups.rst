@@ -37,8 +37,7 @@ These should be set as follows:
 
 .. note::
 
-   If backing up to a Ceph cluster that does not support `server-side encryption
-   <https://docs.ceph.com/en/latest/radosgw/encryption/>`__, set:
+   If backing up to a Ceph cluster that does not support :ceph-doc:`server-side encryption <radosgw/encryption/>`, set:
 
    .. code-block:: yaml
 
