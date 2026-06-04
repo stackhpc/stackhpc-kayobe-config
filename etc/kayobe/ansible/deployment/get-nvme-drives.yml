@@ -17,12 +17,11 @@
     - name: Retrieve NVMe device information via smartctl
       ansible.builtin.command: "smartctl -i -j {{ item }}"
       register: smartctl_info
-      loop: "{{ nvme_devices }}"
+      loop: "{{ nvme_devices | default([], true) }}"
       loop_control:
         label: "{{ item }}"
       changed_when: false
       become: true
-      when: nvme_devices | length > 0
 
     - name: Parse NVMe device model names
       ansible.builtin.set_fact:

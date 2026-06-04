@@ -31,6 +31,7 @@ build-ofed
 ----------
 
 Currently we only support building Rocky Linux 9 OFED kernel module packages.
+The workflow can build packages for ``x86_64`` and ``aarch64``.
 
 The Build OFED module workflow will check that the filesystem is configured (noexec disabled)
 to allow the DOCA build script to run. The workflow will also install any necessary dependencies
@@ -86,7 +87,7 @@ to be reset before rebooting.
   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reset-bls-entries.yml -e reset_bls_host=mlnx
 
 The hosts can now be rebooted to use the latest kernel, a rolling reboot may be applicable
-here to reduce distruptions. See the `package updates documentation <package-updates>`.
+here to reduce disruptions. See the :doc:`package updates documentation <package-updates>`.
 
 .. code-block:: console
 

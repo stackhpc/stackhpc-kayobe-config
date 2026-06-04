@@ -1,0 +1,135 @@
+---
+###############################################################################
+# Ironic configuration.
+
+# Specify the list of hardware types to load during service initialization.
+kolla_ironic_enabled_hardware_types:
+  - idrac
+  - ipmi
+  - redfish
+
+# Specify the list of bios interfaces to load during service initialization.
+kolla_ironic_enabled_bios_interfaces:
+  - idrac-redfish
+  - no-bios
+  - redfish
+
+# Default bios interface to be used for nodes that do not have bios_interface
+# field set.
+kolla_ironic_default_bios_interface:
+
+# Specify the list of boot interfaces to load during service initialization.
+kolla_ironic_enabled_boot_interfaces:
+  - idrac-redfish-virtual-media
+  - ipxe
+  - pxe
+  - redfish-virtual-media
+
+# Default boot interface to be used for nodes that do not have boot_interface
+# field set.
+kolla_ironic_default_boot_interface:
+
+# Specify the list of console interfaces to load during service initialization.
+kolla_ironic_enabled_console_interfaces:
+  - ipmitool-socat
+  - no-console
+
+# Default console interface to be used for nodes that do not have
+# console_interface field set.
+kolla_ironic_default_console_interface:
+
+# Specify the list of deploy interfaces to load during service initialization.
+kolla_ironic_enabled_deploy_interfaces:
+  - direct
+  - ramdisk
+
+# Default deploy interface to be used for nodes that do not have
+# deploy_interface field set.
+kolla_ironic_default_deploy_interface:
+
+# Specify the list of inspect interfaces to load during service initialization.
+kolla_ironic_enabled_inspect_interfaces:
+  - inspector
+  - no-inspect
+
+# Default inspect interface to be used for nodes that do not have
+# inspect_interface field set.
+kolla_ironic_default_inspect_interface:
+
+# Specify the list of management interfaces to load during service
+# initialization.
+kolla_ironic_enabled_management_interfaces:
+  - idrac-redfish
+  - ipmitool
+  - noop
+  - redfish
+
+# Default management interface to be used for nodes that do not have
+# management_interface field set.
+kolla_ironic_default_management_interface:
+
+# Specify the list of network interfaces to load during service initialization.
+kolla_ironic_enabled_network_interfaces:
+  - flat
+  - neutron
+  - noop
+
+# Default network interface to be used for nodes that do not have
+# network_interface field set.
+kolla_ironic_default_network_interface:
+
+# Specify the list of power interfaces to load during service initialization.
+kolla_ironic_enabled_power_interfaces:
+  - idrac-redfish
+  - ipmitool
+  - redfish
+
+# Default power interface to be used for nodes that do not have power_interface
+# field set.
+kolla_ironic_default_power_interface:
+
+# Specify the list of raid interfaces to load during service initialization.
+kolla_ironic_enabled_raid_interfaces:
+  - agent
+  - idrac-redfish
+  - no-raid
+  - redfish
+
+# Default raid interface to be used for nodes that do not have
+# raid_interface field set.
+kolla_ironic_default_raid_interface:
+
+# Specify the list of rescue interfaces to load during service initialization.
+kolla_ironic_enabled_rescue_interfaces:
+  - agent
+  - no-rescue
+
+# Default rescue interface to be used for nodes that do not have
+# rescue_interface field set.
+kolla_ironic_default_rescue_interface:
+
+# Specify the list of storage interfaces to load during
+# service initialization.
+kolla_ironic_enabled_storage_interfaces:
+
+# Default storage interface to be used for nodes that do not
+# have storage_interface field set.
+kolla_ironic_default_storage_interface:
+
+# Specify the list of vendor interfaces to load during service initialization.
+kolla_ironic_enabled_vendor_interfaces:
+  - no-vendor
+
+# Default vendor interface to be used for nodes that do not have
+# vendor_interface field set.
+kolla_ironic_default_vendor_interface:
+
+# List of default kernel parameters to append for baremetal PXE boot.
+kolla_ironic_pxe_append_params_default:
+  - nofb
+  - nomodeset
+  - vga=normal
+  - console=tty0
+  - console=ttyS0,115200n8
+  - "ipa-ntp-server={{ lookup('vars', provision_wl_net_name ~ '_ips')[groups.controllers.0] }}"
+  - "ipa-insecure=1"

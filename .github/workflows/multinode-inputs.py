@@ -35,12 +35,11 @@ UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
 UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
-    OpenStackRelease("2023.1", "zed", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
-VERSION_HIERARCHY = ["zed", "2023.1", "2024.1", "2025.1"]
+VERSION_HIERARCHY = ["2023.1", "2024.1", "2025.1"]
 
 
 def main() -> None:
@@ -85,9 +84,7 @@ def get_branch(version: str) -> str:
 
 
 def get_tkm_version(version: str) -> str:
-    if version == "zed":
-        return "ea61ea1730e179e05e8f0e58b759267664c555e7"
-    elif version == "2025.1":
+    if version == "2025.1":
         return "main"
     else:
         return get_branch(version)

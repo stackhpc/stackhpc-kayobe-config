@@ -154,6 +154,65 @@ def load_dwpd_ratings(path=DWPD_RATINGS_PATH):
 DWPD_RATINGS = load_dwpd_ratings()
 
 
+# Helper: Identify historical temperature/airflow attribute failures
+def is_historical_temperature_attr_failure(attribute):
+    """
+    Return True when a pySMART attribute failure represents only a historical
+    temperature/airflow threshold breach.
+
+    Some disks keep WHEN_FAILED=In_the_past forever after an overheating event.
+    pySMART turns that into assessment=WARN, which is useful to expose, but it
+    should not make the main smart_healthy metric look like an active disk
+    failure.
+    """
+    when_failed = str(getattr(attribute, "when_failed", "") or "").strip().lower()
+    name = str(getattr(attribute, "name", "") or "").strip().lower()
+
+    if when_failed != "in_the_past":
+        return False
+
+    return "temperature" in name or "airflow" in name
+
+
+def get_failed_smart_attributes(device):
+    """
+    Return pySMART attributes with a meaningful WHEN_FAILED value.
+    """
+    failed_attrs = []
+    for attribute in getattr(device, "attributes", []) or []:
+        when_failed = str(getattr(attribute, "when_failed", "") or "").strip().lower()
+        if when_failed and when_failed not in {"-", "none", "never"}:
+            failed_attrs.append(attribute)
+    return failed_attrs
+
+
+def smart_health_value(device):
+    """
+    Convert pySMART assessment into the exported healthy metric.
+
+    PASS is healthy. WARN is also treated as healthy only when every failed
+    attribute is a historical temperature/airflow threshold breach. Other WARN
+    states, FAIL states, current failures, and non-temperature historical
+    failures remain unhealthy.
+    """
+    assessment = str(device.assessment or "").strip().upper()
+
+    if assessment == "PASS":
+        return 1
+
+    if assessment != "WARN":
+        return 0
+
+    failed_attrs = get_failed_smart_attributes(device)
+    if not failed_attrs:
+        return 0
+
+    if all(is_historical_temperature_attr_failure(attribute) for attribute in failed_attrs):
+        return 1
+
+    return 0
+
+
 def get_rated_dwpd(model_name):
     """
     Look up DWPD rating for the given model name, defaulting to 1.0.
@@ -224,6 +283,7 @@ def parse_device_info(device):
         "device_model": device.model or "",
         "serial_number": serial_number,
         "firmware_version": device.firmware or "",
+        "assessment": device.assessment or "",
     }
     sorted_labels = sorted(labels.items())
     label_str = ",".join(f'{k}="{v}"' for k, v in sorted_labels)
@@ -240,9 +300,16 @@ def parse_device_info(device):
             f'smartmon_device_smart_enabled{{{metric_labels}}} {float(1) if device.smart_enabled else float(0)}'
         )
         if device.assessment:
-            is_healthy = 1 if device.assessment.upper() == "PASS" else 0
+            is_healthy = smart_health_value(device)
             metrics.append(
                 f'smartmon_device_smart_healthy{{{metric_labels}}} {float(is_healthy)}'
+            )
+            failed_attrs = get_failed_smart_attributes(device)
+            historical_temperature_attr_failure = 1 if failed_attrs and all(
+                is_historical_temperature_attr_failure(attribute) for attribute in failed_attrs
+            ) else 0
+            metrics.append(
+                f'smartmon_device_historical_temperature_failure{{{metric_labels}}} {float(historical_temperature_attr_failure)}'
             )
 
     # Explicitly collect top-level temperature if available (fixes SCSI temperature issue)

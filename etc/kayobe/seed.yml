@@ -95,14 +95,14 @@
 ###############################################################################
 # Seed node additional containers configuration
 
-# Seed container running a "Pulp in one" service.
-# https://pulpproject.org/pulp-in-one-container/
+# Seed container running a "Pulp in One" service.
+# https://pulpproject.org/pulp-oci-images/docs/admin/reference/available-images/multi-process-images/
 # This can be used as a package mirror, and container image registry.
 seed_pulp_container_enabled: true
 
 seed_pulp_container:
   pulp:
-    image: pulp/pulp
+    image: quay.io/pulp/pulp
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
     tag: "3.81.0"
@@ -111,8 +111,8 @@ seed_pulp_container:
     # s6-overlay-suexec starts as pid 1
     init: false
     env:
-      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
-      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
       PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
@@ -127,9 +127,9 @@ seed_squid_container_enabled: false
 
 seed_squid_container:
   squid:
-    image: stackhpc/squid
+    image: ghcr.io/stackhpc/docker-squid
     pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
-    tag: "4.15"
+    tag: "6.10"
     network_mode: host
     volumes:
       - squid_spool:/var/spool/squid

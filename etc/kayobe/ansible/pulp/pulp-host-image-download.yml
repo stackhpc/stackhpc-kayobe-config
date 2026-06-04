@@ -6,7 +6,7 @@
     # without the auth credentials in it. Auth is handled by username and
     # password in the get_url task of this playbook
     stackhpc_overcloud_host_image_url_no_auth: "{{ stackhpc_release_pulp_content_url }}/kayobe-images/\
-      {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}/\
+      {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_overcloud_host_image_arch == 'aarch64' else '' }}/\
       {{ stackhpc_overcloud_host_image_version }}/\
       overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
   tasks:

@@ -1,0 +1,18 @@
+---
+# Use policy-based routing on the admin API network for ironic. This ensures
+# that during provisioning and cleaning, nodes accessing the admin API network
+# can be routed to without routing asymmetrically which would cause packets to be
+# dropped by the kernel.
+network_route_tables:
+  - name: admin-api
+    id: 1
+
+# IP routing rule to process all packets from the admin API subnet using the
+# admin-api routing table.
+internal_rules:
+  - from {{ internal_net_name | net_cidr }} table 1
+
+# IP routes for the admin-api routing table.
+internal_routes:
+  - cidr: "{{ internal_net_name | net_cidr }}"
+    table: 1

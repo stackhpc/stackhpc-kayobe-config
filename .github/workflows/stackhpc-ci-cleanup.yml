@@ -17,12 +17,12 @@ jobs:
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
 
       - name: Generate clouds.yaml
         run: |
@@ -40,10 +40,10 @@ jobs:
         run: |
           pip install python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
 
-      - name: Clean up aio instances over 3 hours old
+      - name: Clean up aio instances over 6 hours old
         run: |
           result=0
-          changes_before=$(date -Imin -d -3hours)
+          changes_before=$(date -Imin -d -6hours)
           for status in ACTIVE BUILD ERROR SHUTOFF; do
               for instance in $(openstack server list --tags skc-ci-aio --os-compute-api-version 2.66 --format value --column ID --changes-before $changes_before --status $status); do
                   echo "Cleaning up $status instance $instance"
@@ -121,8 +121,9 @@ jobs:
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
 
       - name: Send message to Slack via Workflow Builder
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
+          webhook-type: "incoming-webhook"
           payload: |
             {
               "channel-id": "${{ env.SLACK_CHANNEL_ID }}",

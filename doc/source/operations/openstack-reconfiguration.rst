@@ -41,8 +41,7 @@ Installing External TLS Certificates
 ====================================
 
 This section explains the process of deploying external TLS.
-For internal and backend TLS, see `Hashicorp Vault for internal PKI
-<hashicorp-vault>`__.
+For internal and backend TLS, see :doc:`/configuration/openbao`.
 
 To configure TLS for the first time, we write the contents of a PEM
 file to the ``secrets.yml`` file as ``secrets_kolla_external_tls_cert``.
