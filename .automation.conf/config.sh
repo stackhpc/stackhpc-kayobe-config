@@ -24,7 +24,7 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
 
   if [[ "$KAYOBE_ENVIRONMENT" =~ "aio" ]]; then
     # Seem to get servers failing to spawn with higher concurrency
-    export TEMPEST_CONCURRENCY=1
+    export TEMPEST_CONCURRENCY=2
   fi
 
   if [[ "$KAYOBE_ENVIRONMENT" =~ "ci-multinode" ]]; then
