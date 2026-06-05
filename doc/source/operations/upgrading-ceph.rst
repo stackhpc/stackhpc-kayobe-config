@@ -9,6 +9,37 @@ The Ceph release series is not strictly dependent upon the StackHPC OpenStack
 release, however this configuration does define a default Ceph release series
 and container image tag. The default release series is currently |ceph_series|.
 
+Known issues
+============
+
+Slow ceph-volume activate
+-------------------------
+
+A large slowdown of ``ceph-volume activate`` has been reported on version
+19.2.3 (`bug 73107 <https://tracker.ceph.com/issues/73107>`__).
+
+On Reef, a host with 15 OSDs was measured taking around 10 seconds to activate
+all OSDs while exiting maintenance mode. On Squid 19.2.3, a host with 22 OSDs
+was measured taking 2 minutes to activate all OSDs.
+
+This bug may be a blocker for deployments with large number of OSDs per host.
+
+Elastic Shared Blob crash
+-------------------------
+
+There is a `known bug causing OSDs created on Squid to crash
+<https://tracker.ceph.com/issues/70390>`__. To avoid it, `disable the
+Elastic Shared Blob feature
+<https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before
+any OSDs are created or replaced:
+
+.. code-block:: bash
+
+   ceph config set osd bluestore_elastic_shared_blobs 0
+
+This needs to be done after the upgrade is complete as the option is not
+available on Reef.
+
 Prerequisites
 =============
 
@@ -170,6 +201,21 @@ versions``. Once confirmed, run the following command:
    .. code-block:: bash
 
       ceph config set osd bluestore_elastic_shared_blobs 0
+
+Finally, verify the value of ``ceph osd get-require-min-compat-client``. On
+older Ceph deployments, it may still be set to ``jewel``, which would prevent
+using the `upmap balancer mode
+<https://docs.ceph.com/en/latest/rados/operations/balancer/#modes>`__ which
+requires ``luminous`` or later. Similarly, the more recent `read balancer
+<https://docs.ceph.com/en/latest/rados/operations/read-balancer/>`__ requires
+``reef``.
+
+Run ``ceph features`` to identify client versions and consider setting the
+minimum to an appropriate value:
+
+.. code-block:: console
+
+   ceph osd set-require-min-compat-client reef
 
 Upgrade Cephadm
 ===============

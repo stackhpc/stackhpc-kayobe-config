@@ -74,30 +74,6 @@ should switch to the `native
 <https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
 Prometheus Teams integration.
 
-Keystone LDAP TLS configuration
--------------------------------
-
-Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
-if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
-authentication will fail if this configuration is absent. See `upstream
-Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
-for more details.
-
-OS Capacity exporter and dashboard enabled by default
------------------------------------------------------
-
-The OS Capacity exporter will automatically be deployed after the upgrade.
-During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
-will also be updated to use the exporter. If you want to disable this, change
-the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
-
-.. code-block:: yaml
-
-   # Whether the OpenStack Capacity exporter is enabled.
-   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
-   # targets being templated during deployment.
-   stackhpc_enable_os_capacity: false
-
 Prometheus blackbox exporter endpoints
 --------------------------------------
 
@@ -132,7 +108,7 @@ For example:
       enabled: "{{ seed_pulp_container_enabled | bool }}"
 
 Ansible playbook subdirectories
---------------------------------------
+-------------------------------
 
 The playbooks under ``etc/kayobe/ansible`` have been subdivided into different
 categories to make them easier to navigate. This change may result in merge
@@ -146,6 +122,10 @@ To mitigate the impact of these changes, two scripts have been added:
   deploy-os-capacity-exporter.yml`` returns ``deployment/``
 * ``tools/magic-symlink-fix.sh`` - Uses the previous script to attempt to fix
   any broken symlinks in the kayobe configuration.
+
+If playbooks are referenced in different methods other than symlinks, they'll
+need to be manually resolved by operators. (e.g. Shell scripts running
+playbooks with file paths, ``import_playbook`` command in custom playbooks)
 
 Known issues
 ============
@@ -216,8 +196,8 @@ From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
 for Ironic and follows Ironic's default.
 This can cause your Ironic configuration ``ironic.conf`` to regress.
 Check the configuration difference before applying and re-add your options at
-``$KAYOBE_CONFIG_PATH/kolla/ironic.conf``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/ironic.conf`` if using environments)
+``$KAYOBE_CONFIG_PATH/kolla/config/ironic.conf``
+(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/config/ironic.conf`` if using environments)
 
 For example,
 
@@ -225,6 +205,17 @@ For example,
 
    [DEFAULT]
    enabled_network_interfaces = neutron
+
+RabbitMQ
+--------
+
+After some upgrades, it has been seen that RabbitMQ streams do not have replicas across all RabbitMQ nodes.
+Errors like this will be logged::
+
+   Basic.consume: (406) PRECONDITION_FAILED - stream queue 'compute_fanout' in vhost '/' does not have a running replica on the local node
+
+A proper fix is still WIP, in the meantime these errors can be resolved with this script:
+`<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
 
 Security baseline
 =================
@@ -323,6 +314,14 @@ Then execute the migration script:
 
    $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
 
+.. note::
+
+   After migrating to durable queues, messages are sent to all receivers, but
+   only one will respond. This results in high numbers of messages staying in
+   the ready state, so the Prometheus alert ``RabbitMQTooMuchReady`` will start
+   firing. This alert can be ignored, and will be removed when Prometheus is
+   reconfigured.
+
 RabbitMQ Upgrade
 ~~~~~~~~~~~~~~~~
 
@@ -369,6 +368,14 @@ You can find more information from the :ref:`beokay` documentation.
 
    For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
    option to specify Beokay to use Python 3.12 as it is not the default.
+
+Kayobe Automation
+~~~~~~~~~~~~~~~~~
+
+For deployments using Kayobe Automation CI, the Kayobe Docker image also needs
+to be rebuilt with Python 3.12. In GitHub, run the ``Build Kayobe Docker
+Image`` workflow. In GitLab, run the ``build_kayobe_image`` pipeline. In either
+case, the image will automatically be rebuilt with Python 3.12.
 
 Preparation
 ===========
@@ -558,6 +565,19 @@ To upgrade the Ansible control host:
 .. code-block:: console
 
    kayobe control host upgrade
+
+Upgrading Pulp
+--------------
+
+The local Pulp server needs to be upgraded before synchronising 2025.1
+container images. The following command will deploy the latest Pulp container
+without upgrading Bifrost:
+
+.. code-block:: console
+
+   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+
+Note that this will also update any other enabled seed containers, such as Squid.
 
 Syncing Release Train artifacts
 -------------------------------
@@ -1010,7 +1030,7 @@ or powered off:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-{disable,drain}.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-{disable,drain}.yml --limit <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 

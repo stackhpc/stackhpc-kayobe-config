@@ -1,0 +1,47 @@
+---
+- name: Install certificate authorities and update trust
+  hosts: overcloud:seed:seed-hypervisor
+  # Avoid using facts because this may be used as a pre overcloud host
+  # configure hook, and we don't want to populate the fact cache (if one is in
+  # use) with the bootstrap user's context.
+  gather_facts: false
+  tags:
+    - install-ca
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    # We can't assume that a virtualenv exists at this point, so use the system
+    # python interpreter.
+    ansible_python_interpreter: /usr/bin/python3
+    # Work around no known_hosts entry on first boot.
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no
+    # Don't assume facts are present.
+    os_family: "{{ ansible_facts.os_family | default('Debian' if os_distribution == 'ubuntu' else 'RedHat') }}"
+  become: true
+  tasks:
+    - name: Install certificate authorities on RedHat based distributions
+      when: os_family == 'RedHat'
+      block:
+        - name: Copy certificate authorities on RedHat family systems (Rocky, RHEL, CentOS)
+          ansible.builtin.copy:
+            src: "{{ kayobe_env_config_path }}/openbao/{{ item }}.pem"
+            dest: "/etc/pki/ca-trust/source/anchors/{{ item }}.crt"
+            mode: "0644"
+          loop:
+            - "OS-TLS-ROOT"
+
+        - name: Update CA trust on RedHat family systems
+          ansible.builtin.command: "update-ca-trust"
+
+    - name: Install certificate authorities on Debian based distributions
+      when: os_family == 'Debian'
+      block:
+        - name: Copy certificate authorities on Debian family systems (Ubuntu, Debian)
+          ansible.builtin.copy:
+            src: "{{ kayobe_env_config_path }}/openbao/{{ item }}.pem"
+            dest: "/usr/local/share/ca-certificates/{{ item }}.crt"
+            mode: "0644"
+          loop:
+            - "OS-TLS-ROOT"
+
+        - name: Update CA trust on Debian family systems
+          ansible.builtin.command: "update-ca-certificates"

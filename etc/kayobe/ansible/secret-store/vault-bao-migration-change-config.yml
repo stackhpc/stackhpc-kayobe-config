@@ -1,0 +1,82 @@
+---
+- name: Change SKC secret store configuration from Vault to OpenBao
+  hosts: localhost
+  tasks:
+    - name: Check if Vault directory exists
+      ansible.builtin.stat:
+        path: "{{ kayobe_env_config_path }}/vault"
+      register: vault_dir
+      failed_when: not (vault_dir.stat.exists and vault_dir.stat.isdir)
+
+    - name: Copy contents in Vault directory to OpenBao directory
+      ansible.builtin.copy:
+        src: "{{ kayobe_env_config_path }}/vault/"
+        dest: "{{ kayobe_env_config_path }}/openbao/"
+        remote_src: true
+        mode: preserve
+
+    - name: Check if Vault keys exists under OpenBao directory
+      ansible.builtin.stat:
+        path: "{{ kayobe_env_config_path }}/openbao/{{ item }}"
+      loop:
+        - seed-vault-keys.json
+        - overcloud-vault-keys.json
+      register: vault_keys
+
+    - name: Make copy of Vault keys
+      ansible.builtin.copy:
+        src: "{{ kayobe_env_config_path }}/openbao/{{ item.src }}"
+        dest: "{{ kayobe_env_config_path }}/openbao/{{ item.dest }}"
+        remote_src: true
+        mode: preserve
+      loop:
+        - { src: seed-vault-keys.json, dest: seed-openbao-keys.json }
+        - { src: overcloud-vault-keys.json, dest: overcloud-openbao-keys.json }
+      loop_control:
+        index_var: key_index
+      when:
+        - vault_keys.results[key_index].stat.exists
+        - vault_keys.results[key_index].stat.isreg
+
+    - name: Remove Vault directory
+      ansible.builtin.file:
+        path: "{{ kayobe_env_config_path }}/vault"
+        state: absent
+
+    - name: Remove Vault keys
+      ansible.builtin.file:
+        path: "{{ kayobe_env_config_path }}/openbao/{{ item }}"
+        state: absent
+      loop:
+        - seed-vault-keys.json
+        - overcloud-vault-keys.json
+
+    - name: Check if Vault CA for OpenStack services exists
+      ansible.builtin.stat:
+        path: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+      register: kolla_ca
+
+    - name: Move Vault CA to OpenBao CA
+      when:
+        - kolla_ca.stat.exists
+        - kolla_ca.stat.isreg
+      block:
+        - name: Copy Vault CA to OpenBao CA
+          ansible.builtin.copy:
+            src: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+            dest: "{{ kayobe_env_config_path }}/kolla/certificates/ca/openbao.crt"
+            remote_src: true
+            mode: preserve
+
+        - name: Remove Vault CA
+          ansible.builtin.file:
+            path: "{{ kayobe_env_config_path }}/kolla/certificates/ca/vault.crt"
+            state: absent
+
+    - name: Set stackhpc_ca_secret_store to openbao
+      ansible.builtin.lineinfile:
+        path: "{{ kayobe_env_config_path }}/stackhpc.yml"
+        regexp: "stackhpc_ca_secret_store.+"
+        line: "stackhpc_ca_secret_store: openbao"
+        create: true
+        mode: '0664'

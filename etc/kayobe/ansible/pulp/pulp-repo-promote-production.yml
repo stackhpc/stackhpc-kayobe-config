@@ -9,3 +9,9 @@
       vars:
         pulp_distribution_deb: "{{ stackhpc_pulp_distribution_deb_production | selectattr('required') }}"
         pulp_distribution_rpm: "{{ stackhpc_pulp_distribution_rpm_production | selectattr('required') }}"
+      environment: >-
+        {{
+          {
+            'REQUESTS_CA_BUNDLE': stackhpc_requests_ca_bundle
+          } if pulp_enable_tls | bool else {}
+        }}

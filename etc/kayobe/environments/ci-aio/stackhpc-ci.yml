@@ -8,66 +8,77 @@ kolla_docker_namespace: stackhpc-dev
 ###############################################################################
 # StackHPC configuration.
 
+# AIOs currently run on SMS, and pull packages and containers through an
+# authenticating caching proxy.
 # Host and port of a package repository mirror.
-# Build and deploy the development Pulp service repositories.
-# Use Ark's package repositories to install packages.
-stackhpc_repo_mirror_url: "{{ stackhpc_release_pulp_url }}"
-stackhpc_repo_mirror_username: "skc-ci-aio"
-stackhpc_repo_mirror_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  31386366383365666135336331663635396237623139306362633933636233613765663731666338
-  3633633736333936383439623066653663333964343234350a393137383537316164323837386437
-  36613139323161643766666565643739373037623363636234343965343436653261326238393566
-  3837336661653962340a316631366463623138623530373133336665376433633437306631383666
-  30333461333535363433363336663664316634343432633766346564323833346663
+stackhpc_aio_proxy_address: "192.168.46.157"
+stackhpc_repo_mirror_url: "http://{{ stackhpc_aio_proxy_address }}:80"
+# Host and port of container registry.
+stackhpc_docker_registry: "{{ stackhpc_aio_proxy_address }}:5000"
+docker_registry_insecure: true
 
 # Build against released Pulp repository versions.
-stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
-stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version }}"
-stackhpc_repo_rhel9_rabbitmq_erlang_26_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_26_version }}"
-stackhpc_repo_rhel9_rabbitmq_erlang_27_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_27_version }}"
-stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
-stackhpc_repo_ubuntu_noble_version: "{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
-stackhpc_repo_ubuntu_noble_security_version: "{{ stackhpc_pulp_repo_ubuntu_noble_security_version }}"
-stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
-stackhpc_repo_docker_ce_ubuntu_noble_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
+# Minor versions for stackhpc_repo_rocky_X_* repos are derived from
+# stackhpc_pulp_repo_rocky_X_minor_version in etc/kayobe/pulp.yml
+stackhpc_repo_almalinux_9_proxysql_2_7_version: "{{ stackhpc_pulp_repo_almalinux_9_proxysql_2_7_version }}"
+stackhpc_repo_centos_stream_10_docker_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_10_docker_version }}"
+stackhpc_repo_centos_stream_10_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_10_nfv_openvswitch_version }}"
+stackhpc_repo_centos_stream_10_openstack_epoxy_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_10_openstack_epoxy_version }}"
+stackhpc_repo_centos_stream_10_ovn_lts_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_10_ovn_lts_version }}"
+stackhpc_repo_centos_stream_10_storage_ceph_squid_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_10_storage_ceph_squid_version }}"
+stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_docker_version }}"
 stackhpc_repo_centos_stream_9_nfv_openvswitch_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_nfv_openvswitch_version }}"
 stackhpc_repo_centos_stream_9_openstack_epoxy_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_openstack_epoxy_version }}"
 stackhpc_repo_centos_stream_9_opstools_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_opstools_version }}"
 stackhpc_repo_centos_stream_9_storage_ceph_squid_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_storage_ceph_squid_version }}"
-stackhpc_repo_centos_stream_9_docker_version: "{{ stackhpc_pulp_repo_multiarch_centos_stream_9_docker_version }}"
-stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_treasuredata_5_version }}"
-stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_mariadb_10_11_version }}"
-stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_influxdb_version }}"
+stackhpc_repo_docker_ce_ubuntu_noble_version: "{{ stackhpc_pulp_repo_docker_ce_ubuntu_noble_version }}"
+stackhpc_repo_epel_10_version: "{{ stackhpc_pulp_repo_multiarch_epel_10_version }}"
 stackhpc_repo_epel_9_version: "{{ stackhpc_pulp_repo_multiarch_epel_9_version }}"
+stackhpc_repo_grafana_version: "{{ stackhpc_pulp_repo_grafana_version }}"
 stackhpc_repo_opensearch_2_x_version: "{{ stackhpc_pulp_repo_opensearch_2_x_version }}"
 stackhpc_repo_opensearch_dashboards_2_x_version: "{{ stackhpc_pulp_repo_opensearch_dashboards_2_x_version }}"
-stackhpc_repo_almalinux_9_proxysql_2_7_version: "{{ stackhpc_pulp_repo_almalinux_9_proxysql_2_7_version }}"
-## Use derived vars from etc/kayobe/pulp.yml to switch between
-## minor Rocky versions using stackhpc_pulp_repo_rocky_x_minor_version
-stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
-stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
-stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
-stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
-stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
-stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version }}"
-stackhpc_repo_rhel9_doca_version: "{{ stackhpc_pulp_repo_rhel9_doca_version }}"
+stackhpc_repo_rhel_10_mariadb_10_11_version: "{{ stackhpc_pulp_repo_multiarch_rhel_10_mariadb_10_11_version }}"
+stackhpc_repo_rhel_9_influxdb_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_influxdb_version }}"
+stackhpc_repo_rhel_9_mariadb_10_11_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_mariadb_10_11_version }}"
+stackhpc_repo_rhel_9_treasuredata_5_version: "{{ stackhpc_pulp_repo_multiarch_rhel_9_treasuredata_5_version }}"
+stackhpc_repo_rhel10_doca_version: "{{ stackhpc_pulp_repo_rhel10_doca_version }}"
 stackhpc_repo_rhel9_doca_modules_version: "{{ stackhpc_pulp_repo_rhel9_doca_modules_version }}"
+stackhpc_repo_rhel9_doca_version: "{{ stackhpc_pulp_repo_rhel9_doca_version }}"
+stackhpc_repo_rhel9_rabbitmq_erlang_26_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_26_version }}"
+stackhpc_repo_rhel9_rabbitmq_erlang_27_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_27_version }}"
+stackhpc_repo_rhel9_rabbitmq_erlang_version: "{{ stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version }}"
+stackhpc_repo_rhel9_rabbitmq_server_version: "{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+stackhpc_repo_rocky_10_appstream_version: "{{ stackhpc_pulp_repo_rocky_10_appstream_version }}"
+stackhpc_repo_rocky_10_baseos_version: "{{ stackhpc_pulp_repo_rocky_10_baseos_version }}"
+stackhpc_repo_rocky_10_crb_version: "{{ stackhpc_pulp_repo_rocky_10_crb_version }}"
+stackhpc_repo_rocky_10_extras_version: "{{ stackhpc_pulp_repo_rocky_10_extras_version }}"
+stackhpc_repo_rocky_10_highavailability_version: "{{ stackhpc_pulp_repo_rocky_10_highavailability_version }}"
+stackhpc_repo_rocky_10_security_version: "{{ stackhpc_pulp_repo_rocky_10_security_version }}"
+stackhpc_repo_rocky_9_appstream_version: "{{ stackhpc_pulp_repo_rocky_9_appstream_version }}"
+stackhpc_repo_rocky_9_baseos_version: "{{ stackhpc_pulp_repo_rocky_9_baseos_version }}"
+stackhpc_repo_rocky_9_crb_version: "{{ stackhpc_pulp_repo_rocky_9_crb_version }}"
+stackhpc_repo_rocky_9_extras_version: "{{ stackhpc_pulp_repo_rocky_9_extras_version }}"
+stackhpc_repo_rocky_9_highavailability_version: "{{ stackhpc_pulp_repo_rocky_9_highavailability_version }}"
+stackhpc_repo_rocky_9_security_version: "{{ stackhpc_pulp_repo_rocky_9_security_version }}"
+stackhpc_repo_rocky_9_sig_security_common_version: "{{ stackhpc_pulp_repo_multiarch_rocky_9_sig_security_common_version }}"
+stackhpc_repo_ubuntu_cloud_archive_version: "{{ stackhpc_pulp_repo_ubuntu_cloud_archive_version }}"
+stackhpc_repo_ubuntu_noble_security_version: "{{ stackhpc_pulp_repo_ubuntu_noble_security_version }}"
+stackhpc_repo_ubuntu_noble_version: "{{ stackhpc_pulp_repo_ubuntu_noble_version }}"
 
 # Rocky-and-CI-specific Pulp urls
 stackhpc_include_os_minor_version_in_repo_url: true
 
-# Host and port of container registry.
-# Push built images to the development Pulp service registry.
-stackhpc_docker_registry: "{{ stackhpc_repo_mirror_url | regex_replace('^https?://', '') }}"
-stackhpc_docker_registry_username: "{{ stackhpc_repo_mirror_username }}"
-stackhpc_docker_registry_password: "{{ stackhpc_repo_mirror_password }}"
-
 # Override Pulp credentials to allow querying container image tags in the
 # check-tags.yml custom playbook.
-pulp_url: "{{ stackhpc_repo_mirror_url }}"
-pulp_username: "{{ stackhpc_repo_mirror_username }}"
-pulp_password: "{{ stackhpc_repo_mirror_password }}"
+pulp_url: "{{ stackhpc_release_pulp_url }}"
+pulp_username: "skc-ci-aio-epoxy"
+pulp_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  66666132666635313565646233353065623465316332323337356366303262363437353162643430
+  3138303131313865646532633063666539306332663933340a386131316664663238633534623862
+  65303835626463356666623563333464623630633936663162353935633132376634666463633139
+  3363383033613330360a356639333463643461353462346466633365626333393331633833326634
+  64366233653036333032323334353332643735623264376137383564383361303462
 
 # Ensure Blackbox monitoring configuration is generated correctly
 seed_pulp_container_enabled: false

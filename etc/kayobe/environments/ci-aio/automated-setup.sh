@@ -203,7 +203,7 @@ run_tempest() {
     if ! sudo docker image inspect kayobe:latest > /dev/null 2>&1; then
         echo "Building Kayobe Automation image"
         sudo DOCKER_BUILDKIT=1 docker build \
-        --build-arg BASE_IMAGE=rockylinux:9 \
+        --build-arg BASE_IMAGE=rockylinux/rockylinux:9 \
         --build-arg USE_PYTHON_312=true \
         --file .automation/docker/kayobe/Dockerfile \
         --tag kayobe:latest \
@@ -255,7 +255,7 @@ generate_openstack_env_script() {
 
 python3 -m venv $BASE_PATH/venvs/openstack
 $BASE_PATH/venvs/openstack/bin/pip install -U pip
-$BASE_PATH/venvs/openstack/bin/pip install -U python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/stackhpc/$OPENSTACK_RELEASE/upper-constraints.txt
+$BASE_PATH/venvs/openstack/bin/pip install -U python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/$OPENSTACK_RELEASE/upper-constraints.txt
 cat > $BASE_PATH/openstack-env.sh <<EOF
 
 source $BASE_PATH/venvs/openstack/bin/activate

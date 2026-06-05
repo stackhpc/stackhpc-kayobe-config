@@ -1,48 +1,5 @@
 {% raw %}
 {
-  "__inputs": [
-    {
-      "name": "datasource",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.4.0"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -68,7 +25,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 66,
   "links": [],
   "panels": [
     {
@@ -100,8 +57,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -132,7 +88,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -170,8 +126,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -206,7 +161,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -243,8 +198,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -275,7 +229,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -317,8 +271,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -562,7 +515,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "$$hashKey": "object:40",
@@ -704,8 +657,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -731,11 +683,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -789,8 +742,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1024,7 +976,7 @@
           }
         ]
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "$$hashKey": "object:40",
@@ -1041,7 +993,7 @@
           "displayValueWithAlias": "Never",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_critical_warning_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "expr": "label_join(smartmon_critical_warning{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\")",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1059,7 +1011,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_temperature_celsius{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "expr": "label_join(smartmon_temperature{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1075,7 +1027,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_data_units_written_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\") * 512",
+          "expr": "label_join(smartmon_data_units_written{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\") * 512",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1090,7 +1042,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_data_units_read_total{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\") * 512",
+          "expr": "label_join(smartmon_data_units_read{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\") * 512",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1105,7 +1057,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_physical_size_bytes{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "expr": "label_join(smartmon_physical_size_bytes{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1120,7 +1072,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(delta(nvme_data_units_written_total{instance=~\"$node\"}[24h])*512000,\"unique_device\", \"-\", \"instance\", \"device\")/label_join(nvme_physical_size_bytes{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "expr": "label_join(delta(smartmon_data_units_written{instance=~\"$node\",type=\"nvme\"}[24h])*512000,\"unique_device\", \"-\", \"instance\", \"disk\")/label_join(smartmon_physical_size_bytes{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1135,7 +1087,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_join(nvme_rated_dwpd{instance=~\"$node\"},\"unique_device\", \"-\", \"instance\", \"device\")",
+          "expr": "label_join(smartmon_nvme_rated_dwpd{instance=~\"$node\",type=\"nvme\"},\"unique_device\", \"-\", \"instance\", \"disk\")",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1176,6 +1128,12 @@
               "device 5": true,
               "device 6": true,
               "device 7": true,
+              "disk 2": true,
+              "disk 3": true,
+              "disk 4": true,
+              "disk 5": true,
+              "disk 6": true,
+              "disk 7": true,
               "instance 1": false,
               "instance 2": true,
               "instance 3": true,
@@ -1209,17 +1167,24 @@
               "serial_number 5": true,
               "serial_number 6": true,
               "serial_number 7": true,
+              "type 1": true,
+              "type 2": true,
+              "type 3": true,
+              "type 4": true,
+              "type 5": true,
+              "type 6": true,
+              "type 7": true,
               "unique_device": true
             },
             "includeByName": {},
             "indexByName": {
-              "Time 1": 11,
-              "Time 2": 15,
-              "Time 3": 23,
-              "Time 4": 27,
-              "Time 5": 32,
-              "Time 6": 38,
-              "Time 7": 53,
+              "Time 1": 10,
+              "Time 2": 14,
+              "Time 3": 19,
+              "Time 4": 21,
+              "Time 5": 24,
+              "Time 6": 28,
+              "Time 7": 36,
               "Value #Capacity": 6,
               "Value #DWPD": 8,
               "Value #Health": 2,
@@ -1227,53 +1192,46 @@
               "Value #TBR": 5,
               "Value #TBW": 4,
               "Value #Temp": 3,
-              "__name__ 1": 12,
-              "__name__ 2": 16,
-              "__name__ 3": 37,
-              "__name__ 4": 54,
-              "device 1": 1,
-              "device 2": 21,
-              "device 3": 24,
-              "device 4": 28,
-              "device 5": 33,
-              "device 6": 39,
-              "device 7": 55,
-              "instance 1": 0,
-              "instance 2": 17,
-              "instance 3": 14,
-              "instance 4": 29,
-              "instance 5": 34,
-              "instance 6": 40,
-              "instance 7": 56,
-              "job 1": 13,
-              "job 2": 18,
-              "job 3": 25,
-              "job 4": 30,
-              "job 5": 35,
-              "job 6": 41,
-              "job 7": 57,
-              "model 1": 9,
-              "model 2": 43,
-              "model 3": 45,
-              "model 4": 47,
-              "model 5": 49,
-              "model 6": 51,
-              "model 7": 58,
-              "original_device 1": 20,
-              "original_device 2": 22,
-              "original_device 3": 26,
-              "original_device 4": 31,
-              "original_device 5": 36,
-              "original_device 6": 42,
-              "original_device 7": 59,
-              "serial_number 1": 10,
-              "serial_number 2": 44,
-              "serial_number 3": 46,
-              "serial_number 4": 48,
-              "serial_number 5": 50,
-              "serial_number 6": 52,
-              "serial_number 7": 60,
-              "unique_device": 19
+              "__name__ 1": 11,
+              "__name__ 2": 15,
+              "__name__ 3": 27,
+              "__name__ 4": 37,
+              "disk 1": 0,
+              "disk 2": 42,
+              "disk 3": 44,
+              "disk 4": 46,
+              "disk 5": 48,
+              "disk 6": 50,
+              "disk 7": 52,
+              "instance 1": 1,
+              "instance 2": 16,
+              "instance 3": 13,
+              "instance 4": 22,
+              "instance 5": 25,
+              "instance 6": 29,
+              "instance 7": 38,
+              "job 1": 12,
+              "job 2": 17,
+              "job 3": 20,
+              "job 4": 23,
+              "job 5": 26,
+              "job 6": 30,
+              "job 7": 39,
+              "serial_number 1": 9,
+              "serial_number 2": 31,
+              "serial_number 3": 32,
+              "serial_number 4": 33,
+              "serial_number 5": 34,
+              "serial_number 6": 35,
+              "serial_number 7": 40,
+              "type 1": 41,
+              "type 2": 43,
+              "type 3": 45,
+              "type 4": 47,
+              "type 5": 49,
+              "type 6": 51,
+              "type 7": 53,
+              "unique_device": 18
             },
             "renameByName": {
               "Time 1": "",
@@ -1284,6 +1242,7 @@
               "Value #TBW": "TBW",
               "__name__ 1": "",
               "device 1": "Device",
+              "disk 1": "Device",
               "instance 1": "Hostname",
               "model 1": "Model Name",
               "serial_number 1": "Serial Number"
@@ -1343,8 +1302,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1366,11 +1324,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -1378,8 +1337,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "delta(nvme_data_units_written_total{instance=~\"$node\"}[24h])*512000 / nvme_physical_size_bytes{instance=~\"$node\"}",
-          "legendFormat": "{{instance}} - {{device}}",
+          "expr": "delta(smartmon_data_units_written{instance=~\"$node\",type=\"nvme\"}[24h])*512000 / smartmon_physical_size_bytes{instance=~\"$node\",type=\"nvme\"}",
+          "legendFormat": "{{instance}} - {{disk}}",
           "range": true,
           "refId": "A"
         }
@@ -1435,8 +1394,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1462,11 +1420,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.0.1+security-01",
       "targets": [
         {
           "datasource": {
@@ -1475,10 +1434,10 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg_over_time(nvme_temperature_celsius{instance=~\"$node\"}[1h]) ",
+          "expr": "avg_over_time(smartmon_temperature{instance=~\"$node\"}[1h]) ",
           "instant": false,
           "interval": "",
-          "legendFormat": "{{instance}} - {{device}}",
+          "legendFormat": "{{instance}} - {{disk}}",
           "range": true,
           "refId": "A"
         }
@@ -1487,8 +1446,9 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": false,
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
@@ -1543,7 +1503,6 @@
   "timezone": "",
   "title": "Hardware Overview",
   "uid": "TCN51Y25P",
-  "version": 10,
-  "weekStart": ""
+  "version": 11
 }
 {% endraw %}

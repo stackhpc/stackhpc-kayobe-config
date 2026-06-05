@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: true
+      rocky-linux-10:
+        description: Build Rocky Linux 10 images?
+        type: boolean
+        required: false
+        default: true
       ubuntu-noble:
         description: Build Ubuntu Noble 24.04 images?
         type: boolean
@@ -66,7 +71,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.rocky-linux-10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -76,20 +81,20 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Determine OpenStack release
         id: openstack_release
         run: |
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
-          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," | tee -a "$GITHUB_OUTPUT"
 
       # Generate a tag to apply to all built container images.
       # Without this, each kayobe * container image build command would use a different tag.
       - name: Generate container datetime tag
         id: datetime_tag
         run: |
-          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
+          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" | tee -a "$GITHUB_OUTPUT"
 
       # Dynamically define job matrix.
       # We need a separate matrix entry for each distribution, when the relevant input is true.
@@ -102,7 +107,11 @@ jobs:
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
-              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64'},"
+              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
+          fi
+          if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
               output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
@@ -110,7 +119,7 @@ jobs:
           # remove trailing comma
           output="${output%,}"
           output+="]}"
-          echo "matrix=$output" >> $GITHUB_OUTPUT
+          echo "matrix=$output" | tee -a "$GITHUB_OUTPUT"
 
       - name: Display container datetime tag
         run: |
@@ -125,7 +134,7 @@ jobs:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ${{ matrix.distro.arch == 'aarch64'
-      && fromJson('["self-hosted","sms","arm64"]')
+      && fromJson(format('["self-hosted", "{0}", "arm64"]', matrix.distro.runner))
       || needs.runner-selection.outputs.runner_name_container_image_build }}
     timeout-minutes: 720
     permissions: {}
@@ -145,7 +154,7 @@ jobs:
           sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -155,7 +164,7 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.66.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2
 
       - name: Install yq
         run: |
@@ -175,11 +184,16 @@ jobs:
       # Normally installed during host configure.
       - name: Install Docker Python SDK
         run: |
-          sudo pip install docker 'requests<2.32.0'
+          . /etc/os-release
+          if [[ $VERSION_ID == 22.04 ]]; then
+              sudo pip install docker 'requests<2.32.0'
+          else
+              sudo pip install docker 'requests<2.32.0' --break-system-packages
+          fi
 
       - name: Get Kolla tag
         id: write-kolla-tag
-        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ needs.generate-tag.outputs.datetime_tag }}"  >> $GITHUB_OUTPUT
+        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ needs.generate-tag.outputs.datetime_tag }}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Configure localhost as a seed
         run: |
@@ -218,7 +232,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe overcloud container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.overcloud
 
       - name: Copy build configs to output directory
@@ -237,7 +251,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.seed && matrix.distro.arch == 'amd64'
 
       - name: Copy seed container image build logs to output directory
@@ -245,7 +259,7 @@ jobs:
         if: inputs.seed && matrix.distro.arch == 'amd64'
 
       - name: Get built container images
-        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" > ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" | tee "${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images"
 
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
@@ -255,6 +269,7 @@ jobs:
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output
+        if: ${{ !cancelled() }}
 
       - name: Fail if any images have critical vulnerabilities
         run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
@@ -300,11 +315,11 @@ jobs:
           done < image-build-logs/push-attempt-images.txt
         shell: bash
         env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.push
 
       - name: Upload output artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ matrix.distro.arch }}-logs
           path: image-build-logs
@@ -340,7 +355,7 @@ jobs:
   create-manifests:
     # Only for Rocky Linux for now
     name: Create Multiarch Docker Manifests
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-9
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && (inputs.rocky-linux-9 || inputs.rocky-linux-10)
     runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     permissions: {}
     needs:
@@ -348,21 +363,21 @@ jobs:
       - runner-selection
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 
       - name: Combine pushed images lists
         run: |
           find . -name 'push-attempt-images.txt' -exec cat {} + > all-pushed-images.txt
 
       - name: Log in to container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ark.stackhpc.com
           username: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_USER }}
           password: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_PASS }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: src/kayobe-config
 
@@ -370,7 +385,7 @@ jobs:
         run: src/kayobe-config/tools/multiarch-manifests.sh
 
       - name: Upload manifest logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: manifest-logs
           path: |

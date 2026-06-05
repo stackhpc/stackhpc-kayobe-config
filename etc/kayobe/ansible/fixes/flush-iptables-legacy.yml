@@ -1,0 +1,52 @@
+---
+
+# This playbook flushes iptables-legacy rules in the neutron_openvswitch_agent
+# container on overcloud hosts.  It is intended to be used in scenarios where
+# neutron_openvswitch_agent was updated to a version without iptables-nft.
+
+# NOTE(wszumski): Also had to run a rabbitmq reset after flushing. Potentially
+# we could do a more targetted restart of containers.
+
+- name: Flushes legacy iptables rules on ML2/OVS deployments
+  hosts: overcloud
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: End play for hosts without openvswitch agent
+      ansible.builtin.meta: end_host
+      when: "'kolla-neutron_openvswitch_agent-container.service' not in ansible_facts.services"
+
+    - name: Check if neutron legacy iptables rules exist
+      ansible.builtin.shell: |
+        set -euo pipefail
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy-save | grep neutron
+      register: save_result
+      failed_when: false
+      args:
+        executable: /bin/bash
+
+    - name: End play for hosts where legacy-iptables is not in use by neutron
+      ansible.builtin.meta: end_host
+      when: save_result.rc != 0
+
+    - name: Flush iptables-legacy in neutron_openvswitch_agent container
+      ansible.builtin.shell: |
+        set -euo pipefail
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P INPUT ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P FORWARD ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -P OUTPUT ACCEPT
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t nat -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t nat -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t mangle -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t mangle -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t raw -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t raw -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t filter -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -t filter -X
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -F
+        {{ container_engine }} exec -u root neutron_openvswitch_agent iptables-legacy -X
+      args:
+        executable: /bin/bash
