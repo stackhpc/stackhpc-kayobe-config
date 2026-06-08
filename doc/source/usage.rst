@@ -86,7 +86,7 @@ Kayobe environments can also be specified, for example, to create an AIO environ
    --base-path skc-aio-environment \
    --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
    --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw \
    --kayobe-in-requirements
 
@@ -116,5 +116,5 @@ service deployment on overcloud hosts:
    beokay.py run \
    'kayobe overcloud service deploy' \
    --base-path skc-aio-environment \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw
