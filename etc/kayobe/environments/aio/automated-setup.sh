@@ -8,7 +8,11 @@ KAYOBE_AIO_LVM=true
 KAYOBE_CONFIG_EDIT_PAUSE=false
 AIO_RUN_TEMPEST=false
 USE_OVS=false
-VAULT_PASSWORD_FILE=$BASE_PATH/vault-pw
+
+# NOTE(Alex-Welsh): These values should not be changed unless you are sure you
+# know what you are doing.
+ARK_USERNAME_FILE=~/release_pulp_username
+ARK_PASSWORD_FILE=~/release_pulp_password
 
 # Error handling function
 error_exit() {
@@ -16,10 +20,22 @@ error_exit() {
     exit 1
 }
 
-# Ensure vault password file exists
-check_vault_password() {
-    if [[ ! -f "$VAULT_PASSWORD_FILE" ]]; then
-        error_exit "Vault password file not found at $VAULT_PASSWORD_FILE"
+# Ensure Ark credentials exist and are valid
+check_ark_credentials() {
+    if [[ ! -f "$ARK_USERNAME_FILE" ]]; then
+        error_exit "Release pulp username file not found at $ARK_USERNAME_FILE"
+    fi
+
+    if [[ ! -f "$ARK_PASSWORD_FILE" ]]; then
+        error_exit "Release pulp password file not found at $ARK_PASSWORD_FILE"
+    fi
+
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -u "$(cat $ARK_USERNAME_FILE):$(cat $ARK_PASSWORD_FILE)" https://ark.stackhpc.com/pulp/api/v3/users/)
+
+    # Status is 200 if user exists and has permission
+    # Status is 403 if user exists but does not have permission
+    if [[ "$HTTP_STATUS" != "200" && "$HTTP_STATUS" != "403" ]]; then
+        error_exit "Pulp credentials are not valid (HTTP Status: $HTTP_STATUS)"
     fi
 }
 
@@ -72,7 +88,7 @@ pause_for_configuration() {
 disable_ovn() {
     if [[ "$USE_OVS" == true ]]; then
         echo "Disabling OVN..."
-        echo "kolla_enable_ovn: false" > "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/disable-ovn.yml"
+        echo "kolla_enable_ovn: false" > "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/aio/disable-ovn.yml"
     fi
 }
 
@@ -83,8 +99,8 @@ remove_lvm_configuration() {
             error_exit "You have KAYOBE_AIO_LVM set to true, but LVM has not been found on this system. Set KAYOBE_AIO_LVM to false to ignore this warning."
         fi
         echo "Removing LVM configuration..."
-        rm -f "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/inventory/group_vars/controllers/lvm.yml" || true
-        sed -i -e '/controller_lvm_groups/,+2d' "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/ci-aio/controllers.yml" || true
+        rm -f "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/aio/inventory/group_vars/controllers/lvm.yml" || true
+        sed -i -e '/controller_lvm_groups/,+2d' "$BASE_PATH/src/kayobe-config/etc/kayobe/environments/aio/controllers.yml" || true
     fi
 }
 
@@ -122,10 +138,8 @@ configure_network() {
 
 # Helper function to activate the Kayobe environment
 activate_kayobe_env() {
-    KAYOBE_VAULT_PASSWORD=$(cat $VAULT_PASSWORD_FILE)
-    export KAYOBE_VAULT_PASSWORD
     pushd "$BASE_PATH/src/kayobe-config"
-    source kayobe-env --environment ci-aio
+    source kayobe-env --environment aio
     source $BASE_PATH/venvs/kayobe/bin/activate
     set -x
 }
@@ -224,7 +238,6 @@ run_tempest() {
         -v "$(pwd)":/stack/kayobe-automation-env/src/kayobe-config \
         -v "$(pwd)"/tempest-artifacts:/stack/tempest-artifacts \
         -e KAYOBE_ENVIRONMENT \
-        -e KAYOBE_VAULT_PASSWORD \
         -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
         kayobe:latest \
         /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh \
@@ -243,8 +256,7 @@ generate_kayobe_env_script() {
 
 cat > $BASE_PATH/kayobe-env.sh <<EOF
 
-export KAYOBE_VAULT_PASSWORD=\$(cat $VAULT_PASSWORD_FILE)
-source $BASE_PATH/src/kayobe-config/kayobe-env --environment ci-aio
+source $BASE_PATH/src/kayobe-config/kayobe-env --environment aio
 source $BASE_PATH/venvs/kayobe/bin/activate
 
 EOF
@@ -266,7 +278,7 @@ EOF
 
 # Run all deployment prerequisites
 run_deploy_prereqs() {
-    check_vault_password
+    check_ark_credentials
     configure_lvm
     install_dependencies
     clone_repositories
