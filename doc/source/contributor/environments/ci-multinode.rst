@@ -5,7 +5,8 @@ Multinode Test Environment
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    2025.1. Proceed with caution.
+    2026.1. It is now certainly out of date and is provided for reference only.
+    Proceed with caution.
 
 The ``ci-multinode`` environment provides a Kayobe configuration for multi-node
 clouds to be used for test and development purposes. It is designed to be used

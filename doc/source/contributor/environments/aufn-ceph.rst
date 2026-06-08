@@ -9,7 +9,8 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    2025.1. Proceed with caution.
+    2026.1. It is now certainly out of date and is provided for reference only.
+    Proceed with caution.
 
 Prerequisites
 =============

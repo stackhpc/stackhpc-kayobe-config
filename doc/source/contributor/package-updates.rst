@@ -165,7 +165,8 @@ Upgrading OpenStack to the next release in a multinode environment
 .. warning::
 
     This guide was written for the Wallaby release and has not been validated
-    for 2025.1. Proceed with caution.
+    for 2026.1. It is now certainly out of date and is provided for reference
+    only. Proceed with caution.
 
 As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 

@@ -31,15 +31,17 @@ class Scenario:
 
 
 ROCKY_9 = OSRelease("rocky", "9", "cloud-user")
+ROCKY_10 = OSRelease("rocky", "10", "cloud-user")
 UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
 UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
     OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
-    OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
+    OpenStackRelease("2025.1", "2024.1", [ROCKY_9, ROCKY_10, UBUNTU_NOBLE]),
+    OpenStackRelease("2026.1", "2025.1", [ROCKY_10, UBUNTU_NOBLE]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
-VERSION_HIERARCHY = ["2023.1", "2024.1", "2025.1"]
+VERSION_HIERARCHY = ["2023.1", "2024.1", "2025.1", "2026.1"]
 
 
 def main() -> None:
@@ -84,7 +86,7 @@ def get_branch(version: str) -> str:
 
 
 def get_tkm_version(version: str) -> str:
-    if version == "2025.1":
+    if version in ["2025.1","2026.1"]:
         return "main"
     else:
         return get_branch(version)
