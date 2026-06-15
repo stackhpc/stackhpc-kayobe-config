@@ -27,10 +27,10 @@ for base_image in $manifest_images; do
       arch_images="$arch_images $arch_image"
     fi
   done
+
   if [ -n "$arch_images" ]; then
     echo "Creating manifest for $base_image with images:$arch_images" | tee -a logs/manifest-creation.log
-    docker manifest create "$base_image" $arch_images | tee -a logs/manifest-creation.log
-    docker manifest push "$base_image" | tee -a logs/manifest-creation.log
+    docker buildx imagetools create -t "$base_image" $arch_images | tee -a logs/manifest-creation.log
   else
     echo "No images found for $base_image, skipping." | tee -a logs/manifest-creation.log
   fi
