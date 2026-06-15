@@ -1,0 +1,186 @@
+---
+deb:
+  grafana:
+    url: "https://apt.grafana.com"
+    suite: "stable"
+    component: "main"
+    gpg_key: "grafana.asc"
+  opensearch:
+    url: "https://artifacts.opensearch.org/releases/bundle/opensearch/3.x/apt/"
+    suite: "stable"
+    component: "main"
+    gpg_key: "opensearch.asc"
+  opensearch-dashboards:
+    url: "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/3.x/apt/"
+    suite: "stable"
+    component: "main"
+    gpg_key: "opensearch.asc"
+
+debian:
+  erlang:
+    url: "https://ppa.launchpadcontent.net/rabbitmq/rabbitmq-erlang/ubuntu"
+    suite: "noble"
+    component: "main"
+    gpg_key: "erlang-ppa.gpg"
+  docker-ce:
+    url: "https://download.docker.com/linux/debian"
+    suite: "trixie"
+    component: "stable"
+    gpg_key: "docker-ce.asc"
+  fluentd:
+    url: "https://fluentd.cdn.cncf.io/lts/6/debian/trixie"
+    suite: "trixie"
+    component: "contrib"
+    gpg_key: "fluentd.asc"
+  # NOTE(mnasiadka): 11.4 does not have trixie builds yet
+  mariadb:
+    url: "https://dlm.mariadb.com/repo/mariadb-server/11.4/repo/debian"
+    suite: "bookworm"
+    component: "main"
+    gpg_key: "mariadb.gpg"
+  proxysql:
+    url: "https://repo.proxysql.com/ProxySQL/proxysql-3.0.x/trixie/"
+    suite: "./"
+    component: ""
+    gpg_key: "proxysql.asc"
+  rabbitmq:
+    url: "https://deb1.rabbitmq.com/rabbitmq-server/debian/trixie/"
+    suite: "trixie"
+    component: "main"
+    gpg_key: "rabbitmq.gpg"
+
+debian-aarch64:
+  rabbitmq:
+    url: "https://deb1.rabbitmq.com/rabbitmq-server/debian/trixie"
+    suite: "trixie"
+    component: "main"
+    # NOTE(mnasiadka): Since rabbitmq is really noarch and community mirror is not
+    # syncing binary-aarch64 - we're using amd64 here.
+    arch: "amd64"
+    gpg_key: "rabbitmq.gpg"
+
+ubuntu:
+  erlang:
+    url: "https://ppa.launchpadcontent.net/rabbitmq/rabbitmq-erlang/ubuntu"
+    suite: "noble"
+    component: "main"
+    gpg_key: "erlang-ppa.gpg"
+  docker-ce:
+    url: "https://download.docker.com/linux/ubuntu"
+    suite: "noble"
+    component: "stable"
+    gpg_key: "docker-ce.asc"
+  fluentd:
+    url: "https://fluentd.cdn.cncf.io/lts/6/ubuntu/noble"
+    suite: "noble"
+    component: "contrib"
+    gpg_key: "fluentd.asc"
+  mariadb:
+    url: "https://dlm.mariadb.com/repo/mariadb-server/11.4/repo/ubuntu"
+    suite: "noble"
+    component: "main"
+    gpg_key: "mariadb.gpg"
+  proxysql:
+    url: "https://repo.proxysql.com/ProxySQL/proxysql-3.0.x/noble/"
+    suite: "./"
+    component: ""
+    gpg_key: "proxysql.asc"
+  rabbitmq:
+    url: "https://deb1.rabbitmq.com/rabbitmq-server/ubuntu/noble"
+    suite: "noble"
+    component: "main"
+    gpg_key: "rabbitmq.gpg"
+
+ubuntu-aarch64:
+  rabbitmq:
+    url: "https://deb1.rabbitmq.com/rabbitmq-server/ubuntu/noble"
+    suite: "noble"
+    component: "main"
+    # NOTE(mnasiadka): Since rabbitmq is really noarch and community mirror is not
+    # syncing binary-aarch64 - we're using amd64 here.
+    arch: "amd64"
+    gpg_key: "rabbitmq.gpg"
+
+rpm:
+  appstream:
+    baseurl: "{{ stackhpc_repo_rocky_10_appstream_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "appstream"
+  baseos:
+    baseurl: "{{ stackhpc_repo_rocky_10_baseos_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "baseos"
+  ceph:
+    baseurl: "{{ stackhpc_repo_centos_stream_10_storage_ceph_squid_url }}"
+    gpgkey: "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Storage"
+    name: "centos-ceph-squid"
+  crb:
+    baseurl: "{{ stackhpc_repo_rocky_10_crb_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "crb"
+  docker-ce:
+    baseurl: "{{ stackhpc_repo_centos_stream_10_docker_url }}"
+    gpgkey: "https://download.docker.com/linux/centos/gpg"
+    name: "docker-ce"
+  epel:
+    baseurl: "{{ stackhpc_repo_epel_10_url }}"
+    gpgkey: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever"
+    name: "epel"
+  erlang:
+    baseurl: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
+    gpgkey: "https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-erlang.E495BB49CC4BBE5B.key"
+    name: "rabbitmq_rabbitmq-erlang"
+  extras:
+    baseurl: "{{ stackhpc_repo_rocky_10_extras_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "extras"
+  fluentd:
+    baseurl: "{{ stackhpc_repo_rhel_10_fluent_6_url }}"
+    gpgkey: "https://fluentd.cdn.cncf.io/GPG-KEY-fluent-package"
+    name: "fluent-package-lts"
+  grafana:
+    baseurl: "{{ stackhpc_repo_grafana_url }}"
+    gpgkey: "https://rpm.grafana.com/gpg.key"
+    name: "grafana"
+  hacluster:
+    baseurl: "{{ stackhpc_repo_rocky_10_highavailability_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "highavailability"
+  mariadb:
+    baseurl: "{{ stackhpc_repo_rhel_10_mariadb_11_4_url }}"
+    gpgkey: "https://downloads.mariadb.com/MariaDB/RPM-GPG-KEY-MariaDB"
+    name: "mariadb"
+  opensearch:
+    baseurl: "{{ stackhpc_repo_opensearch_3_x_url }}"
+    gpgkey: "https://artifacts.opensearch.org/publickeys/opensearch-release.pgp"
+    repo_gpgcheck: 1
+    name: "opensearch-3.x"
+  opensearch-dashboards:
+    baseurl: "{{ stackhpc_repo_opensearch_dashboards_3_x_url }}"
+    gpgkey: "https://artifacts.opensearch.org/publickeys/opensearch-release.pgp"
+    repo_gpgcheck: 1
+    name: "opensearch-dashboards-3.x"
+  openvswitch:
+    baseurl: "{{ stackhpc_repo_centos_stream_10_nfv_openvswitch_url }}"
+    gpgkey: "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-NFV"
+    name: "centos-nfv-openvswitch"
+  proxysql:
+    baseurl: "{{ stackhpc_repo_almalinux_10_proxysql_3_0_url }}"
+    gpgkey: "https://repo.proxysql.com/ProxySQL/proxysql-3.0.x/repo_pub_key"
+    name: "proxysql"
+  rabbitmq:
+    baseurl: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
+    gpgkey: |
+      https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-server.9F4587F226208342.key
+      https://github.com/rabbitmq/signing-keys/releases/download/3.0/rabbitmq-release-signing-key.asc
+    name: "rabbitmq_rabbitmq-server"
+  security:
+    baseurl: "{{ stackhpc_repo_rocky_10_security_url }}"
+    gpgkey: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
+    name: "security"
+
+rocky-aarch64:
+  erlang:
+    baseurl: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_27_url }}"
+    gpgkey: "https://download.copr.fedorainfracloud.org/results/@openstack-kolla/rabbitmq-erlang-27/pubkey.gpg"
+    name: "copr-rabbitmq-erlang"
