@@ -217,7 +217,7 @@ stackhpc_pulp_rpm_architectures:
 # Whether to sync Rocky Linux 10 packages.
 stackhpc_pulp_sync_rocky_10: "{{ os_distribution == 'rocky' and os_release == '10' }}"
 # Rocky 10 minor version number. Supported values: 1. Default is 1
-stackhpc_pulp_repo_rocky_10_minor_version: '1'
+stackhpc_pulp_repo_rocky_10_minor_version: '2'
 # Rocky 10 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
 
@@ -252,8 +252,11 @@ stackhpc_pulp_repo_multiarch_centos_stream_10_openstack_epoxy_version: "{{ looku
 stackhpc_pulp_repo_multiarch_centos_stream_10_ovn_lts_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_ovn_lts' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_10_storage_ceph_squid_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_10_docker_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_docker' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_multiarch_rhel_10_mariadb_10_11_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_10_mariadb_10_11' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_rhel_10_mariadb_11_4_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_10_mariadb_11_4' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_epel_10_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10' ~ arch_suffix ~ '_version') }}"
+# These are still el9 upstream
+stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel9_rabbitmq_erlang' ~ arch_suffix ~ '_version', default=stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version) }}"
+stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_27_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel9_rabbitmq_erlang_27' ~ arch_suffix ~ '_version', default=stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version) }}"
 
 # Whether to sync packages common to all RHEL 10 derivatives.
 stackhpc_pulp_sync_el_10: "{{ stackhpc_pulp_sync_rocky_10 | bool }}"
@@ -381,19 +384,6 @@ stackhpc_pulp_rpm_repos:
     base_path: "centos/10-stream/storage/aarch64/ceph-squid/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
-  # NOTE(owenjones): only needed for previous LTS versions of OVN/OVS in Rocky 10
-  - name: CentOS Stream 10 - OVN/OVS LTS for Epoxy
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/ovn/x86_64/ovn-lts/{{ stackhpc_pulp_repo_centos_stream_10_ovn_lts_version }}"
-    distribution_name: "centos-stream-10-ovn-lts-"
-    base_path: "centos/10-stream/ovn/x86_64/ovn-lts/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
-
-  - name: CentOS Stream 10 - OVN/OVS LTS for Epoxy aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/centos/10-stream/ovn/aarch64/ovn-lts/{{ stackhpc_pulp_repo_centos_stream_10_ovn_lts_aarch64_version }}"
-    distribution_name: "centos-stream-10-ovn-lts-aarch64-"
-    base_path: "centos/10-stream/ovn/aarch64/ovn-lts/"
-    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
-
   # EPEL 10 repository
   - name: Extra Packages for Enterprise Linux 10 - x86_64
     url: "{{ stackhpc_release_pulp_content_url }}/epel/10/Everything/x86_64/{{ stackhpc_pulp_repo_epel_10_version }}"
@@ -438,16 +428,16 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional RHEL 10 repositories
-  - name: MariaDB 10.11 for RHEL 10
-    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_10_11_version }}"
-    distribution_name: "rhel-10-mariadb-10-11-"
-    base_path: "mariadb-10.11/yum/rhel/10/x86_64/"
+  - name: MariaDB 11.6 for RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.6/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_6_version }}"
+    distribution_name: "rhel-10-mariadb-11-6-"
+    base_path: "mariadb-11.6/yum/rhel/10/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
-  - name: MariaDB 10.11 for RHEL 10 - aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-10.11/yum/rhel/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_mariadb_10_11_aarch64_version }}"
-    distribution_name: "rhel-10-mariadb-10-11-aarch64-"
-    base_path: "mariadb-10.11/yum/rhel/10/aarch64/"
+  - name: MariaDB 11.6 for RHEL 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.6/yum/rhel/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_6_aarch64_version }}"
+    distribution_name: "rhel-10-mariadb-11-6-aarch64-"
+    base_path: "mariadb-11.6/yum/rhel/10/aarch64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo 3.2.2 - RHEL 10
