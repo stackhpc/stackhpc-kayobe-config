@@ -520,7 +520,7 @@ Enable Barbican in kayobe
 
 1. Set the following in kayobe-config/etc/kayobe/kolla.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla.yml
 
-   .. code-block:: yml
+   .. code-block:: yaml
 
       kolla_enable_barbican: yes
 
@@ -530,7 +530,7 @@ Generate secrets_barbican_approle_secret_id
 1. Run ``uuidgen`` to generate secret id
 2. Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block:: yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_secret_id: "YOUR-SECRET-GOES-HERE"
 
@@ -548,7 +548,7 @@ Add secrets_barbican_approle_id to secrets
 
 1. Note the role id from playbook output and insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block:: yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_role_id: "YOUR-APPROLE-ID-GOES-HERE"
 
