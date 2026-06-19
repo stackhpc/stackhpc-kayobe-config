@@ -55,7 +55,7 @@ stackhpc_dnf_repos:
 dnf_custom_repos_doca_rocky_9:
   doca:
     baseurl: "{{ stackhpc_repo_rhel9_doca_url }}"
-    description: "DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
+    description: "DOCA Online Repo {{ stackhpc_pulp_rocky_9_doca_version }} - RHEL $releasever"
     enabled: "{{ dnf_enable_doca | bool | default(false) }}"
     priority: -1
     file: doca
@@ -64,7 +64,7 @@ dnf_custom_repos_doca_rocky_9:
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
   doca-modules:
     baseurl: "{{ stackhpc_repo_rhel9_doca_modules_url }}"
-    description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
+    description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_rocky_9_doca_version }} - RHEL $releasever"
     enabled: "{{ dnf_enable_doca_modules | bool | default(false) }}"
     priority: -1
     file: doca
@@ -75,23 +75,22 @@ dnf_custom_repos_doca_rocky_9:
 dnf_custom_repos_doca_rocky_10:
   doca:
     baseurl: "{{ stackhpc_repo_rhel10_doca_url }}"
-    description: "DOCA Online Repo {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
+    description: "DOCA Online Repo {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL $releasever"
     enabled: "{{ dnf_enable_doca | bool | default(false) }}"
     priority: -1
     file: doca
     gpgcheck: no
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-    # TODO(owenjones): update this once repo for Rocky 10 has been created in Pulp
-    # doca-modules:
-    #   baseurl: "{{ stackhpc_repo_rhel9_doca_modules_url }}"
-    #   description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_doca_version }} - RHEL $releasever"
-    #   enabled: "{{ dnf_enable_doca_modules | bool | default(false) }}"
-    #   priority: -1
-    #   file: doca
-    #   gpgcheck: no
-    #   username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    #   password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
+  doca-modules:
+    baseurl: "{{ stackhpc_repo_rhel10_doca_modules_url }}"
+    description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL $releasever"
+    enabled: "{{ dnf_enable_doca_modules | bool | default(false) }}"
+    priority: -1
+    file: doca
+    gpgcheck: no
+    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
+    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
 # Custom repositories shared between all RHEL 9/10 derivatives.
 dnf_custom_repos_el9:
