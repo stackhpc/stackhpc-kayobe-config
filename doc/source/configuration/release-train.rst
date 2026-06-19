@@ -39,7 +39,8 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-* Pulp repository definitions for Rocky Linux 9 and Ubuntu Noble 24.04
+* Pulp repository definitions for Rocky Linux 9, Rocky Linux 10, and Ubuntu
+  Noble 24.04
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -94,8 +95,8 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Rocky Linux 9 and Ubuntu Noble package repositories are synced based on the
-value of ``os_distribution`` and ``os_release``.
+Rocky Linux 9, Rocky Linux 10, and Ubuntu Noble package repositories are synced
+based on the value of ``os_distribution`` and ``os_release``.
 
 RPM repository syncs default to the ``x86_64`` architecture. To sync
 ``aarch64`` repositories instead, or to sync both architectures, set
