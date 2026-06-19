@@ -29,7 +29,7 @@ cases.
 Prerequisites
 =============
 
-* a Rocky Linux 9 or Ubuntu Noble 24.04 host
+* a Rocky Linux 9, Rocky Linux 10, or Ubuntu Noble 24.04 host
 
 Setup
 =====
