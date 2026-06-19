@@ -137,7 +137,7 @@ local Pulp:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
 
 Upgrade Ceph services
 =====================
