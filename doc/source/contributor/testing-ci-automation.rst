@@ -274,7 +274,7 @@ In order to create a VM on the cloud hosting the CI, we need a few things:
 - a ``clouds.yaml`` file
 - an application credential to authenticate with the cloud
 - a flavor for the VM (minimum 8GiB RAM)
-- a Rocky Linux 9 image for the VM
+- a Rocky Linux 9 or Rocky Linux 10 image for the VM
 - a network and subnet for the VM
 - SSH connectivity from the GitHub runner to the VM
 - access from the VM to the Internet
