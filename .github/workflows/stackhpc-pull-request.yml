@@ -243,10 +243,10 @@ jobs:
     secrets: inherit
     if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
 
-  # Test three upgrade scenarios: Ubuntu Jammy to Noble OVN and Rocky 9 OVN.
+  # Test three upgrade scenarios: Ubuntu Noble OVN, Rocky 10 OVN, and Rocky 10 OVS.
 
-  all-in-one-upgrade-ubuntu-jammy-to-noble-ovn:
-    name: aio upgrade (Ubuntu Jammy to Noble OVN)
+  all-in-one-upgrade-ubuntu-noble-ovn:
+    name: aio upgrade (Ubuntu Noble OVN)
     permissions: {}
     needs:
       - check-changes
@@ -255,7 +255,7 @@ jobs:
     with:
       kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
       os_distribution: ubuntu
-      os_release: jammy
+      os_release: noble
       ssh_username: ubuntu
       neutron_plugin: ovn
       OS_CLOUD: openstack
