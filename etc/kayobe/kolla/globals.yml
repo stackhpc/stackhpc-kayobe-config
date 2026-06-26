@@ -5,21 +5,22 @@
 # This is necessary for os migrations where mixed clouds might be deployed
 kolla_base_distro: "{% raw %}{{ ansible_facts.distribution | lower }}{% endraw %}"
 
+kolla_base_distro_version_from_facts: true
+
 # Use facts so this is determined correctly when the control host OS differs
-# from os_distribuition.
-kolla_base_distro_version: "{% raw %}{{ kolla_base_distro_version_default_map[kolla_base_distro] }}{% endraw %}"
+# from os_distribution.
+# kolla_base_distro_version: "{% raw %}{{ kolla_base_distro_version_map[kolla_base_distro] }}{% endraw %}"
 
 # Convenience variable for base distro and version string.
-kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
+# kolla_base_distro_and_version: "{% raw %}{{ kolla_base_distro }}-{{ kolla_base_distro_version }}{% endraw %}"
 
-# Override the version map used, so we can deploy Rocky 10 container images
-# on Rocky 10 hosts.
-kolla_base_distro_version_default_map: {
-  "centos": "stream9",
-  "debian": "bookworm",
-  "rocky": "{{ os_release }}",
-  "ubuntu": "noble",
-}
+# Override the version map used, so we can deploy the correct container images
+# on Rocky 9/10 hosts during migration.
+# kolla_base_distro_version_map:
+#   centos: "stream9"
+#   debian: "bookworm"
+#   rocky: "{% raw %}{{ ansible_facts.distribution_major_version }}{% endraw %}"
+#   ubuntu: "noble"
 
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
