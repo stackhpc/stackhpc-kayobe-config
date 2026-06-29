@@ -11,12 +11,13 @@ name: Multinode
         description: Multinode cluster name
         type: string
         required: true
-      os_distribution:
-        description: Host OS distribution
+      host_os:
+        description: Host OS
         type: choice
-        default: rocky
+        default: rocky-9
         options:
-          - rocky
+          - rocky-9
+          - rocky-10
           - ubuntu
       neutron_plugin:
         description: Neutron ML2 plugin
@@ -95,12 +96,12 @@ jobs:
   multinode:
     name: Multinode
     needs: github_user_ssh_keys
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.0
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
     with:
       multinode_name: ${{ inputs.multinode_name }}
-      os_distribution: ${{ inputs.os_distribution }}
-      os_release: ${{ inputs.os_distribution == 'rocky' && '9' || 'noble' }}
-      ssh_username: ${{ inputs.os_distribution == 'rocky' && 'cloud-user' || 'ubuntu' }}
+      os_distribution: ${{ inputs.host_os == 'ubuntu' && 'ubuntu' || 'rocky' }}
+      os_release: ${{ inputs.host_os == 'rocky-9' && '9' || inputs.host_os == 'rocky-10' && '10' || 'noble' }}
+      ssh_username: ${{ (inputs.host_os == 'rocky-9' || inputs.host_os == 'rocky-10') && 'cloud-user' || 'ubuntu' }}
       neutron_plugin: ${{ inputs.neutron_plugin }}
       upgrade: ${{ inputs.upgrade }}
       break_on: ${{ inputs.break_on }}
