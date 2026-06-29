@@ -31,12 +31,14 @@ class Scenario:
 
 
 ROCKY_9 = OSRelease("rocky", "9", "cloud-user")
+ROCKY_10 = OSRelease("rocky", "10", "cloud-user")
 UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
 UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
     OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
+    OpenStackRelease("2025.1", "", [ROCKY_10]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
 VERSION_HIERARCHY = ["2023.1", "2024.1", "2025.1"]
@@ -75,12 +77,12 @@ def random_scenario() -> Scenario:
     openstack_release = random.choice(OPENSTACK_RELEASES)
     os_release = random.choice(openstack_release.os_releases)
     neutron_plugin = random.choice(NEUTRON_PLUGINS)
-    upgrade = "major" if random.random() > 0.6 else "none"
+    upgrade = "major" if (random.random() > 0.6 and openstack_release.previous_version != "") else "none"
     return Scenario(openstack_release, os_release, neutron_plugin, upgrade)
 
 
 def get_branch(version: str) -> str:
-    return f"stackhpc/{version}"
+    return f"stackhpc/{version}" if version != "" else ""
 
 
 def get_tkm_version(version: str) -> str:
