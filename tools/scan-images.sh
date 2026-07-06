@@ -82,7 +82,7 @@ generate_summary_csv() {
   jq -r '.Results[]
       | select(.Vulnerabilities)
       | .Vulnerabilities
-      | map(select(.PkgName | test("kernel") | not ))
+      | map(select(.PkgName | test("^kernel|^linux-libc-dev") | not ))
       | group_by(.VulnerabilityID)
       | map(
         [
