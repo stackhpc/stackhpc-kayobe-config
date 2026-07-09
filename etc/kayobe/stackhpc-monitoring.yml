@@ -67,6 +67,12 @@ redfish_exporter_target_address: "{{ ipmi_address }}"
 # How often to scrape OpenStack Exporter in seconds.
 stackhpc_prometheus_openstack_exporter_interval: 300
 
+# Whether OpenBao monitoring is enabled.
+# Enabling this will add OpenBao scrape targets and alerting rules during
+# Prometheus deployment. Defaults to enabled when OpenBao is the configured
+# CA secret store.
+stackhpc_enable_openbao_monitoring: "{{ stackhpc_ca_secret_store == 'openbao' }}"
+
 ###############################################################################
 
 # Whether the RADOS gateway usage exporter is enabled.
