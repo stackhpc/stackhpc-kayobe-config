@@ -6,7 +6,9 @@
     - nova-compute-drain
   vars:
     venv: "{{ virtualenv_path }}/openstack"
-    live_migration_fatal: true
+    migration_fatal: true
+    nova_compute_drain_live_migration: true
+    nova_compute_drain_destination: ""
   tasks:
     - name: Set up openstack cli virtualenv
       ansible.builtin.pip:
@@ -39,13 +41,14 @@
             --format json
           register: instances
 
-        - name: Live migrate instances
+        - name: "{{ 'Live migrate instances' if (nova_compute_drain_live_migration | bool) else 'Cold migrate instances' }}"
           ansible.builtin.command: >
             {{ venv }}/bin/openstack
-            --os-compute-api-version 2.25
+            {% if nova_compute_drain_live_migration | bool %}--os-compute-api-version 2.25{% endif %}
             server migrate
             {{ instance_uuid }}
-            --live-migration
+            {% if nova_compute_drain_live_migration | bool %}--live-migration{% endif %}
+            {% if nova_compute_drain_destination | default('', true) %}--host {{ nova_compute_drain_destination }}{% endif %}
             --wait
           loop: "{{ instances.stdout | from_json }}"
           loop_control:
@@ -54,7 +57,7 @@
             instance_uuid: "{{ item.ID | default }}"
           register: result
           failed_when:
-            - live_migration_fatal | bool
+            - migration_fatal | bool
             - result is failed
 
         - name: Query instances
@@ -71,5 +74,5 @@
             msg: >
               Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
           when:
-            - live_migration_fatal | bool
+            - migration_fatal | bool
             - instances.stdout | from_json | length > 0
