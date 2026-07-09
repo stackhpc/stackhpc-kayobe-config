@@ -221,6 +221,34 @@ cannot be unsealed with an expired certificate.
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-unseal-overcloud.yml
 
+Monitoring
+----------
+
+OpenBao monitoring is enabled by default when ``stackhpc_ca_secret_store`` is
+set to ``openbao``. This adds Prometheus scrape targets for the overcloud
+OpenBao instances, and alerting for sealed or unhealthy OpenBao nodes.
+
+Existing deployments must rerun the overcloud secret store deployment playbook
+so that the OpenBao configuration exposes the metrics unauthenticated for
+Prometheus:
+
+.. code-block:: bash
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-overcloud.yml
+
+Then reconfigure Prometheus and Grafana:
+
+.. code-block:: bash
+
+   kayobe overcloud service reconfigure -kt prometheus,grafana
+
+To opt out of OpenBao monitoring (Prometheus targets and alerts) while still
+using OpenBao for PKI, set the following in ``stackhpc-monitoring.yml``:
+
+.. code-block:: yaml
+
+   stackhpc_enable_openbao_monitoring: false
+
 Certificates generation
 =======================
 
