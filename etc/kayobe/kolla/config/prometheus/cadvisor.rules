@@ -7,7 +7,12 @@ groups:
   rules:
 
   - alert: ContainerKilled
-    expr: time() - container_last_seen > 61
+    # NOTE(Alex-Welsh) Neutron creates ephemeral containers in a range of formats:
+    # neutron_dhcp_agent_haproxy_qdhcp-05495095-6a7b-45e4-939c-3dcbc6af4505
+    # neutron_dhcp_agent_dnsmasq_qdhcp-05495095-6a7b-45e4-939c-3dcbc6af4505
+    # neutron_ovn_metadata_agent_haproxy_ovnmeta-05495095-6a7b-45e4-939c-3dcbc6af4505
+    # These are created/deleted regularly so can be ignored
+    expr: time() - container_last_seen{name!="", name!~"^neutron_.*_agent_.*-.*"} > 61
     for: 5m
     labels:
       severity: warning
