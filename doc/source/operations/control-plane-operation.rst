@@ -84,162 +84,53 @@ the monitoring service rather than the host being monitored).
 Control Plane Shutdown Procedure
 ================================
 
-Overview
---------
+For a shutdown of the whole cloud, see :doc:`shutdown-and-startup`.
 
-* Verify integrity of clustered components (RabbitMQ, Galera, Keepalived). They
-  should all report a healthy status.
-* Put node into maintenance mode in bifrost to prevent it from automatically
-  powering back on
-* Shutdown down nodes one at a time gracefully using systemctl poweroff
+Single-node maintenance
+-----------------------
 
-Controllers
------------
+Before shutting down a compute node, migrate its instances to another node.
+See :doc:`migrating-vm`.
 
-If you are restarting the controllers, it is best to do this one controller at
-a time to avoid the clustered components losing quorum.
+Before shutting down a controller, repeat the cluster checks from
+:ref:`shutdown-pre-flight`. Shut down only one controller at a time.
 
-Checking Galera state
-+++++++++++++++++++++
-
-On each controller perform the following:
+For a Bifrost-managed compute, controller, network or monitoring node, run on
+the seed VM:
 
 .. code-block:: console
 
-   [stack@controller0 ~]$ docker exec -i mariadb mysql -u root -p -e "SHOW STATUS LIKE 'wsrep_local_state_comment'"
-   Variable_name   Value
-   wsrep_local_state_comment       Synced
+   docker exec bifrost_deploy baremetal --os-cloud bifrost \
+       node maintenance set --reason maintenance <node>
+   docker exec bifrost_deploy baremetal --os-cloud bifrost \
+       node power off --soft <node>
 
-The password can be found using:
-
-.. code-block:: console
-
-   ansible-vault view $KAYOBE_CONFIG_PATH/kolla/passwords.yml \
-           --vault-password-file <Vault password file path> | grep ^database
-
-Checking RabbitMQ
-+++++++++++++++++
-
-RabbitMQ health is determined using the command ``rabbitmqctl cluster_status``:
+Wait for the node to reach ``power off``. To start it again:
 
 .. code-block:: console
 
-   [stack@controller0 ~]$ docker exec rabbitmq rabbitmqctl cluster_status
+   docker exec bifrost_deploy baremetal --os-cloud bifrost \
+       node power on <node>
 
-   Cluster status of node rabbit@controller0 ...
-   [{nodes,[{disc,['rabbit@controller0','rabbit@controller1',
-                   'rabbit@controller2']}]},
-    {running_nodes,['rabbit@controller1','rabbit@controller2',
-                    'rabbit@controller0']},
-    {cluster_name,<<"rabbit@controller2">>},
-    {partitions,[]},
-    {alarms,[{'rabbit@controller1',[]},
-             {'rabbit@controller2',[]},
-             {'rabbit@controller0',[]}]}]
-
-Checking Keepalived
-+++++++++++++++++++
-
-On (for example) three controllers:
+After the node is healthy, remove maintenance mode:
 
 .. code-block:: console
 
-   [stack@controller0 ~]$ docker logs keepalived
+   docker exec bifrost_deploy baremetal --os-cloud bifrost \
+       node maintenance unset <node>
 
-Two instances should show:
-
-.. code-block:: console
-
-   VRRP_Instance(kolla_internal_vip_51) Entering BACKUP STATE
-
-and the other:
+For a seed VM hosted on the seed hypervisor, run on the seed hypervisor to stop
+it:
 
 .. code-block:: console
 
-   VRRP_Instance(kolla_internal_vip_51) Entering MASTER STATE
+   virsh shutdown <seed VM>
 
-Ansible Control Host
---------------------
-
-The Ansible control host is not enrolled in bifrost. This node may run services
-such as the seed virtual machine which will need to be gracefully powered down.
-
-Compute
--------
-
-If you are shutting down a single hypervisor, to avoid down time to tenants it
-is advisable to migrate all of the instances to another machine. See
-:ref:`evacuating-all-instances`.
-
-Ceph
-----
-
-#. Check that the cluster is healthy (i.e. ``ceph -s``). Where possible, solve
-   or isolate any issues before the shutdown e.g. by marking unhealthy OSDs as
-   'out' in the cluster.
-
-#. Stop all clients. This includes
-
-   * **All** OpenStack VMs (if their storage is RBD-backed).
-
-   * CephFS mounts.
-
-   * Ceph-backed OpenStack services such as Glance, Cinder, Manila, and RGW/S3/Swift.
-
-#. Set the ``noout`` flag, so that the cluster does not attempt to redistribute
-   data when OSDs go down. Use the following command on a MON node:
-
-   .. code-block:: console
-
-      sudo cephadm shell -- ceph osd set noout
-
-#. Shut down all the nodes, with those holding MON services last.
-
-Note that if it is not desired for Ceph services to automatically start later
-with the operating system, extra steps need to be taken and are not described
-here.
-
-Shutting down the seed VM
--------------------------
+To start it again:
 
 .. code-block:: console
 
-   virsh shutdown <Seed hostname>
-
-.. _full-shutdown:
-
-Full shutdown
--------------
-
-In case a full shutdown of the system is required, we advise to use the
-following order:
-
-* Perform a graceful shutdown of all virtual machine instances
-* Shut down compute nodes
-* Shut down monitoring node (if separate from controllers)
-* Shut down network nodes (if separate from controllers)
-* Shut down controllers
-* Shut down Ceph nodes (if applicable)
-* Shut down seed VM
-* Shut down Ansible control host
-
-Full startup
--------------
-
-If the entire control plane is powered down, it is best to bring the nodes up
-in the reverse order of shutdown:
-
-* Power on Ansible control host
-* Power on seed VM (and other service VMs)
-* Power on Ceph nodes (if applicable)
-   * Where possible, start the nodes running MON services first.
-   * Make sure that all OSD services are back up and running. At this point
-     it is safe to unset  the ``noout`` cluster flag.
-* Power on controllers
-* Power on network nodes (if separate from controllers)
-* Power on monitoring node (if separate from controllers)
-* Power on compute nodes
-* Power on virtual machines
+   virsh start <seed VM>
 
 Rebooting a node
 ----------------
@@ -250,84 +141,6 @@ Example: Reboot all compute hosts apart from compute0:
 .. code-block:: console
 
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit 'compute:!compute0'
-
-References
-----------
-
-* https://galeracluster.com/library/training/tutorials/restarting-cluster.html
-
-Control Plane Power on Procedure
-================================
-
-Overview
---------
-
-* Remove the node from maintenance mode in bifrost
-* Bifrost should automatically power on the node via IPMI
-* Check that all docker containers are running
-* Check OpenSearch Dashboards for any messages with log level ERROR or equivalent
-
-Controllers
------------
-
-If all of the servers were shut down at the same time, it is necessary to run a
-script to recover the database once they have all started up. This can be done
-with the following command:
-
-.. code-block:: console
-
-   kayobe overcloud database recover
-
-Ansible Control Host
---------------------
-
-The Ansible control host is not enrolled in Bifrost and will have to be powered
-on manually.
-
-Seed VM
--------
-
-The seed VM (and any other service VM) should start automatically when the seed
-hypervisor is powered on. If it does not, it can be started with:
-
-.. code-block:: console
-
-   virsh start <Seed hostname>
-
-Full power on
--------------
-
-Follow the order in :ref:`full-shutdown`, but in reverse order.
-
-Shutting Down / Restarting Monitoring Services
-----------------------------------------------
-
-Shutting down
-+++++++++++++
-
-Log into the monitoring host(s):
-
-.. code-block:: console
-
-   ssh stack@monitoring0
-
-Stop all Docker containers:
-
-.. code-block:: console
-
-   monitoring0# for i in `docker ps -a`; do systemctl stop kolla-$i-container; done
-
-Shut down the node:
-
-.. code-block:: console
-
-   monitoring0# sudo shutdown -h
-
-Starting up
-+++++++++++
-
-The monitoring services containers will automatically start when the monitoring
-node is powered back on.
 
 Software Updates
 ================
