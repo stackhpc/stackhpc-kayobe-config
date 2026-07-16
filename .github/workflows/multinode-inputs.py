@@ -36,13 +36,11 @@ UBUNTU_JAMMY = OSRelease("ubuntu", "jammy", "ubuntu")
 UBUNTU_NOBLE = OSRelease("ubuntu", "noble", "ubuntu")
 # NOTE(upgrade): Add supported releases here.
 OPENSTACK_RELEASES = [
-    OpenStackRelease("2024.1", "2023.1", [ROCKY_9, UBUNTU_JAMMY]),
+    OpenStackRelease("2024.1", "", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
     OpenStackRelease("2025.1", "", [ROCKY_10]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
-VERSION_HIERARCHY = ["2023.1", "2024.1", "2025.1"]
-
 
 def main() -> None:
 
