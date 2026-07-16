@@ -29,8 +29,8 @@
 # -- StackHPC Kayobe configuration --------------------------------------
 # Variables to override
 
-current_series = "2025.1"
-previous_series = "2024.1"
+current_series = "2026.1"
+previous_series = "2025.1"
 branch = f"stackhpc/{current_series}"
 ceph_series = "squid"
 
