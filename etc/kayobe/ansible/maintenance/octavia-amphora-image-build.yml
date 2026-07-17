@@ -18,16 +18,17 @@
         packages_common:
           - debootstrap
           - git
-          - python3-venv
         packages_for_os_family:
           RedHat:
             - qemu-img
             - e2fsprogs
             - policycoreutils-python-utils
+            - python3-devel
             - yum-utils
           Debian:
             - qemu-utils
             - kpartx
+            - python3-venv
       ansible.builtin.package:
         name: "{{ packages_common + packages_for_os_family[ansible_facts.os_family] }}"
 
