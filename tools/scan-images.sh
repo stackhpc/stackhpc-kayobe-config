@@ -58,18 +58,21 @@ get_images() {
 # Generate ignored vulnerabilities file
 generate_trivy_ignore() {
   local imagename=$1
-  local global_vulnerabilities
-  global_vulnerabilities=$(yq .global_allowed_vulnerabilities[] src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
-  local image_vulnerabilities
-  image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  local family
+  family="${imagename%%_*}"
+  local global_vulnerabilities family_vulnerabilities image_vulnerabilities
 
-  truncate -s 0 .trivyignore  # ensure we start from a clean slate
-  for vulnerability in $global_vulnerabilities; do
-    echo "$vulnerability" >> .trivyignore
-  done
-  for vulnerability in $image_vulnerabilities; do
-    echo "$vulnerability" >> .trivyignore
-  done
+  global_vulnerabilities=$(yq '.global_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  if [[ "$family" != "$imagename" ]]; then
+    family_vulnerabilities=$(yq ".${family}_allowed_vulnerabilities[]" src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+  else
+    family_vulnerabilities=""
+  fi
+  image_vulnerabilities=$(yq ".${imagename}_allowed_vulnerabilities[]" src/kayobe-config/etc/kayobe/trivy/allowed-vulnerabilities.yml 2> /dev/null)
+
+  for vulnerability in $global_vulnerabilities $family_vulnerabilities $image_vulnerabilities; do
+    echo "$vulnerability"
+  done | sort -u > .trivyignore
 }
 
 # Put results into CSV

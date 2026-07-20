@@ -52,7 +52,7 @@ Download the setup script:
 
 .. parsed-literal::
 
-   curl -LO https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2025.1/etc/kayobe/environments/ci-tenks/automated-deployment.sh
+   curl -LO https://raw.githubusercontent.com/stackhpc/stackhpc-kayobe-config/stackhpc/2026.1/etc/kayobe/environments/ci-tenks/automated-deployment.sh
 
 Change the permissions on the script:
 
