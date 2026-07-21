@@ -107,11 +107,15 @@ jobs:
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
-              output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
+              if [[ ${{ inputs.overcloud }} == 'true' ]]; then
+                output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
+              fi
           fi
           if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
-              output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
+              if [[ ${{ inputs.overcloud }} == 'true' ]]; then
+                output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
+              fi
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
               output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
@@ -247,6 +251,10 @@ jobs:
           args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
           args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
+          # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+          # runner and dind containers.
+          args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
