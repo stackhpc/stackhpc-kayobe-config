@@ -7,17 +7,10 @@ on:
         description: Build Rocky Linux 9
         type: boolean
         default: true
-      rocky9-aarch64:
-        description: Build Rocky Linux 9 aarch64
+      rocky10:
+        description: Build Rocky Linux 10
         type: boolean
         default: true
-      runner_env:
-        description: Which cloud to run on?
-        type: choice
-        default: SMS Lab
-        options:
-          - SMS Lab
-          - Leafcloud
     secrets:
       KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
@@ -33,54 +26,70 @@ env:
   KAYOBE_ENVIRONMENT: ci-doca-builder
   KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 jobs:
-  runner-selection:
-    uses: ./.github/workflows/runner-selector.yml
-    with:
-      runner_env: ${{ inputs.runner_env }}
-
-  create-tag:
-    name: Create a tag to be added to resulting packages
+  workflow-setup:
+    name: Setup the workflow
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: ${{ inputs.runner_env }}
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
-    needs:
-      - runner-selection
+    runs-on: ubuntu-latest
     permissions: {}
     outputs:
       ofed_tag: ${{ steps.ofed_tag.outputs.ofed_tag }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Validate inputs
         run: |
           if [[
             "${{ inputs.rocky9 }}" == "false" &&
-            "${{ inputs.rocky9-aarch64 }}" == "false"
+            "${{ inputs.rocky10 }}" == "false"
           ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
 
-          if [[
-            "${{ inputs.rocky9-aarch64 }}" == "true" &&
-            "${{ inputs.runner_env }}" != "SMS Lab"
-          ]]; then
-            echo "aarch64 builds are only supported on SMS Lab"
-            exit 1
+      # Dynamically define job matrix.
+      # We need a separate matrix entry for each distribution, when the relevant input is true.
+      # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+      - name: Generate build matrix
+        id: set-matrix
+        run: |
+          output="{'distro': ["
+          if [[ ${{ inputs.rocky9 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': '9', 'arch': 'x86_64'},"
+              output+="{'name': 'rocky', 'release': '9', 'arch': 'aarch64'},"
           fi
+          if [[ ${{ inputs.rocky10 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': '10', 'arch': 'x86_64'},"
+              output+="{'name': 'rocky', 'release': '10', 'arch': 'aarch64'},"
+          fi
+          # remove trailing comma
+          output="${output%,}"
+          output+="]}"
+          echo "matrix=$output" | tee -a "$GITHUB_OUTPUT"
 
       - name: Generate OFED tag
         id: ofed_tag
         run: |
           echo "ofed_tag=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_OUTPUT
 
+  runner-selection:
+    name: Select runner
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    permissions: {}
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: SMS Lab
+
   overcloud-ofed-packages:
     name: Build OFED kernel modules
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.rocky9
-    environment: ${{ inputs.runner_env }}
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    environment: SMS Lab
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
-      - create-tag
+      - workflow-setup
     permissions: {}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.workflow-setup.outputs.matrix) }}
     steps:
       - name: Install Package dependencies
         run: |
@@ -126,21 +135,22 @@ jobs:
       - name: Output image tag
         id: image_tag
         run: |
-          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
+          arch=$([[ "${{ matrix.distro.arch }}" == "aarch64" ]] && echo "_aarch64" || echo "" )
+          echo image_tag=$(grep stackhpc_${{ matrix.distro.name }}_${{ matrix.distro.release }}_overcloud_host_image_version${arch}: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}/src/kayobe-config
 
-      # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
       - name: Output image name
         id: image_name
         run: |
-          echo image_name=overcloud-rocky-9-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
+          arch=$([[ "${{ matrix.distro.arch }}" == "aarch64" ]] && echo "-aarch64" || echo "" )
+          echo image_name=overcloud-${{ matrix.distro.name }}-${{ matrix.distro.release }}${arch}-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
 
       - name: Generate terraform.tfvars
         run: |
           cat << EOF > terraform.tfvars
           ssh_public_key = "id_rsa.pub"
           ssh_username = "cloud-user"
-          aio_vm_name = "skc-ofed-builder"
+          aio_vm_name = "${{ env.VM_NAME }}"
           aio_vm_image = "${{ env.VM_IMAGE }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
@@ -150,8 +160,9 @@ jobs:
           EOF
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
+          VM_NAME: "skc-ofed-builder-${{ github.run_id }}"
           VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
-          VM_TAGS: '["skc-ci-doca-builder", "PR=${{ github.event.number }}"]'
+          VM_TAGS: '["skc-ci-doca-builder"]'
 
       - name: Terraform Plan
         run: terraform plan
@@ -221,7 +232,10 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe control host bootstrap
+          kayobe control host bootstrap \
+          -e os_distribution="${{ matrix.distro.name }}" \
+          -e os_release="${{ matrix.distro.release }}" \
+          -e kolla_base_arch="${{ matrix.distro.arch }}"
 
       - name: Run growroot playbook
         run: |
@@ -236,8 +250,9 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe seed host configure --skip-tags network,docker,docker-registry \
-          -e os_distribution="rocky" \
-          -e os_release="9"
+          -e os_distribution="${{ matrix.distro.name }}" \
+          -e os_release="${{ matrix.distro.release }}" \
+          -e kolla_base_arch="${{ matrix.distro.arch }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -246,8 +261,9 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes" \
-          -e os_distribution="rocky" \
-          -e os_release="9"
+          -e os_distribution="${{ matrix.distro.name }}" \
+          -e os_release="${{ matrix.distro.release }}" \
+          -e kolla_base_arch="${{ matrix.distro.arch }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -256,7 +272,7 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/maintenance/reset-bls-entries.yml \
-          -e "reset_bls_host=ofed-builder"
+          -e reset_bls_host="ofed-builder"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
@@ -277,6 +293,8 @@ jobs:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Run OFED builder playbook
+        continue-on-error: true
+        id: build
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
@@ -284,253 +302,30 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
-      - name: Run OFED upload playbook
+      - name: Show build logs on failure (and fail job)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/push-ofed.yml \
-          -e "ofed_tag=${{ needs.create-tag.outputs.ofed_tag }}" \
-          -e os_release="9"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Destroy
-        run: terraform destroy -auto-approve
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: always()
-
-  overcloud-ofed-packages-aarch64:
-    name: Build aarch64 OFED kernel modules
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.rocky9-aarch64
-    environment: ${{ inputs.runner_env }}
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
-    needs:
-      - runner-selection
-      - create-tag
-    permissions: {}
-    steps:
-      - name: Install Package dependencies
-        run: |
-          sudo apt update &&
-          sudo apt install -y git unzip nodejs python3-pip python3-venv openssh-server openssh-client jq
-
-      - name: Start the SSH service
-        run: |
-          sudo /etc/init.d/ssh start
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          path: src/kayobe-config
-
-      - name: Install Kayobe
-        run: |
-          mkdir -p venvs &&
-          pushd venvs &&
-          python3 -m venv kayobe &&
-          source kayobe/bin/activate &&
-          pip install -U pip &&
-          pip install -r ../src/kayobe-config/requirements.txt
-
-      - name: Install terraform
-        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
-
-      - name: Initialise terraform
-        run: terraform init
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-
-      - name: Generate SSH keypair
-        run: ssh-keygen -f id_rsa -N ''
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-
-      - name: Generate clouds.yaml
-        run: |
-          cat << EOF > clouds.yaml
-          ${{ secrets.CLOUDS_YAML }}
-          EOF
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-
-      - name: Output image tag
-        id: image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version_aarch64: etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
-        working-directory: ${{ github.workspace }}/src/kayobe-config
-
-      # Use the image override if set, otherwise use overcloud-os_distribution-os_release-tag
-      - name: Output image name
-        id: image_name
-        run: |
-          echo image_name=overcloud-rocky-9-aarch64-${{ steps.image_tag.outputs.image_tag }} >> $GITHUB_OUTPUT
-
-      - name: Generate terraform.tfvars
-        run: |
-          cat << EOF > terraform.tfvars
-          ssh_public_key = "id_rsa.pub"
-          ssh_username = "cloud-user"
-          aio_vm_name = "skc-ofed-builder-arm64"
-          aio_vm_image = "${{ env.VM_IMAGE }}"
-          aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
-          aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
-          aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
-          aio_vm_interface = "ens3"
-          aio_vm_tags = ${{ env.VM_TAGS }}
-          EOF
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          VM_IMAGE: ${{ steps.image_name.outputs.image_name }}
-          VM_TAGS: '["skc-ci-doca-builder", "PR=${{ github.event.number }}"]'
-
-      - name: Terraform Plan
-        run: terraform plan
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-
-      - name: Terraform Apply
-        run: |
-          for attempt in $(seq 5); do
-              if terraform apply -auto-approve; then
-                  echo "Created infrastructure on attempt $attempt"
-                  exit 0
-              fi
-              echo "Failed to create infrastructure on attempt $attempt"
-              sleep 10
-              terraform destroy -auto-approve
-              sleep 60
-          done
-          echo "Failed to create infrastructure after $attempt attempts"
+          kayobe seed host command run --command "tail -200 /tmp/DOCA.*/logs/mlnx-ofa_kernel.log" --show-output &&
           exit 1
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-        env:
-          OS_CLOUD: ${{ vars.OS_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-
-      - name: Get Terraform outputs
-        id: tf_outputs
-        run: |
-          terraform output -json
-        working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
-
-      - name: Write Terraform outputs
-        run: |
-          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-doca-builder/tf-outputs.yml
-          ${{ steps.tf_outputs.outputs.stdout }}
-          EOF
-
-      - name: Write Terraform network config
-        run: |
-          cat << EOF > src/kayobe-config/etc/kayobe/environments/ci-doca-builder/tf-network-allocation.yml
-          ---
-          aio_ips:
-            builder: "{{ access_ip_v4.value }}"
-          EOF
-
-      - name: Write Terraform network interface config
-        run: |
-          mkdir -p src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed
-          rm -f src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
-          cat << EOF > src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/inventory/group_vars/seed/network-interfaces
-          admin_interface: "{{ access_interface.value }}"
-          aio_interface: "{{ access_interface.value }}"
-          EOF
-
-      - name: Manage SSH keys
-        run: |
-          mkdir -p ~/.ssh
-          touch ~/.ssh/authorized_keys
-          cat src/kayobe-config/terraform/aio/id_rsa.pub >> ~/.ssh/authorized_keys
-          cp src/kayobe-config/terraform/aio/id_rsa* ~/.ssh/
-
-      - name: Bootstrap the control host
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe control host bootstrap
-
-      - name: Run growroot playbook
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/growroot.yml
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Configure the seed host (Builder VM)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe seed host configure --skip-tags network,docker,docker-registry \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e kolla_base_arch="aarch64"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Run a distro-sync
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe seed host command run --become --command "dnf distro-sync --refresh --assumeyes" \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e kolla_base_arch="aarch64"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Reset BLS entries on the seed host
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/maintenance/reset-bls-entries.yml \
-          -e "reset_bls_host=ofed-builder"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Disable noexec in /var/tmp
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe seed host command run --become --command "sed -i 's/noexec,//g' /etc/fstab"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Reboot to apply the kernel update
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/maintenance/reboot.yml
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-
-      - name: Run OFED builder playbook
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
-          kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/build-ofed-rocky.yml \
-          -e kolla_base_arch="aarch64"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build.outcome == 'failure'
 
       - name: Run OFED upload playbook
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-doca-builder &&
           kayobe playbook run src/kayobe-config/etc/kayobe/ansible/tools/push-ofed.yml \
-          -e "ofed_tag=${{ needs.create-tag.outputs.ofed_tag }}" \
-          -e os_release="9"
-          -e kolla_base_arch="aarch64"
+          -e ofed_tag="${{ needs.workflow-setup.outputs.ofed_tag }}" \
+          -e os_release="${{ matrix.distro.release }}" \
+          -e os_arch="${{ matrix.distro.arch }}"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build.outcome == 'success'
 
       - name: Destroy
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -lock-timeout=300s
         working-directory: ${{ github.workspace }}/src/kayobe-config/terraform/aio
         env:
           OS_CLOUD: ${{ vars.OS_CLOUD }}

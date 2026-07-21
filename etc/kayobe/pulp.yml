@@ -324,15 +324,15 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - HighAvailability
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_x86_64_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/HighAvailability/x86_64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_x86_64_version }}"
     distribution_name: "rocky-10-highavailability-"
-    base_path: "rocky/10/highavailability/x86_64/os/"
+    base_path: "rocky/10/HighAvailability/x86_64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - HighAvailability - aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/highavailability/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/rocky/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/HighAvailability/aarch64/os/{{ stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version }}"
     distribution_name: "rocky-10-highavailability-aarch64-"
-    base_path: "rocky/10/highavailability/aarch64/os/"
+    base_path: "rocky/10/HighAvailability/aarch64/os/"
     required: "{{ stackhpc_pulp_sync_rocky_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Rocky Linux 10 - Security
@@ -440,17 +440,29 @@ stackhpc_pulp_rpm_repos:
     base_path: "mariadb-11.6/yum/rhel/10/aarch64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
-  - name: DOCA Online Repo 3.2.2 - RHEL 10
-    url: "{{ stackhpc_release_pulp_content_url }}/doca/3.2.2/rhel10/x86_64/{{ stackhpc_pulp_repo_doca_3_2_2_rhel10_x86_64_version }}"
-    distribution_name: "doca-3.2.2-rhel10-"
-    base_path: "doca/3.2.2/rhel10/x86_64/"
+  - name: DOCA Online Repo {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/doca/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10/x86_64/{{ stackhpc_pulp_repo_rhel10_doca_version }}"
+    distribution_name: "doca-{{ stackhpc_pulp_rocky_10_doca_version }}-rhel10-x86_64-"
+    base_path: "doca/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10/x86_64/"
     required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
-  - name: DOCA Online Repo 3.2.2 - RHEL 10 aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/doca/3.2.2/rhel10/aarch64/{{ stackhpc_pulp_repo_doca_3_2_2_rhel10_aarch64_version }}"
-    distribution_name: "doca-3.2.2-rhel10-aarch64-"
-    base_path: "doca/3.2.2/rhel10/aarch64/"
+  - name: DOCA Online Repo {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL 10 aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/doca/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10/aarch64/{{ stackhpc_pulp_repo_rhel10_doca_aarch64_version }}"
+    distribution_name: "doca-{{ stackhpc_pulp_rocky_10_doca_version }}-rhel10-aarch64-"
+    base_path: "doca/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10/aarch64/"
     required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: OFED Kernel modules for DOCA {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL 10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}
+    url: "{{ stackhpc_release_pulp_content_url }}/doca-modules/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/x86_64/{{ stackhpc_pulp_repo_rhel10_doca_modules_version }}"
+    distribution_name: "doca-modules-{{ stackhpc_pulp_rocky_10_doca_version }}-rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}-"
+    base_path: "doca-modules/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/x86_64/"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: OFED Kernel modules for DOCA {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL 10.{{ stackhpc_pulp_repo_rocky_10_minor_version }} aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/doca-modules/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/aarch64/{{ stackhpc_pulp_repo_rhel10_doca_modules_aarch64_version }}"
+    distribution_name: "doca-modules-{{ stackhpc_pulp_rocky_10_doca_version }}-rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}-aarch64-"
+    base_path: "doca-modules/{{ stackhpc_pulp_rocky_10_doca_version }}/rhel10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/aarch64/"
+    required: "{{ stackhpc_pulp_sync_ofed | bool and stackhpc_pulp_sync_el_10 | bool }}"
 
 # RPM repositories
 stackhpc_pulp_repository_rpm_repos: >-
@@ -629,15 +641,11 @@ stackhpc_pulp_images_kolla:
 
 # List of images for each base distribution which should not/cannot be built.
 stackhpc_kolla_unbuildable_images:
-  ubuntu-noble:
-    - valkey-server
-    - valkey-sentinel
-  rocky-9:
-    - valkey-server
-    - valkey-sentinel
+  rocky-9: []
   rocky-10:
     - redis
     - redis-sentinel
+  ubuntu-noble: []
 
 # Whitespace-separated list of regular expressions matching Kolla image names.
 # Usage is similar to kolla-build CLI arguments.

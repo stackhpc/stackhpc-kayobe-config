@@ -3,10 +3,6 @@
   any_errors_fatal: true
   gather_facts: true
   hosts: controllers
-  vars:
-    secret_store_bind_interface: "{{ internal_net_name | net_interface }}"
-    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
-    secret_store_api_address: "https://{{ secret_store_bind_address }}:8200"
   tasks:
     - name: Fail if secret store is already configured to be OpenBao
       ansible.builtin.fail:
@@ -39,7 +35,7 @@
   ansible.builtin.import_playbook: stackhpc.hashicorp.vault_bao_migration
   vars:
     vault_hosts_group: controllers
-    secret_store_bind_interface: "{{ internal_net_name | net_interface }}"
+    secret_store_bind_interface: "{{ internal_net_name | net_interface | replace('-', '_') }}"
     secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
     secret_store_api_address: "https://{{ secret_store_bind_address }}:8200"
     migration_consul_docker_image: "{{ overcloud_consul_docker_image }}"

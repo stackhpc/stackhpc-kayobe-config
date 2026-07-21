@@ -1,5 +1,5 @@
 ---
-- name: Enable GPU passthough
+- name: Enable GPU passthrough
   hosts: "{{ (gpu_group_map | default({})).keys() }}"
   vars:
     # This playbook will execute after nodes are deployed
@@ -26,7 +26,7 @@
       ansible.builtin.blockinfile:
         path: /etc/dracut.conf.d/gpu-vfio.conf
         block: |
-          add_drivers+="vfio vfio_iommu_type1 vfio_pci vfio_virqfd"
+          add_drivers+=" vfio vfio_iommu_type1 vfio_pci "
         owner: root
         group: root
         mode: 0660
@@ -43,7 +43,6 @@
           vfio
           vfio_iommu_type1
           vfio_pci
-          vfio_virqfd
         owner: root
         group: root
         mode: 0664
