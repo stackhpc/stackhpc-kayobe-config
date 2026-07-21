@@ -35,7 +35,7 @@ for the local Pulp instance.
 Prerequisites
 =============
 
-* A Rocky Linux 9 or Ubuntu Noble 24.04 host
+* A Rocky Linux 9, Rocky Linux 10, or Ubuntu Noble 24.04 host
 * 16GB of memory
 * 4 cores
 * No LVM
