@@ -84,11 +84,12 @@ Copy the relevant certificates into your kayobe-config:
 
 .. code-block:: console
 
+   mkdir -p ${KAYOBE_CONFIG_PATH}/environments/$KAYOBE_ENVIRONMENT/kolla/config/octavia
    cd ${KAYOBE_CONFIG_PATH}/environments/$KAYOBE_ENVIRONMENT/kolla/config/octavia
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client_ca.cert.pem .
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client.cert-and-key.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.cert.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.key.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.cert.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.key.pem .
 
 Encrypt any files containing the keys:
 
@@ -199,8 +200,8 @@ Copy the relevant certificates into your kayobe-config.
    cd ${KAYOBE_CONFIG_PATH}/environments/$KAYOBE_ENVIRONMENT/kolla/config/octavia
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client_ca.cert.pem .
    cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/client.cert-and-key.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.cert.pem .
-   cp $KOLLA_CONFIG_PATH/octavia-certificates/client_ca/server_ca.key.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.cert.pem .
+   cp $KOLLA_CONFIG_PATH/octavia-certificates/server_ca/server_ca.key.pem .
 
 Encrypt any files containing the keys.
 
