@@ -47,6 +47,11 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
         "haproxy",
         "neutron_tls_proxy",
     ],
+    "httpd": [
+        "ironic_http",
+        "keystone_httpd",
+        "letsencrypt_webserver",
+    ],
     "mariadb-server": [
         "mariadb",
         "mariabackup",
@@ -85,11 +90,10 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "cron": "common",
     "fluentd": "common",
     "glance_tls_proxy": "haproxy",
-    "hacluster_corosync": "openstack",
-    "hacluster_pacemaker": "openstack",
-    "hacluster_pacemaker_remote": "openstack",
+    "hacluster_pacemaker_remote": "hacluster",
     "heat_api_cfn": "heat",
     "ironic_neutron_agent": "neutron",
+    "ironic_pxe_filter": "ironic",
     "kolla_toolbox": "common",
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
@@ -98,7 +102,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "redis_sentinel": "openstack",
     "swift_object_expirer": "swift",
     "tgtd": "iscsi",
-    "valkey_sentinel": "openstack",
+    "valkey_sentinel": "openstack", # NOTE: Remove once https://review.opendev.org/c/openstack/kolla-ansible/+/998592 is backported to 2026.1
 }
 
 # List of supported base distributions and versions.
