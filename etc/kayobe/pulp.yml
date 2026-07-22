@@ -216,7 +216,7 @@ stackhpc_pulp_rpm_architectures:
 
 # Whether to sync Rocky Linux 10 packages.
 stackhpc_pulp_sync_rocky_10: "{{ os_distribution == 'rocky' and os_release == '10' }}"
-# Rocky 10 minor version number. Supported values: 1. Default is 1
+# Rocky 10 minor version number. Supported values: 2. Default is 2
 stackhpc_pulp_repo_rocky_10_minor_version: '2'
 # Rocky 10 Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml for the selected minor release.
@@ -428,16 +428,16 @@ stackhpc_pulp_rpm_repos:
     required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # Additional RHEL 10 repositories
-  - name: MariaDB 11.6 for RHEL 10
-    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.6/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_6_version }}"
-    distribution_name: "rhel-10-mariadb-11-6-"
-    base_path: "mariadb-11.6/yum/rhel/10/x86_64/"
+  - name: MariaDB 11.4 for RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.4/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_4_version }}"
+    distribution_name: "rhel-10-mariadb-11-4-"
+    base_path: "mariadb-11.4/yum/rhel/10/x86_64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
-  - name: MariaDB 11.6 for RHEL 10 - aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.6/yum/rhel/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_6_aarch64_version }}"
-    distribution_name: "rhel-10-mariadb-11-6-aarch64-"
-    base_path: "mariadb-11.6/yum/rhel/10/aarch64/"
+  - name: MariaDB 11.4 for RHEL 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.4/yum/rhel/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_4_aarch64_version }}"
+    distribution_name: "rhel-10-mariadb-11-4-aarch64-"
+    base_path: "mariadb-11.4/yum/rhel/10/aarch64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: DOCA Online Repo {{ stackhpc_pulp_rocky_10_doca_version }} - RHEL 10

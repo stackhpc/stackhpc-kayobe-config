@@ -103,7 +103,6 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 
 # List of supported base distributions and versions.
 SUPPORTED_BASE_DISTROS = [
-    "rocky-9",
     "rocky-10",
     "ubuntu-noble",
 ]
