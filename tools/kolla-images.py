@@ -85,11 +85,10 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "cron": "common",
     "fluentd": "common",
     "glance_tls_proxy": "haproxy",
-    "hacluster_corosync": "openstack",
-    "hacluster_pacemaker": "openstack",
-    "hacluster_pacemaker_remote": "openstack",
+    "hacluster_pacemaker_remote": "hacluster",
     "heat_api_cfn": "heat",
     "ironic_neutron_agent": "neutron",
+    "ironic_pxe_filter": "ironic",
     "kolla_toolbox": "common",
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
@@ -103,7 +102,6 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 
 # List of supported base distributions and versions.
 SUPPORTED_BASE_DISTROS = [
-    "rocky-9",
     "rocky-10",
     "ubuntu-noble",
 ]
