@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit review config file
+
+language: "en-GB"
+reviews:
+  # Options are "quiet", "chill", "assertive" in order of nitpickyness
+  profile: "assertive"
+  # Don't automatically approves PRs
+  request_changes_workflow: false
+  # Summarise the PR in a comment
+  high_level_summary: true
+  # Summary instructions
+  high_level_summary_instructions: "Give a brief description of the changes in 50 words or less."
+  # Put summary in a comment, don't override the PR description
+  high_level_summary_in_walkthrough: true
+  # Post a comment e.g. when a review is skipped, why so
+  review_status: true
+  # Posts extra details about the review  (ignored files, extra context used, suppressed comments, etc.)
+  review_details: true
+  # Don't suggest labels to apply to PRs
+  suggested_labels: false
+  # Don't suggest reviewers to add to the PR
+  suggested_reviewers: false
+  # Don't post a "fortune" message while the review is running
+  in_progress_fortune: false
+  # Don't include review comments to provide codegen instructions for AI agents.
+  enable_prompt_for_ai_agents: false
+
+  # Auto review configuration
+  auto_review:
+    # Review things
+    enabled: true
+    # Review draft PRs
+    drafts: true
+    # Don't auto re-review on push (Can always be re-triggered manually)
+    auto_incremental_review: false
+    # Branches to auto-review PRs against
+    # Regex should match branch such as:
+    #   stackhpc/2025.1
+    #   stackhpc-dev/2026.1
+    #   stackhpc-rc/2027.1
+    base_branches:
+      - ^stackhpc/202\d\.1$
+      - ^stackhpc-rc/202\d\.1$
+      - ^stackhpc-dev/202\d\.1$
+    # Ignore PRs by the CI bot
+    ignore_usernames:
+      - "stackhpc-ci"
+
+  finishing_touches:
+    # Don't try to add docstrings and unit tests
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+  pre_merge_checks:
+    # Ignore title/description checks
+    title:
+      mode: "off"
+    description:
+      mode: "off"
+
+# Additional context options
+knowledge_base:
+  # Auto link to other repos in the org
+  automatic_repository_linking: true
