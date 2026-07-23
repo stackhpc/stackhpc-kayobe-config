@@ -47,6 +47,11 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
         "haproxy",
         "neutron_tls_proxy",
     ],
+    "httpd": [
+        "ironic_http",
+        "keystone_httpd",
+        "letsencrypt_webserver",
+    ],
     "mariadb-server": [
         "mariadb",
         "mariabackup",
@@ -97,7 +102,6 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "redis_sentinel": "openstack",
     "swift_object_expirer": "swift",
     "tgtd": "iscsi",
-    "valkey_sentinel": "openstack",
 }
 
 # List of supported base distributions and versions.
