@@ -183,7 +183,7 @@ stackhpc_controller_firewalld_rules_template:
       - port: 5555/udp
         network: "{{ octavia_net_name | default() }}"
         state: enabled
-    enabled: "{{ kolla_enable_octavia | bool and octavia_net_name is not none }}"
+    enabled: "{{ kolla_enable_octavia | bool and (octavia_net_name | default('') != '') }}"
   # DHCP, Was required to create VMs at a customer site, need to work out condition
   - rules:
     - port: 67/udp
