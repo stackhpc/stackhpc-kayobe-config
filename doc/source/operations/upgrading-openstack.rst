@@ -54,6 +54,34 @@ Errors like this will be logged::
 A proper fix is still WIP, in the meantime these errors can be resolved with this script:
 `<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
 
+ProxySQL
+--------
+
+During OpenStack service upgrade from 2025.1 to 2026.1, database TLS with ProxySQL will be enabled.
+To make sure all certificate files that are required by ProxySQL are prepared, run the latest
+version of the playbook ``secret-store-generate-internal-tls.yml`` before running
+``kayobe overcloud service upgrade``.
+
+1. Ensure ``kolla_enable_proxysql`` is set to ``true`` in ``kolla.yml``.
+
+2. Run the playbook to generate ProxySQL certificates.
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-internal-tls.yml
+
+After running the playbook, check if the following files are generated.
+
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-ca.pem``
+
+If Kayobe environment is used, check these paths.
+
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-ca.pem``
+
 Security baseline
 =================
 
