@@ -3,10 +3,8 @@ name: Build OFED kernel modules
 on:
   workflow_dispatch:
     inputs:
-      rocky9:
-        description: Build Rocky Linux 9
-        type: boolean
-        default: true
+      # NOTE(Alex-Welsh): There's only one option here, but it's easier to
+      # extend in the future when there's more e.g. RL11, Ubuntu
       rocky10:
         description: Build Rocky Linux 10
         type: boolean
@@ -38,7 +36,6 @@ jobs:
       - name: Validate inputs
         run: |
           if [[
-            "${{ inputs.rocky9 }}" == "false" &&
             "${{ inputs.rocky10 }}" == "false"
           ]]; then
             echo "At least one distribution must be selected"
@@ -52,10 +49,6 @@ jobs:
         id: set-matrix
         run: |
           output="{'distro': ["
-          if [[ ${{ inputs.rocky9 }} == 'true' ]]; then
-              output+="{'name': 'rocky', 'release': '9', 'arch': 'x86_64'},"
-              output+="{'name': 'rocky', 'release': '9', 'arch': 'aarch64'},"
-          fi
           if [[ ${{ inputs.rocky10 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': '10', 'arch': 'x86_64'},"
               output+="{'name': 'rocky', 'release': '10', 'arch': 'aarch64'},"

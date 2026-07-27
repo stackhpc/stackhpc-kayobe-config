@@ -3,14 +3,6 @@ name: Promote IPA image
 on:
   workflow_dispatch:
     inputs:
-      rocky9:
-        description: Promote Rocky Linux 9
-        type: boolean
-        default: true
-      rocky9-aarch64:
-        description: Promote Rocky Linux 9 aarch64
-        type: boolean
-        default: true
       rocky10:
         description: Promote Rocky Linux 10
         type: boolean
@@ -38,8 +30,6 @@ jobs:
       - name: Validate inputs
         run: |
           if [[
-            "${{ inputs.rocky9 }}" == "false" &&
-            "${{ inputs.rocky9-aarch64 }}" == "false" &&
             "${{ inputs.rocky10 }}" == "false" &&
             "${{ inputs.rocky10-aarch64 }}" == "false" &&
             "${{ inputs.ubuntu-noble }}" == "false"
@@ -89,7 +79,7 @@ jobs:
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
 
-      - name: Promote Rocky Linux 9 IPA image artifact
+      - name: Promote Rocky Linux 10 IPA image artifact
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
@@ -97,24 +87,24 @@ jobs:
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
           -e artifact_type="ipa-images" \
           -e os_distribution='rocky' \
-          -e os_release='9'
+          -e os_release='10'
         env:
           ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9
+        if: inputs.rocky10
 
-      - name: Promote Rocky Linux 9 aarch64 IPA image artifact
+      - name: Promote Rocky Linux 10 aarch64 IPA image artifact
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-promote.yml \
-          -e repository_name="ipa-images-${{ steps.openstack_release.outputs.openstack_release }}-rocky-9-aarch64" \
-          -e pulp_base_path="ipa-images/${{ steps.openstack_release.outputs.openstack_release }}/rocky/9/aarch64"
+          -e repository_name="ipa-images-${{ steps.openstack_release.outputs.openstack_release }}-rocky-10-aarch64" \
+          -e pulp_base_path="ipa-images/${{ steps.openstack_release.outputs.openstack_release }}/rocky/10/aarch64"
         env:
           ARTIFACT_TAG: ${{ inputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9-aarch64
+        if: inputs.rocky10-aarch64
 
       - name: Promote Rocky Linux 10 IPA image artifact
         run: |

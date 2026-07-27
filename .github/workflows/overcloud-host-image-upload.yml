@@ -3,10 +3,6 @@ name: Upload overcloud host images
 on:
   workflow_dispatch:
     inputs:
-      rocky9:
-        description: Upload Rocky Linux 9
-        type: boolean
-        default: false
       rocky10:
         description: Upload Rocky Linux 10
         type: boolean
@@ -54,7 +50,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky9 }} == 'false' && ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -99,51 +95,6 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           pip install python-openstackclient -c https://raw.githubusercontent.com/stackhpc/requirements/refs/heads/stackhpc/${{ steps.openstack_release.outputs.openstack_release }}/upper-constraints.txt
-
-      - name: Output Rocky Linux 9 image tag
-        id: rocky_9_image_tag
-        run: |
-          echo image_tag=$(grep stackhpc_rocky_9_overcloud_host_image_version: src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml | awk '{print $2}') >> $GITHUB_OUTPUT
-
-      - name: Check if image exists already
-        id: rocky_9_image_exists
-        run: |
-          source venvs/kayobe/bin/activate &&
-          openstack image show \
-          overcloud-rocky-9-${{ steps.rocky_9_image_tag.outputs.image_tag }}
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        continue-on-error: true
-
-      - name: Download Rocky Linux 9 overcloud host image from Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ${{ inputs.kayobe-environment }} &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-host-image-download.yml \
-          -e os_distribution="rocky" \
-          -e os_release="9"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
-
-      - name: Upload Rocky Linux 9 overcloud host image to Cloud
-        run: |
-          source venvs/kayobe/bin/activate &&
-          openstack image create \
-          overcloud-rocky-9-${{ steps.rocky_9_image_tag.outputs.image_tag }} \
-          --container-format bare \
-          --disk-format qcow2 \
-          --file /tmp/rocky-9.qcow2 \
-          --private \
-          --progress
-        env:
-          OS_CLOUD: openstack
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.rocky_9_image_exists.outcome == 'failure'
 
       - name: Output Rocky Linux 10 image tag
         id: rocky_10_image_tag

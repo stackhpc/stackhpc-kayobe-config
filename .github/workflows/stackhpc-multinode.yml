@@ -14,9 +14,8 @@ name: Multinode
       host_os:
         description: Host OS
         type: choice
-        default: rocky-9
+        default: rocky-10
         options:
-          - rocky-9
           - rocky-10
           - ubuntu
       neutron_plugin:
@@ -99,9 +98,9 @@ jobs:
     uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
     with:
       multinode_name: ${{ inputs.multinode_name }}
-      os_distribution: ${{ inputs.host_os == 'ubuntu' && 'ubuntu' || 'rocky' }}
-      os_release: ${{ inputs.host_os == 'rocky-9' && '9' || inputs.host_os == 'rocky-10' && '10' || 'noble' }}
-      ssh_username: ${{ (inputs.host_os == 'rocky-9' || inputs.host_os == 'rocky-10') && 'cloud-user' || 'ubuntu' }}
+      os_distribution: ${{ inputs.host_os == 'rocky-10' && 'rocky' || 'ubuntu' }}
+      os_release: ${{ inputs.host_os == 'rocky-10' && '10' || 'noble' }}
+      ssh_username: ${{ inputs.host_os == 'rocky-10' && 'cloud-user' || 'ubuntu' }}
       neutron_plugin: ${{ inputs.neutron_plugin }}
       upgrade: ${{ inputs.upgrade }}
       break_on: ${{ inputs.break_on }}
