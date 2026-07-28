@@ -102,7 +102,6 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "redis_sentinel": "openstack",
     "swift_object_expirer": "swift",
     "tgtd": "iscsi",
-    "valkey_sentinel": "openstack", # NOTE: Remove once https://review.opendev.org/c/openstack/kolla-ansible/+/998592 is backported to 2026.1
 }
 
 # List of supported base distributions and versions.
