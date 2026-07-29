@@ -84,7 +84,7 @@ def get_branch(version: str) -> str:
 
 
 def get_tkm_version(version: str) -> str:
-    if version == "2025.1":
+    if version in ["2025.1", "2026.1"]:
         return "main"
     else:
         return get_branch(version)
