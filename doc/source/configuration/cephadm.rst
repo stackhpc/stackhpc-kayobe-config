@@ -510,6 +510,102 @@ RGWs to use the Kolla-deployed haproxy. Set the following in Kolla
 
   enable_ceph_rgw_loadbalancer: false
 
+
+SSE KMS
+~~~~~~~
+
+SSE KMS (Server-Side Encryption with Key Management Service) allows RADOS
+Gateway to encrypt object data at rest while keeping encryption keys managed
+outside Ceph in a dedicated KMS backend. When enabled, data is encrypted and
+decrypted transparently by RGW during write and read operations.
+
+SSE KMS should be implemented with the use of OpenStack Barbican. Steps for
+implementing are as follows;
+
+Create a dedicated project for RGW and Barbican integration.
+
+.. code:: bash
+
+  (openstack) $ openstack project create --domain default rgwcrypt
+
+Create a dedicated user for RGW to use when interacting with Barbican.
+
+.. code:: bash
+
+  (openstack) $ PASSWORD=$(openssl rand -base64 24); openstack user create --domain default --project rgwcrypt --password "$PASSWORD" rgwcrypt && echo "Password: $PASSWORD"
+
+Make sure to store the password in `secrets.yml` as `ceph_rgw_rgwcrypt_password`
+
+Provide rgwcrypt user the appropriate roles within the rgwcrypt project
+
+.. code:: bash
+
+  (openstack) $ openstack role add --user rgwcrypt --project rgwcrypt member
+  (openstack) $ openstack role add --user rgwcrypt --project rgwcrypt creator
+
+As the rgwcrypt user create a secret that will act as the symmetric AES-256 key. Make sure to make note of the UUID contained within the secret href.
+
+.. code:: bash
+
+  (openstack) $ openstack secret store \
+  --name rgw-sse-key \
+  --payload-content-type application/octet-stream \
+  --payload-content-encoding base64 \
+  --algorithm aes \
+  --bit-length 256 \
+  --mode cbc \
+  --secret-type symmetric \
+  --payload "$(openssl rand -base64 32)"
+
+In `cephadm.yml` ensure the following is present;
+
+.. code:: yaml
+
+  # Append the following to cephadm_commands_post:
+  - "config set client.rgw rgw_barbican_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:9311"
+  - "config set client.rgw rgw_keystone_barbican_domain Default"
+  - "config set client.rgw rgw_keystone_barbican_project rgwcrypt"
+  - "config set client.rgw rgw_keystone_barbican_password {{ (lookup('file', kayobe_env_config_path ~ '/kolla/passwords.yml') | from_yaml).ceph_rgw_rgwcrypt_password }}"
+  - "config set client.rgw rgw_keystone_barbican_user rgwcrypt"
+  - "config set client.rgw rgw_crypt_s3_kms_backend barbican"
+
+Either deploy Ceph with `cephadm.yml` playbook or if Ceph and RGW are already deployed then just run `cephadm-commands-post.yml`
+
+.. code:: bash
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml
+
+or
+
+.. code:: bash
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-commands-post.yml
+
+Make sure to schedule a restart RGW services using `ceph orch restart RGW_SERVICE_NAME`
+
+Attempt to upload a file using s3cmd with server side encryption requested.
+
+.. code:: bash
+
+  s3cmd put foo.txt s3://bar --server-side-encryption --server-side-encryption-kms-id=UUID-FROM-SECRET-HREF
+
+Use `s3cmd info` to check SSE is present
+
+.. code:: bash
+
+  s3cmd info s3://bar/foo.txt
+  s3://bar/foo.txt (object):
+    File size: 14
+    Last mod:  Fri, 29 May 2026 17:16:33 GMT
+    MIME type: text/plain
+    Storage:   STANDARD
+    MD5 sum:   3223203c6b8bf5e61123044f99eb7a8c
+    SSE:       aws:kms
+    Policy:    none
+    CORS:      none
+    ACL:       admin: FULL_CONTROL
+    x-amz-meta-s3cmd-attrs: atime:1780071502/ctime:1780071462/gid:1000/gname:cloud-user/md5:3223203c6b8bf5e61123044f99eb7a8c/mode:33188/mtime:1780071462/uid:1000/uname:cloud-user
+
 Deployment
 ==========
 
