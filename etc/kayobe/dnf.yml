@@ -48,30 +48,9 @@ dnf_custom_repos: "{{ stackhpc_dnf_repos[os_release] | default({}) if stackhpc_r
 # This is done by default for hosts in the overcloud group via a group_vars
 # file.
 stackhpc_dnf_repos:
-  "9": "{{ dnf_custom_repos_el9 | combine(dnf_custom_repos_rocky_9) | combine(dnf_custom_repos_elrepo_9 if dnf_install_elrepo_9 | bool else {}) | combine(dnf_custom_repos_doca_rocky_9 if dnf_install_doca | bool else {}) }}"
   "10": "{{ dnf_custom_repos_el10 | combine(dnf_custom_repos_rocky_10) | combine(dnf_custom_repos_elrepo_10 if dnf_install_elrepo_10 | bool else {}) | combine(dnf_custom_repos_doca_rocky_10 if dnf_install_doca | bool else {}) }}"
 
 # DOCA repositories
-dnf_custom_repos_doca_rocky_9:
-  doca:
-    baseurl: "{{ stackhpc_repo_rhel9_doca_url }}"
-    description: "DOCA Online Repo {{ stackhpc_pulp_rocky_9_doca_version }} - RHEL $releasever"
-    enabled: "{{ dnf_enable_doca | bool | default(false) }}"
-    priority: -1
-    file: doca
-    gpgcheck: no
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  doca-modules:
-    baseurl: "{{ stackhpc_repo_rhel9_doca_modules_url }}"
-    description: "OFED Kernel module repository for DOCA {{ stackhpc_pulp_rocky_9_doca_version }} - RHEL $releasever"
-    enabled: "{{ dnf_enable_doca_modules | bool | default(false) }}"
-    priority: -1
-    file: doca
-    gpgcheck: no
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-
 dnf_custom_repos_doca_rocky_10:
   doca:
     baseurl: "{{ stackhpc_repo_rhel10_doca_url }}"
@@ -92,27 +71,7 @@ dnf_custom_repos_doca_rocky_10:
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
-# Custom repositories shared between all RHEL 9/10 derivatives.
-dnf_custom_repos_el9:
-  epel:
-    baseurl: "{{ stackhpc_repo_epel_9_url }}"
-    description: "Extra Packages for Enterprise Linux $releasever - $basearch"
-    enabled: "{{ dnf_enable_epel | bool }}"
-    file: epel
-    gpgkey: "{{ dnf_epel_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  docker:
-    baseurl: "{{ stackhpc_repo_centos_stream_9_docker_url }}"
-    description: "Package repository for installing docker"
-    enabled: "{{ dnf_enable_docker | bool }}"
-    file: docker
-    gpgkey: "{{ dnf_docker_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-
+# Custom repositories shared between all RHEL 10 derivatives.
 dnf_custom_repos_el10:
   epel:
     baseurl: "{{ stackhpc_repo_epel_10_url }}"
@@ -133,20 +92,7 @@ dnf_custom_repos_el10:
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
-# ELRepo 9/10
-dnf_custom_repos_elrepo_9:
-  elrepo:
-    baseurl: "{{ stackhpc_repo_elrepo_9_url }}"
-    description: "ELRepo.org Community Enterprise Linux Repository - el9"
-    enabled: "{{ dnf_enable_elrepo_9 | bool }}"
-    file: elrepo
-    gpgkey:
-      - "{{ dnf_elrepo_gpg_key_url }}"
-      - "{{ dnf_elrepo_gpg_v2_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-
+# ELRepo 10
 dnf_custom_repos_elrepo_10:
   elrepo:
     baseurl: "{{ stackhpc_repo_elrepo_10_url }}"
@@ -158,59 +104,7 @@ dnf_custom_repos_elrepo_10:
     username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
     password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
 
-# Rocky 9/10 specific repositories
-dnf_custom_repos_rocky_9:
-  appstream:
-    baseurl: "{{ stackhpc_repo_rocky_9_appstream_url }}"
-    description: "Rocky Linux $releasever - AppStream"
-    file: rocky
-    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  baseos:
-    baseurl: "{{ stackhpc_repo_rocky_9_baseos_url }}"
-    description: "Rocky Linux $releasever - BaseOS"
-    file: rocky
-    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  crb:
-    baseurl: "{{ stackhpc_repo_rocky_9_crb_url }}"
-    description: "Rocky Linux $releasever - CRB"
-    file: rocky
-    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  extras:
-    baseurl: "{{ stackhpc_repo_rocky_9_extras_url }}"
-    description: "Rocky Linux $releasever - Extras"
-    file: rocky-extras
-    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  security:
-    baseurl: "{{ stackhpc_repo_rocky_9_security_url }}"
-    description: "Rocky Linux $releasever - Security"
-    enabled: "{{ dnf_enable_rocky_security | bool }}"
-    file: rocky-security
-    gpgkey: "{{ dnf_rocky_9_gpg_key_url }}"
-    gpgcheck: yes
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-  security-common:
-    baseurl: "{{ stackhpc_repo_rocky_9_sig_security_common_url }}"
-    description: "Rocky Linux $releasever - SIG Security Common"
-    file: Rocky-SIG-Security-Common
-    gpgkey: "{{ dnf_rocky_9_sig_security_gpg_key_url }}"
-    gpgcheck: yes
-    includepkgs: "openssh*"
-    username: "{{ stackhpc_repo_mirror_username | default(omit, true) }}"
-    password: "{{ stackhpc_repo_mirror_password | default(omit, true) }}"
-
+# Rocky 10 specific repositories
 dnf_custom_repos_rocky_10:
   appstream:
     baseurl: "{{ stackhpc_repo_rocky_10_appstream_url }}"
@@ -259,16 +153,12 @@ dnf_docker_gpg_key_url: "https://download.docker.com/linux/centos/gpg"
 dnf_elrepo_gpg_key_url: "https://www.elrepo.org/RPM-GPG-KEY-elrepo.org"
 dnf_elrepo_gpg_v2_key_url: "https://www.elrepo.org/RPM-GPG-KEY-v2-elrepo.org"
 dnf_epel_10_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10"
-dnf_epel_9_gpg_key_url: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9"
 dnf_rocky_10_gpg_key_url: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-10"
-dnf_rocky_9_gpg_key_url: "https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9"
-dnf_rocky_9_sig_security_gpg_key_url: "https://dl.rockylinux.org/pub/sig/9/security/x86_64/security-common/RPM-GPG-KEY-Rocky-SIG-Security"
 
 # Whether to enable EPEL repositories. This affects RedHat-based systems only.
 dnf_enable_epel: "{{ dnf_install_epel | bool }}"
 
-# Whether to enable the ELRepo repository. This affects RedHat-based, 9.x release systems only.
-dnf_enable_elrepo_9: "{{ dnf_install_elrepo_9 | bool }}"
+# Whether to enable the ELRepo repository.
 dnf_enable_elrepo_10: "{{ dnf_install_elrepo_10 | bool }}"
 
 # Whether to enable DOCA repositories. This affects RedHat-based systems only.
@@ -283,7 +173,6 @@ dnf_enable_doca_modules: "{{ dnf_install_doca | bool }}"
 
 # Whether to create a repo file for ELRepo. This affects RedHat-based
 # systems only.
-dnf_install_elrepo_9: false
 dnf_install_elrepo_10: false
 
 # Whether to enable docker dnf repo in stackhpc_dnf_repos

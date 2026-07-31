@@ -37,11 +37,9 @@ stackhpc_overcloud_dib_elements:
 # StackHPC overcloud DIB image environment variables.
 stackhpc_overcloud_dib_env_vars: "{{ stackhpc_overcloud_dib_env_vars_default | combine(stackhpc_overcloud_dib_env_vars_ark if stackhpc_build_overcloud_image_from_pulp_package_mirrors | bool else {}) }}"
 
-# By default the :9/:10 tag is used as base image. Here we want a specific minor version.
+# By default the :10 tag is used as base image. Here we want a specific minor version.
 stackhpc_overcloud_dib_container_opts_default: >-
-    {% if os_distribution == 'rocky' and os_release == '9' %}
-      --build-arg=ROCKY_VERSION=9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}
-    {% elif os_distribution == 'rocky' and os_release == '10' %}
+    {% if os_distribution == 'rocky' and os_release == '10' %}
       --build-arg=ROCKY_VERSION=10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}
     {% endif %}
 
@@ -71,9 +69,7 @@ stackhpc_overcloud_dib_env_vars_default:
 stackhpc_overcloud_dib_env_vars_ark:
   DIB_CONTAINERFILE_BUILDOPTS: >-
     --build-arg=ROCKY_USE_CUSTOM_DNF_MIRRORS=true
-    {% if os_distribution == 'rocky' and os_release == '9' %}
-      --build-arg=ROCKY_CUSTOM_DNF_MIRROR_URLS={{ [stackhpc_repo_rocky_9_baseos_url, stackhpc_repo_rocky_9_appstream_url] | join(',') }}
-    {% elif os_distribution == 'rocky' and os_release == '10' %}
+    {% if os_distribution == 'rocky' and os_release == '10' %}
       --build-arg=ROCKY_CUSTOM_DNF_MIRROR_URLS={{ [stackhpc_repo_rocky_10_baseos_url, stackhpc_repo_rocky_10_appstream_url] | join(',') }}
     {% endif %}
     {{ stackhpc_overcloud_dib_container_opts_default }}

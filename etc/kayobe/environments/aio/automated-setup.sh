@@ -217,7 +217,7 @@ run_tempest() {
     if ! sudo docker image inspect kayobe:latest > /dev/null 2>&1; then
         echo "Building Kayobe Automation image"
         sudo DOCKER_BUILDKIT=1 docker build \
-        --build-arg BASE_IMAGE=rockylinux/rockylinux:9 \
+        --build-arg BASE_IMAGE=rockylinux/rockylinux:10 \
         --build-arg USE_PYTHON_312=true \
         --file .automation/docker/kayobe/Dockerfile \
         --tag kayobe:latest \
