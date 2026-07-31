@@ -18,11 +18,6 @@ on:
         type: boolean
         required: false
         default: false
-      rocky-linux-9:
-        description: Build Rocky Linux 9 images?
-        type: boolean
-        required: false
-        default: false
       rocky-linux-10:
         description: Build Rocky Linux 10 images?
         type: boolean
@@ -71,7 +66,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.rocky-linux-10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+          if [[ ${{ inputs.rocky-linux-10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
             echo "At least one distribution must be selected"
             exit 1
           fi
@@ -100,17 +95,11 @@ jobs:
       # We need a separate matrix entry for each distribution, when the relevant input is true.
       # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
       # NOTE(bbezak): Both amd64 and aarch64 need to be built in a single workflow to create a multi-architecture manifest.
-      # For now include only RL9 in aarch64
+      # For now include only RL10 in aarch64
       - name: Generate build matrix
         id: set-matrix
         run: |
           output="{'distro': ["
-          if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
-              output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
-              if [[ ${{ inputs.overcloud }} == 'true' ]]; then
-                output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
-              fi
-          fi
           if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
               output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
               if [[ ${{ inputs.overcloud }} == 'true' ]]; then
@@ -363,7 +352,7 @@ jobs:
   create-manifests:
     # Only for Rocky Linux for now
     name: Create Multiarch Docker Manifests
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && (inputs.rocky-linux-9 || inputs.rocky-linux-10)
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-10
     runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
     permissions: {}
     needs:
