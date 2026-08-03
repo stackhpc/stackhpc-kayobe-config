@@ -594,3 +594,60 @@ However, end users of OpenStack will not be affected.
 Overcloud migration is HA migration and no downtime is expected.
 
 It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.
+
+.. _openbao-cluster-fix:
+
+Restoring OpenBao cluster
+=========================
+
+Users can use ``fix-openbao-overcloud.yml`` playbook to restore OpenBao cluster.
+
+.. code-block:: bash
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/fix-openbao-overcloud.yml
+
+.. warning::
+
+   The playbook ``secret-store-deploy-overcloud.yml`` assumes the first
+   controller to always be the leader node.
+   **DO NOT** run ``secret-store-deploy-overcloud.yml`` alone to fix the
+   cluster.
+   If the leader OpenBao node (First controller by default) fails, the leader
+   role gets transferred to one of the other controllers.
+   Without checking which node became the new leader, there is a risk of having
+   two separate clusters as a result.
+
+The ``fix-openbao-overcloud.yml`` playbook runs two playbooks
+
+1. ``get-current-raft-leader.yml``
+2. ``secret-store-deploy-overcloud.yml``
+
+Users can also follow this procedure to fix the OpenBao cluster manually.
+
+1. Use ``get-current-raft-leader.yml`` playbook to get the index of the leader
+   controller.
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/get-current-raft-leader.yml
+
+   The last task "Display the index of the Raft leader" will show the index of
+   the new leader controller in the controllers ansible group.
+
+   .. code-block:: bash
+
+      TASK [Display the index of the Raft leader] ***********************************
+      Monday 03 August 2026  12:15:02 +0000 (0:00:00.148)       0:00:07.797 *********
+      ok: [controller-01] =>
+          msg: 'raft_leader_index: 2'
+      ok: [controller-02] =>
+          msg: 'raft_leader_index: 2'
+      ok: [controller-03] =>
+          msg: 'raft_leader_index: 2'
+
+2. Run ``secret-store-deploy-overcloud.yml`` playbook with the index of the new
+   leader as an extra variable.
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-overcloud.yml -e raft_leader_index=2
