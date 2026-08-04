@@ -573,6 +573,10 @@ jobs:
           fi
           exit $rc
 
+      - name: Pause
+        run: sleep 3600
+        if: inputs.upgrade
+
       - name: Destroy
         run: terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/terraform/aio
