@@ -201,6 +201,21 @@ requires ``luminous`` or later. Similarly, the more recent `read balancer
 Run ``ceph features`` to identify client versions and consider setting the
 minimum to an appropriate value:
 
+.. warning::
+
+   Before raising ``require-min-compat-client``, verify that all clients support
+   the target release. This is particularly important for users accessing
+   CephFS via the kernel client (for example, Manila shares).
+
+   Kernel clients that encounter ``pg-upmap-primary`` entries will silently
+   route I/O to the wrong OSD, causing **I/O hangs** on the affected PGs.
+   Kernel clients that encounter CRUSH MSR rules will fail to compute a PG
+   mapping, causing **I/O errors**. Do not enable either feature while kernel
+   clients are present.
+
+   See the `upstream warning
+   <https://docs.ceph.com/en/latest/rados/operations/require-min-compat-client/>`__.
+
 .. code-block:: console
 
    ceph osd set-require-min-compat-client reef
