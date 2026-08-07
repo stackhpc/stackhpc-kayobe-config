@@ -65,7 +65,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4.8,
+        "w": 4,
         "x": 0,
         "y": 1
       },
@@ -83,9 +83,10 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.1.5",
+      "pluginVersion": "10.2.2",
       "repeat": "flavors",
       "repeatDirection": "h",
       "targets": [
@@ -410,6 +411,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -510,6 +512,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -636,6 +639,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -742,6 +746,7 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
@@ -835,7 +840,6 @@
   "refresh": "",
   "revision": 1,
   "schemaVersion": 38,
-  "style": "dark",
   "tags": [],
   "templating": {
     "list": [
@@ -843,7 +847,7 @@
         "current": {
           "selected": false,
           "text": "Prometheus",
-          "value": "Prometheus"
+          "value": "PBFA97CFB590B2093"
         },
         "description": "The prometheus datasource used for queries.",
         "hide": 0,
@@ -873,15 +877,44 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(openstack_free_capacity_by_flavor_total, flavor_name)",
+        "definition": "label_values(openstack_free_capacity_by_flavor_total{public=\"$is_public\"},flavor_name)",
         "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "flavors",
         "options": [],
         "query": {
-          "query": "label_values(openstack_free_capacity_by_flavor_total, flavor_name)",
-          "refId": "StandardVariableQuery"
+          "qryType": 1,
+          "query": "label_values(openstack_free_capacity_by_flavor_total{public=\"$is_public\"},flavor_name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "True",
+          "value": "True"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(openstack_free_capacity_by_flavor_total,public)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "public",
+        "multi": false,
+        "name": "is_public",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(openstack_free_capacity_by_flavor_total,public)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
         "regex": "",
