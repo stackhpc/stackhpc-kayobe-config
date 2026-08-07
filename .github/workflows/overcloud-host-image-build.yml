@@ -3,14 +3,6 @@ name: Build overcloud host images
 on:
   workflow_dispatch:
     inputs:
-      rocky9:
-        description: Build Rocky Linux 9
-        type: boolean
-        default: false
-      rocky9-aarch64:
-        description: Build Rocky Linux 9 aarch64
-        type: boolean
-        default: false
       rocky10:
         description: Build Rocky Linux 10
         type: boolean
@@ -74,8 +66,6 @@ jobs:
       - name: Validate inputs
         run: |
           if [[
-            "${{ inputs.rocky9 }}" == "false" &&
-            "${{ inputs.rocky9-aarch64 }}" == "false" &&
             "${{ inputs.rocky10 }}" == "false" &&
             "${{ inputs.rocky10-aarch64 }}" == "false" &&
             "${{ inputs.ubuntu-noble }}" == "false"
@@ -85,7 +75,7 @@ jobs:
           fi
 
           if [[
-            ("${{ inputs.rocky9-aarch64 }}" == "true" || "${{ inputs.rocky10-aarch64 }}" == "true") &&
+            ("${{ inputs.rocky10-aarch64 }}" == "true") &&
             "${{ inputs.runner_env }}" != "SMS Lab"
           ]]; then
             echo "aarch64 builds are only supported on SMS Lab"
@@ -106,7 +96,7 @@ jobs:
 
   overcloud-host-image-build:
     name: Build overcloud host images
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && (inputs.rocky9 || inputs.rocky10 || inputs.ubuntu-noble)
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && (inputs.rocky10 || inputs.ubuntu-noble)
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
@@ -269,74 +259,6 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
-      - name: Build a Rocky Linux 9 overcloud host image
-        id: build_rocky_9
-        continue-on-error: true
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e stackhpc_overcloud_dib_name=overcloud-rocky-9
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9
-
-      - name: Show last error logs
-        continue-on-error: true
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout" --show-output
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: steps.build_rocky_9.outcome == 'failure'
-
-      - name: Upload Rocky Linux 9 overcloud host image to current Dev Cloud (SMS/Leafcloud)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ needs.create-tag.outputs.host_image_tag }}
-        env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
-
-      - name: Upload Rocky Linux 9 overcloud host image to other Dev Cloud (Leafcloud/SMS)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-${{ needs.create-tag.outputs.host_image_tag }}
-        env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
-
-      - name: Upload Rocky Linux 9 overcloud host image to Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
-          -e file_regex="*.qcow2" \
-          -e os_distribution="rocky" \
-          -e os_release="9"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9 && steps.build_rocky_9.outcome == 'success'
-
       - name: Build a Rocky Linux 10 overcloud host image
         id: build_rocky_10
         continue-on-error: true
@@ -485,8 +407,7 @@ jobs:
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_rocky_9.outcome == 'failure' ||
-            steps.build_rocky_10.outcome == 'failure' ||
+        if: steps.build_rocky_10.outcome == 'failure' ||
             steps.build_ubuntu_noble.outcome == 'failure'
 
       - name: Upload logs artifact
@@ -511,7 +432,6 @@ jobs:
           update-overcloud-host-image-tags.yml \
           --repo stackhpc/stackhpc-kayobe-config \
           --ref $BRANCH_NAME \
-          $(if [[ "${{ inputs.rocky9 }}" == "true" ]]; then echo "-f rocky9_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi) \
           $(if [[ "${{ inputs.rocky10 }}" == "true" ]]; then echo "-f rocky10_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi) \
           $(if [[ "${{ inputs.ubuntu-noble }}" == "true" ]]; then echo "-f ubuntu_noble_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi)
         env:
@@ -549,7 +469,7 @@ jobs:
 
   overcloud-host-image-build-aarch64:
     name: Build aarch64 overcloud host images
-    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.runner_env == 'SMS Lab' && (inputs.rocky9-aarch64 || inputs.rocky10-aarch64)
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.runner_env == 'SMS Lab' && inputs.rocky10-aarch64
     environment: ${{ inputs.runner_env }}
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
@@ -712,64 +632,6 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
-      - name: Build a Rocky Linux 9 aarch64 overcloud host image
-        id: build_rocky_9_aarch64
-        continue-on-error: true
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe overcloud host image build --force-rebuild \
-          -e kolla_base_arch="aarch64" \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e stackhpc_overcloud_dib_name=overcloud-rocky-9
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9-aarch64
-
-      - name: Show last error logs
-        continue-on-error: true
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.stdout" --show-output
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: steps.build_rocky_9_aarch64.outcome == 'failure'
-
-      - name: Upload Rocky Linux 9 aarch64 overcloud host image to current Dev Cloud (SMS)
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-9/overcloud-rocky-9.qcow2" \
-          -e image_name=overcloud-rocky-9-aarch64-${{ needs.create-tag.outputs.host_image_tag }} \
-          -e '{"image_properties":{"hw_architecture":"aarch64"}}'
-        env:
-          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky9-aarch64 && steps.build_rocky_9_aarch64.outcome == 'success'
-
-      - name: Upload Rocky Linux 9 aarch64 overcloud host image to Ark
-        run: |
-          source venvs/kayobe/bin/activate &&
-          source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe playbook run \
-          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-rocky-9 \
-          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
-          -e artifact_type="kayobe-images" \
-          -e file_regex="*.qcow2" \
-          -e os_distribution="rocky" \
-          -e os_release="9" \
-          -e repository_name="kayobe-images-${{ needs.create-tag.outputs.openstack_release }}-rocky-9-aarch64" \
-          -e pulp_base_path="kayobe-images/${{ needs.create-tag.outputs.openstack_release }}/rocky/9/aarch64"
-        env:
-          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky9-aarch64 && steps.build_rocky_9_aarch64.outcome == 'success'
-
       - name: Build a Rocky Linux 10 aarch64 overcloud host image
         id: build_rocky_10_aarch64
         continue-on-error: true
@@ -840,8 +702,7 @@ jobs:
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_rocky_9_aarch64.outcome == 'failure' ||
-            steps.build_rocky_10_aarch64.outcome == 'failure'
+        if: steps.build_rocky_10_aarch64.outcome == 'failure'
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -865,7 +726,6 @@ jobs:
           update-overcloud-host-image-tags.yml \
           --repo stackhpc/stackhpc-kayobe-config \
           --ref $BRANCH_NAME \
-          $(if [[ "${{ inputs.rocky9-aarch64 }}" == "true" ]]; then echo "-f rocky9_aarch64_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi) \
           $(if [[ "${{ inputs.rocky10-aarch64 }}" == "true" ]]; then echo "-f rocky10_aarch64_tag=${{ needs.create-tag.outputs.host_image_tag }}"; fi)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
