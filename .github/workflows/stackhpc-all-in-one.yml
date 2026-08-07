@@ -77,12 +77,13 @@ jobs:
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
-      - name: Install Package
-        uses: ConorMacBride/install-package@main
-        with:
-          apt: git unzip nodejs openssh-client
+      - name: Install Package dependencies
+        run: |
+          sudo apt update &&
+          sudo apt install -y git unzip nodejs openssh-client
 
-      - uses: actions/checkout@v4
+      - name: Checkout config
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
            submodules: true
 
@@ -106,7 +107,7 @@ jobs:
           fi
 
       - name: Install terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
 
       - name: Initialise terraform
         run: terraform init
@@ -320,7 +321,7 @@ jobs:
         if: ${{ always() && steps.tf_apply.outcome == 'success' }}
 
       - name: Upload test result artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: test-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.neutron_plugin }}
           path: |
