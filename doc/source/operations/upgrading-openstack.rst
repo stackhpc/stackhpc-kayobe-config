@@ -72,12 +72,14 @@ version of the playbook ``secret-store-generate-internal-tls.yml`` before runnin
 
 After running the playbook, check if the following files are generated.
 
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/ca/root.crt``
 * ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-cert.pem``
 * ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-key.pem``
 * ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-ca.pem``
 
 If Kayobe environment is used, check these paths.
 
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/ca/root.crt``
 * ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-cert.pem``
 * ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-key.pem``
 * ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-ca.pem``
