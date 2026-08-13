@@ -32,9 +32,7 @@ deployment:
 
     stackhpc_ipa_arch: aarch64
 
-The supported values are ``amd64`` and ``aarch64``. Rocky Linux 9 uses
-``stackhpc_rocky_9_ipa_image_version`` for ``amd64`` and
-``stackhpc_rocky_9_ipa_image_version_aarch64`` for ``aarch64``, similarly
+The supported values are ``amd64`` and ``aarch64``.
 Rocky Linux 10 uses ``stackhpc_rocky_10_ipa_image_version`` for ``amd64`` and
 ``stackhpc_rocky_10_ipa_image_version_aarch64`` for ``aarch64``.
 
