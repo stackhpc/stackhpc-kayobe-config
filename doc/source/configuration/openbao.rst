@@ -224,13 +224,15 @@ cannot be unsealed with an expired certificate.
 Monitoring
 ----------
 
-OpenBao monitoring is enabled by default when ``stackhpc_ca_secret_store`` is
-set to ``openbao``. This adds Prometheus scrape targets for the overcloud
-OpenBao instances, and alerting for sealed or unhealthy OpenBao nodes.
+OpenBao monitoring is enabled when ``stackhpc_ca_secret_store`` is set to
+``openbao`` and ``stackhpc_openbao_enabled`` is ``true``. When both conditions
+are met, ``stackhpc_enable_openbao_monitoring`` defaults to ``true``. This adds
+Prometheus scrape targets for the overcloud OpenBao instances, alerting for
+sealed or unhealthy OpenBao nodes, and an OpenBao Grafana dashboard.
 
 Existing deployments must rerun the overcloud secret store deployment playbook
-so that the OpenBao configuration exposes the metrics unauthenticated for
-Prometheus:
+to expose metrics unauthenticated for Prometheus and set
+``stackhpc_openbao_enabled`` to ``true`` in ``stackhpc-monitoring.yml``:
 
 .. code-block:: bash
 
@@ -242,8 +244,7 @@ Then reconfigure Prometheus and Grafana:
 
    kayobe overcloud service reconfigure -kt prometheus,grafana
 
-To opt out of OpenBao monitoring (Prometheus targets and alerts) while still
-using OpenBao for PKI, set the following in ``stackhpc-monitoring.yml``:
+To disable OpenBao monitoring, set:
 
 .. code-block:: yaml
 

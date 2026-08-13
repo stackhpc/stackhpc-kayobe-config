@@ -3,11 +3,16 @@ features:
   - |
     Adds OpenBao monitoring support, including Prometheus scrape configuration,
     Prometheus alerts for sealed and unhealthy overcloud OpenBao nodes, and an
-    OpenBao Grafana dashboard. OpenBao monitoring can be disabled by setting
+    OpenBao Grafana dashboard. The overcloud OpenBao deployment playbook records
+    the deployment by setting ``stackhpc_openbao_enabled`` to ``true``. OpenBao
+    monitoring is enabled when OpenBao is both the configured CA secret store
+    and deployed on the overcloud. It can be disabled by setting
     ``stackhpc_enable_openbao_monitoring`` to ``false``.
 upgrade:
   - |
     Existing OpenBao deployments should rerun
     ``ansible/secret-store/secret-store-deploy-overcloud.yml`` to enable
-    unauthenticated metrics access,and then reconfigure Prometheus and Grafana
-    to apply the new scrape configuration, alerting rules, and dashboard.
+    unauthenticated metrics access, commit the resulting
+    ``stackhpc-monitoring.yml`` change, and then reconfigure Prometheus and
+    Grafana to apply the new scrape configuration, alerting rules, and
+    dashboard.
