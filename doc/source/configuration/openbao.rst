@@ -460,6 +460,30 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
 
+Rolling back to HTTP
+--------------------
+
+If the system needs a roll back from HTTPS to HTTP, you can set variable for each TLS to false
+then re run ``kayobe overcloud service deploy``.
+
+.. code-block::
+
+   kolla_enable_tls_external: false
+   kolla_enable_tls_internal: false
+   kolla_enable_tls_backend: false
+
+Once the role back is done, you may need to delete TLS related HAProxy rules at controller hosts.
+
+.. code-block::
+
+   # From controller hosts, remove TLS related HAProxy rules
+   cd /etc/kolla/haproxy/services.d
+   rm neutron-tls-proxy.cfg
+   rm glance-tls-proxy.cfg
+
+   # Then restart HAProxy
+   systemctl restart kolla-haproxy-container
+
 Pulp TLS
 ========
 
