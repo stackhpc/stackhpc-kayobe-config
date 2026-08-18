@@ -106,7 +106,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"})",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"}) by (system_id)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -189,7 +189,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} == 1)",
+          "expr": "count(redfish_system_power_state{group=\"$group\", job!=\"redfish-exporter-collectlog\"} == 1) by (system_id)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -327,7 +327,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "count(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\" } != 1)",
+          "expr": "count(max(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\" }) by (server) != 1)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -897,7 +897,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sort(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\"})",
+          "expr": "max(sort(redfish_chassis_health{group=\"$group\", job!=\"redfish-exporter-collectlog\"})) by (server)",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -3083,7 +3083,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "redfish_chassis_health{server=~\"$server\"}",
+          "expr": "round(avg(redfish_chassis_health{server=~\"$server\"}))",
           "format": "table",
           "instant": true,
           "interval": "",
