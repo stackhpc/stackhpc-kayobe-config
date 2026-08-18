@@ -114,7 +114,7 @@ seed_pulp_container_enabled: true
 
 seed_pulp_container:
   pulp:
-    image: quay.io/pulp/pulp
+    image: "quay.io/pulp/pulp"
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
     tag: "3.81.0"
@@ -123,8 +123,8 @@ seed_pulp_container:
     # s6-overlay-suexec starts as pid 1
     init: false
     env:
-      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
-      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min | string }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min | string }}"
       PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
