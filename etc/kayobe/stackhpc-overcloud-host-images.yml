@@ -12,12 +12,15 @@ stackhpc_build_overcloud_image_from_pulp_package_mirrors: false
 # Valid values are amd64 and aarch64.
 stackhpc_overcloud_host_image_arch: amd64
 
+# Desire block size of overcloud image.
+stackhpc_overcloud_host_image_block_size: 512
+
 # The overcloud host image source, defined by os_distribution, os_release,
 # and the current stable version.
 stackhpc_overcloud_host_image_url: "{{ stackhpc_release_pulp_content_url_with_auth }}/kayobe-images/\
                                     {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_overcloud_host_image_arch == 'aarch64' else '' }}/\
                                     {{ stackhpc_overcloud_host_image_version }}/\
-                                    overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
+                                    overcloud-{{ os_distribution }}-{{ os_release }}_{{ '4kb' if (stackhpc_overcloud_host_image_block_size | int) == 4096 else '512b' }}.qcow2"
 
 # Overcloud host image version tag selection
 stackhpc_overcloud_host_image_version: >-

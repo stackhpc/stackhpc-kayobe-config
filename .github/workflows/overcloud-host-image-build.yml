@@ -259,8 +259,8 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
-      - name: Build a Rocky Linux 10 overcloud host image
-        id: build_rocky_10
+      - name: Build a Rocky Linux 10 overcloud host image (512b block size)
+        id: build_rocky_10_512b
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
@@ -268,7 +268,8 @@ jobs:
           kayobe overcloud host image build --force-rebuild \
           -e os_distribution="rocky" \
           -e os_release="10" \
-          -e stackhpc_overcloud_dib_name=overcloud-rocky-10
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-10_512b \
+          -e stackhpc_overcloud_dib_block_size=512
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky10
@@ -278,46 +279,46 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.stdout" --show-output
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10_512b/overcloud-rocky-10_512b.stdout" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: steps.build_rocky_10.outcome == 'failure'
+        if: steps.build_rocky_10_512b.outcome == 'failure'
 
-      - name: Upload Rocky Linux 10 overcloud host image to current Dev Cloud (SMS/Leafcloud)
+      - name: Upload Rocky Linux 10 overcloud host image (512b) to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.qcow2" \
-          -e image_name=overcloud-rocky-10-${{ needs.create-tag.outputs.host_image_tag }}
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_512b/overcloud-rocky-10_512b.qcow2" \
+          -e image_name=overcloud-rocky-10_512b-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky10 && steps.build_rocky_10.outcome == 'success'
+        if: inputs.rocky10 && steps.build_rocky_10_512b.outcome == 'success'
 
-      - name: Upload Rocky Linux 10 overcloud host image to other Dev Cloud (Leafcloud/SMS)
+      - name: Upload Rocky Linux 10 overcloud host image (512b) to other Dev Cloud (Leafcloud/SMS)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.qcow2" \
-          -e image_name=overcloud-rocky-10-${{ needs.create-tag.outputs.host_image_tag }}
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_512b/overcloud-rocky-10_512b.qcow2" \
+          -e image_name=overcloud-rocky-10_512b-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
-        if: inputs.rocky10 && steps.build_rocky_10.outcome == 'success'
+        if: inputs.rocky10 && steps.build_rocky_10_512b.outcome == 'success'
 
-      - name: Upload Rocky Linux 10 overcloud host image to Ark
+      - name: Upload Rocky Linux 10 overcloud host image (512b) to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10 \
+          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10_512b \
           -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
@@ -325,10 +326,79 @@ jobs:
           -e os_release="10"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky10 && steps.build_rocky_10.outcome == 'success'
+        if: inputs.rocky10 && steps.build_rocky_10_512b.outcome == 'success'
 
-      - name: Build an Ubuntu Noble 24.04 overcloud host image
-        id: build_ubuntu_noble
+      - name: Build a Rocky Linux 10 overcloud host image (4kb block size)
+        id: build_rocky_10_4kb
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution="rocky" \
+          -e os_release="10" \
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-10_4kb \
+          -e stackhpc_overcloud_dib_block_size=4096
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10_4kb/overcloud-rocky-10_4kb.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_rocky_10_4kb.outcome == 'failure'
+
+      - name: Upload Rocky Linux 10 overcloud host image (4kb) to current Dev Cloud (SMS/Leafcloud)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_4kb/overcloud-rocky-10_4kb.qcow2" \
+          -e image_name=overcloud-rocky-10_4kb-${{ needs.create-tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.rocky10 && steps.build_rocky_10_4kb.outcome == 'success'
+
+      - name: Upload Rocky Linux 10 overcloud host image (4kb) to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_4kb/overcloud-rocky-10_4kb.qcow2" \
+          -e image_name=overcloud-rocky-10_4kb-${{ needs.create-tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
+        if: inputs.rocky10 && steps.build_rocky_10_4kb.outcome == 'success'
+
+      - name: Upload Rocky Linux 10 overcloud host image (4kb) to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10_4kb \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="rocky" \
+          -e os_release="10"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10 && steps.build_rocky_10_4kb.outcome == 'success'
+
+      - name: Build an Ubuntu Noble 24.04 overcloud host image (512b block size)
+        id: build_ubuntu_noble_512b
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
@@ -336,7 +406,8 @@ jobs:
           kayobe overcloud host image build --force-rebuild \
           -e os_distribution="ubuntu" \
           -e os_release="noble" \
-          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-noble
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-noble_512b \
+          -e stackhpc_overcloud_dib_block_size=512
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.ubuntu-noble
@@ -346,46 +417,46 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.stdout" --show-output
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-noble_512b/overcloud-ubuntu-noble_512b.stdout" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: steps.build_ubuntu_noble.outcome == 'failure'
+        if: steps.build_ubuntu_noble_512b.outcome == 'failure'
 
-      - name: Upload Ubuntu Noble overcloud host image to current Dev Cloud (SMS/Leafcloud)
+      - name: Upload Ubuntu Noble overcloud host image (512b) to current Dev Cloud (SMS/Leafcloud)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ needs.create-tag.outputs.host_image_tag }}
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble_512b/overcloud-ubuntu-noble_512b.qcow2" \
+          -e image_name=overcloud-ubuntu-noble_512b-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_512b.outcome == 'success'
 
-      - name: Upload Ubuntu Noble overcloud host image to other Dev Cloud (Leafcloud/SMS)
+      - name: Upload Ubuntu Noble overcloud host image (512b) to other Dev Cloud (Leafcloud/SMS)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble/overcloud-ubuntu-noble.qcow2" \
-          -e image_name=overcloud-ubuntu-noble-${{ needs.create-tag.outputs.host_image_tag }}
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble_512b/overcloud-ubuntu-noble_512b.qcow2" \
+          -e image_name=overcloud-ubuntu-noble_512b-${{ needs.create-tag.outputs.host_image_tag }}
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
-        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_512b.outcome == 'success'
 
-      - name: Upload Ubuntu Noble 24.04 overcloud host image to Ark
+      - name: Upload Ubuntu Noble 24.04 overcloud host image (512b) to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble_512b \
           -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
@@ -393,7 +464,76 @@ jobs:
           -e os_release="noble"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.ubuntu-noble && steps.build_ubuntu_noble.outcome == 'success'
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_512b.outcome == 'success'
+
+      - name: Build an Ubuntu Noble 24.04 overcloud host image (4kb block size)
+        id: build_ubuntu_noble_4kb
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble" \
+          -e stackhpc_overcloud_dib_name=overcloud-ubuntu-noble_4kb \
+          -e stackhpc_overcloud_dib_block_size=4096
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.ubuntu-noble
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-ubuntu-noble_4kb/overcloud-ubuntu-noble_4kb.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_ubuntu_noble_4kb.outcome == 'failure'
+
+      - name: Upload Ubuntu Noble overcloud host image (4kb) to current Dev Cloud (SMS/Leafcloud)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble_4kb/overcloud-ubuntu-noble_4kb.qcow2" \
+          -e image_name=overcloud-ubuntu-noble_4kb-${{ needs.create-tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_4kb.outcome == 'success'
+
+      - name: Upload Ubuntu Noble overcloud host image (4kb) to other Dev Cloud (Leafcloud/SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-ubuntu-noble_4kb/overcloud-ubuntu-noble_4kb.qcow2" \
+          -e image_name=overcloud-ubuntu-noble_4kb-${{ needs.create-tag.outputs.host_image_tag }}
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID_OTHER_CLOUD }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET_OTHER_CLOUD }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_4kb.outcome == 'success'
+
+      - name: Upload Ubuntu Noble 24.04 overcloud host image (4kb) to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-ubuntu-noble_4kb \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="ubuntu" \
+          -e os_release="noble"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.ubuntu-noble && steps.build_ubuntu_noble_4kb.outcome == 'success'
 
       - name: Copy logs back
         continue-on-error: true
@@ -407,8 +547,10 @@ jobs:
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_rocky_10.outcome == 'failure' ||
-            steps.build_ubuntu_noble.outcome == 'failure'
+        if: steps.build_rocky_10_512b.outcome == 'failure' ||
+            steps.build_rocky_10_4kb.outcome == 'failure' ||
+            steps.build_ubuntu_noble_512b.outcome == 'failure' ||
+            steps.build_ubuntu_noble_4kb.outcome == 'failure'
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -632,8 +774,8 @@ jobs:
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
-      - name: Build a Rocky Linux 10 aarch64 overcloud host image
-        id: build_rocky_10_aarch64
+      - name: Build a Rocky Linux 10 aarch64 overcloud host image (512b block size)
+        id: build_rocky_10_aarch64_512b
         continue-on-error: true
         run: |
           source venvs/kayobe/bin/activate &&
@@ -642,7 +784,8 @@ jobs:
           -e kolla_base_arch="aarch64" \
           -e os_distribution="rocky" \
           -e os_release="10" \
-          -e stackhpc_overcloud_dib_name=overcloud-rocky-10
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-10_512b \
+          -e stackhpc_overcloud_dib_block_size=512
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
         if: inputs.rocky10-aarch64
@@ -652,33 +795,33 @@ jobs:
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
-          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.stdout" --show-output
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10_512b/overcloud-rocky-10_512b.stdout" --show-output
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: steps.build_rocky_10_aarch64.outcome == 'failure'
+        if: steps.build_rocky_10_aarch64_512b.outcome == 'failure'
 
-      - name: Upload Rocky Linux 10 aarch64 overcloud host image to current Dev Cloud (SMS)
+      - name: Upload Rocky Linux 10 aarch64 overcloud host image (512b) to current Dev Cloud (SMS)
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
-          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10/overcloud-rocky-10.qcow2" \
-          -e image_name=overcloud-rocky-10-aarch64-${{ needs.create-tag.outputs.host_image_tag }} \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_512b/overcloud-rocky-10_512b.qcow2" \
+          -e image_name=overcloud-rocky-10-aarch64_512b-${{ needs.create-tag.outputs.host_image_tag }} \
           -e '{"image_properties":{"hw_architecture":"aarch64"}}'
         env:
           CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64.outcome == 'success'
+        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64_512b.outcome == 'success'
 
-      - name: Upload Rocky Linux 10 aarch64 overcloud host image to Ark
+      - name: Upload Rocky Linux 10 aarch64 overcloud host image (512b) to Ark
         run: |
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe playbook run \
           src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
-          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10 \
+          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10_512b \
           -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
           -e artifact_type="kayobe-images" \
           -e file_regex="*.qcow2" \
@@ -688,7 +831,66 @@ jobs:
           -e pulp_base_path="kayobe-images/${{ needs.create-tag.outputs.openstack_release }}/rocky/10/aarch64"
         env:
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
-        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64.outcome == 'success'
+        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64_512b.outcome == 'success'
+
+      - name: Build a Rocky Linux 10 aarch64 overcloud host image (4kb block size)
+        id: build_rocky_10_aarch64_4kb
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud host image build --force-rebuild \
+          -e kolla_base_arch="aarch64" \
+          -e os_distribution="rocky" \
+          -e os_release="10" \
+          -e stackhpc_overcloud_dib_name=overcloud-rocky-10_4kb \
+          -e stackhpc_overcloud_dib_block_size=4096
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10-aarch64
+
+      - name: Show last error logs
+        continue-on-error: true
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed host command run --command "tail -200 /opt/kayobe/images/overcloud-rocky-10_4kb/overcloud-rocky-10_4kb.stdout" --show-output
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: steps.build_rocky_10_aarch64_4kb.outcome == 'failure'
+
+      - name: Upload Rocky Linux 10 aarch64 overcloud host image (4kb) to current Dev Cloud (SMS)
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/tools/openstack-host-image-upload.yml \
+          -e local_image_path="/opt/kayobe/images/overcloud-rocky-10_4kb/overcloud-rocky-10_4kb.qcow2" \
+          -e image_name=overcloud-rocky-10-aarch64_4kb-${{ needs.create-tag.outputs.host_image_tag }} \
+          -e '{"image_properties":{"hw_architecture":"aarch64"}}'
+        env:
+          CLOUDS_YAML: ${{ secrets.CLOUDS_YAML }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64_4kb.outcome == 'success'
+
+      - name: Upload Rocky Linux 10 aarch64 overcloud host image (4kb) to Ark
+        run: |
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run \
+          src/kayobe-config/etc/kayobe/ansible/pulp/pulp-artifact-upload.yml \
+          -e artifact_path=/opt/kayobe/images/overcloud-rocky-10_4kb \
+          -e artifact_tag=${{ needs.create-tag.outputs.host_image_tag }} \
+          -e artifact_type="kayobe-images" \
+          -e file_regex="*.qcow2" \
+          -e os_distribution="rocky" \
+          -e os_release="10" \
+          -e repository_name="kayobe-images-${{ needs.create-tag.outputs.openstack_release }}-rocky-10-aarch64" \
+          -e pulp_base_path="kayobe-images/${{ needs.create-tag.outputs.openstack_release }}/rocky/10/aarch64"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.rocky10-aarch64 && steps.build_rocky_10_aarch64_4kb.outcome == 'success'
 
       - name: Copy logs back
         continue-on-error: true
@@ -702,7 +904,8 @@ jobs:
         run: |
           echo "Builds failed. See workflow artifacts for details." &&
           exit 1
-        if: steps.build_rocky_10_aarch64.outcome == 'failure'
+        if: steps.build_rocky_10_aarch64_512b.outcome == 'failure' ||
+            steps.build_rocky_10_aarch64_4kb.outcome == 'failure'
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

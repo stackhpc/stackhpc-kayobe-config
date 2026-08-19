@@ -57,12 +57,16 @@ stackhpc_overcloud_dib_env_vars_default:
   DIB_DRACUT_ENABLED_MODULES_DEFAULT_CONFIG: "{{ stackhpc_overcloud_dib_dracut_enabled_modules_default_config }}"
   DIB_RELEASE: "{{ overcloud_dib_os_release }}"
   DIB_SUDOERS_FILENAME: "no-fqdn"
+  DIB_BLOCK_SIZE: "{{ stackhpc_overcloud_dib_block_size }}"
   # Avoid DNS queries during sudo commands, since we might not always have working DNS.
   DIB_SUDOERS_CONFIG: |
     Defaults  !fqdn
   YUM: dnf
   # Workaround for stack user home ownership bug
   DIB_IMAGE_CACHE: "/tmp/yum"
+
+# Block size of image built. Some hardware now requires 4096 byte block size images. Defaults to 512.
+stackhpc_overcloud_dib_block_size: "{{ stackhpc_overcloud_host_image_block_size | default ('512') }}"
 
 # NB: use --build-arg to pass arguments only to the Dockerfile.
 # Use stackhpc_overcloud_dib_env_vars_ark keys directly for elements (eg 80-cleanup-and-restore-repofiles)
