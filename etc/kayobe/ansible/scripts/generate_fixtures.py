@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import re
+import subprocess
 from pySMART import DeviceList
 
 SMARTMON_ATTRS = {
@@ -63,6 +64,8 @@ SMARTMON_ATTRS = {
     "critical_comp_time",
 }
 
+SMARTCTL_PATH = "/usr/sbin/smartctl"
+
 DISK_INFO = {
     "name",
     "interface",
@@ -83,6 +86,15 @@ def camel_to_snake(name):
     Reference: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
     """
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+def canonical_device_path(name):
+    """
+    Ensure device name is returned as absolute /dev path for smartctl.
+
+    pySMART sometimes reports bare device names (e.g. 'nvme0'); smartctl on the
+    CLI expects the canonical /dev path, so normalise here to avoid surprises.
+    """
+    return name if name.startswith("/dev/") else f"/dev/{name}"
 
 def attrs_to_dict(obj, allowed_keys):
     """
@@ -105,14 +117,52 @@ def attrs_to_dict(obj, allowed_keys):
             attributes[name] = value
     return attributes
 
+def smartctl_json(device_name, device_type):
+    """
+    Execute smartctl -x -j for the given device and return the parsed JSON payload.
+
+    The goal is to mirror the exact data smartmon.py consumes at runtime so our
+    fixtures stay faithful to real hardware output.
+    """
+    if not device_name:
+        return {}
+
+    target = canonical_device_path(device_name)
+
+    cmd = [SMARTCTL_PATH, "-x", "-j", target]
+    if device_type and device_type.lower() not in (None, "", "nvme"):
+        cmd.insert(3, device_type)
+        cmd.insert(3, "-d")
+
+    try:
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            text=True,
+        )
+    except OSError:
+        return {}
+
+    if not result.stdout:
+        return {}
+
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {}
+
 for disk in DeviceList().devices:
 
     fixtures = {}
     disk_info = attrs_to_dict(disk, DISK_INFO)
     if_stats = attrs_to_dict(disk.if_attributes, SMARTMON_ATTRS)
+    smartctl_payload = smartctl_json(disk.name, disk.interface)
 
     fixtures["device_info"] = disk_info
     fixtures["if_attributes"] = if_stats
+    fixtures["smartctl"] = smartctl_payload
 
     print(f'Disk: {disk.name}: \n')
     print(json.dumps(fixtures, indent=2, default=str))

@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    The ``RabbitMQTooMuchReady`` prometheus alert has been removed.
+    
+    Since migrating to durable queues, messages are sent to all receivers, but
+    only one will respond. This results in high numbers of messages staying in
+    the ready state. The messages will be deleted automatically once they hit
+    resource limits. This appears to have no noticeable impact on CPU,
+    memory, or disk usage, so the alert is not needed.

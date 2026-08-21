@@ -35,163 +35,59 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-RabbitMQ 4.1
-------------
+Ironic Inspector removal
+------------------------
 
-StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-Existing transient queues must be migrated to durable queues with Queue Manager before upgrading to RabbitMQ 4.1.
-
-Queue Migration
-~~~~~~~~~~~~~~~
-
-.. warning::
-
-   This migration will stop all services using RabbitMQ and cause an extended
-   API outage while queues are migrated. It should only be performed in a
-   pre-agreed maintenance window.
-
-   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
-   make sure to pause reconciliation of all clusters before the API outage
-   window. See the `Azimuth docs
-   <https://azimuth-config.readthedocs.io/en/stable/operations/01-maintenance/>`__
-   for instructions.
-
-Set the following variables in your kolla globals file (i.e.
-$KAYOBE_CONFIG_PATH/kolla/globals.yml or $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml):
-
-.. code-block:: yaml
-
-   om_enable_queue_manager: true
-   om_enable_rabbitmq_quorum_queues: true
-   om_enable_rabbitmq_transient_quorum_queue: true
-   om_enable_rabbitmq_stream_fanout: true
-
-Then execute the migration script:
-
-.. code-block:: bash
-
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
-
-RabbitMQ Upgrade
-~~~~~~~~~~~~~~~~
-
-After queue migration is finished, upgrade RabbitMQ to 4.1 by running the following command
-
-.. code-block:: bash
-
-   kayobe kolla ansible run rabbitmq-upgrade 4.1
-
-.. note::
-
-   Until Kolla-Ansible bug `LP#2118452 <https://bugs.launchpad.net/kolla-ansible/+bug/2118452>`__
-   is fixed, add ``--kolla-skip-tags rabbitmq-version-check`` to avoid Kolla-Ansible incorrectly
-   stopping RabbitMQ upgrade from 3.13 to 4.1.
-
-stackhpc.linux collection
--------------------------
-
-The ``stackhpc.linux`` collection version has been bumped to 1.3.0. Note this
-version uses systemd to activate virtual functions. This change is restricted
-to the ``stackhpc.linux.sriov`` role, which is not used by Kayobe. If a custom
-playbook uses this role, you can retain existing behaviour by setting
-``sriov_numvfs_driver`` to ``udev``.
-
-Neutron driver defaults
------------------------
-
-The default Neutron ML2 type drivers and tenant network types now use
-``geneve`` instead of ``vxlan`` when OVN is enabled. This affects the
-``kolla_neutron_ml2_type_drivers`` and
-``kolla_neutron_ml2_tenant_network_types`` variables.
-
-Custom inspector_keep_ports
----------------------------
-
-If you have customized ``inspector_keep_ports``, ensure it is set to one of:
-``all``, ``present``, or ``added``. If you are relying on the previous
-behaviour you should set ironic_keep_ports to present.
-
-Seed/Infra VM boot firmware
----------------------------
-
-The default boot firmware for Seed and Infra VMs has changed from ``bios`` to
-``efi``. Set ``infra_vm_boot_firmware`` and ``seed_vm_boot_firmware`` to bios
-to retain existing behaviour.
-
-Prometheus MSteams
-------------------
-
-The ``prometheus-msteams`` integration in Kolla Ansible has been removed, users
-should switch to the `native
-<https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
-Prometheus Teams integration.
-
-Keystone LDAP TLS configuration
--------------------------------
-
-Either ``[ldap] tls_cacertfile`` or ``[ldap] tls_cacertdir`` must be configured
-if ``[ldap] use_tls`` is true or LDAP URL uses the ``ldaps://`` scheme. LDAP
-authentication will fail if this configuration is absent. See `upstream
-Keystone change <https://review.opendev.org/c/openstack/keystone/+/833876>`__
-for more details.
-
-OS Capacity exporter and dashboard enabled by default
------------------------------------------------------
-
-The OS Capacity exporter will automatically be deployed after the upgrade.
-During the upgrade, HAProxy config, Prometheus config  and Grafana dashboards
-will also be updated to use the exporter. If you want to disable this, change
-the following in ``kayobe-config/etc/kayobe/stackhpc-monitoring.yml``:
-
-.. code-block:: yaml
-
-   # Whether the OpenStack Capacity exporter is enabled.
-   # Enabling this flag will result in HAProxy configuration and Prometheus scrape
-   # targets being templated during deployment.
-   stackhpc_enable_os_capacity: false
-
-Prometheus blackbox exporter endpoints
---------------------------------------
-
-Many endpoints for the Blackbox exporter are now templated in the Kolla-Ansible
-group vars for the cloud. This means that the
-``prometheus_blackbox_exporter_endpoints`` variable can be removed from the
-environment's ``kolla/globals.yml`` file (if applicable) and the endpoints will
-fallback to the ones templated in the group vars. Backend endpoints such as
-`these <https://github.com/stackhpc/stackhpc-kayobe-config/blob/094c2e012a037309d103c08a71eb633fdeb214e7/etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter#L27-L64>`__
-are not yet templated by Kolla-Ansible.
-
-Additional endpoints may still be added.
-
-For Kolla-Ansible templating, use ``stackhpc_prometheus_blackbox_exporter_endpoints_custom``.
-For example:
-
-.. code-block:: yaml
-   :caption: ``etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter``
-
-   stackhpc_prometheus_blackbox_exporter_endpoints_custom:
-     - 'custom_service:http_2xx:{{ public_protocol }}://{{ external_fqdn | put_address_in_context('url') }}:{{ custom_serivce_port }}'
-
-Alternatively, for Kayobe templating, use the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
-For example:
-
-.. code-block:: yaml
-   :caption: ``kolla/globals.yml``
-
-   prometheus_blackbox_exporter_endpoints_kayobe:
-      - endpoints:
-         - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
-      enabled: "{{ seed_pulp_container_enabled | bool }}"
+The separate Ironic Inspector service was replaced by the Ironic built-in inspector.
 
 Known issues
 ============
 
-* None so far!
+RabbitMQ
+--------
+
+After some upgrades, it has been seen that RabbitMQ streams do not have replicas across all RabbitMQ nodes.
+Errors like this will be logged::
+
+   Basic.consume: (406) PRECONDITION_FAILED - stream queue 'compute_fanout' in vhost '/' does not have a running replica on the local node
+
+A proper fix is still WIP, in the meantime these errors can be resolved with this script:
+`<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
+
+ProxySQL
+--------
+
+During OpenStack service upgrade from 2025.1 to 2026.1, database TLS with ProxySQL will be enabled.
+To make sure all certificate files that are required by ProxySQL are prepared, run the latest
+version of the playbook ``secret-store-generate-internal-tls.yml`` before running
+``kayobe overcloud service upgrade``.
+
+1. Ensure ``kolla_enable_proxysql`` is set to ``true`` in ``kolla.yml``.
+
+2. Run the playbook to generate ProxySQL certificates.
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-internal-tls.yml
+
+After running the playbook, check if the following files are generated.
+
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/ca/root.crt``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-ca.pem``
+
+If Kayobe environment is used, check these paths.
+
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/ca/root.crt``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-ca.pem``
 
 Security baseline
 =================
 
-As part of the 2025.1 Epoxy release we are looking to improve the security
+As part of the 2026.1 Gazpacho release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
 been done, they should be completed before the upgrade begins.
 
@@ -231,14 +127,6 @@ suggestions:
   ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
   generally be found in the documentation of each project. For example, Nova
   policy: https://docs.openstack.org/nova/latest/configuration/policy.html
-
-Ubuntu Noble migration
-----------------------
-
-Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
-must be migrated to Ubuntu 24.04 before upgrading OpenStack services. The
-upgrade process is currently a work in progress.
-.. TODO: Add link to another page describing how to migrate
 
 Preparation
 ===========
@@ -359,10 +247,11 @@ Upgrading local Kayobe environment
 
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
-release in case it is necessary before the uprade begins.
+release in case it is necessary before the upgrade begins.
 
-In general it is safer to rebuild an environment than upgrade, but for
-completeness the following shows how to upgrade an existing local Kayobe
+In general it is safer to rebuild an environment than upgrade. You can follow
+instructions from the :ref:`beokay` documentation.
+But for completeness the following shows how to upgrade an existing local Kayobe
 environment.
 
 Change to the Kayobe configuration directory:
@@ -422,6 +311,19 @@ To upgrade the Ansible control host:
 
    kayobe control host upgrade
 
+Upgrading Pulp
+--------------
+
+The local Pulp server needs to be upgraded before synchronising 2026.1
+container images. The following command will deploy the latest Pulp container
+without upgrading Bifrost:
+
+.. code-block:: console
+
+   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+
+Note that this will also update any other enabled seed containers, such as Squid.
+
 Syncing Release Train artifacts
 -------------------------------
 
@@ -434,22 +336,22 @@ To sync host packages:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 Once the host package content has been tested in a test/staging environment, it
 may be promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 To sync container images:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 Build locally customised container images
 -----------------------------------------
@@ -575,7 +477,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed-hypervisor
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed-hypervisor
 
 Upgrading Host Services
 -----------------------
@@ -641,7 +543,7 @@ If the kernel has been upgraded, reboot the seed to pick up the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l seed
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l seed
 
 Verify that Bifrost, Ironic and Inspector are running as expected:
 
@@ -779,7 +681,7 @@ change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l wazuh-manager
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l wazuh-manager
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -817,7 +719,7 @@ Run the following playbook to update Wazuh Manager services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml
 
 Verify that Wazuh Manager is functioning correctly by :ref:`logging into the
 Wazuh UI <wazuh-verification>`.
@@ -839,7 +741,7 @@ Run the following playbook to update Wazuh Agent services and configuration:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml
 
 Verify that the agents have conncted to Wazuh Manager correctly by
 :ref:`logging into the Wazuh UI <wazuh-verification>`.
@@ -873,7 +775,7 @@ or powered off:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-{disable,drain}.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-{disable,drain}.yml --limit <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
@@ -895,7 +797,7 @@ the change:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 .. warning::
 
@@ -906,10 +808,10 @@ the change:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host package update --packages "*" --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are
@@ -919,7 +821,7 @@ If the host is a hypervisor, enable the Nova compute service.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/nova-compute-enable.yml --limit <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-enable.yml --limit <host>
 
 If any VMs were powered off, they may now be powered back on.
 
@@ -975,9 +877,9 @@ least start with a small number of hosts:
 
    .. code-block:: console
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
       kayobe overcloud host configure --limit <host>
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml --limit <host>
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml --limit <host>
 
    **Always** reconfigure hosts in small batches or one-by-one. Check the Ceph
    state after each host configuration. Ensure all warnings and errors are

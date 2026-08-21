@@ -1,0 +1,18 @@
+---
+- name: Sync Pulp repositories
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Sync Pulp repositories
+      ansible.builtin.import_role:
+        name: stackhpc.pulp.pulp_repository
+      # NOTE: use intermediate variable to avoid syncing containers.
+      vars:
+        pulp_repository_deb_repos: "{{ stackhpc_pulp_repository_deb_repos | selectattr('required') }}"
+        pulp_repository_rpm_repos: "{{ stackhpc_pulp_repository_rpm_repos | selectattr('required') }}"
+      environment: >-
+        {{
+          {
+            'REQUESTS_CA_BUNDLE': stackhpc_requests_ca_bundle
+          } if pulp_enable_tls else {}
+        }}

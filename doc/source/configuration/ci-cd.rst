@@ -133,7 +133,7 @@ Runner Deployment
 
 7. If the host is an actual Infra VM then please refer to upstream :kayobe-doc:`Infrastructure VMs <configuration/reference/infra-vms.html>` documentation for additional configuration and steps.
 
-8. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-github-runner.yml`
+8. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/deploy-github-runner.yml`
 
 9. Check runners have registered properly by visiting the repository's :code:`Action` tab -> :code:`Runners` -> :code:`Self-hosted runners`
 
@@ -145,7 +145,7 @@ Workflow Deployment
 
 1. Edit :code:`$KAYOBE_CONFIG_PATH/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
-2. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/write-github-workflows.yml`
+2. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/write-github-workflows.yml`
 
 3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
 
@@ -287,7 +287,7 @@ Runner Deployment
 
     kayobe infra vm host configure --limit gitlab-runner-01
 
-9. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-gitlab-runner.yml`
+9. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/deploy-gitlab-runner.yml`
 
 10. Check runners have registered properly by visiting the repository's :code:`CI/CD` tab -> :code:`Runners`
 
@@ -304,7 +304,7 @@ However, if you have a single host that is shared between environments then Open
 
 .. code-block:: bash
 
-    kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deploy-openbao-kayobe-automation.yml
+    kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/deploy-openbao-kayobe-automation.yml
 
 .. note::
 
@@ -370,7 +370,7 @@ Following the instructions in the documentation will allow you to customise the 
 If using multiple environments ensure that :code:`gitlab_kayobe_environments` is updated to reflect all environments present in the deployment.
 Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors.
 
-2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/write-gitlab-pipelines.yml`
+2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/write-gitlab-pipelines.yml`
 
 3. Commit and push all newly generated pipelines found under root of the repository.
 

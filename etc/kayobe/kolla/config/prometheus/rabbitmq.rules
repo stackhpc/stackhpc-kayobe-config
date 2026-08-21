@@ -20,7 +20,7 @@ groups:
     annotations:
       description: RabbitMQ consumers message consumption speed is low on {{ $labels.instance }}
   - alert: RabbitMQNodeNotDistributed
-    expr: erlang_vm_dist_node_state < {% endraw %}{{ alertmanager_number_of_rabbitmq_nodes }}{% raw %}
+    expr: erlang_vm_dist_node_state < 3
     for: 5m
     labels:
       severity: critical
@@ -41,13 +41,6 @@ groups:
       severity: warning
     annotations:
       description: RabbitMQ file descriptors usage on {{ $labels.instance }}
-  - alert: RabbitMQTooMuchReady
-    expr: rabbitmq_queue_messages_ready > 100
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      description: RabbitMQ too much ready on {{ $labels.instance }}
   - alert: RabbitMQTooMuchUnack
     expr: rabbitmq_queue_messages_unacked > 100
     for: 1m

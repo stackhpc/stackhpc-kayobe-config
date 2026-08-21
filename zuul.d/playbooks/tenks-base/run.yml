@@ -1,0 +1,17 @@
+---
+- hosts: all
+  vars:
+    script_path: "/home/zuul/src/github.com/stackhpc/stackhpc-kayobe-config/etc/kayobe/environments/ci-tenks/automated-deployment.sh"
+  tasks:
+    - name: Write out vault password file
+      copy:
+        content: "{{ tenks_vault_password.vault_pw | trim }}"
+        dest: "~/vault-pw"
+      no_log: true
+
+    - name: Run deploy script
+      environment:
+        KAYOBE_CONFIG_REF: "{{ zuul.patchset }}"
+      shell:
+        cmd: "{{ script_path }}"
+        executable: /bin/bash

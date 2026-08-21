@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Script used by the Image build workflow to build & push multiarch manifests.
 
-set -ex
+set -o errexit
+set -o xtrace
+set -o pipefail
 
 mkdir -p logs
 images=$(cat all-pushed-images.txt | sort | uniq)
 
 # Filter out Ubuntu and Rocky Bifrost images
 manifest_images=$(echo "$images" \
-  | grep -E '.*-(amd64|aarch64)$' \
-  | sed -E 's/-(amd64|aarch64)$//' \
+  | sed -nE 's/-(amd64|aarch64)$//p' \
   | sort | uniq)
 
 if [ -z "$manifest_images" ]; then
@@ -26,10 +27,10 @@ for base_image in $manifest_images; do
       arch_images="$arch_images $arch_image"
     fi
   done
+
   if [ -n "$arch_images" ]; then
     echo "Creating manifest for $base_image with images:$arch_images" | tee -a logs/manifest-creation.log
-    docker manifest create "$base_image" $arch_images | tee -a logs/manifest-creation.log
-    docker manifest push "$base_image" | tee -a logs/manifest-creation.log
+    docker buildx imagetools create -t "$base_image" $arch_images | tee -a logs/manifest-creation.log
   else
     echo "No images found for $base_image, skipping." | tee -a logs/manifest-creation.log
   fi

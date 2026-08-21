@@ -20,11 +20,17 @@ in ``etc/kayobe/stackhpc-overcloud-host-images.yml``.
 Currently, images exist for the following operating systems:
 
 * Rocky Linux 9
+* Rocky Linux 10
 * Ubuntu Noble 24.04
 
 The image to download is selected automatically using the ``os_distribution``
 and ``os_release`` variables. These images are versioned and a variable for
 each OS is stored in ``pulp-host-image-versions.yml``.
+
+The architecture of the Rocky Linux release train overcloud host images can be
+selected using ``stackhpc_overcloud_host_image_arch``. Valid values are
+``amd64`` and ``aarch64``. Rocky Linux 9 and Rocky Linux 10 ``aarch64`` images
+use separate version variables in ``pulp-host-image-versions.yml``.
 
 This content requires the same set of credentials as is used for other
 release train content.

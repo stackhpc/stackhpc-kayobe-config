@@ -9,6 +9,37 @@ The Ceph release series is not strictly dependent upon the StackHPC OpenStack
 release, however this configuration does define a default Ceph release series
 and container image tag. The default release series is currently |ceph_series|.
 
+Known issues
+============
+
+Slow ceph-volume activate
+-------------------------
+
+A large slowdown of ``ceph-volume activate`` has been reported on version
+19.2.3 (`bug 73107 <https://tracker.ceph.com/issues/73107>`__).
+
+On Reef, a host with 15 OSDs was measured taking around 10 seconds to activate
+all OSDs while exiting maintenance mode. On Squid 19.2.3, a host with 22 OSDs
+was measured taking 2 minutes to activate all OSDs.
+
+This bug is resolved in 19.2.4.
+
+Elastic Shared Blob crash
+-------------------------
+
+In Ceph Squid versions prior to 19.2.4, there is a `known bug causing OSDs
+created on Squid to crash <https://tracker.ceph.com/issues/70390>`__. To avoid
+it, `disable the Elastic Shared Blob feature
+<https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before any
+OSDs are created or replaced:
+
+.. code-block:: bash
+
+   ceph config set osd bluestore_elastic_shared_blobs 0
+
+This needs to be done after the upgrade is complete as the option is not
+available on Reef.
+
 Prerequisites
 =============
 
@@ -63,7 +94,7 @@ Place the host or batch of hosts into maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-enter-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml -l <host>
 
 To update all eligible packages, use ``*``, escaping if necessary:
 
@@ -77,13 +108,13 @@ the maximum number of hosts that can safely reboot concurrently.
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml -l <host>
 
 Remove the host or batch of hosts from maintenance mode:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph-exit-maintenance.yml -l <host>
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-exit-maintenance.yml -l <host>
 
 Wait for Ceph health to return to ``HEALTH_OK``:
 
@@ -106,7 +137,7 @@ local Pulp:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
 
 Upgrade Ceph services
 =====================
@@ -145,6 +176,50 @@ Watch the cephadm logs:
 
    ceph -W cephadm
 
+After completing the upgrade to Squid, Ceph may show the following warning in
+the output of ``ceph -s``:
+
+.. code-block:: console
+
+   all OSDs are running squid or later but require_osd_release < squid
+
+To resolve this, first verify that all OSDs were upgraded to Squid with ``ceph
+versions``. Once confirmed, run the following command:
+
+.. code-block:: console
+
+   ceph osd require-osd-release squid
+
+Finally, verify the value of ``ceph osd get-require-min-compat-client``. On
+older Ceph deployments, it may still be set to ``jewel``, which would prevent
+using the `upmap balancer mode
+<https://docs.ceph.com/en/latest/rados/operations/balancer/#modes>`__ which
+requires ``luminous`` or later. Similarly, the more recent `read balancer
+<https://docs.ceph.com/en/latest/rados/operations/read-balancer/>`__ requires
+``reef``.
+
+Run ``ceph features`` to identify client versions and consider setting the
+minimum to an appropriate value:
+
+.. warning::
+
+   Before raising ``require-min-compat-client``, verify that all clients support
+   the target release. This is particularly important for users accessing
+   CephFS via the kernel client (for example, Manila shares).
+
+   Kernel clients that encounter ``pg-upmap-primary`` entries will silently
+   route I/O to the wrong OSD, causing **I/O hangs** on the affected PGs.
+   Kernel clients that encounter CRUSH MSR rules will fail to compute a PG
+   mapping, causing **I/O errors**. Do not enable either feature while kernel
+   clients are present.
+
+   See the `upstream warning
+   <https://docs.ceph.com/en/latest/rados/operations/require-min-compat-client/>`__.
+
+.. code-block:: console
+
+   ceph osd set-require-min-compat-client reef
+
 Upgrade Cephadm
 ===============
 
@@ -152,7 +227,7 @@ Update the Cephadm package:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml -e cephadm_package_update=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml -e cephadm_package_update=true
 
 Testing
 =======

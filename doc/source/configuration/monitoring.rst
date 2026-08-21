@@ -27,7 +27,7 @@ after deployment:
 .. code-block:: console
 
     cd $KAYOBE_CONFIG_PATH
-    kayobe playbook run ansible/rsyslog.yml
+    kayobe playbook run ansible/tools/rsyslog.yml
 
 `Prometheus <https://prometheus.io/>`__ comes with a comprehensive set of
 metrics gathered from enabled exporters; every exporter's data is visualised
@@ -69,6 +69,12 @@ present, the workaround is to go into each node running Grafana and manually
 restart the process with ``systemctl restart kolla-grafana-container.service``
 and then try the reconfigure command again.)
 
+.. note::
+   If the environment defines additional Prometheus Node Exporter startup parameters
+   via ``prometheus_node_exporter_cmdline_extras``, the parameters should be updated
+   to include the textfile collector used by SMART monitoring:
+   ``--collector.textfile.directory=/var/lib/node_exporter/textfile_collector``
+
 Once the reconfigure has completed you can now run the custom playbook which
 copies over the scripts and sets up the cron jobs to start SMART monitoring
 on the overcloud hosts:
@@ -76,10 +82,31 @@ on the overcloud hosts:
 .. code-block:: console
 
     (kayobe) [stack@node ~]$ cd etc/kayobe
-    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/smartmon-tools.yml
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/deployment/smartmon-tools.yml
 
 SMART reporting should now be enabled along with a Prometheus alert for
 unhealthy disks and a Grafana dashboard called ``Hardware Overview``.
+
+Monitoring Drive Writes Per Day
+-------------------------------
+
+Drives can be monitored for the level of write intensity of the
+workload, and alerts defined for drives that are persistently
+exceeding their stated level of write endurance.  To enable this
+feature, set the flag ``create_dwpd_ratings``:
+
+.. code-block:: console
+
+    (kayobe) [stack@node ~]$ cd etc/kayobe
+    (kayobe) [stack@node kayobe]$ kayobe playbook run ansible/deployment/smartmon-tools.yml -e create_dwpd_ratings=true
+
+This flag scans for NVME/SSD devices in the system and creates a new
+file, ``dwpd-ratings.yml``, in the directory of the current environment.
+
+.. note::
+   The playbook assigns placeholder values for write endurance for each
+   drive model. These values should be updated with specifications from
+   vendor datasheets.
 
 Alertmanager, Slack and Microsoft Teams
 =======================================
@@ -194,7 +221,7 @@ via Kayobe.
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deploy-os-capacity-exporter.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/deploy-os-capacity-exporter.yml
 
 If you notice ``HaproxyServerDown`` or ``HaproxyBackendDown`` prometheus
 alerts after deployment it's likely the os_exporter secrets have not been
@@ -217,7 +244,7 @@ To enable the change:
 
 .. code-block:: console
 
-    kayobe playbook run etc/kayobe/ansible/prometheus-network-names.yml
+    kayobe playbook run etc/kayobe/ansible/tools/prometheus-network-names.yml
     kayobe overcloud service reconfigure --kt prometheus
 
 This first generates a template based on the prometheus.yml.j2

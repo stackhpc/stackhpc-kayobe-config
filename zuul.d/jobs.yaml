@@ -1,0 +1,48 @@
+---
+- job:
+    name: tenks-base
+    description: |
+      Base job for testing seed VM deployment and overcloud
+      provisioning.
+
+      Configures the primary VM as a seed hypervisor. Uses tenks to create
+      a single overcloud host and test Bifrost provisioning.
+    run: zuul.d/playbooks/tenks-base/run.yml
+    timeout: 10800
+    secrets:
+      - tenks_vault_password
+    irrelevant-files:
+      - ^\..*
+      - ^doc/.*
+      - ^kayobe-env$
+      - ^LICENSE$
+      - ^README.rst$
+      - ^releasenotes/.*
+      - ^tox.ini$
+      - ^etc/kayobe/environments/aufn-ceph/.*
+      - ^etc/kayobe/environments/aio/.*
+      - ^etc/kayobe/environments/ci-aio/.*
+      - ^etc/kayobe/environments/ci-builder/.*
+      - ^etc/kayobe/environments/ci-doca-builder/.*
+      - ^etc/kayobe/environments/ci-multinode/.*
+- job:
+    name: tenks-ubuntu-noble
+    parent: tenks-base
+    nodeset:
+      nodes:
+        - name: ubuntu-noble-tenks
+          label: ubuntu-noble-tenks
+- job:
+    name: tenks-rocky-9
+    parent: tenks-base
+    nodeset:
+      nodes:
+        - name: rocky-9-tenks
+          label: rocky-9-tenks
+- job:
+    name: tenks-rocky-10
+    parent: tenks-base
+    nodeset:
+      nodes:
+        - name: rocky-10-tenks
+          label: rocky-10-tenks

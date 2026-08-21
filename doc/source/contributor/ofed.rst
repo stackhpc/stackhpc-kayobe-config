@@ -30,7 +30,9 @@ Before building OFED packages, the workflow will ensure that:
 build-ofed
 ----------
 
-Currently we only support building Rocky Linux 9 OFED kernel module packages.
+Currently we only support building Rocky Linux 9 and Rocky Linux 10 OFED kernel
+module packages. The workflow builds packages for ``x86_64`` and
+``aarch64`` at the same time, to keep kernel versions synchronised across architectures.
 
 The Build OFED module workflow will check that the filesystem is configured (noexec disabled)
 to allow the DOCA build script to run. The workflow will also install any necessary dependencies
@@ -44,9 +46,9 @@ push-ofed
 ---------
 
 As mentioned above, the DOCA repository is synced into the ``doca`` repository in Ark. This workflow
-will upload the ``doca-kernel-repo`` RPM to a separate repository named ``doca-modules``. The version
-for this repository is set in ``pulp-repo-versions.yml`` and is disabled for local pulp syncs by
-default.
+will upload the ``doca-kernel-repo`` RPM to a separate repository named ``doca-modules``, which is
+specific to the minor version of Rocky the modules are being built for. The versions for these
+repositories are set in ``pulp-repo-versions.yml`` and are disabled for local pulp syncs by default.
 
 Install process
 ===============
@@ -61,8 +63,8 @@ by running:
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
 
 DOCA repositories can be templated to hosts by running Kayobe host configure.
 
@@ -83,14 +85,14 @@ to be reset before rebooting.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reset-bls-entries.yml -e reset_bls_host=mlnx
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reset-bls-entries.yml -e reset_bls_host=mlnx
 
 The hosts can now be rebooted to use the latest kernel, a rolling reboot may be applicable
-here to reduce distruptions. See the `package updates documentation <package-updates>`.
+here to reduce disruptions. See the :doc:`package updates documentation <package-updates>`.
 
 .. code-block:: console
 
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/reboot.yml --limit mlnx
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/reboot.yml --limit mlnx
 
 install-doca
 ------------
@@ -101,4 +103,4 @@ playbook:
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/install-doca.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/install-doca.yml

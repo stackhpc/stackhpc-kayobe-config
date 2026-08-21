@@ -1,0 +1,66 @@
+---
+- name: Generate certificates
+  hosts: seed
+  run_once: true
+  vars:
+    openbao_api_addr: http://127.0.0.1:8200
+    openbao_intermediate_ca_name: OS-TLS-INT
+  tasks:
+    - name: Assert that stackhpc_ca_secret_store is 'openbao'
+      ansible.builtin.assert:
+        that:
+          - stackhpc_ca_secret_store == "openbao"
+        fail_msg: "stackhpc_ca_secret_store must be 'openbao'"
+
+    - name: Include OpenBao keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/openbao/seed-openbao-keys.json"
+        name: openbao_keys
+
+    - name: Check OpenBao seal status
+      ansible.builtin.uri:
+        url: "{{ openbao_api_addr }}/v1/sys/seal-status"
+        return_content: true
+      register: openbao_seal_status
+
+    - name: Assert that OpenBao is unsealed
+      ansible.builtin.assert:
+        that: not openbao_seal_status.json.sealed
+        fail_msg: "OpenBao is sealed. Please unseal it before continuing."
+
+    - name: Issue Pulp certificate
+      hashivault_pki_cert_issue:  # noqa: fqcn
+        url: "{{ openbao_api_addr }}"
+        ca_cert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/OS-TLS-ROOT.crt' }}"
+        token: "{{ openbao_keys.root_token }}"
+        mount_point: "{{ openbao_intermediate_ca_name }}"
+        role: "{{ overcloud_openbao_pki_default_role_name }}"
+        common_name: "{{ inventory_hostname }}"
+        extra_params:
+          ip_sans: "{{ admin_oc_net_name | net_ip(inventory_hostname=groups['seed'][0]) }}"
+      register: pulp_certificate
+
+    - name: Ensure Pulp certificates directory exists
+      ansible.builtin.file:
+        path: "{{ kayobe_env_config_path }}/pulp/certificates"
+        state: directory
+      delegate_to: localhost
+
+    - name: Write certificate to file
+      no_log: true
+      ansible.builtin.copy:
+        dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.crt"
+        content: |
+          {{ pulp_certificate.data.certificate }}
+          {{ pulp_certificate.data.issuing_ca }}
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: Write key to file
+      no_log: true
+      ansible.builtin.copy:
+        dest: "{{ kayobe_env_config_path }}/pulp/certificates/pulp.key"
+        content: |
+          {{ pulp_certificate.data.private_key }}
+        mode: "0600"
+      delegate_to: localhost

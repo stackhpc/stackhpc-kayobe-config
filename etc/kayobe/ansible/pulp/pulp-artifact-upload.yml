@@ -1,0 +1,136 @@
+---
+- name: Upload and create a distribution for an artifact
+  hosts: seed
+  vars:
+    remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
+    remote_pulp_username: "{{ stackhpc_release_pulp_username }}"
+    remote_pulp_password: "{{ stackhpc_release_pulp_password }}"
+    repository_name: "{{ artifact_type }}-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    pulp_base_path: "{{ artifact_type }}/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    upload_checksum: true
+  tasks:
+    - name: Print artifact tag
+      ansible.builtin.debug:
+        msg: "artifact tag: {{ artifact_tag }}"
+
+    - name: Get filename
+      ansible.builtin.find:
+        paths: "{{ artifact_path }}"
+        patterns: "{{ file_regex }}"
+      register: found_files
+
+    - name: Install pip packages
+      ansible.builtin.pip:
+        name:
+          - pyopenssl
+          - ndg-httpsclient
+          - pyasn1
+          - urllib3
+          - packaging
+          - pulp-glue<0.34.0,>=0.33.0
+          - pulp-glue-deb<0.4.0,>=0.3.0
+        state: present
+
+    - name: Get sha256 hash
+      ansible.builtin.stat:
+        path: "{{ found_files.files[0].path }}"
+        checksum_algorithm: sha256
+      register: file_stats
+
+    - name: Write checksum to file
+      ansible.builtin.copy:
+        content: "{{ file_stats.stat.checksum }} {{ found_files.files[0].path | basename }}"
+        dest: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+      when: upload_checksum
+
+    - name: Get sha256 hash for checksum
+      ansible.builtin.stat:
+        path: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+        checksum_algorithm: sha256
+      register: checksum_stats
+
+    - name: Ensure file repo exists
+      pulp.squeezer.file_repository:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}"
+        state: present
+      register: file_repo_result
+      until: file_repo_result is success
+      retries: 3
+      delay: 5
+
+    - name: Upload artifact
+      pulp.squeezer.file_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        file: "{{ found_files.files[0].path }}"
+        sha256: "{{ file_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}"
+        state: present
+        repository: "{{ repository_name }}"
+        chunk_size: 4194304
+      register: file_content_result
+      until: file_content_result is success
+      retries: 3
+      delay: 5
+
+    - name: Upload checksum
+      pulp.squeezer.file_content:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        file: "/tmp/{{ found_files.files[0].path | basename }}.sha256"
+        sha256: "{{ checksum_stats.stat.checksum }}"
+        relative_path: "{{ found_files.files[0].path | basename }}.sha256"
+        state: present
+        repository: "{{ repository_name }}"
+        chunk_size: 4194304
+      register: checksum_content_result
+      until: checksum_content_result is success
+      retries: 3
+      delay: 5
+      when: upload_checksum
+
+    - name: Create a new publication to point to this version
+      pulp.squeezer.file_publication:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        repository: "{{ repository_name }}"
+        state: present
+      register: publication_details
+      until: publication_details is success
+      retries: 3
+      delay: 5
+
+    - name: Create distribution for given version
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ artifact_tag }}"
+        base_path: "{{ pulp_base_path }}/{{ artifact_tag }}"
+        publication: "{{ publication_details.publication.pulp_href }}"
+        content_guard: development
+        state: present
+      register: distribution_result
+      until: distribution_result is success
+      retries: 3
+      delay: 5
+
+    - name: Update new artifacts file with versioned path
+      ansible.builtin.lineinfile:
+        path: /tmp/updated_artifacts.txt
+        line: "{{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
+        create: true
+
+    - name: Print versioned path
+      ansible.builtin.debug:
+        msg: "New versioned path: {{ remote_pulp_url }}/pulp/content/{{ pulp_base_path }}/{{ artifact_tag }}/{{ found_files.files[0].path | basename }}"
+
+    - name: Print version tag
+      ansible.builtin.debug:
+        msg: "New tag: {{ artifact_tag }}"

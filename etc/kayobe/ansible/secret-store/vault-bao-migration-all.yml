@@ -1,0 +1,9 @@
+# Using lookup because Kayobe variable ``kayobe_config_path`` is not initialised at this stage
+- name: Migrate seed Vault to OpenBao
+  ansible.builtin.import_playbook: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/secret-store/vault-bao-migration-seed.yml"
+
+- name: Migrate overcloud Vault to OpenBao
+  ansible.builtin.import_playbook: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/secret-store/vault-bao-migration-overcloud.yml"
+
+- name: Change SKC config to use OpenBao
+  ansible.builtin.import_playbook: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/secret-store/vault-bao-migration-change-config.yml"

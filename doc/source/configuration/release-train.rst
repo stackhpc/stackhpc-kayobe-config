@@ -39,7 +39,8 @@ Configuration
 This configuration provides the following:
 
 * Configuration to deploy a local Pulp service as a container on the seed
-* Pulp repository definitions for Rocky Linux 9 and Ubuntu Noble 24.04
+* Pulp repository definitions for Rocky Linux 9, Rocky Linux 10, and Ubuntu
+  Noble 24.04
 * Playbooks to synchronise a local Pulp service with Ark
 * Configuration to use the local Pulp repository mirrors on control plane hosts
 * Configuration to use the local Pulp container registry on control plane hosts
@@ -94,8 +95,18 @@ The Ark pulp credentials issued by StackHPC should be configured in
 Package repositories
 --------------------
 
-Rocky Linux 9 and Ubuntu Noble package repositories are synced based on the
-value of ``os_distribution`` and ``os_release``.
+Rocky Linux 9, Rocky Linux 10, and Ubuntu Noble package repositories are synced
+based on the value of ``os_distribution`` and ``os_release``.
+
+RPM repository syncs default to the ``x86_64`` architecture. To sync
+``aarch64`` repositories instead, or to sync both architectures, set
+``stackhpc_pulp_rpm_architectures`` in ``etc/kayobe/pulp.yml``. For example:
+
+.. code-block:: yaml
+
+   stackhpc_pulp_rpm_architectures:
+     - x86_64
+     - aarch64
 
 On Ark, each package repository provides versioned snapshots using a datetime
 stamp (e.g. ``20220817T082321``). The current set of tested versions is defined
@@ -233,17 +244,17 @@ A typical workflow to sync all packages and containers is as follows:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-publish.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
 
 Once the content has been tested in a test/staging environment, it may be
 promoted to production:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-repo-promote-production.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-repo-promote-production.yml
 
 Synchronising all Kolla container images can take a long time. A limited list
 of images can be synchronised using the ``stackhpc_pulp_images_kolla_filter``
@@ -253,7 +264,7 @@ For example:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml -e stackhpc_pulp_images_kolla_filter='"^glance nova-compute$"'
 
 Initial seed deployment
 -----------------------
@@ -265,8 +276,8 @@ has not yet been deployed. This can be avoided with the following workflow:
 .. code-block:: console
 
    kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
    kayobe seed service deploy
 
 Working with pulp

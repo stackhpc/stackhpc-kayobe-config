@@ -374,10 +374,10 @@ be used as follows:
 .. code-block:: bash
 
    # Enable the watchdog BEFORE applying the firewall configuration
-   kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts>
+   kayobe playbook run etc/kayobe/ansible/tools/firewalld-watchdog.yml -l <hosts>
 
    # Disable the watchdog after applying the firewall configuration
-   kayobe playbook run etc/kayobe/ansible/firewalld-watchdog.yml -l <hosts> -e firewalld_watchdog_state=absent
+   kayobe playbook run etc/kayobe/ansible/tools/firewalld-watchdog.yml -l <hosts> -e firewalld_watchdog_state=absent
 
 If the firewall rules block connectivity, the second playbook run (disabling
 the watchdog) will fail. You will still be able to get in after the watchdog

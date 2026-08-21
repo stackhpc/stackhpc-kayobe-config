@@ -18,9 +18,9 @@ The short version
    ``$KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-manager``, in
    particular the defaults assume that the ``provision_oc_net`` network will be
    used.
-#. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``
-#. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
-#. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
+#. Generate secrets: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml``
+#. Deploy the Wazuh manager: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml``
+#. Deploy the Wazuh agents: ``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml``
 
 
 Wazuh Manager Host
@@ -205,13 +205,32 @@ Reinstall the role if required:
 
 ``kayobe control host bootstrap``
 
+Secrets
+-------
 
-Edit the playbook and variables to your needs:
+Wazuh requires that secrets or passwords are set for itself and the services with which it communicates.
+Wazuh secrets playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml``.
+Running this playbook will generate and put pertinent security items into secrets
+vault file which will be placed in ``$KAYOBE_CONFIG_PATH/deployment/wazuh-secrets.yml``.
+If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/deployment/wazuh-secrets.yml``
+Remember to encrypt!
+
+Wazuh secrets template is located in ``$KAYOBE_CONFIG_PATH/ansible/templates/wazuh-secrets.yml.j2``.
+It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
+
+
+.. code-block:: console
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-secrets.yml
+
+.. note:: Use ``ansible-vault`` to view the secrets:
+
+  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/deployment/wazuh-secrets.yml``
 
 Wazuh manager configuration
 ---------------------------
 
-Wazuh manager playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``.
+Wazuh manager playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml``.
 Running this playbook will:
 
 * generate certificates for wazuh-manager
@@ -237,49 +256,27 @@ You may need to modify some of the variables, including:
     Files which values can be overridden (in the context of Wazuh):
 
     - $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-manager/wazuh-manager
-    - $KAYOBE_CONFIG_PATH/wazuh-manager.yml
+    - $KAYOBE_CONFIG_PATH/deployment/wazuh-manager.yml
     - $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh/wazuh-agent/wazuh-agent
 
 You'll need to run ``wazuh-manager.yml`` playbook again to apply customisation.
-
-Secrets
--------
-
-Wazuh requires that secrets or passwords are set for itself and the services with which it communiticates.
-Wazuh secrets playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml``.
-Running this playbook will generate and put pertinent security items into secrets
-vault file which will be placed in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
-If using environments it ends up in ``$KAYOBE_CONFIG_PATH/environments/<env_name>/wazuh-secrets.yml``
-Remember to encrypt!
-
-Wazuh secrets template is located in ``$KAYOBE_CONFIG_PATH/ansible/templates/wazuh-secrets.yml.j2``.
-It will be used by wazuh secrets playbook to generate wazuh secrets vault file.
-
-
-.. code-block:: console
-
-  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-secrets.yml
-
-.. note:: Use ``ansible-vault`` to view the secrets:
-
-  ``ansible-vault view --vault-password-file ~/vault.password $KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-manager/wazuh-secrets.yml``
 
 Configure Wazuh Dashboard's Server Host
 ---------------------------------------
 
 It is common to want to configure the Wazuh dashboard to serve on a different network than the overcloud provisioning network used for Wazuh's internal communication.
 
-In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml`` configuration file to include the dashboard variable:
+In order to do so, either create or edit the ``$KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/deployment/wazuh-manager.yml`` configuration file to include the dashboard variable:
 
 .. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/deployment/wazuh-manager.yml
 
     dashboard_server_host: "{{ <network-name-prefix>_net_name | net_ip }}"
 
 For example:
 
 .. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/wazuh-manager.yml
+   :caption: $KAYOBE_CONFIG_PATH/environments/<env_name>/inventory/group_vars/wazuh-manager/deployment/wazuh-manager.yml
 
     dashboard_server_host: "{{ public_net_name | net_ip }}"
 
@@ -288,7 +285,7 @@ If this is being added post deployment the user will be required to re-run the `
 .. code-block:: bash
    :caption: Deploy or re-run the ``wazuh-manager.yml`` ansible playbook to apply changes made to the configuration.
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml
 
 More on the deployment of Wazuh dashboard can be found below in the :ref:`subsequent section <Deploy>`.
 
@@ -357,7 +354,7 @@ Deploy
 
 Deploy Wazuh manager:
 
-``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-manager.yml``
+``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-manager.yml``
 
 If you are using the wazuh generated certificates,
 this will result in the creation of some certificates and keys (in case of custom certs adjust path to it).
@@ -377,7 +374,7 @@ Verification
 The Wazuh portal should be accessible on port 443 of the Wazuh
 manager’s IPs (using HTTPS, with the root CA cert in ``$KAYOBE_CONFIG_PATH/ansible/wazuh/certificates/wazuh-certificates/root-ca.pem``).
 The first login should be as the admin user,
-with the opendistro_admin_password password in ``$KAYOBE_CONFIG_PATH/wazuh-secrets.yml``.
+with the opendistro_admin_password password in ``$KAYOBE_CONFIG_PATH/deployment/wazuh-secrets.yml``.
 This will create the necessary indices.
 
 Troubleshooting
@@ -387,7 +384,7 @@ Logs are in ``/var/log/wazuh-indexer/wazuh.log``. There are also logs in the jou
 Wazuh agents
 ============
 
-Wazuh agent playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``.
+Wazuh agent playbook is located in ``$KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml``.
 
 Wazuh agent variables file is located in ``$KAYOBE_CONFIG_PATH/inventory/group_vars/wazuh-agent/wazuh-agent``.
 
@@ -397,7 +394,7 @@ You may need to modify some variables, including:
 
 Deploy the Wazuh agents:
 
-``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/wazuh-agent.yml``
+``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/wazuh-agent.yml``
 
 The Wazuh Agent is deployed to all hosts in the ``wazuh-agent``
 inventory group, comprising the ``seed`` group
@@ -423,6 +420,13 @@ Verification
 
 The Wazuh agents should register with the Wazuh manager. This can be verified via the agents page in Wazuh Portal.
 Check CIS benchmark output in agent section.
+
+Wazuh manager removal
+---------------------
+
+The following playbook can be used to purge all Wazuh manager components from a host. This is particularly useful for Wazuh manager servers that are not hosted on an infra-vm.
+
+``kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/wazuh-manager-purge.yml``
 
 Additional resources
 --------------------

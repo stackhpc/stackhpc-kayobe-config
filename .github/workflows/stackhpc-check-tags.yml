@@ -37,7 +37,7 @@ jobs:
           sudo apt install -y git unzip nodejs
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
 
@@ -53,7 +53,7 @@ jobs:
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
-            '$KAYOBE_CONFIG_PATH/ansible/check-kolla-images-py.yml'
+            '$KAYOBE_CONFIG_PATH/ansible/tools/check-kolla-images-py.yml'
 
       - name: Check container image tags
         run: |
@@ -62,4 +62,4 @@ jobs:
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             $KAYOBE_IMAGE \
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
-            '$KAYOBE_CONFIG_PATH/ansible/check-tags.yml'
+            '$KAYOBE_CONFIG_PATH/ansible/tools/check-tags.yml'

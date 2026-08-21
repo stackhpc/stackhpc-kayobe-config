@@ -14,15 +14,14 @@ jobs:
       matrix:
         include:
           - version: stackhpc/2023.1
-            codename: Antelope
           - version: stackhpc/2024.1
-            codename: Caracal
           - version: stackhpc/2025.1
-            codename: Epoxy
+          # FIXME(Alex-Welsh): The 2026.1 branches are under active development.
+          # Pin once they are stable and re-enable syncs
+          # - version: stackhpc/2026.1
     uses: ./.github/workflows/update-dependencies.yml
     with:
-      openstack_version: ${{ matrix.version }}
-      openstack_codename: ${{ matrix.codename }}
+      branch: ${{ matrix.version }}
     permissions:
       contents: write
       pull-requests: write

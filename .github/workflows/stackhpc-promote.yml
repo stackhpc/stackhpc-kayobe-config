@@ -4,13 +4,14 @@ on:
   push:
     branches:
       # NOTE(upgrade): Reference only the current release branch here.
-      - stackhpc/2025.1
+      - stackhpc/2026.1
 jobs:
   promote:
     name: Trigger Pulp promotion workflows
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      actions: write
     steps:
       # NOTE(mgoddard): Trigger another CI workflow in the
       # stackhpc-release-train repository.
@@ -44,9 +45,24 @@ jobs:
         run: |
           echo "::notice Container image promote workflow: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-promote.yml"
 
+      - name: Trigger overcloud host image promotion
+        run: |
+          gh workflow run \
+          overcloud-host-image-promote.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Display link to overcloud host image promotion workflows
+        run: |
+          echo "::notice Overcloud host image promote workflow: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/overcloud-host-image-promote.yml"
+
       - name: Send message to Slack via Workflow Builder
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
+          webhook-type: "incoming-webhook"
           payload: |
             {
               "channel-id": "${{ env.SLACK_CHANNEL_ID }}",

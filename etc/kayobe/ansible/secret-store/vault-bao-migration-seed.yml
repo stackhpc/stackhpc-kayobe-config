@@ -1,0 +1,56 @@
+---
+- name: Migrate Seed Vault to OpenBao
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: seed
+  tasks:
+    - name: Fail if secret store is already configured to be OpenBao
+      ansible.builtin.fail:
+        msg: Please check if OpenBao is already running on the host.
+             If it's not, please set the variable 'stackhpc_ca_secret_store' to 'vault'
+      when: stackhpc_ca_secret_store == "openbao"
+
+    - name: Set a fact about the virtualenv on the remote system
+      ansible.builtin.set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      ansible.builtin.pip:
+        name: hvac
+        state: present
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Include secret store keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/{{ stackhpc_ca_secret_store }}/seed-{{ stackhpc_ca_secret_store }}-keys.json"
+        name: secret_store_keys
+
+- name: Migrate Vault to Openbao
+  ansible.builtin.import_playbook: stackhpc.hashicorp.vault_bao_migration
+  vars:
+    vault_hosts_group: seed
+    secret_store_bind_interface: lo
+    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
+    secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
+    migration_consul_docker_image: "{{ seed_consul_docker_image }}"
+    migration_common_root_token: "{{ secret_store_keys.root_token }}"
+    migration_common_unseal_keys: "{{ secret_store_keys.keys_base64 }}"
+    migration_common_bind_addr: "{{ secret_store_bind_address }}"
+    migration_common_api_addr: "{{ secret_store_api_address }}"
+    migration_vault_config_dir: /opt/kayobe/vault
+    migration_common_cluster_name: seed
+    migration_vault_docker_image: "{{ seed_vault_docker_image }}"
+    migration_vault_docker_tag: "{{ seed_vault_docker_tag }}"
+    vault_unseal_timeout: 10
+    migration_openbao_config_dir: /opt/kayobe/openbao
+    migration_openbao_docker_image: "{{ seed_openbao_docker_image }}"
+    migration_openbao_docker_tag: "{{ seed_openbao_docker_tag }}"
+    migration_openbao_registry_url: "{{ seed_openbao_registry_url }}"
+    migration_openbao_registry_username: "{{ seed_openbao_registry_username }}"
+    migration_openbao_registry_password: "{{ seed_openbao_registry_password }}"

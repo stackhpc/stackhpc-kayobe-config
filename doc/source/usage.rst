@@ -16,8 +16,7 @@ when used with Kayobe's :kayobe-doc:`multiple environments
 <multiple-environments>` feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
-<https://github.com/stackhpc/kayobe/tree/stackhpc/2025.1>`__, which includes
-backported support for Ansible collections.
+<https://github.com/stackhpc/kayobe/tree/stackhpc/2026.1>`__.
 
 New deployments
 ---------------
@@ -58,10 +57,12 @@ The intention is to avoid merge conflicts where possible, but there may be
 cases where this is difficult. We are open to discussion on how best to
 approach this on both sides.
 
+.. _beokay:
+
 Beokay
 ------
 
-`Beokay <https://github.com/stackhpc/beokay>` is a tool to manage Kayobe
+`Beokay <https://github.com/stackhpc/beokay>`__ is a tool to manage Kayobe
 environments. This can create new StackHPC Kayobe environments and
 ensure StackHPC Kayobe Configuration dependencies are from the correct repositories and
 are up-to-date:
@@ -84,9 +85,20 @@ Kayobe environments can also be specified, for example, to create an AIO environ
    --base-path skc-aio-environment \
    --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
    --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw \
    --kayobe-in-requirements
+
+Python executable can also be specified, for example, to use Python 3.12:
+
+.. code-block:: console
+
+   beokay.py create \
+   --base-path skc-environment \
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
+   --kayobe-config-branch |current_release_git_branch_name| \
+   --kayobe-in-requirements
+   --python python3.12
 
 When Beokay environments are no longer required, they can be deleted by running:
 
@@ -103,5 +115,5 @@ service deployment on overcloud hosts:
    beokay.py run \
    'kayobe overcloud service deploy' \
    --base-path skc-aio-environment \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw

@@ -47,6 +47,11 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
         "haproxy",
         "neutron_tls_proxy",
     ],
+    "httpd": [
+        "ironic_http",
+        "keystone_httpd",
+        "letsencrypt_webserver",
+    ],
     "mariadb-server": [
         "mariadb",
         "mariabackup",
@@ -75,6 +80,9 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
     "prometheus-server": [
         "prometheus_server",
     ],
+    "valkey-server": [
+        "valkey",
+    ],
 }
 
 # Maps a container to the parent tag variable in the hierarchy.
@@ -82,11 +90,10 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
     "cron": "common",
     "fluentd": "common",
     "glance_tls_proxy": "haproxy",
-    "hacluster_corosync": "openstack",
-    "hacluster_pacemaker": "openstack",
-    "hacluster_pacemaker_remote": "openstack",
+    "hacluster_pacemaker_remote": "hacluster",
     "heat_api_cfn": "heat",
     "ironic_neutron_agent": "neutron",
+    "ironic_pxe_filter": "ironic",
     "kolla_toolbox": "common",
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
@@ -99,7 +106,7 @@ CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
 
 # List of supported base distributions and versions.
 SUPPORTED_BASE_DISTROS = [
-    "rocky-9",
+    "rocky-10",
     "ubuntu-noble",
 ]
 
@@ -311,7 +318,7 @@ def check_image_map(kolla_ansible_path: str):
     image_map = yaml.safe_load(image_map_str)
     image_var_re = re.compile(r"^([a-z0-9_]+)_image$")
     image_map = {
-        image_var_re.match(image_var).group(1): image.split("/")[-1].replace('{{ docker_image_name_prefix }}', '')
+        image_var_re.match(image_var).group(1): image.split("/")[-1].replace('{{ docker_image_url }}', '')
         for image_var, image in image_map.items()
     }
     # Filter out unsupported images.

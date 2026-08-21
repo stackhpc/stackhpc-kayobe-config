@@ -1,0 +1,45 @@
+---
+# This file holds the config given to Tenks when running `tenks-deploy.sh`. It
+# assumes the existence of the bridges `brmgmt` and `brcloud`.
+
+node_types:
+  controller:
+    memory_mb: 8192
+    vcpus: 2
+    volumes:
+      # Host images pulled from Ark require a disk larger than 20GB
+      - capacity: 22GiB
+    physical_networks:
+      - provision-net
+      - mgmt-net
+      - cloud-net
+    console_log_enabled: true
+
+specs:
+  - type: controller
+    count: 1
+    node_name_prefix: controller
+    ironic_config:
+      resource_class: test-rc
+      network_interface: noop
+
+ipmi_address: 192.168.33.4
+ipmi_port_range_end: 6250
+
+nova_flavors: []
+
+physnet_mappings:
+  mgmt-net: brmgmt
+  provision-net: brprov
+  cloud-net: brcloud
+
+bridge_type: linuxbridge
+
+# No placement service.
+wait_for_placement: false
+
+# NOTE(priteau): Disable libvirt_vm_trust_guest_rx_filters, which when enabled
+# triggers the following errors when booting baremetal instances with Tenks on
+# Libvirt 9: Cannot set interface flags on 'macvtap1': Value too large for
+# defined data type
+libvirt_vm_trust_guest_rx_filters: false

@@ -6,76 +6,85 @@
 update_audit_template: true
 
 ##############################################################################
-# Rocky 9 CIS Hardening Configuration
+# Rocky 10 CIS Hardening Configuration
 
-# Allow IP forwarding
-rhel9cis_is_router: true
+# Configure log rotation to prevent audit logs from filling the disk
+rhel10cis_auditd_admin_space_left_action: syslog
+rhel10cis_auditd_max_log_file_action: rotate
+rhel10cis_auditd_max_log_file_size: 1024
+rhel10cis_auditd_space_left_action: syslog
+rhel10cis_auditd_disk_full_action: syslog
 
-# Skip configuration of chrony
-rhel9cis_rule_2_1_1: false
-rhel9cis_rule_2_1_2: false
+# Set an authselect profile name (required)
+rhel10cis_authselect_custom_profile_name: "stack"
+
+# Set crypto policy
+# NOTE: FUTURE breaks wazuh agent repo metadata download
+rhel10cis_crypto_policy: FIPS
 
 # Skip configuration of the firewall
-rhel9cis_firewall: None
-rhel9cis_rule_3_4_1_2: false
+rhel10cis_firewall: None
 
-# Don't configure selinux
-rhel9cis_selinux_disable: true
+# Allow IP forwarding
+rhel10cis_is_router: true
 
-# NOTE: FUTURE breaks wazuh agent repo metadata download
-rhel9cis_crypto_policy: FIPS
+# The following rules change permissions on all files on every mounted
+# filesystem. We do not want to change /var/lib/docker permissions.
+rhel10cis_no_world_write_adjust: false
+
+# Prevent remounting of /tmp
+rhel10cis_rule_1_1_2_1_1: false
+rhel10cis_rule_1_1_2_1_2: false
+rhel10cis_rule_1_1_2_1_3: false
+rhel10cis_rule_1_1_2_1_4: false
+
+# Skip enabling gpgcheck on all yum repos.
+# This conflicts with our configured doca repos, which need gpgcheck disabled.
+rhel10cis_rule_1_2_1_2: false
 
 # Skip package updates
-rhel9cis_rule_1_9: false
+rhel10cis_rule_1_2_2_1: false
+
+# Skip configuration of chrony
+rhel10cis_rule_2_3_1: false
+rhel10cis_rule_2_3_2: false
+
+# Disable configuration of sshd
+# This task doesn't work with the version of ansible we use in 2026.1
+rhel10cis_rule_5_1_4: false
 
 # Disable requirement for password when using sudo
-rhel9cis_rule_5_3_4: false
+rhel10cis_rule_5_2_4: false
+
+# Disable password expiration limit
+rhel10cis_rule_5_4_1_1: false
 
 # Disable check for root password being set, we should be locking root passwords instead.
 # Please double-check yourself with: sudo passwd -S root
-rhel9cis_rule_5_6_6: false
+rhel10cis_rule_5_4_2_4: false
+
+# Prevent hardening from recursively changing permissions on log files
+rhel10cis_rule_6_2_4_1: false
 
 # Stop the CIS benchmark scanning all files on every filesystem since this
-# takes a long time. Related to the changing permissions block below. This
-# would normally warn you about violations, but we can use Wazuh to continually
-# monitor this.
-rhel9cis_rule_6_1_9: false
-rhel9cis_rule_6_1_10: false
-rhel9cis_rule_6_1_11: false
-rhel9cis_rule_6_1_12: false
-rhel9cis_rule_6_1_13: false
-rhel9cis_rule_6_1_14: false
-rhel9cis_rule_6_1_15: false
+# takes a long time. Related to the changing permissions block
+# (no_world_write_adjust). This would normally warn you about violations, but we
+# can use Wazuh to continually monitor this.
+rhel10cis_rule_7_1_11: false
+rhel10cis_rule_7_1_12: false
+rhel10cis_rule_7_1_13: false
 
-# The following rules change permissions on all files on every mounted
-# filesystem.  We do not want to change /var/lib/docker permissions.
-rhel9cis_no_world_write_adjust: false
+# Don't configure selinux
+rhel10cis_selinux_disable: true
 
-# Prevent hardening from recursivley changing permissions on log files
-rhel9cis_rule_4_2_3: false
-
-# Configure log rotation to prevent audit logs from filling the disk
-rhel9cis_auditd:
-  space_left_action: syslog
-  action_mail_acct: root
-  admin_space_left_action: syslog
-  max_log_file: 10
-  max_log_file_action: rotate
-
-# Max size of audit logs (MB)
-rhel9cis_max_log_file_size: 1024
-
-# Disable setting of boatloader password. This requires setting the variable
-# `rhel9cis_bootloader_password_hash`
-rhel9cis_set_boot_pass: false
-
-# NOTICE: rule disabled otherwise rule will prevent access to accounts
-# as it will expire passwords older than one year.
-rhel9cis_rule_5_6_1_1: false
+# Disable setting of bootloader password
+rhel10cis_set_boot_pass: false
 
 ##############################################################################
 # Ubuntu Noble CIS Hardening Configuration
-# FIXME: These settings are untested, they are just carried over from Jammy
+
+# Stop general "High Disruption" tasks
+ubtu24cis_disruption_high: false
 
 # Ubuntu 24 CIS configuration
 # Disable changing routing rules
@@ -93,17 +102,16 @@ ubtu24cis_install_network_manager: false
 # Set syslog service to journald
 ubtu24cis_syslog_service: journald
 
-# Squashfs is compiled into the kernel
-ubtu24cis_rule_1_1_1_2: false
+# Allow rsync server
+ubtu24cis_rsync_server: true
 
-# This updates the system. Let's do this explicitly.
-ubtu24cis_rule_1_9: false
+# AIDE doesn't play well with hosts that have been upgraded from Jammy to Noble
+ubtu24cis_config_aide: false
 
 # Do not change Chrony Time servers
-ubtu24cis_rule_2_1_2_1: false
-
-# Disable CIS from touching sudoers
-ubtu24cis_rule_5_3_4: false
+ubtu24cis_rule_2_3_3_1: false
+ubtu24cis_rule_2_3_3_2: false
+ubtu24cis_rule_2_3_3_3: false
 
 # Add stack and kolla to allowed ssh users
 ubtu24cis_sshd:
@@ -144,28 +152,21 @@ ubtu24cis_sshd:
 # takes a long time. Related to the changing permissions block below. This
 # would normally warn you about violations, but we can use Wazuh to continually
 # monitor this.
-ubtu24cis_rule_6_1_9: false
-ubtu24cis_rule_6_1_10: false
-ubtu24cis_rule_6_1_11: false
-ubtu24cis_rule_6_1_12: false
-ubtu24cis_rule_6_1_13: false
+ubtu24cis_rule_6_3_1: true
+ubtu24cis_rule_6_3_2: true
+ubtu24cis_rule_6_3_3: true
 
 # The following rules change permissions on all files on every mounted
 # filesystem.  We do not want to change /var/lib/docker permissions.
-ubtu24cis_no_group_adjust: false
-ubtu24cis_no_owner_adjust: false
+ubtu24cis_ownership_adjust: false
 ubtu24cis_no_world_write_adjust: false
-ubtu24cis_suid_adjust: false
-
-# Prevent hardening from recursivley changing permissions on log files
-ubtu24cis_rule_4_2_3: false
+ubtu24cis_suid_sgid_adjust: false
 
 # Configure log rotation to prevent audit logs from filling the disk
-ubtu24cis_auditd:
-  action_mail_acct: root
-  space_left_action: syslog
-  admin_space_left_action: syslog
-  max_log_file_action: rotate
+ubtu24cis_auditd_space_left_action: syslog
+ubtu24cis_auditd_admin_space_left_action: syslog
+ubtu24cis_auditd_max_log_file_action: rotate
+ubtu24cis_auditd_disk_full_action: syslog
 
 # Max size of audit logs (MB)
 ubtu24cis_max_log_file_size: 1024
@@ -175,20 +176,21 @@ ubtu24cis_max_log_file_size: 1024
 ubtu24cis_rule_1_4_1: false
 ubtu24cis_rule_1_4_3: false
 
-# Disable: Ensure minimum days between password changes is configured
-ubtu24cis_rule_5_5_1_1: false
 
-# Disable: Ensure password expiration is 365 days or less
-ubtu24cis_rule_5_5_1_2: false
+# Disable minimum days between password changes
+ubtu24cis_rule_5_4_1_1: false
+ubtu24cis_rule_5_4_1_2: false
+ubtu24cis_rule_5_4_1_3: false
+ubtu24cis_rule_5_4_1_5: false
+ubtu24cis_rule_5_4_1_6: false
 
-# Disable: Ensure inactive password lock is 30 days or less
-ubtu24cis_rule_5_5_1_4: false
+# Do not require a sudo password
+ubtu24cis_rule_5_2_4: false
 
-# Disable: Ensure all users last password change date is in the past
-ubtu24cis_rule_5_5_1_5: false
+# Do not require a root password
+ubtu24cis_rule_5_4_2_4: false
 
 # The way this is disabled currently breaks kolla's IPV6 check, see:
 # https://bugs.launchpad.net/kolla-ansible/+bug/2071443
 # Also matches RHEL hardening behavior.
 ubtu24cis_ipv6_required: true
-

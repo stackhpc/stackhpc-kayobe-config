@@ -99,7 +99,7 @@ Ceph deployment configuration
 -----------------------------
 
 Default variables for configuring Ceph are provided in
-``etc/kayobe/cephadm.yml``. Many of these defaults will be sufficient,
+``etc/kayobe/ceph/cephadm.yml``. Many of these defaults will be sufficient,
 but you will likely need to set ``cephadm_osd_spec`` to define the OSD
 specification.
 
@@ -258,6 +258,25 @@ for Cinder, Cinder backup, Glance, and Nova in Kolla Ansible.
          osd: "profile rbd pool=images"
          mgr: "profile rbd pool=images"
        state: present
+
+.. note::
+
+   By default, the ``client.cinder`` user is configured with read-only access
+   to the ``images`` pool. However, to support copy-on-write (COW) snapshots,
+   configure read-write access to the ``images`` pool by changing ``profile
+   rbd-read-only pool=images`` to ``profile rbd pool=images``:
+
+   .. code:: yaml
+
+      cephadm_keys:
+        - name: client.cinder
+          caps:
+            mon: "profile rbd"
+            osd: "profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images"
+            mgr: "profile rbd pool=volumes, profile rbd pool=vms"
+
+   For more details on enabling and configuring COW optimisations, see the
+   :ref:`ceph-cow-optimisations` section.
 
 Ceph Commands
 ~~~~~~~~~~~~~
@@ -513,7 +532,7 @@ Deploy the Ceph services:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-deploy.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml
 
 You can check the status of Ceph via Cephadm on the storage nodes:
 
@@ -526,7 +545,7 @@ cephadm.yml playbook to perform post-deployment configuration:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml
 
 The ``cephadm.yml`` playbook imports various other playbooks, which may also be
 run individually to perform specific tasks. Note that if you want to deploy
@@ -535,7 +554,7 @@ will need to set ``cephadm_bootstrap`` to true. For example:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm.yml -e cephadm_bootstrap=true
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml -e cephadm_bootstrap=true
 
 Configuration generation
 ------------------------
@@ -544,7 +563,7 @@ Generate keys and configuration for Kolla Ansible:
 
 .. code:: bash
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cephadm-gather-keys.yml
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml
 
 This will generate Ceph keys and configuration under
 ``etc/kayobe/environments/<env>/kolla/config/``, which should be
@@ -552,3 +571,88 @@ committed to the configuration.
 
 This configuration will be used during
 ``kayobe overcloud service deploy``.
+
+OpenStack integration
+=====================
+
+.. _ceph-cow-optimisations:
+
+Copy on write optimisations
+---------------------------
+
+Copy on write optimisations are currently disabled by default due to
+`security concerns <https://bugs.launchpad.net/kolla-ansible/+bug/1992153>`__.
+To enable them, set ``stackhpc_enable_ceph_cow_optimisations`` to ``true`` in
+``etc/kayobe/stackhpc.yml``. Setting this flag to ``true`` causes Kayobe to
+render a `glance.conf` file with the following content:
+
+.. code:: ini
+
+  [DEFAULT]
+  show_multiple_locations = true
+  show_image_direct_url = true
+
+  [glance_store]
+  rbd_thin_provisioning = true
+
+.. warning::
+
+   Enabling ``show_image_direct_url`` allows Glance to return the RADOS location
+   (pool and image name) for each image. Although this does not expose any Ceph
+   credentials, it can be considered an information leak in some environments.
+   There are plans in kolla-ansible to deploy a separate ``glance-api`` instance
+   for the internal endpoint, which would allow this to be enabled for the
+   internal endpoint only.
+
+Verify that the Cinder user has read-write access to the images pool by running:
+
+.. code:: console
+
+   ceph auth get client.cinder
+
+If the output includes `profile rbd-read-only pool=images`, update the caps using:
+
+.. code:: console
+
+   ceph auth caps client.cinder mon 'profile rbd' osd 'profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images' mgr 'profile rbd pool=volumes, profile rbd pool=vms'
+
+Be sure to keep any existing capabilities and only change the capabilities on the
+images pool from `profile rbd-read-only pool=images` to
+`profile rbd pool=images`. Then re-run the verification command to confirm the
+change.
+
+The Ceph keyrings under the Cinder and Nova configurations should also be
+updated to remove the read-only flag (e.g. remove `readonly` from the caps
+lines in `etc/kayobe/kolla/config/cinder/ceph.client.cinder.keyring` and
+`etc/kayobe/kolla/config/nova/ceph.client.cinder.keyring`).
+
+Example (before / after):
+
+.. code:: ini
+
+   [client.cinder]
+           key = redacted
+           caps mgr = "profile rbd pool=volumes, profile rbd pool=vms"
+           caps mon = "profile rbd"
+           caps osd = "profile rbd pool=volumes, profile rbd pool=vms, profile rbd-read-only pool=images"
+
+.. code:: ini
+
+   [client.cinder]
+           key = redacted
+           caps mgr = "profile rbd pool=volumes, profile rbd pool=vms"
+           caps mon = "profile rbd"
+           caps osd = "profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images"
+
+If you had to change the keyrings, you will need to reconfigure glance, nova and cinder:
+
+.. code:: console
+
+   kayobe overcloud service deploy -kt glance,nova,cinder
+
+otherwise, just reconfigure glance:
+
+.. code:: console
+
+   kayobe overcloud service deploy -kt glance
+

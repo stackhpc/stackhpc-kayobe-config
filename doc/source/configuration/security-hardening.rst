@@ -14,6 +14,7 @@ The following operating systems are supported:
 
 - Ubuntu 24.04
 - Rocky 9
+- Rocky 10
 
 Configuration
 --------------
@@ -27,6 +28,7 @@ about what each variable does. The documentation can be found here:
 
 - `Ubuntu 24.04 <https://github.com/ansible-lockdown/UBUNTU24-CIS>`__
 - `Rocky 9 <https://github.com/ansible-lockdown/RHEL9-CIS>`__
+- `Rocky 10 <https://github.com/ansible-lockdown/RHEL10-CIS>`__
 
 Running the playbooks
 ---------------------
@@ -46,7 +48,7 @@ whether or not workloads or API requests are affected by any configuration chang
 
 .. code-block:: console
 
-    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/cis.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/cis.yml
 
 Targetting additional hosts
 ---------------------------

@@ -144,11 +144,11 @@ Build a Kayobe image:
 
    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 
-Use the ci-aio environment:
+Use the aio environment:
 
 .. code-block:: console
 
-   export KAYOBE_ENVIRONMENT=ci-aio
+   export KAYOBE_ENVIRONMENT=aio
 
 Set the Kayobe Vault password env var:
 
@@ -179,7 +179,7 @@ Configure aio resources:
 
 .. code-block:: console
 
-   sudo -E docker run -it --rm -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/configure-aio-resources.yml
+   sudo -E docker run -it --rm -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY kayobe:latest /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/tools/configure-aio-resources.yml
 
 Run Tempest:
 

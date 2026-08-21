@@ -83,8 +83,8 @@ jobs:
     present in the ``stackhpc-dev`` namespace in Ark.
 
   Uses the ``.github/workflows/stackhpc-check-tags.yml`` reusable workflow,
-  which runs the ``etc/kayobe/ansible/check-tags.yml`` and
-  ``etc/kayobe/ansible/check-kolla-images-py.yml`` playbooks.
+  which runs the ``etc/kayobe/ansible/tools/check-tags.yml`` and
+  ``etc/kayobe/ansible/tools/check-kolla-images-py.yml`` playbooks.
 ``aio [upgrade] (<OS> <neutron plugin>)``
   Runs an all-in-one OpenStack deployment test.
   Various jobs are run using different parameters.
@@ -99,9 +99,10 @@ All in one testing
 The ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow accepts
 various parameters, and the following are used to create a test matrix for PRs:
 
-  - Operating System (Rocky 9, Ubuntu Noble)
+  - Operating System (Rocky 9, Rocky 10, Ubuntu Noble)
   - Neutron plugin (OVS, OVN)
   - Upgrade or no upgrade
+  - aarch64 or x86
 
 The workflow runs on an autoscaling `Actions Runner Controller (ARC)
 <https://stackhpc.github.io/stackhpc-release-train/operations/github/#github-actions-runner-controller-arc>`_
@@ -113,7 +114,7 @@ job.
 The workflow performs the following high-level steps:
 
 #. Deploy a VM on an OpenStack cloud using the `aio
-   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/2025.1/terraform/aio>`_
+   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/2026.1/terraform/aio>`_
    Terraform configuration.
 #. Deploy OpenStack in the VM using Kayobe and the :doc:`ci-aio
    <environments/ci-aio>` environment. If this is an upgrade job, the previous
@@ -273,7 +274,7 @@ In order to create a VM on the cloud hosting the CI, we need a few things:
 - a ``clouds.yaml`` file
 - an application credential to authenticate with the cloud
 - a flavor for the VM (minimum 8GiB RAM)
-- a Rocky Linux 9 image for the VM
+- a Rocky Linux 9 or Rocky Linux 10 image for the VM
 - a network and subnet for the VM
 - SSH connectivity from the GitHub runner to the VM
 - access from the VM to the Internet
@@ -286,8 +287,9 @@ and `variables
 <https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment>`_
 are used to allow running jobs on different clouds.
 
-``KAYOBE_VAULT_PASSWORD`` is a repository-scoped GitHub secret containing the
-Ansible Vault password for the ``ci-builder`` Kayobe environment.
+``KAYOBE_VAULT_PASSWORD_CI_BUILDER`` is a repository-scoped GitHub secret
+containing the Ansible Vault password for the ``ci-builder`` Kayobe
+environment.
 
 The following GitHub secrets are defined in each GitHub environment:
 

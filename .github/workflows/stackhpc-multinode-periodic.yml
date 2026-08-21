@@ -19,14 +19,17 @@ jobs:
       upgrade: ${{ steps.generate-inputs.outputs.upgrade }}
       stackhpc_kayobe_config_version: ${{ steps.generate-inputs.outputs.stackhpc_kayobe_config_version }}
       stackhpc_kayobe_config_previous_version: ${{ steps.generate-inputs.outputs.stackhpc_kayobe_config_previous_version }}
+      terraform_kayobe_multinode_version: ${{ steps.generate-inputs.outputs.terraform_kayobe_multinode_version }}
+      terraform_kayobe_multinode_previous_version: ${{ steps.generate-inputs.outputs.terraform_kayobe_multinode_previous_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Generate inputs for multinode workflow
         id: generate-inputs
         run: |
-          python3 .github/workflows/multinode-inputs.py >> $GITHUB_OUTPUT
+          python3 .github/workflows/multinode-inputs.py -s "$GITHUB_STEP_SUMMARY" \
+            | tee -a "$GITHUB_OUTPUT"
 
       - name: Display generated inputs
         run: |
@@ -35,7 +38,7 @@ jobs:
     name: Multinode periodic
     needs:
       - generate-inputs
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.4.0
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
     with:
       multinode_name: mn-periodic-${{ github.run_id }}
       os_distribution: ${{ needs.generate-inputs.outputs.os_distribution }}
@@ -45,6 +48,8 @@ jobs:
       upgrade: ${{ needs.generate-inputs.outputs.upgrade }}
       stackhpc_kayobe_config_version: ${{ needs.generate-inputs.outputs.stackhpc_kayobe_config_version }}
       stackhpc_kayobe_config_previous_version: ${{ needs.generate-inputs.outputs.stackhpc_kayobe_config_previous_version }}
+      terraform_kayobe_multinode_version: ${{ needs.generate-inputs.outputs.terraform_kayobe_multinode_version }}
+      terraform_kayobe_multinode_previous_version: ${{ needs.generate-inputs.outputs.terraform_kayobe_multinode_previous_version }}
       enable_slack_alert: true
     secrets: inherit
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'

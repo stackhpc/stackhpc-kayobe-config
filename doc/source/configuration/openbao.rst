@@ -30,7 +30,7 @@ OpenBao/Hashicorp Vault may also be used as the secret store for Barbican.
     To configure Hashicorp Vault instead set ``stackhpc_ca_secret_store: vault``,
     then follow the instruction.
 
-    Currently the migration path from Hashicorp Vault to OpenBao is in development
+    Migration method can be found at :ref:`Hashicorp Vault to OpenBao migration <vault-bao-migration>`
 
 Background
 ==========
@@ -78,13 +78,13 @@ Setup OpenBao on the seed node
 
 1. Run secret-store-deploy-seed.yml custom playbook
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-seed.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-seed.yml
 
 2. Encrypt generated certs/keys with ansible-vault (use proper location of vault password file)
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/openbao/OS-TLS-INT.pem
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/openbao/seed-openbao-keys.json
@@ -97,7 +97,7 @@ Setup OpenBao on the seed node
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/OS-TLS-INT.pem
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/seed-openbao-keys.json
@@ -111,24 +111,38 @@ Setup OpenBao on the seed node
 Setup OpenBao HA on the overcloud hosts
 ---------------------------------------
 
-1. Run secret-store-deploy-overcloud.yml custom playbook
+1. If using a walled garden, ensure ``no_proxy`` is configured to include the first controller's internal network IP. Append it to the list if necessary.
 
-   .. code-block::bash
+   .. code-block:: yaml
+      :caption: ``inventory/group_vars/overcloud/proxy.yml``
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-overcloud.yml
+      ---
+      no_proxy:
+        - "{{ lookup('vars', internal_net_name ~ '_ips')[groups.controllers.0] }}"
 
-2. Encrypt overcloud openbao keys (use proper location of vault password file)
+   .. code-block:: bash
 
-   .. code-block::bash
+      kayobe overcloud host configure -t proxy
+
+2. Run secret-store-deploy-overcloud.yml custom playbook
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-overcloud.yml
+
+3. Encrypt overcloud openbao keys (use proper location of vault password file)
+
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/openbao/overcloud-openbao-keys.json
 
       # For Hashicorp Vault
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/vault/overcloud-vault-keys.json
 
+
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/overcloud-openbao-keys.json
 
@@ -145,7 +159,7 @@ cannot be unsealed with an expired certificate.
 
 1. Delete the old certificate:
 
-   .. code-block::bash
+   .. code-block:: bash
 
       rm $KAYOBE_CONFIG_PATH/openbao/overcloud.crt
 
@@ -154,7 +168,7 @@ cannot be unsealed with an expired certificate.
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       rm $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/overcloud.crt
 
@@ -163,13 +177,13 @@ cannot be unsealed with an expired certificate.
 
 2. Generate a new certificate (and key):
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-seed.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-seed.yml
 
 3. Encrypt generated key with ansible-vault (use proper location of vault password file)
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/openbao/overcloud.key
 
@@ -178,7 +192,7 @@ cannot be unsealed with an expired certificate.
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/overcloud.key
 
@@ -188,13 +202,13 @@ cannot be unsealed with an expired certificate.
 4. Copy the new certificate to the overcloud hosts. Note, if the old
    certificate has expired this will fail on the unseal step.
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-overcloud.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-overcloud.yml
 
 5. Restart the containers to use the new certificate:
 
-   .. code-block::bash
+   .. code-block:: bash
 
       kayobe overcloud host command run --command "docker restart openbao" -l controllers
 
@@ -203,9 +217,9 @@ cannot be unsealed with an expired certificate.
 
 6. If sealed, unseal OpenBao:
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-unseal-overcloud.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-unseal-overcloud.yml
 
 Certificates generation
 =======================
@@ -217,32 +231,32 @@ Certificates generation
 
    .. code-block::
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-unseal-overcloud.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-unseal-overcloud.yml
 
 Create the external TLS certificates (testing only)
 ---------------------------------------------------
 
-This method should only be used for testing. For external TLS on production systems,
-See `Installing External TLS Certificates <installing-external-tls-certificates>`__.
+This method should only be used for testing. For external TLS on production
+systems, see :ref:`installing-external-tls-certificates`.
 
 Typically external API TLS certificates should be generated by a organisation's trusted internal or third-party CA.
 For test and development purposes it is possible to use OpenBao as a CA for the external API.
 
 1. Run the playbook
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-generate-test-external-tls.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-test-external-tls.yml
 
 2. Use ansible-vault to encrypt the PEM bundle in $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy.pem. Commit the PEM bundle to the kayobe configuration.
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy.pem
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/haproxy.pem
 
@@ -251,19 +265,19 @@ Create the internal TLS certificates
 
 1. Run the playbook
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-generate-internal-tls.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-internal-tls.yml
 
 2. Use ansible-vault to encrypt the PEM bundle in $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy-internal.pem. Commit the PEM bundle and root CA to the kayobe configuration.
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/kolla/certificates/haproxy-internal.pem
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/haproxy-internal.pem
 
@@ -272,19 +286,19 @@ Create the backend TLS and RabbitMQ TLS certificates
 
 1. Run the playbook
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-generate-backend-tls.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-backend-tls.yml
 
 2. Use ansible-vault to encrypt the keys in $KAYOBE_CONFIG_PATH/kolla/certificates/<controller>-key.pem. Commit the certificates and keys to the kayobe configuration.
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/kolla/certificates/<controller>-key.pem
 
    Or if environments are being used
 
-   .. code-block::bash
+   .. code-block:: bash
 
       ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/<controller>-key.pem
 
@@ -425,12 +439,12 @@ Enable the required TLS variables in kayobe and kolla
       It is important that you are only using admin endpoints for keystone. If
       any admin endpoints exist for other services, they must be deleted e.g.
 
-      .. code-block::bash
+      .. code-block:: bash
 
          openstack endpoint list --interface admin -f value | \
          awk '!/keystone/ {print $1}' | xargs openstack endpoint delete
 
-   .. code-block::bash
+   .. code-block:: bash
 
       kayobe overcloud service deploy
 
@@ -442,9 +456,59 @@ Enable the required TLS variables in kayobe and kolla
 
    Restart the nova-compute container on all hypervisors:
 
-   .. code-block::bash
+   .. code-block:: bash
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
+
+Pulp TLS
+========
+
+.. warning::
+
+   For clouds in production consider the impact of enabling TLS on specific hosts as Docker daemon will be restarted and this will disrupt deployments of Ceph Reef and older.
+   As Vault is deprecated and will be removed in future releases this process only works for OpenBao
+
+To enable TLS for Pulp we first need to generate the certificates and the proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+
+1. Generate the certificate
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-generate-certificate.yml
+
+2. Copy CA to truststore
+
+   .. code-block::
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
+
+3. Enable TLS for Pulp
+
+   .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/pulp.yml
+
+      # Whether to enable TLS for Pulp.
+      pulp_enable_tls: true
+
+4. Redeploy Pulp
+
+   .. code-block::
+
+      kayobe seed service deploy -t seed-deploy-containers -kt none
+
+5. Set CA for docker registry
+
+   .. code-block::
+      :caption: $KAYOBE_CONFIG_PATH/container-engine.yml
+
+      # CA of docker registry
+      docker_registry_ca: "{{ kayobe_env_config_path ~ '/openbao/OS-TLS-INT.crt' if pulp_enable_tls | bool else '' }}"
+
+6. Perform host configure to reconfigure APT, DNF and docker/podman settings
+
+   .. code-block::
+
+      kayobe overcloud host configure -t dnf,apt,container-engine
 
 Barbican integration
 ====================
@@ -456,7 +520,7 @@ Enable Barbican in kayobe
 
 1. Set the following in kayobe-config/etc/kayobe/kolla.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       kolla_enable_barbican: yes
 
@@ -466,7 +530,7 @@ Generate secrets_barbican_approle_secret_id
 1. Run ``uuidgen`` to generate secret id
 2. Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_secret_id: "YOUR-SECRET-GOES-HERE"
 
@@ -475,16 +539,16 @@ Create required configuration in OpenBao
 
 1. Run secret-store-deploy-barbican.yml custom playbook
 
-   .. code-block::bash
+   .. code-block:: bash
 
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store-deploy-barbican.yml
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-barbican.yml
 
 Add secrets_barbican_approle_id to secrets
 ------------------------------------------
 
 1. Note the role id from playbook output and insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_role_id: "YOUR-APPROLE-ID-GOES-HERE"
 
@@ -513,6 +577,30 @@ Configure Barbican
 Deploy Barbican
 ---------------
 
-   .. code-block::bash
+   .. code-block:: bash
 
       kayobe overcloud service deploy -kt barbican
+
+.. _vault-bao-migration:
+
+Hashicorp Vault to OpenBao Migration
+====================================
+
+You can migrate your secret store from Vault to OpenBao by using a playbook.
+
+.. code-block:: bash
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/vault-bao-migration-all.yml
+
+The playbook runs three playbooks that can be run separately.
+
+1. Migrate seed Vault to OpenBao - ``$KAYOBE_CONFIG_PATH/ansible/secret-store/vault-bao-migration-seed.yml``
+2. Migrate overcloud Vault to OpenBao - ``$KAYOBE_CONFIG_PATH/ansible/secret-store/vault-bao-migration-overcloud.yml``
+3. Automatically update SKC to target OpenBao - ``$KAYOBE_CONFIG_PATH/ansible/secret-store/vault-bao-migration-change-config.yml``
+
+Seed migration is a single node migration and API calls to seed secret store can be disrupted.
+However, end users of OpenStack will not be affected.
+
+Overcloud migration is HA migration and no downtime is expected.
+
+It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.

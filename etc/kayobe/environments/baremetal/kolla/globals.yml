@@ -1,0 +1,25 @@
+# yamllint disable-file
+---
+#############################################################################
+# HAProxy tunings
+
+{% if kolla_enable_ironic | bool and "genericswitch" in kolla_neutron_ml2_mechanism_drivers %}
+# NOTE: We are increasing the HAProxy timeouts to 5 minutes and 30 seconds due
+# to the neutron
+# generic switch driver, which synchronously applies switch configuration for
+# each ironic port during node provisioning and tear down.
+# The specific API calls that require this long timeout are:
+# - Creation and deletion of VLAN networks.
+# - Creation or update of ports, adding binding information.
+# - Update of ports, removing binding information.
+# - Deletion of ports.
+haproxy_client_timeout: 5m30
+haproxy_server_timeout: 5m30
+neutron_tls_proxy_client_timeout: 5m30
+neutron_tls_proxy_server_timeout: 5m30
+{% endif %}
+
+#############################################################################
+# Neutron tunings
+
+#############################################################################

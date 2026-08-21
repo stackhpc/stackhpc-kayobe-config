@@ -1,0 +1,197 @@
+---
+- name: Run StackHPC Cloud tests
+  hosts: tempest_runner:overcloud
+  tags:
+    - stackhpc-cloud-tests
+  vars:
+    sct_venv: "{{ virtualenv_path }}/sct-venv"
+    sct_repo: https://github.com/stackhpc/stackhpc-cloud-tests
+    # Define the version of SCT used for testing, the github workflow overrides this with
+    # stackhpc_cloud_tests_version so this is only used if running "locally".
+    sct_version: main
+    sct_timeout: 30
+    results_path_local: "{{ lookup('env', 'HOME') }}/sct-results"
+  tasks:
+    - name: Stackhpc Cloud tests
+      block:
+        - name: Assert that there is only one host in the tempest_runner group
+          ansible.builtin.assert:
+            that: groups.get('tempest_runner', []) | length == 1
+            fail_msg: The tempest_runner group should contain exactly one host
+
+        - name: Create a temporary directory for tests repo
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: sct-repo
+          register: repo_tmpdir
+
+        - name: Create a temporary directory for results
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: sct-results
+          register: results_tmpdir
+
+        - name: Clone the StackHPC Cloud tests repository
+          ansible.builtin.git:
+            repo: "{{ sct_repo }}"
+            version: "{{ sct_version }}"
+            dest: "{{ repo_tmpdir.path }}"
+            depth: 1
+            single_branch: true
+
+        - name: Ensure the latest versions of pip and setuptools are installed  # noqa package-latest
+          ansible.builtin.pip:
+            name: "{{ item.name }}"
+            state: latest
+            virtualenv: "{{ sct_venv }}"
+            virtualenv_command: python3 -m venv
+          with_items:
+            - { name: pip }
+            - { name: setuptools }
+
+        - name: Ensure required individual Python packages are installed
+          ansible.builtin.pip:
+            name:
+              - pytest-html
+              - pytest-timeout
+            virtualenv: "{{ sct_venv }}"
+
+        - name: Ensure Python requirements file packages are installed
+          ansible.builtin.pip:
+            requirements: "{{ repo_tmpdir.path }}/requirements.txt"
+            virtualenv: "{{ sct_venv }}"
+
+        - name: Include Kolla Ansible passwords
+          ansible.builtin.include_vars:
+            file: "{{ kayobe_env_config_path }}/kolla/passwords.yml"
+            name: kolla_passwords
+
+        # Monitoring tests should run once, executed on the host in the
+        # tempest_runner group.
+        - name: Check for StackHPC Cloud monitoring tests
+          ansible.builtin.stat:
+            path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
+          register: stackhpc_cloud_monitoring_tests
+
+        - name: Run StackHPC Cloud monitoring tests
+          ansible.builtin.command:
+            cmd: >
+              {{ sct_venv }}/bin/py.test
+              --html={{ results_tmpdir.path }}/monitoring.html
+              --self-contained-html
+              --timeout {{ sct_timeout }}
+              -rfEx
+              -vv
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
+          environment:
+            GRAFANA_URL: "{{ sct_grafana_url }}"
+            GRAFANA_USERNAME: "{{ sct_grafana_username }}"
+            GRAFANA_PASSWORD: "{{ sct_grafana_password }}"
+            OPENSEARCH_HOSTS: "{{ sct_opensearch_hosts }}"
+            OPENSEARCH_PORT: "{{ sct_opensearch_port }}"
+            OPENSEARCH_TLS: "{{ sct_opensearch_tls }}"
+            OPENSEARCH_DASHBOARDS_URL: "{{ sct_opensearch_dashboards_url }}"
+            OPENSEARCH_DASHBOARDS_USERNAME: "{{ sct_opensearch_dashboards_username }}"
+            OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sct_opensearch_dashboards_password }}"
+            PROMETHEUS_URL: "{{ sct_prometheus_url }}"
+            PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
+            PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
+          vars:
+            kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
+            kolla_internal_scheme: "{{ 'https' if kolla_enable_tls_internal | bool else 'http' }}"
+            sct_grafana_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:3000"
+            sct_grafana_username: "grafana_local_admin"
+            sct_grafana_password: "{{ kolla_passwords.grafana_admin_password }}"
+            sct_opensearch_hosts: "{{ kolla_internal_fqdn }}"
+            sct_opensearch_port: 9200
+            sct_opensearch_tls: "{{ kolla_enable_tls_internal | bool }}"
+            sct_opensearch_dashboards_url: "{{ kolla_external_scheme }}://{{ kolla_external_fqdn }}:5601"
+            sct_opensearch_dashboards_username: "opensearch"
+            sct_opensearch_dashboards_password: "{{ kolla_passwords.opensearch_dashboards_password }}"
+            sct_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
+            sct_prometheus_username: admin
+            sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+          failed_when: monitoring_results.rc not in [0, 1]
+          register: monitoring_results
+          when: "'tempest_runner' in group_names and stackhpc_cloud_monitoring_tests.stat.exists"
+
+        # Host tests should run on every host in the overcloud group.
+        # TODO: Use TestInfra's native Ansible or SSH connection plugins for
+        # remote test execution? That would place all results in a single file
+        # and allow us to execute all tests from a single host.
+        # https://testinfra.readthedocs.io/en/latest/backends.html#connection-backends
+        - name: Check for StackHPC Cloud host tests
+          ansible.builtin.stat:
+            path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
+          register: stackhpc_cloud_host_tests
+
+        - name: Run StackHPC Cloud host tests
+          ansible.builtin.command:
+            cmd: >
+              {{ sct_venv }}/bin/py.test
+              --html={{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
+              --self-contained-html
+              --timeout {{ sct_timeout }}
+              -vv
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
+          environment:
+            DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
+            DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
+            SELINUX_STATE: "{{ sct_selinux_state }}"
+          vars:
+            # Inclusive min
+            sct_docker_version_min: "27.0.0"
+            # Exclusive max
+            sct_docker_version_max: "30.0.0"
+            sct_selinux_state: "{{ selinux_state }}"
+          failed_when: host_results.rc not in [0, 1]
+          register: host_results
+          # Some host checks may need to run as root
+          become: true
+          when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
+
+        # Host test results will be owned by root - we need to read and delete them
+        - name: Change permissions on SCT host test results
+          ansible.builtin.command:
+            cmd: chmod 666 {{ results_tmpdir.path }}/host-{{ inventory_hostname }}.html
+          become: true
+          when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
+
+      always:
+        - name: Synchronize results
+          ansible.posix.synchronize:
+            src: "{{ results_tmpdir.path }}/"
+            dest: "{{ results_path_local }}/"
+            mode: pull
+            archive: no
+            recursive: true
+            # For jump host
+            use_ssh_args: true
+
+        - name: Write a file containing failed test runs
+          ansible.builtin.copy:
+            content: |-
+              {% for host in ansible_play_hosts_all %}
+              {% if host not in ansible_play_hosts %}
+              {{ host }}: Host failure
+              {% endif %}
+              {% if hostvars[host].monitoring_results.rc | default(0) != 0 %}
+              monitoring.html
+              {% endif %}
+              {% if hostvars[host].host_results.rc | default(0) != 0 %}
+              host-{{ host }}.html
+              {% endif %}
+              {% endfor %}
+            dest: "{{ results_path_local }}/failed-tests"
+          delegate_to: localhost
+          run_once: true
+
+        - name: Clean up temporary directory
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ repo_tmpdir.path }}"
+            - "{{ results_tmpdir.path }}"
+          # Some files used by host tests may now be owned by root
+          become: true

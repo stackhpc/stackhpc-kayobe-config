@@ -3,7 +3,8 @@
 # Seed node configuration.
 
 # User with which to access the seed via SSH during bootstrap, in order to
-# setup the Kayobe user account. Default is {{ os_distribution }}.
+# setup the Kayobe user account. Default is 'cloud-user' if os_distribution is
+# set to centos, otherwise 'os_distribution'.
 #seed_bootstrap_user:
 
 ###############################################################################
@@ -59,6 +60,12 @@
 # value to require configuration.
 #seed_lvm_group_data_disks:
 
+# List of LVM logical volumes for the data volume group when using docker.
+#seed_lvm_group_data_docker_lvs:
+
+# List of LVM logical volumes for the data volume group when using podman.
+#seed_lvm_group_data_podman_lvs:
+
 # List of LVM logical volumes for the data volume group.
 #seed_lvm_group_data_lvs:
 
@@ -70,6 +77,12 @@
 
 # Filesystem for docker volumes LVM backing volume. ext4 allows for shrinking.
 #seed_lvm_group_data_lv_docker_volumes_fs:
+
+# Size of podman volumes LVM backing volume.
+#seed_lvm_group_data_lv_podman_volumes_size:
+
+# Filesystem for podman volumes LVM backing volume. ext4 allows for shrinking.
+#seed_lvm_group_data_lv_podman_volumes_fs:
 
 ###############################################################################
 # Seed node sysctl configuration.
@@ -94,14 +107,14 @@
 ###############################################################################
 # Seed node additional containers configuration
 
-# Seed container running a "Pulp in one" service.
-# https://pulpproject.org/pulp-in-one-container/
+# Seed container running a "Pulp in One" service.
+# https://pulpproject.org/pulp-oci-images/docs/admin/reference/available-images/multi-process-images/
 # This can be used as a package mirror, and container image registry.
 seed_pulp_container_enabled: true
 
 seed_pulp_container:
   pulp:
-    image: pulp/pulp
+    image: "quay.io/pulp/pulp"
     pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
     post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
     tag: "3.81.0"
@@ -110,8 +123,8 @@ seed_pulp_container:
     # s6-overlay-suexec starts as pid 1
     init: false
     env:
-      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
-      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 32] | min }}"
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min | string }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min | string }}"
       PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
     volumes:
       - /opt/kayobe/containers/pulp:/etc/pulp
@@ -126,9 +139,9 @@ seed_squid_container_enabled: false
 
 seed_squid_container:
   squid:
-    image: stackhpc/squid
+    image: ghcr.io/stackhpc/docker-squid
     pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
-    tag: "4.15"
+    tag: "6.10"
     network_mode: host
     volumes:
       - squid_spool:/var/spool/squid
@@ -151,13 +164,14 @@ seed_redfish_exporter_container:
     volumes: "/opt/kayobe/containers/redfish_exporter/redfish_exporter.yml:/redfish_exporter.yml:ro"
     restart_policy: unless-stopped
 
-# Dict of container images to start
+# Dict of containers to deploy.
 # Example:
 # seed_containers:
 #   squid:
-#     image: "stackhpc/squid:3.5.20-1"
+#     image: "docker.io/stackhpc/squid"
 #     pre: "{{ kayobe_env_config_path }}/containers/squid/pre.yml"
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
+#     tag: "3.5.20-1"
 #
 seed_containers: >-
   {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
@@ -168,8 +182,8 @@ seed_containers: >-
 seed_extra_containers: {}
 
 # Whether to attempt a basic authentication login to a registry when
-# deploying seed containers
-seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabled | bool }}"
+# deploying seed containers.
+seed_manage_containers_registry_attempt_login: "{{ not seed_pulp_container_enabled | bool }}"
 
 ###############################################################################
 # Seed node firewalld configuration.
@@ -193,11 +207,25 @@ seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabl
 #seed_firewalld_rules:
 
 ###############################################################################
+# Seed node fail2ban configuration.
+
+# Whether to install and enable fail2ban.
+#seed_fail2ban_enabled:
+
+# List of fail2ban jails for the seed node.
+#seed_fail2ban_jail_configuration:
+
+# List of default fail2ban jails for the seed node.
+#seed_fail2ban_jail_configuration_default:
+
+# List of extra fail2ban jails for the seed node.
+#seed_fail2ban_jail_configuration_extra:
+
+###############################################################################
 # Seed node swap configuration.
 
-# List of swap devices. Each item is a dict containing a 'device' item. Default
-# is an empty list.
-# seed_swap:
+# List of swap devices. Each item is a dict containing a 'device' item.
+#seed_swap:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

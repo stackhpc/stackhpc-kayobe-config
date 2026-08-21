@@ -9,7 +9,9 @@ This guide is for operators of the StackHPC Kayobe configuration project.
 
    ceph-management
    control-plane-operation
+   shutdown-and-startup
    customising-horizon
+   database-backups
    gpu-in-openstack
    bifrost-hardware-inventory-management
    hotfix-playbook

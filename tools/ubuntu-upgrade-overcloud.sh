@@ -29,8 +29,8 @@ fi
 
 set -x
 
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ubuntu-upgrade.yml -e os_release=noble --limit $1
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/ubuntu-upgrade.yml -e os_release=noble --limit $1
 
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ovn-fix-chassis-priorities.yml
+kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/ovn-fix-chassis-priorities.yml
 
 kayobe overcloud host configure --limit $1 -e os_release=noble

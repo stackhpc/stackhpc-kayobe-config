@@ -2,8 +2,9 @@
 ###############################################################################
 # Compute node configuration.
 
-# User with which to access the computes via SSH during bootstrap, in order
-# to setup the Kayobe user account. Default is {{ os_distribution }}.
+# User with which to access the compute nodes via SSH during bootstrap, in
+# order to setup the Kayobe user account. Default is 'cloud-user' if
+# os_distribution is set to centos, otherwise 'os_distribution'.
 #compute_bootstrap_user:
 
 ###############################################################################
@@ -159,6 +160,21 @@
 #compute_firewalld_rules:
 
 ###############################################################################
+# Compute node fail2ban configuration.
+
+# Whether to install and enable fail2ban.
+#compute_fail2ban_enabled:
+
+# List of fail2ban jails for the compute node.
+#compute_fail2ban_jail_configuration:
+
+# List of default fail2ban jails for the compute node.
+#compute_fail2ban_jail_configuration_default:
+
+# List of extra fail2ban jails for the compute node.
+#compute_fail2ban_jail_configuration_extra:
+
+###############################################################################
 # Compute node host libvirt configuration.
 
 # Whether to enable a host libvirt daemon. Default is true if kolla_enable_nova
@@ -208,15 +224,14 @@
 #compute_libvirt_ceph_repo_install:
 
 # Ceph package repository release to install on CentOS and Rocky hosts when
-# compute_libvirt_ceph_repo_install is true. Default is 'pacific'.
+# compute_libvirt_ceph_repo_install is true. Default is 'squid'.
 #compute_libvirt_ceph_repo_release:
 
 ###############################################################################
 # Compute node swap configuration.
 
-# List of swap devices. Each item is a dict containing a 'device' item. Default
-# is an empty list.
-# compute_swap:
+# List of swap devices. Each item is a dict containing a 'device' item.
+#compute_swap:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
