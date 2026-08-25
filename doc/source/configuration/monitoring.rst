@@ -313,7 +313,7 @@ To configure the exporter, adjust the variables in
     redfish_exporter_default_password: "{{ ipmi_password }}"
 
     # The address of the BMC that is queried by redfish exporter for metrics.
-    redfish_exporter_target_address: "{{ ipmi_address }}"
+    redfish_exporter_target_address: "{{ redfish_address | default(ipmi_address, true) }}"
 
 Deploy the exporter on the seed:
 
