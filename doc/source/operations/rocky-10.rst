@@ -17,7 +17,7 @@ beginning migrations:
 #. :doc:`tempest`.
 #. Check OpenSearch logs
 #. Check Prometheus alerts
-#. Check Azimuth operation status
+#. Check Azimuth operation status, if applicable
 
 Update Configuration
 ====================
@@ -463,9 +463,141 @@ Full procedure for one host
 
 Seed
 ====
-TODO
+Migrating the seed host follows a very similar process to migrating the other hosts, with the added step
+of needing to backup and restore some data on the seed VM.
 
-* Bifrost docker volume
+The steps taken will vary depending on whether or not your seed VM uses a separate data partition; if it does
+not, now would be a good opportunity to address this.
+
+.. caution::
+
+   The seed data partition holds data and keys which must be persisted. Ensure volumes are
+   properly backed up before migrating, and then restored before services are deployed.
+
+Full procedure for seed host migration - with separate data partition
+---------------------------------------------------------------------
+
+On the seed
+^^^^^^^^^^^
+
+#. If it's used, stop bifrost:
+
+   .. code-block:: console
+
+      systemctl stop kolla-bifrost_deploy-container.service
+
+#. Stop remaining seed services:
+
+   .. code-block:: console
+
+      docker stop $(docker ps -aq)
+
+#. Copy relevant container data into the data partition (under ``/var/lib/docker/volumes``)
+   so this data can be restored after the migration
+
+   #. Pulp: ``/opt/kayobe/containers/pulp``
+   #. Vault: ??
+   #. Openbao: ``/opt/kayobe/openbao``
+   #. Squid: ``/srv/docker/squid/squid.conf``
+
+On the seed hypervisor
+^^^^^^^^^^^^^^^^^^^^^^
+
+#. Shutdown the seed VM:
+
+   .. code-block:: console
+
+      virsh shutdown <seed VM>
+
+#. Take a backup of the seed VM root and data images in ``/var/lib/libvirt/images``
+
+#. Deprovision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm deprovision
+
+#. Restore seed VM data image in ``/var/lib/libvirt/images``
+
+#. Provision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm provision
+
+#. Configure the seed:
+
+   .. code-block:: console
+
+      kayobe seed host configure
+
+#. Deploy and upgrade seed services:
+
+   .. code-block:: console
+
+      kayobe seed service upgrade
+
+Full procedure for seed host migration - without separate data partition
+------------------------------------------------------------------------
+
+On the seed
+^^^^^^^^^^^
+
+#. If it's used, stop bifrost:
+
+   .. code-block:: console
+
+      systemctl stop kolla-bifrost_deploy-container.service
+
+#. Stop remaining seed services:
+
+   .. code-block:: console
+
+      docker stop $(docker ps -aq)
+
+#. Copy the contents of ``/var/lib/docker`` and ``/opt/kayobe/containers/pulp`` out of the VM
+
+Setup a data partition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Magic**
+
+On the seed hypervisor
+^^^^^^^^^^^^^^^^^^^^^^
+
+#. Shutdown the seed VM:
+
+   .. code-block:: console
+
+      virsh shutdown <seed VM>
+
+#. Take a backup of the seed VM root disk image in ``/var/lib/libvirt/images``
+
+#. Deprovision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm deprovision
+
+#. Restore seed VM data image in ``/var/lib/libvirt/images``
+
+#. Provision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm provision
+
+#. Configure the seed:
+
+   .. code-block:: console
+
+      kayobe seed host configure
+
+#. Deploy and upgrade seed services:
+
+   .. code-block:: console
+
+      kayobe seed service upgrade
 
 Ansible Control Host
 ====================
