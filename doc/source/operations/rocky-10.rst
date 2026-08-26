@@ -17,7 +17,7 @@ beginning migrations:
 #. :doc:`tempest`.
 #. Check OpenSearch logs
 #. Check Prometheus alerts
-#. Check Azimuth operation status
+#. Check Azimuth operation status, if applicable
 
 Update Configuration
 ====================
@@ -463,9 +463,100 @@ Full procedure for one host
 
 Seed
 ====
-TODO
+Migrating the seed host follows a very similar process to migrating the other hosts, with the added step
+of needing to backup and restore some data on the seed VM.
 
-* Bifrost docker volume
+The data you need to backup and restore will vary depending on whether or not your seed VM uses a separate
+data partition; if it does not, now would be a good opportunity to address this.
+
+.. caution::
+
+   The seed data partition holds data and keys which must be persisted. Ensure volumes are
+   properly backed up before migrating, and then restored before services are deployed.
+
+Potential issues
+----------------
+As we only backup the container data volumes, rather than the containers themselves,
+`kayobe seed service upgrade` can fail as it expects a Rocky 9 bifrost container, rather than the Rocky 10 container
+that the newly provisioned VM will deploy with. It may be necessary to temporarily update your configuration to
+deploy a Rocky 9 container first, revert this change, then run the service upgrade to deploy the Rocky 10 container.
+
+Full procedure for seed host migration
+---------------------------------------------------------------------
+
+On the seed
+^^^^^^^^^^^
+
+#. If it's used, stop bifrost:
+
+   .. code-block:: console
+
+      systemctl stop kolla-bifrost_deploy-container.service
+
+#. Stop remaining seed services:
+
+   .. code-block:: console
+
+      docker stop $(docker ps -aq)
+
+#. Backup data:
+
+   #. If your seed has a data partition (under ``/var/lib/docker/volumes``), copy relevant container data
+      into it so this data can be restored after the migration:
+
+      #. Pulp: ``/opt/kayobe/containers/pulp``
+      #. Openbao: ``/opt/kayobe/openbao``
+      #. Vault: ``/opt/kayobe/vault``
+      #. Squid: ``/srv/docker/squid/squid.conf``
+
+   #. If your seed doesn't, copy data out of the VM:
+
+      #. Containers: ``/var/lib/docker/``
+      #. Pulp: ``/opt/kayobe/containers/pulp``
+      #. Openbao: ``/opt/kayobe/openbao``
+      #. Vault: ``/opt/kayobe/vault``
+      #. Squid: ``/srv/docker/squid/squid.conf``
+
+On the seed hypervisor
+^^^^^^^^^^^^^^^^^^^^^^
+
+#. Shutdown the seed VM:
+
+   .. code-block:: console
+
+      virsh shutdown <seed VM>
+
+#. Take a backup of the seed VM data and/or root images in ``/var/lib/libvirt/images``
+
+#. Deprovision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm deprovision
+
+#. If your seed VM had a data volume, restore the image in ``/var/lib/libvirt/images``, if it did not then
+   now would be a good time to create one to aid future migrations and seed VM reprovisioning
+
+#. Provision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm provision
+
+#. Configure the seed:
+
+   .. code-block:: console
+
+      kayobe seed host configure
+
+#. On the seed VM, copy container data back from the data partition (or from outside the VM if your
+   seed VM didn't have one)
+
+#. Deploy and upgrade seed services:
+
+   .. code-block:: console
+
+      kayobe seed service upgrade
 
 Ansible Control Host
 ====================
