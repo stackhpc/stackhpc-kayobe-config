@@ -1,0 +1,29 @@
+---
+- name: Check for node UUID
+  hosts: "{{ groups['controllers'][0] }}"
+  vars:
+    venv: "{{ lookup('env', 'VENV_PATH') }}/openstack-cli"
+
+  tasks:
+    - name: Get redfish node VM UUID
+      shell:
+        cmd: virsh domuuid baremetal0
+      become: true
+      register: redfish_vm_uuid
+
+    - name: Create empty host_vars file
+      file:
+        path: "{{ lookup('env', 'KAYOBE_CONFIG_SOURCE_PATH') }}/etc/kayobe/environments/baremetal/inventory/host_vars/baremetal0"
+        state: touch
+        mode: '0664'
+      become: true
+
+    - name: Ensure redfish node host_vars exist
+      template:
+        src: baremetal0.j2
+        dest: "{{ lookup('env', 'KAYOBE_CONFIG_SOURCE_PATH') }}/etc/kayobe/environments/baremetal/inventory/host_vars/baremetal0"
+      become: true
+
+    - name: Print value
+      debug:
+        msg:  Redfish uuid is {{ redfish_vm_uuid.stdout }}
