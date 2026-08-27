@@ -16,8 +16,7 @@ when used with Kayobe's :kayobe-doc:`multiple environments
 <multiple-environments>` feature.
 
 This configuration should be consumed using the `StackHPC Kayobe fork
-<https://github.com/stackhpc/kayobe/tree/stackhpc/2025.1>`__, which includes
-backported support for Ansible collections.
+<https://github.com/stackhpc/kayobe/tree/stackhpc/2025.1>`__.
 
 New deployments
 ---------------
@@ -40,6 +39,8 @@ need to merge the changes in this repository into your repository:
    git remote add stackhpc https://github.com/stackhpc/stackhpc-kayobe-config
    git fetch stackhpc
    git merge stackhpc/|current_release_git_branch_name|
+
+.. _updating-configuration:
 
 Updating
 --------
@@ -86,7 +87,7 @@ Kayobe environments can also be specified, for example, to create an AIO environ
    --base-path skc-aio-environment \
    --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
    --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw \
    --kayobe-in-requirements
 
@@ -116,5 +117,5 @@ service deployment on overcloud hosts:
    beokay.py run \
    'kayobe overcloud service deploy' \
    --base-path skc-aio-environment \
-   --kayobe-config-env-name ci-aio \
+   --kayobe-config-env-name aio \
    --vault-password-file ~/vault-pw

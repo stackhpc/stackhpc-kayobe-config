@@ -148,6 +148,12 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
     reference: 1.3.0
+  # TODO(priteau): Remove once
+  # https://review.opendev.org/c/openstack/keystone/+/990504 is merged
+  keystone-base:
+    type: git
+    location: https://github.com/stackhpc/keystone.git
+    reference: stackhpc/{{ openstack_release }}
   magnum-conductor-plugin-helm:
     version: "v4.1.4"
     sha256:
@@ -173,10 +179,12 @@ kolla_sources:
     type: git
     location: https://github.com/stackhpc/networking-mlnx.git
     reference: stackhpc/{{ openstack_release }}
-  blazar-base:
+  # TODO(technowhizz): Remove in 2026.1 on openstacksdk >= 4.9.0
+  # https://review.opendev.org/c/openstack/openstacksdk/+/970135
+  horizon:
     type: git
-    location: https://github.com/stackhpc/blazar.git
-    reference: stackhpc/master
+    location: https://github.com/stackhpc/horizon.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.

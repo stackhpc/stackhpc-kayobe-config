@@ -9,6 +9,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
 
    ceph-management
    control-plane-operation
+   shutdown-and-startup
    customising-horizon
    database-backups
    gpu-in-openstack
@@ -23,4 +24,5 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    tempest
    upgrading-openstack
    upgrading-ceph
+   rocky-10
    ubuntu-noble

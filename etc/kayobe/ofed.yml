@@ -4,14 +4,23 @@
 ###############################################################################
 # DOCA host version
 stackhpc_pulp_doca_version_matrix:
-    "6": 2.9.3
-    "7": 3.2.2
-stackhpc_pulp_doca_version: "{{ stackhpc_pulp_doca_version_matrix[stackhpc_pulp_repo_rocky_9_minor_version | string] | default('2.9.1') }}"
+    "9.6": '2.9.3'
+    "9.7": '3.2.2'
+    "9.8": '3.2.3'
+    "10.2": '3.2.3'
+
+doca_rocky_9_release: 9.{{ stackhpc_pulp_repo_rocky_9_minor_version | string }}
+doca_rocky_10_release: 10.{{stackhpc_pulp_repo_rocky_10_minor_version | string }}
+
+stackhpc_pulp_rocky_9_doca_version: "{{ stackhpc_pulp_doca_version_matrix[doca_rocky_9_release] | default('2.9.3') }}"
+stackhpc_pulp_rocky_10_doca_version: "{{ stackhpc_pulp_doca_version_matrix[doca_rocky_10_release] | default('3.2.2') }}"
 
 # Available and tested versions of the pre-compiled doca-ofed kernel modules
 stackhpc_doca_kernel_version_matrix:
-    "6": 5.14.0.570.21.1.el9.6
-    "7": 5.14.0.611.41.1.el9.7
+    "9.6": 5.14.0.570.21.1.el9.6
+    "9.7": 5.14.0.611.55.1.el9.7
+    "9.8": 5.14.0.687.41.1.el9.8
+    "10.2": 6.12.0.211.49.1.el10.2
 
 ###############################################################################
 # Pulp configuration for DOCA OFED
@@ -20,19 +29,29 @@ stackhpc_doca_kernel_version_matrix:
 stackhpc_pulp_sync_ofed: "{{ groups['mlnx'] | length > 0 }}"
 
 # DOCA Snapshot lookup vars
-doca_rocky_9_minor_dot: "{% if stackhpc_pulp_doca_version is version('3.2.0', '>=') %}9{% else %}9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}{% endif %}"
+doca_rocky_9_minor_dot: "{% if stackhpc_pulp_rocky_9_doca_version is version('3.2.0', '>=') %}9{% else %}{{ doca_rocky_9_release }}{% endif %}"
 # eg stackhpc_pulp_repo_doca_2_9_3_rhel9_6_version or stackhpc_pulp_repo_doca_3_2_2_rhel9_version
-doca_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel{{ doca_rocky_9_minor_dot | replace('.', '_') }}_version"
-doca_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel{{ doca_rocky_9_minor_dot | replace('.', '_') }}_aarch64_version"
-doca_modules_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_version"
-doca_modules_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_aarch64_version"
+doca_rocky_9_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_9_doca_version | replace('.', '_') }}_rhel{{ doca_rocky_9_minor_dot | replace('.', '_') }}_version"
+doca_rocky_9_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_9_doca_version | replace('.', '_') }}_rhel{{ doca_rocky_9_minor_dot | replace('.', '_') }}_aarch64_version"
+doca_rocky_9_modules_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_9_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_version"
+doca_rocky_9_modules_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_9_doca_version | replace('.', '_') }}_rhel9_{{ stackhpc_pulp_repo_rocky_9_minor_version }}_modules_aarch64_version"
+
+doca_rocky_10_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_10_doca_version | replace('.', '_') }}_rhel10_x86_64_version"
+doca_rocky_10_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_10_doca_version | replace('.', '_') }}_rhel10_aarch64_version"
+doca_rocky_10_modules_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_10_doca_version | replace('.', '_') }}_rhel10_{{ stackhpc_pulp_repo_rocky_10_minor_version }}_modules_version"
+doca_rocky_10_modules_aarch64_version_lookup_var: "stackhpc_pulp_repo_doca_{{ stackhpc_pulp_rocky_10_doca_version | replace('.', '_') }}_rhel10_{{ stackhpc_pulp_repo_rocky_10_minor_version }}_modules_aarch64_version"
 
 # DOCA Snapshot versions. The defaults use the appropriate version from
 # pulp-repo-versions.yml
-stackhpc_pulp_repo_rhel9_doca_version: "{{ lookup('vars', doca_version_lookup_var) }}"
-stackhpc_pulp_repo_rhel9_doca_aarch64_version: "{{ lookup('vars', doca_aarch64_version_lookup_var, default=stackhpc_pulp_repo_rhel9_doca_version) }}"
-stackhpc_pulp_repo_rhel9_doca_modules_version: "{{ lookup('vars', doca_modules_version_lookup_var) }}"
-stackhpc_pulp_repo_rhel9_doca_modules_aarch64_version: "{{ lookup('vars', doca_modules_aarch64_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel9_doca_version: "{{ lookup('vars', doca_rocky_9_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel9_doca_aarch64_version: "{{ lookup('vars', doca_rocky_9_aarch64_version_lookup_var, default=stackhpc_pulp_repo_rhel9_doca_version) }}"
+stackhpc_pulp_repo_rhel9_doca_modules_version: "{{ lookup('vars', doca_rocky_9_modules_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel9_doca_modules_aarch64_version: "{{ lookup('vars', doca_rocky_9_modules_aarch64_version_lookup_var) }}"
+
+stackhpc_pulp_repo_rhel10_doca_version: "{{ lookup('vars', doca_rocky_10_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel10_doca_aarch64_version: "{{ lookup('vars', doca_rocky_10_aarch64_version_lookup_var, default=stackhpc_pulp_repo_rhel10_doca_version) }}"
+stackhpc_pulp_repo_rhel10_doca_modules_version: "{{ lookup('vars', doca_rocky_10_modules_version_lookup_var) }}"
+stackhpc_pulp_repo_rhel10_doca_modules_aarch64_version: "{{ lookup('vars', doca_rocky_10_modules_aarch64_version_lookup_var) }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

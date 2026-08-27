@@ -100,7 +100,7 @@ Checkout the new kayobe-config branch (from the draft PR):
    git fetch
    git checkout <branch-name>
 
-For Rocky Linux 9, bump the snapshot versions in /etc/yum/repos.d with:
+For Rocky Linux 9 and Rocky Linux 10, bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 

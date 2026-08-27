@@ -30,8 +30,9 @@ Before building OFED packages, the workflow will ensure that:
 build-ofed
 ----------
 
-Currently we only support building Rocky Linux 9 OFED kernel module packages.
-The workflow can build packages for ``x86_64`` and ``aarch64``.
+Currently we only support building Rocky Linux 9 and Rocky Linux 10 OFED kernel
+module packages. The workflow builds packages for ``x86_64`` and
+``aarch64`` at the same time, to keep kernel versions synchronised across architectures.
 
 The Build OFED module workflow will check that the filesystem is configured (noexec disabled)
 to allow the DOCA build script to run. The workflow will also install any necessary dependencies
@@ -45,9 +46,9 @@ push-ofed
 ---------
 
 As mentioned above, the DOCA repository is synced into the ``doca`` repository in Ark. This workflow
-will upload the ``doca-kernel-repo`` RPM to a separate repository named ``doca-modules``. The version
-for this repository is set in ``pulp-repo-versions.yml`` and is disabled for local pulp syncs by
-default.
+will upload the ``doca-kernel-repo`` RPM to a separate repository named ``doca-modules``, which is
+specific to the minor version of Rocky the modules are being built for. The versions for these
+repositories are set in ``pulp-repo-versions.yml`` and are disabled for local pulp syncs by default.
 
 Install process
 ===============
