@@ -13,7 +13,7 @@ jobs:
   amphora-image-promote:
     name: Promote Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -22,9 +22,9 @@ jobs:
       - name: Determine OpenStack release
         id: openstack_release
         run: |
-          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' src/kayobe-config/.gitreview)
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
-        working-directory: src/kayobe-config
 
       - name: Setup networking
         run: |
@@ -55,6 +55,8 @@ jobs:
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe control host bootstrap
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Promote Amphora image artifact
         run: |
