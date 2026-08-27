@@ -67,3 +67,23 @@ prometheus_blackbox_exporter_endpoints_kayobe:
     enabled: "{{ seed_pulp_container_enabled | bool }}"
 
 prometheus_openstack_exporter_interval: "{{ stackhpc_prometheus_openstack_exporter_interval }}s"
+
+#############################################################################
+# Additional configuration
+
+# NOTE(Alex-Welsh): The Gazpacho release removes the cinderv3 endpoint by
+# default. A lot of integrations still rely on the old endpoint, so we enable it
+# explicitly.
+cinder_ks_services:
+  - name: "cinder"
+    type: "block-storage"
+    description: "Openstack Block Storage"
+    endpoints:
+      - {'interface': 'internal', 'url': '{% raw %}{{ cinder_internal_endpoint }}{% endraw %}'}
+      - {'interface': 'public', 'url': '{% raw %}{{ cinder_public_endpoint }}{% endraw %}'}
+  - name: "cinderv3"
+    type: "volumev3"
+    description: "Openstack Block Storage (deprecated)"
+    endpoints:
+      - {'interface': 'internal', 'url': '{% raw %}{{ cinder_v3_internal_endpoint }}{% endraw %}'}
+      - {'interface': 'public', 'url': '{% raw %}{{ cinder_v3_public_endpoint }}{% endraw %}'}
