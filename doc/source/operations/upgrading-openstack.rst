@@ -44,6 +44,27 @@ such as older versions of Gophercloud or the OpenStack Terraform/OpenTofu
 provider, will fail to reach the Cinder service. This can usually be resolved
 by updating dependencies to their latest versions.
 
+If migration to the new endpoint is not feasible, the old endpoint can be
+persisted by adding the following configuration to ``kolla/globals.yml``:
+
+.. code-block:: yaml
+   :caption: ``kolla/globals.yml``
+
+
+    cinder_ks_services:
+      - name: "cinder"
+        type: "block-storage"
+        description: "Openstack Block Storage"
+        endpoints:
+          - {'interface': 'internal', 'url': '{{ cinder_internal_endpoint }}'}
+          - {'interface': 'public', 'url': '{{ cinder_public_endpoint }}'}
+      - name: "cinderv3"
+        type: "volumev3"
+        description: "Openstack Block Storage (deprecated)"
+        endpoints:
+          - {'interface': 'internal', 'url': '{{ cinder_v3_internal_endpoint }}'}
+          - {'interface': 'public', 'url': '{{ cinder_v3_public_endpoint }}'}
+
 Ironic Inspector removal
 ------------------------
 
