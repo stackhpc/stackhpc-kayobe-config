@@ -1225,7 +1225,10 @@ This will block the upgrade, but may be overridden by setting
       cd kayobe/ansible/roles/kolla-ansible/templates/
       sdiff -w 200 overcloud-services.j2 /home/stack/2025.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-services.j2
       sdiff -w 200 overcloud-components.j2 /home/stack/2025.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-components.j2
-      or when using environments:
+
+or when using environments:
+   .. code-block:: console
+
       sdiff -w 200 overcloud-services.j2 /home/stack/2025.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-services.j2
       sdiff -w 200 overcloud-components.j2 /home/stack/2025.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-components.j2
 
