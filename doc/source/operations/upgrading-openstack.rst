@@ -35,6 +35,15 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
+Cinder volumev3 endpoint removal
+--------------------------------
+
+The Cinder ``volumev3`` endpoint has been removed in the 2026.1 release. The
+new endpoint is ``block-storage``. Older clients that rely on this endpoint,
+such as older versions of Gophercloud or the OpenStack Terraform/OpenTofu
+provider, will fail to reach the Cinder service. This can usually be resolved
+by updating dependencies to their latest versions.
+
 Ironic Inspector removal
 ------------------------
 
