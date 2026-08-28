@@ -434,16 +434,6 @@ Enable the required TLS variables in kayobe and kolla
 
 4. Deploy OpenStack
 
-   .. warning::
-
-      It is important that you are only using admin endpoints for keystone. If
-      any admin endpoints exist for other services, they must be deleted e.g.
-
-      .. code-block:: bash
-
-         openstack endpoint list --interface admin -f value | \
-         awk '!/keystone/ {print $1}' | xargs openstack endpoint delete
-
    .. code-block:: bash
 
       kayobe overcloud service deploy
