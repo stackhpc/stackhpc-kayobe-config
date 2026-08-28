@@ -1,0 +1,23 @@
+---
+###############################################################################
+# Controller node configuration.
+
+# User with which to access the controllers via SSH during bootstrap, in order
+# to setup the Kayobe user account. Default is {{ os_distribution }}.
+controller_bootstrap_user: "{{ os_distribution if os_distribution == 'ubuntu' else 'cloud-user' }}"
+
+controller_extra_network_interfaces:
+  - ethernet
+
+# Controller lvm configuration. See intentory/group_vars/controllers/lvm.yml
+# for the exact configuration.
+controller_lvm_groups:
+  - "{{ stackhpc_lvm_group_rootvg }}"
+
+# Controller firewalld configuration. See inventory/group_vars/all/firewall for
+# the exact configuration.
+controller_firewalld_zones: "{{ stackhpc_firewalld_zones }}"
+controller_firewalld_rules: "{{ stackhpc_firewalld_rules }}"
+# FIXME(wszumski): Firewall disabled in OVS temporarily until someone has a change to fix it.
+controller_firewalld_enabled: "{{ kolla_enable_ovn | bool }}"
+controller_firewalld_default_zone: "drop"

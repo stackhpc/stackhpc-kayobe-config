@@ -1,0 +1,28 @@
+---
+features:
+  - |
+    This patch adds OpenStack Capacity metrics and exporters to
+    StackHPC Kayobe Config. This includes a deployment playbook,
+    Prometheus scrape jobs and HAProxy configurations to support
+    this change.
+upgrade:
+  - |
+    To deploy the OpenStack Capacity Grafana dashboard, you must
+    define OpenStack application credential variables:
+    ``secrets_os_capacity_credential_id`` and
+    ``secrets_os_capacity_credential_secret`` as laid out in the
+    'Monitoring' documentation.
+
+    You must also enable the ``stackhpc_enable_os_capacity``
+    flag for OpenStack Capacity HAProxy and Prometheus configuration
+    to be templated.
+
+    You may also change the default authentication URL from the
+    kolla_internal_fqdn and change the default OpenStack region
+    from RegionOne with the variables:
+    ``stackhpc_os_capacity_auth_url`` and
+    ``stackhpc_os_capacity_openstack_region_name``.
+
+    To disable certificate verification for the OpenStack Capacity
+    exporter, you can set ``stackhpc_os_capacity_openstack_verify``
+    to false.

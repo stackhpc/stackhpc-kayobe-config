@@ -1,0 +1,38 @@
+---
+runner_user: "{{ kayobe_ansible_user }}"
+github_account: "{{ undef(hint='Name of customer's GitHub account') }}"
+github_repo: "{{ undef(hint='Name of customer's kayobe config repository') }}"
+access_token: "{{ secrets_github_access_token }}"
+
+base_runner_dir: /opt/actions-runner
+
+default_runner_labels:
+  - kayobe
+  - openstack
+  - "{{ kayobe_environment }}"
+
+# Dictionary of GitHub runners to be deployed to each runner host.
+# Each dict item can be provided with optional attributes
+# * labels - provide a list of labels for a specific runner
+#   overriding the contents of `default_runner_labels`
+# * state - either `started`` or `absent`. By default it will
+#   be started if however the runner needs to be removed
+#   then setting it to `absent` will unregister the runner with
+#   GitHub and remove it from the system.
+# Example
+# github_runners:
+#  runner_01: {}
+#  runner_02:
+#    labels: ['foo', 'bar', 'baz']
+#  runner_03:
+#    state: absent
+github_runners:
+  runner_01: {}
+  runner_02: {}
+  runner_03: {}
+
+docker_users:
+  - "{{ runner_user }}"
+
+pip_install_packages:
+  - name: docker

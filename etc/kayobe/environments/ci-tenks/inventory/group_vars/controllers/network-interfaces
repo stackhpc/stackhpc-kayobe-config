@@ -1,0 +1,27 @@
+---
+###############################################################################
+# Network interface definitions for the controller group.
+
+provision_oc_interface: "{{ 'eth0' if os_distribution == 'rocky' and os_release == '9' else 'ens2' }}"
+# Route via the seed-hypervisor to the outside world.
+provision_oc_gateway: 192.168.33.4
+
+mgmt_interface: "{{ 'eth1' if os_distribution == 'rocky' and os_release == '9' else 'ens3' }}"
+
+provision_wl_interface: "br{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}"
+provision_wl_bridge_ports:
+  - "{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}"
+
+internal_interface: "{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}.{{ internal_vlan }}"
+
+external_interface: "br{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}.{{ external_vlan }}"
+
+public_interface: "{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}.{{ public_vlan }}"
+
+storage_interface: "{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}.{{ storage_vlan }}"
+
+tunnel_interface: "{{ 'eth2' if os_distribution == 'rocky' and os_release == '9' else 'ens4' }}.{{ tunnel_vlan }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

@@ -1,0 +1,14 @@
+---
+- name: Ensure additional Ceph commands are run before post-deployment configuration
+  gather_facts: false
+  hosts: mons
+  become: true
+  tags:
+    - cephadm
+    - cephadm-commands
+  tasks:
+    - name: Apply Cephadm commands role
+      ansible.builtin.import_role:
+        name: stackhpc.cephadm.commands
+      vars:
+        cephadm_commands: "{{ cephadm_commands_pre | default([]) }}"

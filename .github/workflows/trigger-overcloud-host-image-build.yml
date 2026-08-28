@@ -1,0 +1,46 @@
+---
+name: Trigger overcloud host image build
+on:
+  push:
+    branches:
+      - stackhpc/2025.1
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-24.04
+    name: Check changed files
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    outputs:
+      pulp-repo-versions: ${{ steps.changes.outputs.pulp-repo-versions }}
+    steps:
+      - name: GitHub Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check changed files
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: changes
+        with:
+          filters: .github/overcloud-host-image-build-path-filters.yml
+
+  trigger-overcloud-host-image-build:
+    runs-on: ubuntu-24.04
+    name: Trigger overcloud host image build
+    permissions:
+      actions: write
+    needs:
+      - check-changes
+    if: ${{ needs.check-changes.outputs.pulp-repo-versions == 'true' }}
+    steps:
+      - name: Trigger overcloud host image build
+        run: |
+          gh workflow run \
+          overcloud-host-image-build.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Display link to overcloud host image build workflows
+        run: |
+          echo "::notice Overcloud host image build workflows: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/overcloud-host-image-build.yml"

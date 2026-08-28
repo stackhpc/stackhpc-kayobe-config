@@ -1,0 +1,433 @@
+---
+name: Build Kolla container images
+on:
+  workflow_dispatch:
+    inputs:
+      regexes:
+        description: Space-separated list of regular expressions matching overcloud images to build
+        type: string
+        required: false
+        default: ""
+      overcloud:
+        description: Build container images for overcloud services?
+        type: boolean
+        required: false
+        default: true
+      seed:
+        description: Build container images for seed services?
+        type: boolean
+        required: false
+        default: false
+      rocky-linux-9:
+        description: Build Rocky Linux 9 images?
+        type: boolean
+        required: false
+        default: true
+      rocky-linux-10:
+        description: Build Rocky Linux 10 images?
+        type: boolean
+        required: false
+        default: true
+      ubuntu-noble:
+        description: Build Ubuntu Noble 24.04 images?
+        type: boolean
+        required: false
+        default: true
+      push:
+        description: Whether to push images
+        type: boolean
+        required: false
+        default: true
+      sbom:
+        description: Generate SBOM?
+        type: boolean
+        required: false
+        default: true
+      push-critical:
+        description: Push scanned images that have critical vulnerabilities?
+        type: boolean
+        required: false
+        default: false
+      runner_env:
+        description: Which cloud to run on?
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
+
+env:
+  ANSIBLE_FORCE_COLOR: True
+jobs:
+  generate-tag:
+    name: Generate container image tag
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      datetime_tag: ${{ steps.datetime_tag.outputs.datetime_tag }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      openstack_release: ${{ steps.openstack_release.outputs.openstack_release }}
+    steps:
+      - name: Validate inputs
+        run: |
+          if [[ ${{ inputs.rocky-linux-9 }} == 'false' && ${{ inputs.rocky-linux-10 }} == 'false' && ${{ inputs.ubuntu-noble }} == 'false' ]]; then
+            echo "At least one distribution must be selected"
+            exit 1
+          fi
+          if [[ ${{ inputs.overcloud }} == 'false' && ${{ inputs.seed }} == 'false' ]]; then
+            echo "At least one of overcloud or seed must be selected"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Determine OpenStack release
+        id: openstack_release
+        run: |
+          BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
+          echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," | tee -a "$GITHUB_OUTPUT"
+
+      # Generate a tag to apply to all built container images.
+      # Without this, each kayobe * container image build command would use a different tag.
+      - name: Generate container datetime tag
+        id: datetime_tag
+        run: |
+          echo "datetime_tag=$(date +%Y%m%dT%H%M%S)" | tee -a "$GITHUB_OUTPUT"
+
+      # Dynamically define job matrix.
+      # We need a separate matrix entry for each distribution, when the relevant input is true.
+      # https://stackoverflow.com/questions/65384420/how-do-i-make-a-github-action-matrix-element-conditional
+      # NOTE(bbezak): Both amd64 and aarch64 need to be built in a single workflow to create a multi-architecture manifest.
+      # For now include only RL9 in aarch64
+      - name: Generate build matrix
+        id: set-matrix
+        run: |
+          output="{'distro': ["
+          if [[ ${{ inputs.rocky-linux-9 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': 9, 'arch': 'amd64'},"
+              if [[ ${{ inputs.overcloud }} == 'true' ]]; then
+                output+="{'name': 'rocky', 'release': 9, 'arch': 'aarch64', 'runner': 'sms'},"
+              fi
+          fi
+          if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
+              if [[ ${{ inputs.overcloud }} == 'true' ]]; then
+                output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
+              fi
+          fi
+          if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
+              output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
+          fi
+          # remove trailing comma
+          output="${output%,}"
+          output+="]}"
+          echo "matrix=$output" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Display container datetime tag
+        run: |
+          echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
+
+  runner-selection:
+    uses: ./.github/workflows/runner-selector.yml
+    with:
+      runner_env: ${{ inputs.runner_env }}
+
+  container-image-build:
+    name: Build Kolla container images
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ${{ matrix.distro.arch == 'aarch64'
+      && fromJson(format('["self-hosted", "{0}", "arm64"]', matrix.distro.runner))
+      || needs.runner-selection.outputs.runner_name_container_image_build }}
+    timeout-minutes: 720
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
+    needs:
+      - generate-tag
+      - runner-selection
+    steps:
+      - name: Purge workspace
+        run: sudo rm -rf "$GITHUB_WORKSPACE"/*
+
+      - name: Install package dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git unzip nodejs python3-wheel python3-pip python3-venv curl jq wget
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: src/kayobe-config
+
+      - name: Make sure dockerd is running and test Docker
+        run: |
+          docker ps
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2
+
+      - name: Install yq
+        run: |
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -sL "https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_${ARCH}.tar.gz" | tar xz && sudo mv yq_linux_${ARCH} /usr/bin/yq
+
+      - name: Install Kayobe
+        run: |
+          mkdir -p venvs &&
+          pushd venvs &&
+          python3 -m venv kayobe &&
+          source kayobe/bin/activate &&
+          pip install -U pip &&
+          pip install -r ../src/kayobe-config/requirements.txt
+
+      # Required for Pulp auth proxy deployment and Docker registry login.
+      # Normally installed during host configure.
+      - name: Install Docker Python SDK
+        run: |
+          . /etc/os-release
+          if [[ $VERSION_ID == 22.04 ]]; then
+              sudo pip install docker 'requests<2.32.0'
+          else
+              sudo pip install docker 'requests<2.32.0' --break-system-packages
+          fi
+
+      - name: Get Kolla tag
+        id: write-kolla-tag
+        run: echo "kolla-tag=${{ needs.generate-tag.outputs.openstack_release }}-${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ needs.generate-tag.outputs.datetime_tag }}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Configure localhost as a seed
+        run: |
+          cat > src/kayobe-config/etc/kayobe/environments/ci-builder/inventory/hosts << EOF
+          # A 'seed' host used for building images.
+          # Use localhost for container image builds.
+          [seed]
+          localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+          EOF
+
+      - name: Create build logs output directory
+        run: mkdir image-build-logs
+
+      - name: Build kolla overcloud images
+        id: build_overcloud_images
+        continue-on-error: true
+        run: |
+          args="${{ inputs.regexes }}"
+          if [[ "${{ matrix.distro.arch }}" == 'aarch64' ]]; then
+            args="$args -e kolla_base_arch=${{ matrix.distro.arch }}"
+          fi
+          args="$args -e kolla_base_distro=${{ matrix.distro.name }}"
+          args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
+          if [[ "${{ matrix.distro.name }}" == 'rocky' ]]; then
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}-${{ matrix.distro.arch }}"
+          else
+            args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          fi
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e kolla_build_log_path=$GITHUB_WORKSPACE/image-build-logs/kolla-build-overcloud.log"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
+          # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+          # runner and dind containers.
+          args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe overcloud container image build $args
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.overcloud
+
+      - name: Copy build configs to output directory
+        run: sudo cp -rnL "$GITHUB_WORKSPACE/opt/kayobe/etc/kolla/"* image-build-logs/
+        if: inputs.overcloud
+
+      - name: Build kolla seed images
+        id: build_seed_images
+        continue-on-error: true
+        run: |
+          args="-e kolla_base_distro=${{ matrix.distro.name }}"
+          args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
+          args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
+          args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
+          # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+          # runner and dind containers.
+          args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe seed container image build $args
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.seed && matrix.distro.arch == 'amd64'
+
+      - name: Copy seed container image build logs to output directory
+        run: sudo mv /var/log/kolla-build.log image-build-logs/kolla-build-seed.log
+        if: inputs.seed && matrix.distro.arch == 'amd64'
+
+      - name: Get built container images
+        run: docker image ls --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" | tee "${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images"
+
+      - name: Fail if no images have been built
+        run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
+
+      - name: Scan built container images
+        run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
+
+      - name: Move image scan logs to output artifact
+        run: mv image-scan-output image-build-logs/image-scan-output
+        if: ${{ !cancelled() }}
+
+      - name: Fail if any images have critical vulnerabilities
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then exit 1; fi
+        if: ${{ !inputs.push-critical }}
+
+      - name: Copy clean images to push-attempt-images list
+        run: cp image-build-logs/image-scan-output/clean-images.txt image-build-logs/push-attempt-images.txt
+        if: inputs.push
+
+      # NOTE(seunghun1ee): This always appends dirty images with CVEs severity lower than critical.
+      # This should be reverted when it's decided to filter high level CVEs as well.
+      - name: Append dirty images to push list
+        run: |
+          cat image-build-logs/image-scan-output/high-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push }}
+
+      - name: Append images with critical vulnerabilities to push list
+        run: |
+          cat image-build-logs/image-scan-output/critical-images.txt >> image-build-logs/push-attempt-images.txt
+        if: ${{ inputs.push && inputs.push-critical }}
+
+      - name: Push images
+        run: |
+          touch image-build-logs/push-failed-images.txt
+          source venvs/kayobe/bin/activate &&
+          source src/kayobe-config/kayobe-env --environment ci-builder &&
+          kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/tools/docker-registry-login.yml &&
+
+          while read -r image; do
+            # Retries!
+            for i in {1..5}; do
+              if docker push $image; then
+                echo "Pushed $image"
+                break
+              elif [ $i -eq 5 ] ; then
+                echo "Failed to push $image"
+                echo $image >> image-build-logs/push-failed-images.txt
+              else
+                echo "Failed on retry $i"
+                sleep 5
+              fi;
+            done
+          done < image-build-logs/push-attempt-images.txt
+        shell: bash
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
+        if: inputs.push
+
+      - name: Upload output artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ${{ matrix.distro.name }}-${{ matrix.distro.release }}-${{ matrix.distro.arch }}-logs
+          path: image-build-logs
+          retention-days: 7
+        if: ${{ !cancelled() }}
+
+      - name: Fail when images failed to build
+        run: echo "An image build failed. Check the workflow artifact for build logs" && exit 1
+        if: ${{ steps.build_overcloud_images.outcome == 'failure' || steps.build_seed_images.outcome == 'failure' }}
+
+      - name: Fail when images failed to push
+        run: if [ $(wc -l < image-build-logs/push-failed-images.txt) -gt 0 ]; then cat image-build-logs/push-failed-images.txt && exit 1; fi
+        if: ${{ inputs.push && !cancelled() }}
+
+      # NOTE(seunghun1ee): Currently we want to mark the job fail only when critical CVEs are detected.
+      # This can be used again instead of "Fail when critical vulnerabilities are found" when it's
+      # decided to fail the job on detecting high CVEs as well.
+      # - name: Fail when images failed scanning
+      #   run: if [ $(wc -l < image-build-logs/image-scan-output/high-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/high-images.txt && exit 1; fi
+      #   if: ${{ !inputs.push-critical && !cancelled() }}
+
+      - name: Fail when critical vulnerabilities are found
+        run: if [ $(wc -l < image-build-logs/image-scan-output/critical-images.txt) -gt 0 ]; then cat image-build-logs/image-scan-output/critical-images.txt && exit 1; fi
+        if: ${{ !inputs.push-critical && !cancelled() }}
+
+      - name: Remove locally built images for this run
+        if: always() && runner.arch == 'ARM64'
+        run: |
+          docker images --format '{{.Repository}}:{{.Tag}}' \
+            --filter "reference=ark.stackhpc.com/stackhpc-dev/*:${{ steps.write-kolla-tag.outputs.kolla-tag }}*" \
+            | xargs -r -n1 docker rmi -f
+
+  create-manifests:
+    # Only for Rocky Linux for now
+    name: Create Multiarch Docker Manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && (inputs.rocky-linux-9 || inputs.rocky-linux-10)
+    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
+    permissions: {}
+    needs:
+      - container-image-build
+      - runner-selection
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+
+      - name: Combine pushed images lists
+        run: |
+          find . -name 'push-attempt-images.txt' -exec cat {} + > all-pushed-images.txt
+
+      - name: Log in to container registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ark.stackhpc.com
+          username: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_USER }}
+          password: ${{ secrets.RLS_TRAIN_CI_ARK_REGISTRY_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: src/kayobe-config
+
+      - name: Create and push Docker manifests
+        run: src/kayobe-config/tools/multiarch-manifests.sh
+
+      - name: Upload manifest logs
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: manifest-logs
+          path: |
+            all-pushed-images.txt
+            logs/manifest-creation.log
+          retention-days: 7
+        if: ${{ !cancelled() }}
+
+  trigger-image-sync:
+    name: Trigger container image repository sync
+    needs:
+      - container-image-build
+      - create-manifests
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && !cancelled()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      # NOTE(mgoddard): Trigger another CI workflow in the
+      # stackhpc-release-train repository.
+      - name: Trigger container image repository sync
+        run: |
+          filter='${{ inputs.regexes }}'
+          if [[ -n $filter ]] && [[ ${{ inputs.seed }} == 'true' ]]; then
+            filter="$filter bifrost"
+          fi
+          gh workflow run \
+          container-sync.yml \
+          --repo stackhpc/stackhpc-release-train \
+          --ref main \
+          -f filter="$filter" \
+          -f sync-old-images=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.STACKHPC_RELEASE_TRAIN_TOKEN }}
+
+      - name: Display link to container image repository sync workflows
+        run: |
+          echo "::notice Container image repository sync workflows: https://github.com/stackhpc/stackhpc-release-train/actions/workflows/container-sync.yml"

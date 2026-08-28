@@ -24,6 +24,26 @@ seed-hypervisor
 [infra-vms]
 # Empty group to provide declaration of infra-vms group.
 
+[wazuh-manager]
+# Empty group to provide declaration of wazuh-manager group.
+
+[wazuh-agent:children]
+seed
+seed-hypervisor
+overcloud
+
+[github-runners]
+# Empty group to provide declaration of github-runner group.
+
+[github-writer]
+localhost
+
+[gitlab-runners]
+# Empty group to provide declaration of gitlab-runner group.
+
+[gitlab-writer]
+localhost
+
 ###############################################################################
 # Overcloud groups.
 
@@ -62,6 +82,9 @@ compute-vgpu
 [iommu:children]
 vgpu
 
+[mlnx]
+# Empty group to provide declaration of mlnx group.
+
 ###############################################################################
 # Service groups.
 
@@ -73,6 +96,7 @@ network
 monitoring
 storage
 compute
+gitlab-runners
 
 [docker-registry:children]
 # Hosts in this group will have a Docker Registry deployed. This group should
@@ -109,3 +133,30 @@ infra-vms
 mgmt-switches
 ctl-switches
 hs-switches
+
+###############################################################################
+# Ceph groups.
+
+[ceph:children]
+mons
+mgrs
+osds
+rgws
+
+# Empty groups to provide declaration of groups required for Cephadm.
+[mons]
+[mgrs]
+[osds]
+[rgws]
+
+###############################################################################
+# Feature control groups
+
+[cis-hardening:children]
+overcloud
+
+###############################################################################
+# Monitoring groups.
+
+[redfish_exporter_targets:children]
+overcloud

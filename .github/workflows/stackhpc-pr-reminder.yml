@@ -1,0 +1,39 @@
+---
+name: Friday PR Author Reminder
+
+on:
+  schedule:
+    # Every Friday at 13:00 UTC
+    - cron: '0 13 * * 5'
+  workflow_dispatch:
+
+jobs:
+  remind-authors:
+    runs-on: ubuntu-latest
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Fetch open PRs and remind authors
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Fetch open PRs with the specific label in JSON format. Extract number and author username
+          prs=$(gh pr list --state open --label "waiting-author-response" --json number,author --jq '.[] | "\(.number),\(.author.login)"')
+
+          # However unlikely, exit if none found
+          if [ -z "$prs" ]; then
+            echo "No open PRs found with the 'waiting-author-response' label."
+            exit 0
+          fi
+
+          # Loop through the PRs and post reminder
+          echo "$prs" | while IFS=, read -r pr_number author; do
+            echo "Sending reminder to @$author on PR #$pr_number..."
+
+            gh pr comment "$pr_number" --body "Happy Friday @$author, this is a friendly reminder that this PR is waiting for your changes or response. Please take a look when you have a moment!
+
+            **Note:** Once your changes are ready, remove the \`waiting-author-response\` label and add the \`waiting-review\` label."
+          done

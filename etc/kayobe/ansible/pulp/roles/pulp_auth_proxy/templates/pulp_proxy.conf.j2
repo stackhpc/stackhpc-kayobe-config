@@ -1,0 +1,17 @@
+server {
+    listen {{ pulp_auth_proxy_listen_port }};
+    server_name pulp_proxy;
+    location / {
+        proxy_pass {{ pulp_auth_proxy_url }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host {{ pulp_auth_proxy_url | urlsplit('hostname') }};
+        # The important part: add basic auth header
+        proxy_set_header Authorization "Basic {{ (pulp_auth_proxy_username ~ ':' ~ pulp_auth_proxy_password) | b64encode }}";
+        proxy_pass_header Authorization;
+        # See https://stackoverflow.com/questions/25329941/nginx-caching-proxy-fails-with-ssl23-get-server-hellosslv3-alert-handshake-fail/25330027#25330027
+        proxy_ssl_server_name on;
+        proxy_ssl_protocols TLSv1.2;
+    }
+}

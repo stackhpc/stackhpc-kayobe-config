@@ -1,0 +1,55 @@
+---
+# Kayobe time configuration.
+
+###############################################################################
+# Timezone.
+
+# Name of the local timezone.
+timezone: "Etc/UTC"
+
+###############################################################################
+# Network Time Protocol (NTP).
+
+# List of NTP time sources to configure. Format is a list of dictionaries with
+# the following keys:
+# server:  host or pool
+# type:    (Optional) Defaults to server. Maps to a time source in the
+#           configuration file. Can be one of server, peer, pool.
+# options: (Optional) List of options that depends on type, see Chrony
+#          documentation for details.
+# See: https://chrony.tuxfamily.org/doc/4.0/chrony.conf.html
+#
+# Example of configuring a pool and customising the pool specific maxsources
+# option:
+# chrony_ntp_servers:
+#   - server: pool.ntp.org
+#     type: pool
+#     options:
+#       - option: maxsources
+#         val: 3
+#
+chrony_ntp_servers:
+  - server: 139.143.5.30
+  - server: ntpsvr1.npl.co.uk
+
+
+# Synchronise hardware clock with system time. Default is true.
+chrony_rtcsync_enabled: true
+
+# Force synchronisation from NTP sources. This methods may jump the clock by
+# large values which can cause issues with some software. Disabled by default.
+#ntp_force_sync:
+
+# Maximum number of tries used by the `chronyc waitsync` command. Only used
+# when ntp_force_sync is true. Default is 60 which waits for a maximum of 10
+# minutes (60 times 10 seconds).
+#chrony_waitsync_max_tries:
+
+# Maximum correction used by the `chronyc waitsync` command. Only used when
+# ntp_force_sync is true. Default is 0.01 which waits for the remaining
+# correction to be less than 10 milliseconds.
+#chrony_waitsync_max_correction:
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

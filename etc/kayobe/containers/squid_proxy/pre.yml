@@ -1,0 +1,14 @@
+---
+- name: Ensure /srv/docker/squid directory exists
+  file:
+    path: /srv/docker/squid
+    state: directory
+    mode: 0755
+  become: true
+
+- name: Copy modified squid.conf
+  copy:
+    src: "{{ kayobe_config_path }}/containers/squid_proxy/squid.conf"
+    dest: /srv/docker/squid/
+    mode: 0644
+  become: true

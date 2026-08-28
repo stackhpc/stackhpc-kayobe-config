@@ -1,0 +1,28 @@
+==============
+Operator Guide
+==============
+
+This guide is for operators of the StackHPC Kayobe configuration project.
+
+.. toctree::
+   :maxdepth: 1
+
+   ceph-management
+   control-plane-operation
+   shutdown-and-startup
+   customising-horizon
+   database-backups
+   gpu-in-openstack
+   bifrost-hardware-inventory-management
+   hotfix-playbook
+   migrating-vm
+   nova-compute-ironic
+   octavia
+   openstack-projects-and-users-management
+   openstack-reconfiguration
+   secret-rotation
+   tempest
+   upgrading-openstack
+   upgrading-ceph
+   rocky-10
+   ubuntu-noble

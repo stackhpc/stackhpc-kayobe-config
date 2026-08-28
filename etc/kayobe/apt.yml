@@ -17,14 +17,22 @@
 # * filename: name of a file in /etc/apt/apt.conf.d/ in which to write the
 #   configuration
 # Default is an empty list.
-#apt_config:
+apt_config:
+  # NOTE: Currently the Pulp verbatim publisher does not sync translation
+  # files, which results in apt update failing. Disable translations until this
+  # is resolved.
+  - content: |
+      Acquire::Languages "none";
+    filename: 99no-languages
 
 # List of apt keys. Each item is a dict containing the following keys:
 # * url: URL of key
 # * filename: Name of a file in which to store the downloaded key. The
 #   extension should be '.asc' for ASCII-armoured keys, or '.gpg' otherwise.
 # Default is an empty list.
-#apt_keys:
+apt_keys:
+  - url: "https://download.docker.com/linux/ubuntu/gpg"
+    filename: docker.asc
 
 # A list of Apt repositories. Each item is a dict with the following keys:
 # * name: the <name>.sources filename part. Optional. Default is 'kayobe' and
@@ -41,7 +49,33 @@
 # * architecture: whitespace-separated list of architectures that will be used
 #   (optional, default is unset)
 # Default is an empty list.
-#apt_repositories:
+stackhpc_apt_repositories:
+  - url: "{{ stackhpc_repo_ubuntu_noble_url }}"
+    name: ubuntu
+    suites: "{{ ansible_facts.distribution_release }} {{ ansible_facts.distribution_release }}-updates {{ ansible_facts.distribution_release }}-backports"
+    components: main restricted universe
+    signed_by: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    architecture: amd64
+    required: true
+  - url: "{{ stackhpc_repo_ubuntu_noble_security_url }}"
+    name: ubuntu
+    suites: "{{ ansible_facts.distribution_release }}-security"
+    components: main restricted universe
+    signed_by: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    architecture: amd64
+    required: true
+  - url: "{{ stackhpc_repo_docker_ce_ubuntu_noble_url }}"
+    name: ubuntu
+    suites: "{{ ansible_facts.distribution_release  }}"
+    components: stable
+    signed_by: docker.asc
+    architecture: amd64
+    required: true
+
+# Do not replace apt configuration for non-overcloud hosts. This can result in
+# errors if apt reconfiguration is performed before local repository mirrors
+# are deployed.
+apt_repositories: "{{ stackhpc_apt_repositories | selectattr('required') | list if stackhpc_repos_enabled | bool else [] }}"
 
 # List of Apt preferences options. Each item is a dict with the following
 # keys:
@@ -54,7 +88,17 @@
 # Whether to disable repositories in /etc/apt/sources.list. This may be used
 # when replacing the distribution repositories via apt_repositories.
 # Default is false.
-#apt_disable_sources_list:
+# Do not disable the default apt configuration for non-overcloud hosts. This
+# can result in errors if apt reconfiguration is performed before local
+# repository mirrors are deployed.
+apt_disable_sources_list: "{{ stackhpc_repos_enabled | bool }}"
+
+# Apt auth configuration for accessing the package repository mirror.
+stackhpc_apt_auth:
+  - machine: "{{ stackhpc_repo_mirror_url }}"
+    login: "{{ stackhpc_repo_mirror_username }}"
+    password: "{{ stackhpc_repo_mirror_password }}"
+    filename: "kayobe.conf"
 
 # List of Apt auth configurations. Each item is a dict with the following keys:
 # * machine: 'machine' entry in the auth file
@@ -63,7 +107,7 @@
 # * filename: Name of a file in /etc/apt/auth.conf.d in which to store
 #   the auth configuration. The extension should be ``.conf``.
 # Default is an empty list.
-#apt_auth:
+apt_auth: "{{ stackhpc_apt_auth if stackhpc_repos_enabled | bool and stackhpc_repo_mirror_username is truthy else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

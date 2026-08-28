@@ -1,0 +1,35 @@
+---
+- name: Download an amphora image from Ark
+  hosts: controllers[0]
+  vars:
+    # The auth is handled by username and
+    # password in the get_url task of this playbook
+    stackhpc_amphora_image_url_no_auth: "{{ stackhpc_release_pulp_content_url }}/amphora-images/\
+      {{ openstack_release }}/\
+      {{ stackhpc_amphora_image_version }}/\
+      amphora-x64-haproxy.qcow2"
+    download_destination: /tmp/amphora-x64-haproxy.qcow2
+
+  tasks:
+    - name: Print image information
+      ansible.builtin.debug:
+        msg: |
+          Image tag: {{ stackhpc_amphora_image_version }}
+
+    # TODO: Add checksum support
+    - name: Download image artifact
+      ansible.builtin.get_url:
+        url: "{{ stackhpc_amphora_image_url_no_auth }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        force_basic_auth: true
+        unredirected_headers:
+          - "Authorization"
+        dest: "{{ download_destination }}"
+        mode: "0644"
+        owner: stack
+        group: stack
+      register: image_download_result
+      until: image_download_result.status_code >= 200 and image_download_result.status_code <= 399
+      retries: 3
+      delay: 60

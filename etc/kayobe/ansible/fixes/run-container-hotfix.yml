@@ -1,0 +1,25 @@
+---
+- name: Run container_hotfix
+  when: container_hotfix_files != []
+  block:
+    - name: Ensure any required directories exist in container(s)
+      ansible.builtin.command: "{{ container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} mkdir
+        -p {{ item.dest | dirname }}"
+      loop: "{{ container_hotfix_files }}"
+
+    - name: Copy file into container(s)
+      ansible.builtin.command: "{{ container_engine | default('docker') }} cp /tmp/hotfix-files/{{ index }} {{ hotfix_container }}:{{ item.dest }}"
+      loop: "{{ container_hotfix_files }}"
+      loop_control:
+        index_var: index
+
+    - name: Set mode for copied files
+      ansible.builtin.command: "{{ container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} chmod
+        {{ item.mode | default('400') }} {{ item.dest }}"
+      loop: "{{ container_hotfix_files }}"
+      loop_control:
+        index_var: index
+
+- name: Run container_hotfix_command
+  ansible.builtin.command: "{{ container_engine | default('docker') }} exec {{ '-u 0' if container_hotfix_become else '' }} {{ hotfix_container }} {{ container_hotfix_command }}"
+  when: container_hotfix_command

@@ -1,0 +1,107 @@
+---
+# This playbook performs the system upgrade from RockyLinux 9.6 to 9.7 on hosts
+# using doca ofed kernel modules and utilities.
+# It prevents the install of the dkms toolchain and dkms modules that would be
+# used instead or our precompiled modules if a direct `dnf upgrade` was run.
+#
+# It must be run after new package snapshots have been merged and
+# `pulp-repo-sync.yml` and `pulp-repo-publish.yml` have been run.
+# Also `kayobe overcloud host configure -t dnf` must have been run for the new
+# `doca.repo` to be present (the doca version is in the url) on the mlnx hosts.
+
+- name: Prepare upgrade from Rocky Linux 9.6 to 9.7
+  hosts: mlnx
+  serial: "{{ lookup('env', 'ANSIBLE_SERIAL') | default(1, true) }}"
+  gather_facts: true
+  tags: pre
+  vars:
+    # we don't build kernel modules for each version, eg 5.14.0-611.13.1 has been built,
+    # but not 5.14.0-611.20.1.
+    doca_kernel_arch: "{{ 'x86.64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix['9.7'] }}.{{ doca_kernel_arch }}"
+  tasks:
+    - name: Assert that hosts are running Rocky Linux 9.6
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Rocky'
+          - ansible_facts.distribution_version == '9.6'
+          - os_distribution == 'rocky'
+        fail_msg: >-
+          This playbook is only designed for Rocky Linux 9.6 hosts. Ensure
+          that you are limiting it to only run on Rocky Linux 9.6 hosts and
+          os_distribution is set to rocky. This can be bypassed by setting the
+          skip_rocky_96_version_check variable to true.
+      when: not skip_rocky_96_version_check | default(false) | bool
+
+    - name: Ensure doca kernel repo is up to date
+      ansible.builtin.dnf:
+        name: doca-kernel-repo
+        state: latest
+        update_cache: true
+      become: true
+
+    # This is required by mlnx-ofa_kernel, and comes from the doca repository.
+    # It is already present when doca-ofed is installed, but will be upgraded.
+    - name: Ensure mlnx-tools is installed
+      ansible.builtin.dnf:
+        name: mlnx-tools
+        state: latest
+        update_cache: true
+      become: true
+
+    - name: Ensure appropriate doca-kernel is installed
+      ansible.builtin.dnf:
+        name: "doca-kernel-{{ doca_kernel_version }}"
+        state: latest
+        disablerepo: doca
+      become: true
+
+    # doca-ofed 3.2 starts to depend on the dkms modules. It was not the case
+    # in doca-ofed 2.9.3.
+    - name: Ensure doca-ofed is not present (upgrading it brings dkms)
+      ansible.builtin.dnf:
+        name: doca-ofed
+        state: absent
+        autoremove: false
+      become: true
+
+    - name: Ensure latest doca-ofed-userspace instead of doca-ofed
+      ansible.builtin.dnf:
+        name: doca-ofed-userspace
+        state: latest
+      become: true
+
+    - name: Update all packages (this can take a long time)
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      become: true
+
+- name: Fix potential grub config preventing new kernel from being used
+  ansible.builtin.import_playbook: reset-bls-entries.yml
+  vars:
+    reset_bls_hosts: mlnx
+
+- name: Reboot to apply updates
+  ansible.builtin.import_playbook: reboot.yml
+  vars:
+    reboot_hosts: mlnx
+
+- name: Confirm the host is upgraded to Rocky Linux 9.7
+  hosts: mlnx
+  tags: post
+  tasks:
+    - name: Update distribution facts
+      ansible.builtin.setup:
+        filter: "{{ kayobe_ansible_setup_filter }}"
+        gather_subset: "{{ kayobe_ansible_setup_gather_subset }}"
+
+    # Can fail (eg in multinode) when there are bad entries in grub config
+    # Fixed by `kayobe playbook run ansible/maintenance/reset-bls-entries.yml`
+    # and manual reboot
+    - name: Assert that hosts are now using Rocky Linux 9.7
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Rocky'
+          - ansible_facts.distribution_version == '9.7'
+          - os_distribution == 'rocky'

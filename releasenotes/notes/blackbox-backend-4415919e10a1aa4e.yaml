@@ -1,0 +1,14 @@
+---
+features:
+  - |
+    Added Blackbox monitoring for backend endpoints by default. Note that this
+    configuration will only work if the Blackbox exporters have access to the
+    backend endpoints.
+issues:
+  - |
+    Backend Blackbox monitoring will not work if the exporter does not have
+    access to the backend OpenStack endpoints. This usually happens when
+    separate monitoring nodes are deployed. In this case, move the Blackbox
+    exporter to the Haproxy group, remove the endpoints from
+    `etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter`, or
+    silence the alerts permanently.

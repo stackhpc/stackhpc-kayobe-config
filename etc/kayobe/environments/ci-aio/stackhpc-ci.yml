@@ -1,0 +1,36 @@
+---
+###############################################################################
+# Kolla configuration.
+
+# Docker namespace to use for Kolla images. Default is 'kolla'.
+kolla_docker_namespace: stackhpc-dev
+
+###############################################################################
+# StackHPC configuration.
+
+# AIOs currently run on SMS, and pull packages and containers through an
+# authenticating caching proxy.
+# Host and port of a package repository mirror.
+stackhpc_aio_proxy_address: "192.168.46.157"
+stackhpc_repo_mirror_url: "http://{{ stackhpc_aio_proxy_address }}:80"
+# Credentials are not required in CI, proxy handles authentication
+stackhpc_repo_mirror_username: "{{ none }}"
+stackhpc_repo_mirror_password: "{{ none }}"
+# Host and port of container registry.
+stackhpc_docker_registry: "{{ stackhpc_aio_proxy_address }}:5000"
+# Credentials are not required in CI, proxy handles authentication
+stackhpc_docker_registry_username: "{{ none }}"
+stackhpc_docker_registry_password: "{{ none }}"
+docker_registry_insecure: true
+
+# Override Pulp credentials to allow querying container image tags in the
+# check-tags.yml custom playbook.
+pulp_url: "{{ stackhpc_release_pulp_url }}"
+pulp_username: "skc-ci-aio-epoxy"
+pulp_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  66666132666635313565646233353065623465316332323337356366303262363437353162643430
+  3138303131313865646532633063666539306332663933340a386131316664663238633534623862
+  65303835626463356666623563333464623630633936663162353935633132376634666463633139
+  3363383033613330360a356639333463643461353462346466633365626333393331633833326634
+  64366233653036333032323334353332643735623264376137383564383361303462

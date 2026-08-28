@@ -1,0 +1,16 @@
+---
+- name: "Import pulp-repo-sync"
+  import_playbook: pulp-repo-sync.yml
+
+- name: "Import pulp-repo-publish"
+  import_playbook: pulp-repo-publish.yml
+
+- name: "Import pulp-repo-promote-production"
+  import_playbook: pulp-repo-promote-production.yml
+  when: repo_promote_production | default(true)
+
+- name: "Import pulp-container-sync"
+  import_playbook: pulp-container-sync.yml
+
+- name: "Import pulp-container-publish"
+  import_playbook: pulp-container-publish.yml

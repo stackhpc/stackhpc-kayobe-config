@@ -1,0 +1,13 @@
+---
+- name: Ensure a Ceph host has entered maintenance
+  gather_facts: true
+  any_errors_fatal: true
+  # We need to check whether it is OK to stop hosts after previous hosts have
+  # entered maintenance.
+  serial: 1
+  hosts: ceph
+  become: true
+  tasks:
+    - name: Ensure a Ceph host has entered maintenance
+      ansible.builtin.import_role:
+        name: stackhpc.cephadm.enter_maintenance

@@ -1,0 +1,126 @@
+---
+- name: Enable KVM nested virtualisation
+  hosts: compute
+  gather_facts: true
+  vars:
+    venv: "{{ virtualenv_path }}/openstack"
+  pre_tasks:
+    - name: Assert host is capable of virtualisation
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.virtualization_role == 'host'
+        fail_msg: "Host is not capable of virtualisation"
+
+    - name: Set up openstack cli virtualenv
+      ansible.builtin.pip:
+        virtualenv: "{{ venv }}"
+        virtualenv_command: /usr/bin/python3 -m venv
+        name:
+          - python-openstackclient
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+      run_once: true
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Check compute service is disabled for maintenance
+      ansible.builtin.command: >
+        {{ venv }}/bin/openstack compute service list
+        --service nova-compute
+        --host {{ ansible_facts.nodename }}
+        --format json
+      register: compute_service
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Assert hypervisor is disabled for maintenance
+      ansible.builtin.assert:
+        that:
+          - compute_service.stdout | from_json | length > 0
+          - (compute_service.stdout | from_json | first).Status == "disabled"
+        fail_msg: >
+          Hypervisor {{ ansible_facts.nodename }} is not disabled for maintenance.
+          Current service state: {{ compute_service.stdout | from_json }}
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Query instances
+      ansible.builtin.command: >
+        {{ venv }}/bin/openstack
+        server list --host {{ ansible_facts.nodename }}
+        --all-projects
+        --status ACTIVE
+        --format json
+      register: instances
+      environment: "{{ openstack_auth_env }}"
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+
+    - name: Fail if there are instances still on the host
+      ansible.builtin.fail:
+        msg: >
+          Instances still on {{ inventory_hostname }}: {{ instances.stdout | from_json }}
+      when:
+        - instances.stdout | from_json | length > 0
+      delegate_to: "{{ groups['controllers'][0] }}"
+      vars:
+        ansible_host: "{{ hostvars[groups['controllers'][0]].ansible_host }}"
+  tasks:
+    - name: Set KVM module name
+      ansible.builtin.set_fact:
+        kvm_module_name: >-
+          {{ 'kvm_intel'
+              if 'GenuineIntel' in (ansible_facts.processor | default([]))
+              else 'kvm_amd'
+              if 'AuthenticAMD' in (ansible_facts.processor | default([]))
+              else 'unknown' }}
+
+    - name: Assert supported CPU is present
+      ansible.builtin.assert:
+        that:
+          - kvm_module_name != 'unknown'
+        fail_msg: "Cannot detect either GenuineIntel or AuthenticAMD processor"
+
+    - name: Verify KVM module is loaded
+      ansible.builtin.stat:
+        path: "/sys/module/{{ kvm_module_name }}"
+      register: kvm_module_path
+      become: true
+
+    - name: Check if nested virtualization is supported
+      ansible.builtin.command: "cat /sys/module/{{ kvm_module_name }}/parameters/nested"
+      register: nested
+      changed_when: false
+      when: kvm_module_path.stat.exists
+      become: true
+
+    - name: Enable nested virtualisation and restart nova_libvirt
+      when: "not kvm_module_path.stat.exists or ('Y' not in nested.stdout_lines | default([]) and '1' not in nested.stdout_lines | default([]))"
+      become: true
+      block:
+        - name: Unload the KVM module
+          community.general.modprobe:
+            name: "{{ kvm_module_name }}"
+            state: absent
+
+        - name: Ensure KVM module is enabled and nested virtualisation is enabled
+          community.general.modprobe:
+            name: "{{ kvm_module_name }}"
+            params: 'nested=1'
+            persistent: present
+
+        - name: Check again if nested virtualization is supported
+          ansible.builtin.command: "cat /sys/module/{{ kvm_module_name }}/parameters/nested"
+          changed_when: false
+          register: result
+          failed_when: "'Y' not in result.stdout_lines and '1' not in result.stdout_lines"
+
+        - name: Restart nova_libvirt container
+          ansible.builtin.systemd_service:
+            name: kolla-nova_libvirt-container
+            state: restarted

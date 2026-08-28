@@ -1,0 +1,53 @@
+---
+- name: Install DOCA
+  become: true
+  hosts: mlnx
+  gather_facts: true
+  vars:
+    # we don't build kernel modules for each version, eg 5.14.0-611.13.1 has been built,
+    # but not 5.14.0-611.20.1
+    doca_kernel_arch: "{{ 'x86.64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[ansible_facts.distribution_version | string] }}.{{ doca_kernel_arch }}"
+  tasks:
+    - name: Install kernel repo
+      ansible.builtin.dnf:
+        name: doca-kernel-repo
+        state: latest
+        update_cache: true
+
+    # not the same as doca_kernel_version: some dots changed to underscore or dash
+    - name: Discover kernel repo filename
+      ansible.builtin.shell: |
+        set -o pipefail
+        rpm -ql doca-kernel-repo | grep /etc/yum.repos.d/
+      register: kernel_repo_filename
+      changed_when: false
+
+    - name: Ensure correct priority for DOCA modules
+      ansible.builtin.lineinfile:
+        line: "priority=-2"
+        insertafter: EOF
+        path: "{{ kernel_repo_filename.stdout }}"
+
+    # This is required by mlnx-ofa_kernel, and comes from the doca repository.
+    # It is already present when doca-ofed is installed, but will be upgraded.
+    - name: Ensure mlnx-tools is installed
+      ansible.builtin.dnf:
+        name: mlnx-tools
+        state: latest
+        update_cache: true
+      become: true
+
+    - name: Ensure appropriate doca-kernel is installed
+      ansible.builtin.dnf:
+        name: "doca-kernel-{{ doca_kernel_version }}"
+        state: latest
+        disablerepo: doca
+      become: true
+
+    - name: Ensure DOCA OFED userspace is installed
+      ansible.builtin.dnf:
+        name:
+          - doca-ofed-userspace
+        state: latest
+        update_cache: true

@@ -1,0 +1,20 @@
+[Unit]
+# This service addresses a specific issue when OVS HW offloading is enabled
+# typically in conjunction with VF-LAG and ASAP^2
+# the DMESG log reports frequent errors on the internal OVS Bridge interface:
+# "tc mirred to Houston: device bond0-ovs is down".
+# This interface is down by default. The errors are mitigated by bringing the interface up.
+# For further context, see:
+# https://bugs.launchpad.net/charm-neutron-openvswitch/+bug/1899364
+# https://patchwork.kernel.org/project/netdevbpf/patch/c2ef23da1d9a4eb62f4e7b7c4540f9bafb553c15.1658420239.git.dcaratti@redhat.com/
+Description=Bring up {{ interface_name }} interface
+After=kolla-openvswitch_vswitchd-container.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/timeout 60s /bin/bash -c 'until ip link show {{ interface_name }}; do sleep 1; done'
+ExecStart=/sbin/ip link set {{ interface_name }} up
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

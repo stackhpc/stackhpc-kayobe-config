@@ -1,0 +1,154 @@
+---
+- name: Pre-checks
+  gather_facts: false
+  hosts: localhost
+  tags:
+    - prechecks
+  tasks:
+    - name: Generate certificates
+      when:
+        - groups["wazuh-manager"] | length > 0
+
+      block:
+        - name: Fail if using old path for Wazuh certificates
+          ansible.builtin.fail:
+            msg: >-
+              The path used for Wazuh SSL certificates was changed in a previous release. The certificates
+              were found in the wrong location. Please move all files and directories in
+              {{ playbook_dir }}/wazuh/certificates to {{ kayobe_env_config_path }}/wazuh/ and remove the
+              empty directory.
+          when:
+            - (playbook_dir ~ '/wazuh/certificates') is exists
+
+        - name: Fail if using old path for custom certificates
+          ansible.builtin.fail:
+            msg: >-
+              Wazuh custom SSL certificates have been merged with regular certificates. The certificates
+              were found in the wrong location. Please move them from {{ playbook_dir }}/wazuh/custom_certificates
+              to {{ kayobe_env_config_path }}/wazuh/wazuh-certificates and remove the empty directory.
+          when:
+            - (playbook_dir ~ '/wazuh/custom_certificates') is exists
+
+        - name: Check that removed variable, local_custom_certs_path, is not set
+          ansible.builtin.assert:
+            that: local_custom_certs_path is not defined
+            fail_msg: The variable, `local_custom_certs_path`, is no longer used. Please remove this variable.
+
+# Certificates generation
+- name: Apply Wazuh indexer role
+  hosts: localhost
+  roles:
+    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
+      perform_installation: false
+  become: false
+  tags:
+    - generate-certs
+# Single node
+- name: Install Wazuh manager
+  hosts: wazuh-manager
+  become: true
+  become_user: root
+  roles:
+    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-indexer
+    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-wazuh-manager
+    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/ansible-filebeat-oss
+    - role: wazuh-ansible/wazuh-ansible/roles/wazuh/wazuh-dashboard
+  post_tasks:
+    - name: Use custom SCA policies
+      notify:
+        - Restart wazuh
+
+      block:
+        - name: Check if custom SCA policies directory exists
+          ansible.builtin.stat:
+            path: "{{ local_custom_sca_policies_path }}"
+          register: custom_sca_policies_folder
+          delegate_to: localhost
+          become: false
+
+        - name: Gather list of custom SCA policies
+          ansible.builtin.find:
+            paths: "{{ local_custom_sca_policies_path }}"
+            patterns: "*.yml"
+          delegate_to: localhost
+          register: custom_sca_policies
+          when: custom_sca_policies_folder.stat.exists
+          become: false
+
+        - name: Copy custom SCA policy files to Wazuh manager
+          ansible.builtin.copy:
+            # Note the trailing slash to copy directory contents
+            src: "{{ local_custom_sca_policies_path }}/"
+            dest: /var/ossec/etc/shared/default/
+            owner: wazuh
+            group: wazuh
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+
+        - name: Add custom policy definition(s) to the shared Agent config
+          ansible.builtin.blockinfile:
+            path: /var/ossec/etc/shared/default/agent.conf
+            state: present
+            owner: wazuh
+            group: wazuh
+            marker: "{mark} ANSIBLE MANAGED BLOCK Custom SCA Policies"
+            insertafter: <!-- Shared agent configuration here -->
+            block: |
+              {% filter indent(width=2, first=true) %}
+              <sca>
+                <policies>
+              {% for item in custom_sca_policies.files %}
+                  <policy>etc/shared/{{ item.path | basename }}</policy>
+              {% endfor %}
+                </policies>
+              </sca>
+              {% endfilter %}
+          when:
+            - custom_sca_policies_folder.stat.exists
+            - custom_sca_policies.files | length > 0
+
+    - name: Add JVM proxy settings to wazuh-indexer
+      ansible.builtin.blockinfile:
+        path: /etc/wazuh-indexer/jvm.options
+        state: present
+        owner: root
+        group: wazuh
+        marker: "# {mark} ANSIBLE MANAGED BLOCK JVM PROXY SETTINGS"
+        block: |
+          -Dhttp.proxyHost={{ http_proxy_url | urlsplit('hostname') }}
+          -Dhttp.proxyPort={{ http_proxy_url | urlsplit('port') }}
+          -Dhttps.proxyHost={{ http_proxy_url | urlsplit('hostname') }}
+          -Dhttps.proxyPort={{ http_proxy_url | urlsplit('port') }}
+        backup: true
+      when: http_proxy_url is defined
+      notify:
+        - Restart wazuh-indexer
+
+    - name: Perform health check against filebeat
+      ansible.builtin.command: filebeat test output
+      changed_when: false
+      retries: 2
+
+    - name: Correct permissions on alerts manifest
+      ansible.builtin.file:
+        path: "/usr/share/filebeat/module/wazuh/alerts/manifest.yml"
+        mode: "go-w"
+      notify:
+        - Restart filebeat
+
+  handlers:
+    - name: Restart filebeat
+      ansible.builtin.service:
+        name: filebeat
+        state: restarted
+
+    - name: Restart wazuh
+      ansible.builtin.service:
+        name: wazuh-manager
+        state: restarted
+
+    - name: Restart wazuh-indexer
+      ansible.builtin.service:
+        name: wazuh-indexer
+        state: restarted

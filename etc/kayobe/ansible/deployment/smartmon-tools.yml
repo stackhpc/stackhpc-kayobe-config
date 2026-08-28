@@ -1,0 +1,135 @@
+---
+- name: Install and set up SMART monitoring tools
+  hosts: overcloud
+  tasks:
+    - name: Ensure smartmontools, jq, and cron/cronie are installed
+      ansible.builtin.package:
+        name:
+          - smartmontools
+          - jq
+          - "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'cronie' }}"
+        state: present
+      become: true
+
+    - name: Ensure Python 3, venv, and pip are installed on Debian/Ubuntu
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-venv
+          - python3-pip
+        state: present
+      when: ansible_facts.os_family == 'Debian'
+      become: true
+
+    - name: Ensure Python 3, and pip are installed on RedHat/CentOS
+      ansible.builtin.dnf:
+        name:
+          - python3
+          - python3-pip
+        state: present
+      when: ansible_facts.os_family == 'RedHat'
+      become: true
+
+    - name: Create smartmon Python virtual environment
+      ansible.builtin.command:
+        cmd: python3 -m venv /opt/smartmon-venv
+        creates: /opt/smartmon-venv/bin/activate
+      become: true
+
+    - name: Install prometheus_client and pySMART in venv
+      ansible.builtin.pip:
+        name:
+          - prometheus_client
+          - pySMART
+        state: present
+        virtualenv: /opt/smartmon-venv
+        virtualenv_python: python3
+      become: true
+
+    - name: Ensure the cron/crond service is running
+      ansible.builtin.service:
+        name: "{{ 'cron' if ansible_facts['distribution'] == 'Ubuntu' else 'crond' }}"
+        state: started
+        enabled: true
+      become: true
+
+    - name: Copy smartmon.py from scripts folder
+      ansible.builtin.copy:
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/scripts/{{ item }}"
+        dest: /usr/local/bin/{{ item }}
+        owner: root
+        group: root
+        mode: "0700"
+      loop:
+        - smartmon.py
+      become: true
+
+    - name: Set PATH Variable for cron
+      ansible.builtin.cron:
+        name: PATH
+        user: root
+        env: true
+        job: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      become: true
+
+    - name: Schedule cronjob to run smartmon.py every 5 minutes and save output to file
+      ansible.builtin.cron:
+        name: SMART metrics for drive monitoring using smartmon.py
+        user: root
+        minute: "*/5"
+        job: >-
+          umask 0022 && /opt/smartmon-venv/bin/python /usr/local/bin/smartmon.py --output /var/lib/docker/volumes/textfile/_data/smartmon.prom.temp &&
+          mv -f /var/lib/docker/volumes/textfile/_data/smartmon.prom.temp /var/lib/docker/volumes/textfile/_data/smartmon.prom
+      become: true
+
+    - name: Remove old cronjobs if present
+      ansible.builtin.cron:
+        name: SMART metrics for drive monitoring using {{ item }}
+        user: root
+        state: absent
+      become: true
+      loop:
+        - smartmon
+        - nvmemon
+        - nvmemon.sh
+
+    - name: Remove old monitoring scripts if present
+      ansible.builtin.file:
+        path: /usr/local/bin/{{ item }}
+        state: absent
+      loop:
+        - smartmon.sh
+        - nvmemon.sh
+      become: true
+
+- name: Gather NVMe drives and generate dwpd ratings
+  import_playbook: get-nvme-drives.yml
+  when: create_dwpd_ratings | default(false)
+
+- name: Copy DWPD ratings to overcloud hosts
+  hosts: overcloud
+  gather_facts: false
+  tasks:
+    - name: Convert the stackhpc_dwpd_ratings variable to JSON
+      ansible.builtin.set_fact:
+        dwpd_ratings_json: "{{ stackhpc_dwpd_ratings | default([]) | to_json }}"
+      run_once: true
+      when: stackhpc_dwpd_ratings is defined
+
+    - name: Ensure /opt/kayobe/etc/monitoring directory exists
+      ansible.builtin.file:
+        path: /opt/kayobe/etc/monitoring
+        state: directory
+        mode: '0755'
+      become: true
+      when: stackhpc_dwpd_ratings is defined
+
+    - name: Copy JSON file to remote
+      ansible.builtin.copy:
+        content: "{{ dwpd_ratings_json }}"
+        dest: "/opt/kayobe/etc/monitoring/dwpd_ratings.json"
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+      when: stackhpc_dwpd_ratings is defined

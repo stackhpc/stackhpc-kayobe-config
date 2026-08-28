@@ -1,0 +1,22 @@
+---
+features:
+  - |
+    Added four playbooks for migrating secret store from Hashicorp Vault to
+    OpenBao.
+
+    ``vault-bao-migration-seed.yml`` does Vault to OpenBao migration on seed
+    node. This is single node migration, so API calls to seed secret-store can
+    be disruptive for short period of time.
+
+    ``vault-bao-migration-overcloud.yml`` does Vault to OpenBao migration on
+    overcloud. (Default: controller nodes)
+    This is HA migration, so no downtime is expected.
+
+    ``vault-bao-migration-change-config.yml`` automatically update SKC to
+    target OpenBao. It is recommended to use this playbook after all Vault
+    deployments are migrated to OpenBao.
+
+    ``vault-bao-migration-all.yml`` runs all other three playbooks in order.
+
+    As Hashicorp Vault will no longer be supported from OpenStack 2026.1, it is
+    strongly recommended to migrate to OpenBao before upgrading.

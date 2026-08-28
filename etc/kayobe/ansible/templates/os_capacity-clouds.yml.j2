@@ -1,0 +1,18 @@
+clouds:
+  openstack:
+    auth:
+      auth_url: "{{ stackhpc_os_capacity_auth_url }}"
+      project_name: "{{ stackhpc_os_capacity_project_name }}"
+      domain_name: "{{ stackhpc_os_capacity_domain_name }}"
+      username: "{{ stackhpc_os_capacity_username }}"
+      password: "{{ stackhpc_os_capacity_password }}"
+    region_name: "{{ stackhpc_os_capacity_openstack_region_name }}"
+    interface: "internal"
+    identity_api_version: 3
+    auth_type: "password"
+{% if stackhpc_os_capacity_openstack_cacert | length > 0 %}
+    cacert: /etc/openstack/cacert.pem
+{% endif %}
+{% if not stackhpc_os_capacity_openstack_verify | bool %}
+    verify: False
+{% endif %}

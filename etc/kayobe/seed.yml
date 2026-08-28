@@ -95,6 +95,63 @@
 ###############################################################################
 # Seed node additional containers configuration
 
+# Seed container running a "Pulp in One" service.
+# https://pulpproject.org/pulp-oci-images/docs/admin/reference/available-images/multi-process-images/
+# This can be used as a package mirror, and container image registry.
+seed_pulp_container_enabled: true
+
+seed_pulp_container:
+  pulp:
+    image: quay.io/pulp/pulp
+    pre: "{{ kayobe_config_path }}/containers/pulp/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/pulp/post.yml"
+    tag: "3.81.0"
+    network_mode: host
+    # Override deploy_containers_defaults.init == true to ensure
+    # s6-overlay-suexec starts as pid 1
+    init: false
+    env:
+      PULP_CONTENT_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
+      PULP_API_WORKERS: "{{ [ansible_facts.processor_vcpus * 2 + 1, 12] | min }}"
+      PULP_HTTPS: "{{ 'true' if pulp_enable_tls | bool else 'false' }}"
+    volumes:
+      - /opt/kayobe/containers/pulp:/etc/pulp
+      - pulp_storage:/var/lib/pulp
+      - pulp_pgsql:/var/lib/pgsql
+      - pulp_containers:/var/lib/containers
+    restart_policy: unless-stopped
+
+# Seed container running a Squid caching proxy. This can be used to proxy
+# HTTP(S) requests from control plane hosts.
+seed_squid_container_enabled: false
+
+seed_squid_container:
+  squid:
+    image: ghcr.io/stackhpc/docker-squid
+    pre: "{{ kayobe_config_path }}/containers/squid_proxy/pre.yml"
+    tag: "6.10"
+    network_mode: host
+    volumes:
+      - squid_spool:/var/spool/squid
+      - /srv/docker/squid/squid.conf:/etc/squid/squid.conf
+      - /var/log/squid:/var/log/squid
+
+# Seed container running redfish exporter.
+# https://github.com/jenningsloy318/redfish_exporter
+# This can be be used for monitoring servers in bifrost.
+seed_redfish_exporter_container_enabled: "{{ stackhpc_enable_redfish_exporter }}"
+
+seed_redfish_exporter_container:
+  redfish_exporter:
+    image: ghcr.io/stackhpc/redfish-exporter
+    pre: "{{ kayobe_config_path }}/containers/redfish_exporter/pre.yml"
+    post: "{{ kayobe_config_path }}/containers/redfish_exporter/post.yml"
+    tag: "v2.1.1-stackhpc"
+    network_mode: host
+    command: redfish_exporter --config.file /redfish_exporter.yml
+    volumes: "/opt/kayobe/containers/redfish_exporter/redfish_exporter.yml:/redfish_exporter.yml:ro"
+    restart_policy: unless-stopped
+
 # Dict of container images to start
 # Example:
 # seed_containers:
@@ -104,11 +161,17 @@
 #     post: "{{ kayobe_env_config_path }}/containers/squid/post.yml"
 #     tag: "3.5.20-1"
 #
-#seed_containers:
+seed_containers: >-
+  {{ {} | combine(seed_pulp_container if seed_pulp_container_enabled | bool else {})
+        | combine(seed_squid_container if seed_squid_container_enabled | bool else {})
+        | combine(seed_redfish_exporter_container if seed_redfish_exporter_container_enabled | bool else {})
+        | combine(seed_extra_containers) }}
+
+seed_extra_containers: {}
 
 # Whether to attempt a basic authentication login to a registry when
 # deploying seed containers
-#seed_deploy_containers_registry_attempt_login:
+seed_deploy_containers_registry_attempt_login: "{{ not seed_pulp_container_enabled | bool }}"
 
 ###############################################################################
 # Seed node firewalld configuration.
@@ -134,8 +197,9 @@
 ###############################################################################
 # Seed node swap configuration.
 
-# List of swap devices. Each item is a dict containing a 'device' item.
-#seed_swap:
+# List of swap devices. Each item is a dict containing a 'device' item. Default
+# is an empty list.
+# seed_swap:
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.

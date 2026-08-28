@@ -1,0 +1,13 @@
+{% raw %}
+groups:
+- name: Fluentd
+  rules:
+  - alert: FluentdBufferTooLarge
+    expr: (fluentd_output_status_buffer_total_bytes / 1024^2) > 128
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Fluentd at {{ $labels.instance }} reports large queue buffers"
+      description: "Fluentd queue buffers on {{ $labels.instance }} are using {{ $value }} MiB."
+{% endraw %}

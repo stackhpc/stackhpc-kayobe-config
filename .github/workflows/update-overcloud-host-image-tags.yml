@@ -1,0 +1,83 @@
+---
+name: Update overcloud host image tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      rocky9_tag:
+        description: Overcloud host image tag for Rocky 9
+        type: string
+      rocky9_aarch64_tag:
+        description: Overcloud host image tag for Rocky 9 aarch64
+        type: string
+      rocky10_tag:
+        description: Overcloud host image tag for Rocky 10
+        type: string
+      rocky10_aarch64_tag:
+        description: Overcloud host image tag for Rocky 10 aarch64
+        type: string
+      ubuntu_noble_tag:
+        description: Overcloud host image tag for Ubuntu
+        type: string
+
+jobs:
+  propose_overcloud_host_image_tag_updates:
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Update overcloud host image tags
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: stackhpc/2025.1
+          path: ${{ github.workspace }}/src/kayobe-config
+
+      - name: Update Rocky 9 overcloud host image tag
+        run: |
+          sed -i "/^stackhpc_rocky_9_overcloud_host_image_version:/s/.*/stackhpc_rocky_9_overcloud_host_image_version: ${{ inputs.rocky9_tag }}/" ${{ github.workspace }}/src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml
+        if: "${{ inputs.rocky9_tag != '' }}"
+
+      - name: Update Rocky 9 aarch64 overcloud host image tag
+        run: |
+          sed -i "/^stackhpc_rocky_9_overcloud_host_image_version_aarch64:/s/.*/stackhpc_rocky_9_overcloud_host_image_version_aarch64: ${{ inputs.rocky9_aarch64_tag }}/" ${{ github.workspace }}/src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml
+        if: "${{ inputs.rocky9_aarch64_tag != '' }}"
+
+      - name: Update Rocky 10 overcloud host image tag
+        run: |
+          sed -i "/^stackhpc_rocky_10_overcloud_host_image_version:/s/.*/stackhpc_rocky_10_overcloud_host_image_version: ${{ inputs.rocky10_tag }}/" ${{ github.workspace }}/src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml
+        if: "${{ inputs.rocky10_tag != '' }}"
+
+      - name: Update Rocky 10 aarch64 overcloud host image tag
+        run: |
+          sed -i "/^stackhpc_rocky_10_overcloud_host_image_version_aarch64:/s/.*/stackhpc_rocky_10_overcloud_host_image_version_aarch64: ${{ inputs.rocky10_aarch64_tag }}/" ${{ github.workspace }}/src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml
+        if: "${{ inputs.rocky10_aarch64_tag != '' }}"
+
+      - name: Update Ubuntu Noble overcloud host image tag
+        run: |
+          sed -i "/^stackhpc_ubuntu_noble_overcloud_host_image_version:/s/.*/stackhpc_ubuntu_noble_overcloud_host_image_version: ${{ inputs.ubuntu_noble_tag }}/" ${{ github.workspace }}/src/kayobe-config/etc/kayobe/pulp-host-image-versions.yml
+        if: "${{ inputs.ubuntu_noble_tag != '' }}"
+
+      - name: Propose changes via PR if required
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        with:
+          path: ${{ github.workspace }}/src/kayobe-config
+          commit-message: >-
+            Bump overcloud host image tags
+          author: stackhpc-ci <22933334+stackhpc-ci@users.noreply.github.com>
+          branch: bump-overcloud-host-images-${{ inputs.rocky9_tag }}-${{ inputs.rocky9_aarch64_tag }}-${{ inputs.rocky10_tag }}-${{ inputs.rocky10_aarch64_tag }}-${{ inputs.ubuntu_noble_tag }}
+          delete-branch: true
+          title: >-
+            Bump overcloud host image tags 
+          body: |
+            This PR was created automatically to update the overcloud host image
+            tags.
+            Rocky 9: ${{ inputs.rocky9_tag }}
+            Rocky 9 aarch64: ${{ inputs.rocky9_aarch64_tag }}
+            Rocky 10: ${{ inputs.rocky10_tag }}
+            Rocky 10 aarch64: ${{ inputs.rocky10_aarch64_tag }}
+            Ubuntu Noble: ${{ inputs.ubuntu_noble_tag }}
+          labels: |
+            automated

@@ -1,0 +1,24 @@
+---
+- name: Deploy GitLab runners
+  hosts: gitlab-runners
+  become: true
+  pre_tasks:
+    - name: Ensure /opt/.docker folder exists
+      ansible.builtin.file:
+        path: /opt/.docker
+        state: directory
+
+    - name: Ensure docker/config.json exists for runner
+      ansible.builtin.copy:
+        content: |
+          {
+            "auths": {
+              "{{ pulp_url | regex_replace('^https?://|^http?://', '') }}": {
+                "auth": "{{ (pulp_username + ':' + pulp_password) | b64encode }}"
+              }
+            }
+          }
+        dest: /opt/.docker/config.json
+        mode: "0600"
+  roles:
+    - role: riemers.gitlab-runner

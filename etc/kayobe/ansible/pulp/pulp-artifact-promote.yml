@@ -1,0 +1,45 @@
+---
+# Tag is the version of the artifact to promote, stored in an env variable named ARTIFACT_TAG
+- name: Promote an artifact to production
+  hosts: localhost
+  vars:
+    remote_pulp_url: "{{ stackhpc_release_pulp_url }}"
+    remote_pulp_username: "{{ stackhpc_release_pulp_username }}"
+    remote_pulp_password: "{{ stackhpc_release_pulp_password }}"
+    repository_name: "{{ artifact_type }}-{{ openstack_release }}-{{ os_distribution }}-{{ os_release }}"
+    pulp_base_path: "{{ artifact_type }}/{{ openstack_release }}/{{ os_distribution }}/{{ os_release }}"
+    promotion_tag: "{{ lookup('env', 'ARTIFACT_TAG') }}"
+  tasks:
+    - name: Check whether the artifact exists
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ promotion_tag }}"
+      register: distribution_details
+      until: distribution_details is success
+      retries: 3
+      delay: 5
+
+    - name: Fail if the artifact does not exist
+      ansible.builtin.fail:
+        msg: "artifact {{ promotion_tag }} does not exist"
+      when: distribution_details.distribution is none
+
+    - name: Ensure production content guard is set
+      pulp.squeezer.file_distribution:
+        pulp_url: "{{ remote_pulp_url }}"
+        username: "{{ remote_pulp_username }}"
+        password: "{{ remote_pulp_password }}"
+        name: "{{ repository_name }}_{{ promotion_tag }}"
+        base_path: "{{ pulp_base_path }}/{{ promotion_tag }}"
+        content_guard: release
+        state: present
+      register: content_guard_result
+      until: content_guard_result is success
+      retries: 3
+      delay: 5
+
+    - name: Print version tag and os
+      ansible.builtin.debug:
+        msg: "Promoted tag: {{ promotion_tag }}"

@@ -1,0 +1,36 @@
+---
+# Custom playbook to configure rsyslog to forward operating system logs to
+# fluentd, eventually reaching Kolla's OpenSearch cluster.
+#
+# Variables:
+# * rsyslog_group: Host pattern against which to target the playbook. Default
+#   is 'overcloud'.
+
+- name: Configure rsyslog to forward messages
+  hosts: "{{ rsyslog_group | default('overcloud') }}"
+  become: true
+
+  tasks:
+    - name: Ensure rsyslog is installed
+      ansible.builtin.package:
+        name: rsyslog
+        state: present
+
+    - name: Ensure rsyslog is started and enabled
+      ansible.builtin.systemd:
+        state: started
+        enabled: true
+        name: rsyslog
+
+    - name: Update rsyslog configuration
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        insertafter: ^#*.* @@remote-host:514
+        line: "*.* @{{ internal_net_name | net_ip }}:5140"
+      notify: Restart rsyslog
+
+  handlers:
+    - name: Restart rsyslog
+      ansible.builtin.systemd:
+        state: restarted
+        name: rsyslog

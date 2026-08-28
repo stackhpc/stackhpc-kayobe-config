@@ -1,0 +1,9 @@
+---
+
+- hosts: overcloud
+  gather_facts: false
+  tasks:
+    - name: Configure firewalld to log blocked traffic
+      command: firewall-cmd --set-log-denied=all
+      become: true
+      when: firewalld_enabled | bool

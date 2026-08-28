@@ -1,0 +1,78 @@
+---
+- name: Deploy OpenBao on the runners
+  any_errors_fatal: true
+  gather_facts: true
+  hosts: github-runners,gitlab-runners
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      ansible.builtin.set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      ansible.builtin.pip:
+        name: hvac
+        state: latest
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Ensure /opt/kayobe/vault exists
+      ansible.builtin.file:
+        path: /opt/kayobe/vault
+        state: directory
+      become: true
+
+    - name: Ensure vault directory exists in environment
+      ansible.builtin.file:
+        path: "{{ kayobe_env_config_path }}/vault"
+        state: directory
+      become: true
+
+    - name: Import OpenBao role
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.openbao
+      vars:
+        openbao_config_dir: "/opt/kayobe/vault"
+        openbao_cluster_name: "kayobe-automation"
+        copy_self_signed_ca: false
+        openbao_write_keys_file: true
+        openbao_write_keys_file_path: "{{ kayobe_env_config_path }}/vault/kayobe-automation-keys.json"
+
+    - name: Include OpenBao keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/vault/kayobe-automation-keys.json"
+        name: openbao_keys
+      tags: always
+
+    - name: Import Vault unseal role
+      ansible.builtin.import_role:
+        name: stackhpc.hashicorp.vault_unseal
+      vars:
+        vault_api_addr: "{{ openbao_api_addr }}"
+        vault_unseal_token: "{{ openbao_keys.root_token }}"
+        vault_unseal_keys: "{{ openbao_keys.keys_base64 }}"
+        vault_unseal_verify: false
+      environment:
+        https_proxy: ''
+
+    - name: Create secret store
+      ansible.legacy.hashivault_secret_engine:
+        name: kayobe-automation
+        backend: kv
+        url: "{{ openbao_api_addr }}"
+        token: "{{ openbao_keys.root_token }}"
+
+    - name: Ensure secret store is present
+      community.hashi_vault.vault_write:
+        url: "{{ openbao_api_addr }}"
+        token: "{{ openbao_keys.root_token }}"
+        path: kayobe-automation/{{ kayobe_environment }}
+        data:
+          kayobe_vault_password: "{{ kolla_ansible_vault_password }}"
+          kayobe_automation_ssh_private_key: "{{ lookup('ansible.builtin.file', '{{ ssh_private_key_path }}') }}"
+          kayobe_public_openrc: "{{ lookup('ansible.builtin.file', '{{ kolla_config_path }}/public-openrc.sh') }}"
+      tags: add_secrets

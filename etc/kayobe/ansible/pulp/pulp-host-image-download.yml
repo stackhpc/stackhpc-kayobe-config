@@ -1,0 +1,34 @@
+---
+- name: Download an overcloud host image from Ark
+  hosts: localhost
+  vars:
+    # This var is an edited version of stackhpc_overcloud_host_image_url
+    # without the auth credentials in it. Auth is handled by username and
+    # password in the get_url task of this playbook
+    stackhpc_overcloud_host_image_url_no_auth: "{{ stackhpc_release_pulp_content_url }}/kayobe-images/\
+      {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_overcloud_host_image_arch == 'aarch64' else '' }}/\
+      {{ stackhpc_overcloud_host_image_version }}/\
+      overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
+  tasks:
+    - name: Print image information
+      ansible.builtin.debug:
+        msg: |
+          OS Distribution: {{ os_distribution }}
+          OS Release: {{ os_release }}
+          Image tag: {{ stackhpc_overcloud_host_image_version }}
+
+    # TODO: Add checksum support
+    - name: Download image artifact
+      ansible.builtin.get_url:
+        url: "{{ stackhpc_overcloud_host_image_url_no_auth }}"
+        username: "{{ stackhpc_release_pulp_username }}"
+        password: "{{ stackhpc_release_pulp_password }}"
+        force_basic_auth: true
+        unredirected_headers:
+          - Authorization
+        dest: /tmp/{{ os_distribution }}-{{ os_release }}.qcow2
+        mode: "0644"
+      register: image_download_result
+      until: image_download_result.status_code == 200
+      retries: 3
+      delay: 60

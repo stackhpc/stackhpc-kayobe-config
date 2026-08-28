@@ -11,11 +11,11 @@
 #kolla_source_path:
 
 # URL of Kolla source code repository if type is 'source'.
-#kolla_source_url:
+kolla_source_url: "{{ stackhpc_kolla_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla source code repository if type is
 # 'source'. Default is {{ openstack_branch }}.
-#kolla_source_version:
+kolla_source_version: "{{ stackhpc_kolla_source_version }}"
 
 # Path to virtualenv in which to install kolla.
 #kolla_venv:
@@ -23,12 +23,13 @@
 # Path in which to generate kolla configuration.
 #kolla_build_config_path:
 
+# View debug logs, like source downloads, during image build.
+kolla_build_extra_config: |
+  [DEFAULT]
+  debug = True
+
 ###############################################################################
 # Kolla-ansible installation.
-
-# Type of Kolla-ansible control installation. One of 'binary' or 'source'.
-# Default is 'source'.
-#kolla_ansible_ctl_install_type:
 
 # Path to directory for kolla-ansible source code checkout.
 # Default is $KOLLA_SOURCE_PATH, or $PWD/src/kolla-ansible if
@@ -37,11 +38,11 @@
 
 # URL of Kolla Ansible source code repository if type is 'source'. Default is
 # https://opendev.org/openstack/kolla-ansible.
-#kolla_ansible_source_url:
+kolla_ansible_source_url: "{{ stackhpc_kolla_ansible_source_url }}"
 
 # Version (branch, tag, etc.) of Kolla Ansible source code repository if type
 # is 'source'. Default is {{ openstack_branch }}.
-#kolla_ansible_source_version:
+kolla_ansible_source_version: "{{ stackhpc_kolla_ansible_source_version }}"
 
 # Path to virtualenv in which to install kolla-ansible. Default is
 # $KOLLA_VENV_PATH or $PWD/venvs/kolla-ansible if $KOLLA_VENV_PATH is not set.
@@ -68,7 +69,8 @@
 
 # Kolla base container image architecture. Options are "x86_64", "aarch64".
 # Default is "{{ ansible_facts.architecture }}"
-#kolla_base_arch:
+# NOTE(bbezak): evaluating this var locally for non facts gathering playbooks
+kolla_base_arch: "{{ 'aarch64' if lookup('pipe','uname -m') in ['aarch64','arm64'] else 'x86_64' }}"
 
 # Kolla base container image distribution. Options are "centos", "debian",
 # "rocky", "ubuntu". Default is {{ os_distribution }}.
@@ -82,29 +84,31 @@
 # Default is kolla_base_distro_version_default_map[kolla_base_distro].
 #kolla_base_distro_version:
 
+kolla_base_distro_and_version: "{{ kolla_base_distro }}-{{ kolla_base_distro_version }}"
+
 # URL of docker registry to use for Kolla images. Default is not set, in which
 # case Quay.io will be used.
 #kolla_docker_registry:
 
 # Docker namespace to use for Kolla images. Default is 'openstack.kolla'.
-#kolla_docker_namespace:
+kolla_docker_namespace: stackhpc
 
 # Username to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_username:
+kolla_docker_registry_username: "{{ stackhpc_docker_registry_username }}"
 
 # Password to use to access a docker registry. Default is not set, in which
 # case the registry will be used without authentication.
-#kolla_docker_registry_password:
+kolla_docker_registry_password: "{{ stackhpc_docker_registry_password }}"
 
 # Kolla OpenStack release version. This should be a Docker image tag.
 # Default is {{ openstack_release }}.
-#kolla_openstack_release:
+# kolla_openstack_release:
 
 # Docker tag applied to built container images. Default is {{
 # kolla_openstack_release }}-{{ kolla_base_distro }}-{{
 # kolla_base_distro_version }}.
-#kolla_tag:
+kolla_tag: "{{ openstack_release }}-{{ kolla_base_distro }}-{{ kolla_base_distro_version }}-{{ ansible_facts.date_time.iso8601_basic_short }}"
 
 # Dict mapping names of sources to their definitions.
 # See kolla.common.config for details.
@@ -114,13 +118,382 @@
 #     type: git
 #     location: https://github.com/openstack/ironic
 #     reference: master
-#kolla_sources:
+# NOTE(upgrade): These sources should be checked with each release. StackHPC
+# branches are only required when we have custom backports. For a new release,
+# we may have caught up with upstream.
+kolla_sources:
+  bifrost-base:
+    type: git
+    location: https://github.com/stackhpc/bifrost.git
+    reference: stackhpc/{{ openstack_release }}
+  bifrost-base-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
+  cinder-base:
+    type: git
+    location: https://github.com/stackhpc/cinder.git
+    reference: stackhpc/{{ openstack_release }}
+  horizon-plugin-cloudkitty-dashboard:
+    type: git
+    location: https://github.com/stackhpc/cloudkitty-dashboard.git
+    reference: stackhpc/{{ openstack_release }}
+  ironic-base:
+    type: git
+    location: https://github.com/stackhpc/ironic.git
+    reference: stackhpc/{{ openstack_release }}
+  ironic-inspector-additions-stackhpc-inspector-plugins:
+    # Install our custom inspector plugins.
+    type: git
+    location: https://github.com/stackhpc/stackhpc-inspector-plugins.git
+    reference: 1.3.0
+  # TODO(priteau): Remove once
+  # https://review.opendev.org/c/openstack/keystone/+/990504 is merged
+  keystone-base:
+    type: git
+    location: https://github.com/stackhpc/keystone.git
+    reference: stackhpc/{{ openstack_release }}
+  magnum-conductor-plugin-helm:
+    version: "v4.1.4"
+    sha256:
+      amd64: 70b2c30a19da4db264dfd68c8a3664e05093a361cefd89572ffb36f8abfa3d09
+      arm64: 13d03672be289045d2ff00e4e345d61de1c6f21c1257a45955a30e8ae036d8f1
+  manila-base:
+    type: git
+    location: https://github.com/stackhpc/manila.git
+    reference: stackhpc/{{ openstack_release }}
+  neutron-base-plugin-networking-generic-switch:
+    type: git
+    location: https://github.com/stackhpc/networking-generic-switch.git
+    reference: stackhpc/{{ openstack_release }}
+  neutron-server-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
+  nova-base:
+    type: git
+    location: https://github.com/stackhpc/nova.git
+    reference: stackhpc/{{ openstack_release }}
+  nova-compute-plugin-networking-mlnx:
+    type: git
+    location: https://github.com/stackhpc/networking-mlnx.git
+    reference: stackhpc/{{ openstack_release }}
+  # TODO(technowhizz): Remove in 2026.1 on openstacksdk >= 4.9.0
+  # https://review.opendev.org/c/openstack/openstacksdk/+/970135
+  horizon:
+    type: git
+    location: https://github.com/stackhpc/horizon.git
+    reference: stackhpc/{{ openstack_release }}
 
 ###############################################################################
 # Kolla image build configuration.
 
+# List of repositories for Rocky Linux 9
+stackhpc_rocky_9_repos:
+  - url: "{{ stackhpc_repo_rocky_9_baseos_url }}"
+    file: "rocky.repo"
+    tag: "baseos"
+  - url: "{{ stackhpc_repo_rocky_9_appstream_url }}"
+    file: "rocky.repo"
+    tag: "appstream"
+  - url: "{{ stackhpc_repo_rocky_9_extras_url }}"
+    file: "rocky-extras.repo"
+    tag: "extras"
+
+# List of additional repositories for Rocky Linux 9
+stackhpc_rocky_9_additional_repos:
+  - url: "{{ stackhpc_repo_centos_stream_9_nfv_openvswitch_url }}"
+    file: "CentOS-NFV-OpenvSwitch.repo"
+    tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_9_openstack_epoxy_url }}"
+    file: "CentOS-OpenStack-epoxy.repo"
+    tag: "centos-openstack-epoxy"
+  - url: "{{ stackhpc_repo_centos_stream_9_opstools_url }}"
+    file: "CentOS-OpsTools.repo"
+    tag: "centos-opstools"
+  - url: "{{ stackhpc_repo_rocky_9_crb_url }}"
+    file: "rocky.repo"
+    tag: "crb"
+  - url: "{{ stackhpc_repo_rocky_9_highavailability_url }}"
+    file: "rocky-addons.repo"
+    tag: "highavailability"
+
+# List of third-party repositories for Rocky Linux 9
+stackhpc_rocky_9_third_party_repos:
+  - url: "{{ stackhpc_repo_grafana_url }}"
+    file: "grafana.repo"
+    tag: "grafana"
+  - url: "{{ stackhpc_repo_rhel_9_treasuredata_5_url }}"
+    file: "td.repo"
+    tag: "treasuredata"
+  - url: "{{ stackhpc_repo_rhel_9_mariadb_10_11_url }}"
+    file: "mariadb.repo"
+    tag: "mariadb"
+  - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
+    file: "influxdb.repo"
+    tag: "influxdb"
+  - url: "{{ stackhpc_repo_centos_stream_9_storage_ceph_squid_url }}"
+    file: "CentOS-Ceph-Squid.repo"
+    tag: "centos-ceph-squid"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_26_url }}"
+    file: "copr-rabbitmq-erlang-26.repo"
+    tag: "copr-rabbitmq-erlang-26"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_27_url }}"
+    file: "copr-rabbitmq-erlang-27.repo"
+    tag: "copr-rabbitmq-erlang-27"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
+    file: "rabbitmq_rabbitmq-server.repo"
+    tag: "rabbitmq_rabbitmq-server"
+  - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-2.x"
+  - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-dashboards-2.x"
+  - url: "{{ stackhpc_repo_almalinux_9_proxysql_2_7_url }}"
+    file: "proxysql.repo"
+    tag: "proxysql"
+
+# List of EPEL 9
+stackhpc_epel_9_repos:
+  - url: "{{ stackhpc_repo_epel_9_url }}"
+    file: "epel.repo"
+    tag: "epel"
+
+# Repositories for Rocky Linux 10
+stackhpc_rocky_10_repos:
+  - url: "{{ stackhpc_repo_rocky_10_baseos_url }}"
+    file: "rocky.repo"
+    tag: "baseos"
+  - url: "{{ stackhpc_repo_rocky_10_appstream_url }}"
+    file: "rocky.repo"
+    tag: "appstream"
+  - url: "{{ stackhpc_repo_rocky_10_extras_url }}"
+    file: "rocky-extras.repo"
+    tag: "extras"
+
+# NOTE(owenjones): Whether to feed in the .repo file needed for previous LTS
+# versions of OVN/OVS - for now always include this in Rocky 10,
+# when we switch over to newer LTS versions this might need some more conditions
+stackhpc_enable_ovn_lts_repo: "{{ kolla_base_distro_and_version == 'rocky-10' }}"
+
+# Additional repositories for Rocky Linux 10
+stackhpc_rocky_10_additional_repos:
+  - url: "{{ stackhpc_repo_centos_stream_10_nfv_openvswitch_url }}"
+    file: "CentOS-NFV-OpenvSwitch.repo"
+    tag: "centos-nfv-openvswitch"
+  - url: "{{ stackhpc_repo_centos_stream_10_openstack_epoxy_url }}"
+    file: "CentOS-OpenStack-epoxy.repo"
+    tag: "centos-openstack-epoxy"
+  - url: "{{ stackhpc_repo_rocky_10_crb_url }}"
+    file: "rocky.repo"
+    tag: "crb"
+  - url: "{{ stackhpc_repo_rocky_10_highavailability_url }}"
+    file: "rocky-addons.repo"
+    tag: "highavailability"
+  # NOTE(owenjones): Remove this when previous OVN/OVS LTS versions
+  # no longer required
+  - url: "{{ stackhpc_repo_centos_stream_10_ovn_lts_url }}"
+    file: "ovn-lts-centos-stream-10.repo"
+    tag: "StackHPC-OVN-LTS"
+
+# List of third-party repositories for Rocky Linux 10
+stackhpc_rocky_10_third_party_repos:
+  - url: "{{ stackhpc_repo_grafana_url }}"
+    file: "grafana.repo"
+    tag: "grafana"
+  - url: "{{ stackhpc_repo_rhel_9_treasuredata_5_url }}"
+    file: "td.repo"
+    tag: "treasuredata"
+  - url: "{{ stackhpc_repo_rhel_10_mariadb_10_11_url }}"
+    file: "mariadb.repo"
+    tag: "mariadb"
+  - url: "{{ stackhpc_repo_rhel_9_influxdb_url }}"
+    file: "influxdb.repo"
+    tag: "influxdb"
+  - url: "{{ stackhpc_repo_centos_stream_10_storage_ceph_squid_url }}"
+    file: "CentOS-Ceph-Squid.repo"
+    tag: "centos-ceph-squid"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_url }}"
+    file: "rabbitmq_rabbitmq-erlang.repo"
+    tag: "rabbitmq_rabbitmq-erlang"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_26_url }}"
+    file: "copr-rabbitmq-erlang-26.repo"
+    tag: "copr-rabbitmq-erlang-26"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_erlang_27_url }}"
+    file: "copr-rabbitmq-erlang-27.repo"
+    tag: "copr-rabbitmq-erlang-27"
+  - url: "{{ stackhpc_repo_rhel9_rabbitmq_server_url }}"
+    file: "rabbitmq_rabbitmq-server.repo"
+    tag: "rabbitmq_rabbitmq-server"
+  - url: "{{ stackhpc_repo_opensearch_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-2.x"
+  - url: "{{ stackhpc_repo_opensearch_dashboards_2_x_url }}"
+    file: "opensearch.repo"
+    tag: "opensearch-dashboards-2.x"
+  - url: "{{ stackhpc_repo_almalinux_9_proxysql_2_7_url }}"
+    file: "proxysql.repo"
+    tag: "proxysql"
+
+# List of EPEL 10
+stackhpc_epel_10_repos:
+  - url: "{{ stackhpc_repo_epel_10_url }}"
+    file: "epel.repo"
+    tag: "epel"
+
+base_centos_repo_overrides_post_yum_list: >-
+  {% if kolla_base_distro_and_version == 'rocky-9' -%}
+    {{ stackhpc_rocky_9_repos + stackhpc_epel_9_repos + stackhpc_rocky_9_additional_repos + stackhpc_rocky_9_third_party_repos }}
+  {%- elif kolla_base_distro_and_version == 'rocky-10' -%}
+    {{ stackhpc_rocky_10_repos + stackhpc_epel_10_repos + stackhpc_rocky_10_additional_repos + stackhpc_rocky_10_third_party_repos }}
+  {%- else -%}
+    []
+  {%- endif %}
+
+stackhpc_yum_repos: "{{ stackhpc_rocky_9_repos if kolla_base_distro_and_version == 'rocky-9' else stackhpc_rocky_10_repos if kolla_base_distro_and_version == 'rocky-10' else [] }}"
+
+# Apt sources.list entry prefix.
+# If using an authenticating Pulp proxy we need to trust the repository because
+# the certificate provided by the upstream repo will not match the proxy's IP.
+stackhpc_ubuntu_repo_prefix: "deb {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}[trusted=yes] {% endif %}"
+
+# List of base repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_base_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-updates main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_url }} noble-backports main universe"
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_noble_security_url }} noble-security main universe"
+
+# List of UCA repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_uca_repos:
+  - "{{ stackhpc_ubuntu_repo_prefix }}{{ stackhpc_repo_ubuntu_cloud_archive_url }} noble-updates/{{ openstack_release_codename }} main"
+
+# List of repositories for Ubuntu Noble.
+stackhpc_ubuntu_noble_repos: "{{ stackhpc_ubuntu_noble_base_repos + stackhpc_ubuntu_noble_uca_repos }}"
+
+# Whether to revert to the upstream mirrors in built Kolla container images.
+stackhpc_kolla_clean_up_repo_mirrors: true
+
 # Dict mapping Jinja2 block names in kolla's Docker images to their contents.
-#kolla_build_blocks:
+kolla_build_blocks:
+  base_header: |
+    {% if kolla_base_distro == 'rocky' %}
+    RUN \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        mkdir -p /etc/yum.repos.d.backup && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
+    {% for repo in stackhpc_yum_repos %}
+        sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}{% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    RUN \
+        rm -f /etc/apt/sources.list && \
+        rm -f /etc/apt/sources.list.d/* && \
+    {% if stackhpc_repo_mirror_auth_proxy_enabled | bool %}
+    {# We lack the ca-certificates package at this stage, so don't verify the CA initially #}
+        echo 'Acquire::https::Verify-Peer "false";' > /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% endif %}
+    {% for repo in stackhpc_ubuntu_noble_base_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+  base_centos_repo_overrides_post_yum: |
+    {# fixme #}
+    {% if kolla_base_distro == 'rocky' %}
+        && \
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+        tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+        tar -czf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d . && \
+    {% endif %}
+    {% if stackhpc_enable_ovn_lts_repo | bool %}
+    echo -e "[StackHPC-OVN-LTS]\n\
+    name=Copr repo for ovn-lts owned by @ovn-lts\n\
+    baseurl=https://download.copr.fedorainfracloud.org/results/@ovn-lts/ovn-lts/centos-stream-\$releasever-\$basearch/\n\
+    type=rpm-md\n\
+    skip_if_unavailable=True\n\
+    gpgcheck=1\n\
+    gpgkey=https://download.copr.fedorainfracloud.org/results/@ovn-lts/ovn-lts/pubkey.gpg\n\
+    repo_gpgcheck=0\n\
+    enabled=1\n\
+    enabled_metadata=1\n" > /etc/yum.repos.d/ovn-lts-centos-stream-10.repo && \
+    {% endif %}
+    {% for repo in base_centos_repo_overrides_post_yum_list %}
+    if [ -f /etc/yum.repos.d/{{ repo.file }} ]; then \
+        sed -i -e '/\[{{ repo.tag }}\]/,/^\[/ s/^\(mirrorlist *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(baseurl *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[ \t]*\(https.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s/^[# ]*\(metalink *=.*\)/#\1/g' \
+               -e '/\[{{ repo.tag }}\]/,/^\[/ s|^\(name.*\)|\1\nbaseurl={{ repo.url }}|' /etc/yum.repos.d/{{ repo.file }}; \
+    fi{% if not loop.last %} &&{% endif %} \
+    {% endfor %}
+        # NOTE(bbezak): RDO epoxy repo obsoletes many OVN versions
+        # (see rdo-openvswitch.spec obsolete_ovn_versions:
+        # https://git.centos.org/rpms/rdo-openvswitch/blob/c9s-sig-cloud-openstack-epoxy/f/SPECS/rdo-openvswitch.spec#L10),
+        # which would replace our NFV OVS and OVN 24.03 LTS with 24.09. Hence exclude RDO OVN/OVS.
+        && \
+        if [ -f /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo ]; then \
+          sed -i '/^\[centos-openstack-epoxy\]/a excludepkgs=*rdo-ovn*,*rdo-openvswitch*' /etc/yum.repos.d/CentOS-OpenStack-epoxy.repo; \
+        fi \
+    {% endif %}
+  # With the UCA keyring installed we can now add all repos.
+  base_ubuntu_package_sources_list: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    COPY sources.list.ubuntu /etc/apt/sources.list.backup
+    {% endif %}
+    RUN \
+        rm -f /etc/apt/sources.list && \
+        rm -f /etc/apt/sources.list.d/* && \
+        rm -f /etc/apt/apt.conf.d/90no-verify-peer && \
+    {% for repo in stackhpc_ubuntu_noble_repos %}
+        echo '{{ repo }}' >> /etc/apt/sources.list {% if not loop.last %} && \
+    {% endif %}
+    {% endfor %}
+  footer: |
+    {% if stackhpc_kolla_clean_up_repo_mirrors | bool %}
+    {% if kolla_base_distro == 'rocky' %}
+    RUN \
+        if [ -f /etc/yum.repos.d.backup/repos.tar.gz ]; then \
+          tar -xzf /etc/yum.repos.d.backup/repos.tar.gz -C /etc/yum.repos.d && \
+          rm -rf /etc/yum.repos.d.backup/; \
+        fi && \
+        {% if stackhpc_enable_ovn_lts_repo | bool %}
+        if [ -f /etc/yum.repos.d/ovn-lts-centos-stream-10.repo ]; then \
+          rm /etc/yum.repos.d/ovn-lts-centos-stream-10.repo; \
+        fi && \
+        {% endif %}
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/yum.repos.d; then \
+          echo "Found repository mirror in Yum repositories"; \
+          exit 1; \
+        fi
+    {% else %}
+    RUN \
+        if [ -f /etc/apt/sources.list.backup ]; then \
+          mv /etc/apt/sources.list.backup /etc/apt/sources.list; \
+        fi && \
+        if grep -r '{{ stackhpc_repo_mirror_url }}' /etc/apt/sources.list; then \
+          echo "Found repository mirror in APT repositories"; \
+          exit 1; \
+        fi
+    {% endif %}
+    {% endif %}
+  kolla_toolbox_header: |
+    ENV UPPER_CONSTRAINTS_FILE=https://raw.githubusercontent.com/stackhpc/requirements/stackhpc/{{ openstack_release }}/upper-constraints.txt
+  bifrost_base_header: |
+    ADD additions-archive /
+    ENV TOX_CONSTRAINTS_FILE=/requirements/upper-constraints.txt
+  ironic_inspector_header: |
+    ADD additions-archive /
 
 # Dict mapping image customization variable names to their values.
 # Each variable takes the form:
@@ -128,7 +501,146 @@
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
-#kolla_build_customizations:
+kolla_build_customizations_common:
+  bifrost_base_pip_packages_append:
+    - /additions/*
+  grafana_plugins_append:
+    - vonage-status-panel
+  ironic_inspector_pip_packages_append:
+    - /additions/*
+  magnum_base_pip_packages_override:
+    - /magnum[osprofiler]
+    - magnum-capi-helm==1.3.0
+  neutron_server_packages_append:
+    - python3-libvirt
+  nova_compute_packages_append:
+    - python3-libvirt
+  neutron_mlnx_agent_pip_packages_override:
+    - networking-mlnx@git+https://opendev.org/x/networking-mlnx@master
+
+stackhpc_kolla_build_customizations:
+  rocky-9:
+    base_centos_yum_repo_packages_append:
+      - centos-release-ceph-squid
+    base_centos_yum_repo_packages_remove:
+      - centos-release-ceph-reef
+    base_centos_yum_repos_to_disable_remove:
+      - centos-ceph-reef
+      - epel
+      - centos9-nfv-ovs
+      - centos9-opstools
+      - centos9-rabbitmq
+      - centos9-storage
+    kolla_toolbox_packages_remove:
+      - openvswitch
+    kolla_toolbox_packages_append:
+      - openvswitch3.3
+    manila_base_packages_remove:
+      - openvswitch
+    manila_base_packages_append:
+      - openvswitch3.3
+    neutron_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    neutron_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    neutron_server_packages_append:
+      - python3-ethtool
+    nova_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    nova_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    nova_compute_packages_append:
+      - python3-ethtool
+    nova_libvirt_packages_remove:
+      - openvswitch
+    octavia_base_packages_remove:
+      - python3-openvswitch
+    openvswitch_base_packages_remove:
+      - openvswitch
+      - python3-openvswitch
+    openvswitch_base_packages_append:
+      - openvswitch3.3
+      - python3-openvswitch3.3
+    ovn_base_packages_override:
+      - ovn24.03
+    ovn_controller_packages_override:
+      - ovn24.03-host
+    ovn_nb_db_server_packages_override:
+      - ovn24.03-central
+    ovn_northd_packages_override:
+      - ovn24.03-central
+    ovn_sb_db_server_packages_override:
+      - ovn24.03-central
+  rocky-10:
+    base_centos_yum_repos_to_disable_remove:
+      - epel
+      - centos-nfv-openvswitch
+    kolla_toolbox_packages_remove:
+      - openvswitch3.5
+    kolla_toolbox_packages_append:
+      - openvswitch
+    manila_base_packages_remove:
+      - openvswitch3.5
+    manila_base_packages_append:
+      - openvswitch
+    neutron_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    neutron_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    nova_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    nova_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    nova_libvirt_packages_remove:
+      - openvswitch3.5
+    nova_libvirt_packages_append:
+      - openvswitch
+    octavia_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    octavia_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    openvswitch_base_packages_remove:
+      - openvswitch3.5
+      - python3-openvswitch3.5
+    openvswitch_base_packages_append:
+      - openvswitch
+      - python3-openvswitch
+    ovn_base_packages_override:
+      - ovn24.03
+    ovn_controller_packages_override:
+      - ovn24.03-host
+    ovn_nb_db_server_packages_override:
+      - ovn24.03-central
+    ovn_northd_packages_override:
+      - ovn24.03-central
+    ovn_sb_db_server_packages_override:
+      - ovn24.03-central
+  ubuntu-noble:
+    neutron_server_packages_append:
+      - python3-ethtool
+    nova_compute_packages_append:
+      - python3-ethtool
+
+# Dict mapping image customization variable names to their values.
+# Each variable takes the form:
+# <image name>_<customization>_<operation>
+# Hyphens in the image name must be replaced with underscores. The
+# customization is most commonly packages. The operation should be one of
+# override, append or remove. The value should be a list.
+kolla_build_customizations: "{{ kolla_build_customizations_common | combine(stackhpc_kolla_build_customizations[kolla_base_distro_and_version] | default({})) }}"
+
+# Dict mapping Kolla Dockerfile ARG names to their values.
+kolla_build_args: {}
 
 ###############################################################################
 # Kolla-ansible inventory configuration.
@@ -189,6 +701,10 @@
 # * groups: A list of kayobe ansible groups to map to this kolla-ansible group.
 # * vars: A dict mapping variable names to values for hosts in this
 #         kolla-ansible group.
+# NOTE(Alex-Welsh): If you want to extend the map rather than replace it, you
+# must include the Kayobe defaults in the mapping.
+# The standard Kayobe defaults can be found here:
+# https://github.com/stackhpc/kayobe/blob/stackhpc/<release>/ansible/inventory/group_vars/all/kolla
 #kolla_overcloud_inventory_top_level_group_map:
 
 # List of names of top level kolla-ansible groups. Any of these groups which
@@ -203,7 +719,11 @@
 # List of names of additional host variables to pass through from kayobe hosts
 # to kolla-ansible hosts, if set. See also
 # kolla_overcloud_inventory_pass_through_host_vars_map.
-#kolla_overcloud_inventory_pass_through_host_vars_extra:
+kolla_overcloud_inventory_pass_through_host_vars_extra:
+  - stackhpc_gpu_data
+  - gpu_group_map
+  - stackhpc_radosgw_usage_exporter_frontend_port
+  - stackhpc_radosgw_usage_exporter_backend_port
 
 # List of names of host variables to pass through from kayobe hosts to
 # kolla-ansible hosts, if set. See also
@@ -290,7 +810,7 @@
 #kolla_enable_ceilometer_ipmi:
 #kolla_enable_ceilometer_prometheus_pushgateway:
 #kolla_enable_cells:
-#kolla_enable_central_logging:
+kolla_enable_central_logging: true
 #kolla_enable_ceph_rgw:
 #kolla_enable_ceph_rgw_loadbalancer:
 #kolla_enable_cinder:
@@ -321,12 +841,12 @@
 #kolla_enable_glance_image_cache:
 #kolla_enable_gnocchi:
 #kolla_enable_gnocchi_statsd:
-#kolla_enable_grafana:
+kolla_enable_grafana: true
 #kolla_enable_grafana_external:
 #kolla_enable_hacluster:
 #kolla_enable_haproxy:
 #kolla_enable_haproxy_memcached:
-#kolla_enable_heat:
+kolla_enable_heat: false
 #kolla_enable_heat_horizon_policy_file:
 #kolla_enable_horizon:
 #kolla_enable_horizon_blazar:
@@ -351,7 +871,7 @@
 #kolla_enable_ironic_dnsmasq:
 #kolla_enable_ironic_inspector:
 #kolla_enable_ironic_neutron_agent:
-#kolla_enable_ironic_prometheus_exporter:
+kolla_enable_ironic_prometheus_exporter: false
 #kolla_enable_iscsid:
 #kolla_enable_keepalived:
 #kolla_enable_keystone:
@@ -368,7 +888,7 @@
 #kolla_enable_manila_backend_generic:
 #kolla_enable_manila_backend_glusterfs_nfs:
 #kolla_enable_manila_backend_hnas:
-#kolla_enable_mariabackup:
+kolla_enable_mariabackup: True
 #kolla_enable_mariadb:
 #kolla_enable_masakari:
 #kolla_enable_masakari_hostmonitor:
@@ -410,17 +930,16 @@
 #kolla_enable_openstack_core:
 #kolla_enable_openvswitch:
 #kolla_enable_osprofiler:
-#kolla_enable_ovn:
+kolla_enable_ovn: true
 #kolla_enable_ovn_sb_db_relay:
 #kolla_enable_ovs_dpdk:
 #kolla_enable_placement:
-#kolla_enable_prometheus:
+kolla_enable_prometheus: true
 #kolla_enable_prometheus_alertmanager:
 #kolla_enable_prometheus_alertmanager_external:
 #kolla_enable_prometheus_blackbox_exporter:
 #kolla_enable_prometheus_cadvisor:
 #kolla_enable_prometheus_ceph_mgr_exporter:
-#kolla_enable_prometheus_elasticsearch_exporter:
 #kolla_enable_prometheus_etcd_integration:
 #kolla_enable_prometheus_fluentd_integration:
 #kolla_enable_prometheus_haproxy_exporter:
@@ -517,7 +1036,11 @@
 
 # Extra items to add to kolla_openstack_custom_config_rules_default
 # to produce kolla_openstack_custom_config_rules.
-#kolla_openstack_custom_config_rules_extra:
+kolla_openstack_custom_config_rules_extra:
+  # Files ending with .example should not be copied
+  - glob: "**/*.example"
+    strategy: noop
+    priority: 1
 
 ###############################################################################
 # Passwords and credentials.

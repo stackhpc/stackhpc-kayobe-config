@@ -1,16 +1,20 @@
-====================
-Kayobe Configuration
-====================
+=============================
+StackHPC Kayobe Configuration
+=============================
 
-This repository provides configuration for the `kayobe
-<https://opendev.org/openstack/kayobe>`_ project. It is intended to encourage
-version control of site configuration.
+This repository provides a base Kayobe configuration for the 2025.1 Epoxy
+release of StackHPC OpenStack.
 
-Kayobe enables deployment of containerised OpenStack to bare metal.
+**Note: This repository is maintained for StackHPC and its customers. While it
+is not intended for direct external deployment, specific OpenStack
+configuration elements may be extracted or adapted for your own use.**
 
-Containers offer a compelling solution for isolating OpenStack services, but
-running the control plane on an orchestrator such as Kubernetes or Docker
-Swarm adds significant complexity and operational overheads.
+Documentation is hosted on `readthedocs.io
+<https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2025.1/index.html>`__,
+and includes release notes.
+
+Kayobe
+======
 
 The hosts in an OpenStack control plane must somehow be provisioned, but
 deploying a secondary OpenStack cloud to do this seems like overkill.

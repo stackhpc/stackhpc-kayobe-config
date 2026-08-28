@@ -1,0 +1,93 @@
+---
+# Reset a broken RabbitMQ cluster.
+# Also restarts all OpenStack services using RabbitMQ.
+
+- name: Stop OpenStack services
+  hosts: "{{ rabbitmq_reset_service_hosts | default('controllers:compute:storage') }}"
+  become: true
+  gather_facts: false
+  tasks:
+    # The following services use RabbitMQ.
+    - name: Stop OpenStack services
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          systemctl -a | grep -E 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          awk '{ print $NF }' |
+          xargs systemctl stop
+        executable: "/bin/bash"
+
+- name: Reset RabbitMQ
+  hosts: "{{ rabbitmq_reset_hosts | default('controllers') }}"
+  become: true
+  gather_facts: false
+  vars:
+    container_name: rabbitmq
+  tasks:
+    - name: Checking timedatectl status
+      ansible.builtin.command: timedatectl status
+      register: timedatectl_status
+      changed_when: false
+
+    - name: Fail if the clock is not synchronized
+      ansible.builtin.fail:
+        msg: >-
+          timedatectl sees the system clock as unsynchronized.
+          You may need to force synchronisation using `chronyc makestep`.
+          Otherwise, please wait for synchronization.
+      when:
+        - "'synchronized: yes' not in timedatectl_status.stdout"
+
+    - name: Inspect the {{ container_name }} container
+      ansible.builtin.shell:
+        cmd: docker container inspect --format '{{ '{{' }} .State.Running {{ '}}' }}' {{ container_name }}
+      register: inspection
+
+    - name: Ensure the {{ container_name }} container is running
+      ansible.builtin.command: systemctl start kolla-{{ container_name }}-container.service  # noqa command-instead-of-module
+      when: inspection.stdout == 'false'
+
+    - name: Wait for the {{ container_name }} container to reach state 'Running'
+      ansible.builtin.shell:
+        cmd: docker container inspect --format '{{ '{{' }} .State.Running {{ '}}' }}' {{ container_name }}
+      register: result
+      until: result.stdout == 'true'
+      retries: 10
+      delay: 6
+
+    - name: Wait for the rabbitmq node to automatically start on container start
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbitmq.pid --timeout 60'
+      when: inspection.stdout == 'false'
+
+    - name: Stop app
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl stop_app'
+
+    - name: Force reset app
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl force_reset'
+
+    - name: Start app
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'
+
+    - name: Wait for all nodes to join the cluster
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl await_online_nodes {{ ansible_play_hosts | length }}'
+
+- name: Restart OpenStack services
+  hosts: "{{ rabbitmq_reset_service_hosts | default('controllers:compute:storage') }}"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Clear shared memory
+      ansible.builtin.shell:
+        cmd: >
+          rm -rf /dev/shm/*_qmanager
+
+    # The following services use RabbitMQ.
+    - name: Restart OpenStack services
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          systemctl list-units --type=service --all --no-legend --plain |
+          grep -E 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          awk '{ print $1 }' |
+          xargs -r systemctl restart
+        executable: "/bin/bash"

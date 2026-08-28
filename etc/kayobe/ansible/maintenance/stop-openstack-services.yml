@@ -1,0 +1,32 @@
+---
+# Stops containers running OpenStack services
+
+- name: Stop OpenStack services
+  hosts: overcloud
+  become: true
+  gather_facts: false
+  vars:
+    stop_service_list:
+      - blazar
+      - barbican
+      - cinder
+      - cloudkitty
+      - designate
+      - glance
+      - heat
+      - horizon
+      - ironic
+      - keystone
+      - magnum
+      - manila
+      - neutron
+      - nova
+      - octavia
+      - placement
+  tasks:
+    - name: Stop OpenStack services
+      ansible.builtin.shell:
+        executable: "/bin/bash"
+        cmd: >-
+          set -o pipefail &&
+          systemctl -a | grep -E 'kolla-({{ stop_service_list | join('|') }})' | awk '{ print $1 }' | xargs systemctl stop
