@@ -33,3 +33,10 @@ baremetal-policy
 ----------------
 
 .. include:: ../../../etc/kayobe/environments/baremetal-policy/README.rst
+
+.. _mixin-security:
+
+security
+--------
+
+.. include:: ../../../etc/kayobe/environments/security/README.rst
