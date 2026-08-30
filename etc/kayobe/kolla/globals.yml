@@ -24,12 +24,14 @@ kolla_base_distro_version_default_map: {
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
 # where the key is the OS distro and the value is the tag to deploy.
-# NOTE: This is defined in etc/kayobe/kolla-image-tags.yml.
+# NOTE: This is loaded from etc/kayobe/kolla-image-tags.yml. Environment-
+# specific overrides are only loaded when
+# stackhpc_kolla_image_tags_env_overrides_enabled is true.
 kolla_image_tags:
 {{ kolla_image_tags | to_nice_yaml | indent(width=4, first=true) }}
 
 # Variables defining which tag to use for each container's image.
-{{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars') }}
+{{ lookup('pipe', 'python3 ' ~ kayobe_config_path ~ '/../../tools/kolla-images.py list-tag-vars' ~ (' --environment-overrides' if stackhpc_kolla_image_tags_env_overrides_enabled | default(false) | bool else '')) }}
 
 #############################################################################
 # Monitoring and alerting related settings
