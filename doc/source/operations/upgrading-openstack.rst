@@ -43,6 +43,12 @@ The separate Ironic Inspector service was replaced by the Ironic built-in inspec
 Known issues
 ============
 
+Ubuntu Support
+--------------
+
+Ubuntu Noble is not yet supported for this release. Development is underway,
+and will be released in the next few months.
+
 RabbitMQ
 --------
 
