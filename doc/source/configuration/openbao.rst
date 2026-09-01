@@ -597,10 +597,10 @@ It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vau
 
 .. _openbao-cluster-fix:
 
-Restoring OpenBao cluster
-=========================
+Restoring an OpenBao cluster
+============================
 
-Users can use ``fix-openbao-overcloud.yml`` playbook to restore OpenBao cluster.
+Users can use the ``fix-openbao-overcloud.yml`` playbook to restore an OpenBao cluster.
 
 .. code-block:: bash
 
@@ -645,7 +645,7 @@ Users can also follow this procedure to fix the OpenBao cluster manually.
       ok: [controller-03] =>
           msg: 'raft_leader_index: 2'
 
-2. Run ``secret-store-deploy-overcloud.yml`` playbook with the index of the new
+2. Run the ``secret-store-deploy-overcloud.yml`` playbook with the index of the new
    leader as an extra variable.
 
    .. code-block:: bash
