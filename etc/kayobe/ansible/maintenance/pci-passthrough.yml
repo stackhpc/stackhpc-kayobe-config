@@ -18,6 +18,9 @@
       {% endfor %}
       {% for item in gpu_list | flatten | unique %}
       {% set _ = output.append(stackhpc_gpu_data[item]['vendor_id'] + ':' + stackhpc_gpu_data[item]['product_id']) %}
+      {% if stackhpc_gpu_data[item].product_audio_id is defined %}
+      {% set _ = output.append(stackhpc_gpu_data[item]['vendor_id'] + ':' + stackhpc_gpu_data[item]['product_audio_id']) %}
+      {% endif %}
       {% endfor %}
       {{ output | join(',') }}
     reboot_timeout_s: "{{ 20 * 60 }}"
