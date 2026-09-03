@@ -17,7 +17,7 @@ beginning migrations:
 #. :doc:`tempest`.
 #. Check OpenSearch logs
 #. Check Prometheus alerts
-#. Check Azimuth operation status
+#. Check Azimuth operation status, if applicable
 
 Update Configuration
 ====================
@@ -463,9 +463,59 @@ Full procedure for one host
 
 Seed
 ====
-TODO
+Migrating the seed host follows a very similar process to migrating the other hosts, with the added step
+of potentially needing to backup and restore container volumes for seed services.
 
-* Bifrost docker volume
+.. caution::
+
+   Some seed container volumes hold data and keys which must be persisted. Ensure these volumes are
+   properly backed up and removed from the host before migrating, and then restored before services
+   are deployed.
+
+Full procedure for seed host migration
+--------------------------------------
+
+#. Stop seed services:
+
+   .. code-block:: console
+
+      kayobe seed service destroy --yes-i-really-really-mean-it
+
+#. Take a backup of relevant container volumes on the seed:
+
+   #. Bifrost inventory
+   #. Secret store (Vault or OpenBao)
+   #. Pulp (root and data volumes)
+
+#. Deprovision and reprovision the seed host:
+
+   .. code-block:: console
+
+      kayobe seed vm deprovision
+
+   .. code-block:: console
+
+      kayobe seed vm provision
+
+#. Configure the seed:
+
+   .. code-block:: console
+
+      kayobe seed host configure
+
+#. Restore the container volumes
+
+#. Redeploy secret store:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-seed.yml
+
+#. Deploy seed services:
+
+   .. code-block:: console
+
+      kayobe seed service deploy
 
 Ansible Control Host
 ====================
