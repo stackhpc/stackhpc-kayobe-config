@@ -1,0 +1,14 @@
+---
+- name: Create virtual redfish baremetal
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Run teardown.yml for tenks
+      ansible.builtin.command:
+        cmd: >-
+          {{ lookup('env', 'VENV_PATH') }}/tenks/bin/ansible-playbook
+          -i {{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/ansible/inventory
+          --extra-vars
+          @{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/baremetal/ansible/tenks.yml
+          {{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/ansible/teardown.yml
+      delegate_to: localhost
