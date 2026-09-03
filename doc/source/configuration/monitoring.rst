@@ -141,7 +141,10 @@ These should then be set as the ``slack_api_url`` and ``api_url`` for the
 regular and critical alerts channels respectively. Both slack channel names will
 need to be set, and the proxy URL sould be set or removed.
 
-If you want to add an alerting rule, they simply need to be added to one of the ``*.rules`` files in the prometheus configuration directory.
+If you want to add an alerting rule, there are many good examples of alerts are
+available `here <https://samber.github.io/awesome-prometheus-alerts/>`__. They simply
+need to be added to one of the ``*.rules`` files in the prometheus configuration
+directory.
 
 If however you are using Microsoft Teams instead of Slack, you can use Prometheus
 Alertmanager's built-in support for the new message format based on Power Automate flows.
