@@ -142,7 +142,7 @@ regular and critical alerts channels respectively. Both slack channel names will
 need to be set, and the proxy URL sould be set or removed.
 
 If you want to add an alerting rule, there are many good examples of alerts are
-available `here <https://awesome-prometheus-alerts.grep.to/>`__. They simply
+available `here <https://samber.github.io/awesome-prometheus-alerts/>`__. They simply
 need to be added to one of the ``*.rules`` files in the prometheus configuration
 directory.
 
