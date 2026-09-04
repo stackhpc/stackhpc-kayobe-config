@@ -9,7 +9,7 @@ Consuming this environment
 Add the ``baremetal`` environment to your  ``.kayobe-environment`` file:
 
 .. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/$KAYOBE_ENVIRONMENT/.kayobe-environment
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/.kayobe-environment
 
    dependencies:
      - baremetal
@@ -38,7 +38,7 @@ this setting if this is a risk you want to take. This can be customised by
 editing the following variables:
 
 .. code-block:: yaml
-    :caption: $KAYOBE_CONFIG_PATH/$KAYOBE_ENVIRONMENT/kolla/config/ironic/ironic-conductor.conf
+    :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/config/ironic/ironic-conductor.conf
 
     [deploy]
     erase_devices_priority=10
