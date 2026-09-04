@@ -18,7 +18,7 @@ Consuming this environment
 Add the ``baremetal-policy`` environment to your  ``.kayobe-environment`` file:
 
 .. code-block:: yaml
-   :caption: $KAYOBE_CONFIG_PATH/$KAYOBE_ENVIRONMENT/.kayobe-environment
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/.kayobe-environment
 
    dependencies:
      - baremetal-policy
