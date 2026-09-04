@@ -40,6 +40,8 @@ need to merge the changes in this repository into your repository:
    git fetch stackhpc
    git merge stackhpc/|current_release_git_branch_name|
 
+.. _updating-configuration:
+
 Updating
 --------
 

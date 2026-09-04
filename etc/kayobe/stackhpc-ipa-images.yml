@@ -12,20 +12,17 @@ stackhpc_ipa_image_overcloud_enabled: true
 # Options are "amd64" and "aarch64".
 stackhpc_ipa_arch: amd64
 
-# NOTE(owenjones): for now we'll override the release used so we use CentOS
-# Stream 9 IPA images on both Rocky 9 and 10 - remove once Rocky 10 IPA images
-# are stable.
-stackhpc_ipa_release: "{{ '9' if os_distribution == 'rocky' and os_release == '10' else os_release }}"
-
 # The IPA image source, defined by os_distribution,
 # os_release, and the current stable version.
 stackhpc_ipa_image_url: "{{ stackhpc_release_pulp_content_url }}/ipa-images/\
                          {{ openstack_release }}/{{ os_distribution }}/\
-                         {{ stackhpc_ipa_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_ipa_arch == 'aarch64' else '' }}/\
+                         {{ os_release }}{{ '/aarch64' if os_distribution == 'rocky' and stackhpc_ipa_arch == 'aarch64' else '' }}/\
                          {{ stackhpc_ipa_image_version }}"
 
 # IPA image version tag selection
 stackhpc_ipa_image_version: >-
-  {{ stackhpc_rocky_9_ipa_image_version_aarch64 if os_distribution == 'rocky' and stackhpc_ipa_arch == 'aarch64' else
-  stackhpc_rocky_9_ipa_image_version if os_distribution == 'rocky' else
+  {{ stackhpc_rocky_9_ipa_image_version_aarch64 if os_distribution == 'rocky' and os_release == '9' and stackhpc_ipa_arch == 'aarch64' else
+  stackhpc_rocky_10_ipa_image_version_aarch64 if os_distribution == 'rocky' and os_release == '10' and stackhpc_ipa_arch == 'aarch64' else
+  stackhpc_rocky_9_ipa_image_version if os_distribution == 'rocky' and os_release == '9' else
+  stackhpc_rocky_10_ipa_image_version if os_distribution == 'rocky' and os_release == '10' else
   stackhpc_ubuntu_noble_ipa_image_version if os_distribution == 'ubuntu' and os_release == 'noble' }}
