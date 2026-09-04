@@ -224,6 +224,14 @@ kolla_build_blocks:
 # Hyphens in the image name must be replaced with underscores. The
 # customization is most commonly packages. The operation should be one of
 # override, append or remove. The value should be a list.
+ethtool_packages:
+  rocky:
+    - libnl3-devel
+  ubuntu:
+    - libnl-3-dev
+    - libnl-route-3-dev
+    - libnl-genl-3-dev
+
 kolla_build_customizations_common:
   bifrost_base_pip_packages_append:
     - /additions/*
@@ -234,12 +242,10 @@ kolla_build_customizations_common:
   magnum_base_pip_packages_override:
     - /magnum[osprofiler]
     - magnum-capi-helm==1.3.0
-  neutron_server_packages_append:
-    - python3-libvirt
+  neutron_server_packages_append: "{{ ['python3-libvirt'] + ethtool_packages[kolla_base_distro] }}"
   neutron_server_pip_packages_append:
     - ethtool
-  nova_compute_packages_append:
-    - python3-libvirt
+  nova_compute_packages_append: "{{ ['python3-libvirt'] + ethtool_packages[kolla_base_distro] }}"
   nova_compute_pip_packages_append:
     - ethtool
 
