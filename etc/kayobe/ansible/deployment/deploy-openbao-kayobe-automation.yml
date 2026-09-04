@@ -3,6 +3,10 @@
   any_errors_fatal: true
   gather_facts: true
   hosts: github-runners,gitlab-runners
+  vars:
+    secret_store_bind_interface: "{{ provision_oc_net_name | net_interface }}"
+    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
+    secret_store_api_address: "http://{{ secret_store_bind_address }}:8200"
   tasks:
     - name: Set a fact about the virtualenv on the remote system
       ansible.builtin.set_fact:
@@ -36,6 +40,8 @@
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.openbao
       vars:
+        openbao_bind_addr: "{{ secret_store_bind_address }}"
+        openbao_api_addr: "{{ secret_store_api_address }}"
         openbao_config_dir: "/opt/kayobe/vault"
         openbao_cluster_name: "kayobe-automation"
         copy_self_signed_ca: false
@@ -52,7 +58,7 @@
       ansible.builtin.import_role:
         name: stackhpc.hashicorp.vault_unseal
       vars:
-        vault_api_addr: "{{ openbao_api_addr }}"
+        vault_api_addr: "{{ secret_store_api_address }}"
         vault_unseal_token: "{{ openbao_keys.root_token }}"
         vault_unseal_keys: "{{ openbao_keys.keys_base64 }}"
         vault_unseal_verify: false
@@ -63,12 +69,12 @@
       ansible.legacy.hashivault_secret_engine:
         name: kayobe-automation
         backend: kv
-        url: "{{ openbao_api_addr }}"
+        url: "{{ secret_store_api_address }}"
         token: "{{ openbao_keys.root_token }}"
 
     - name: Ensure secret store is present
       community.hashi_vault.vault_write:
-        url: "{{ openbao_api_addr }}"
+        url: "{{ secret_store_api_address }}"
         token: "{{ openbao_keys.root_token }}"
         path: kayobe-automation/{{ kayobe_environment }}
         data:
