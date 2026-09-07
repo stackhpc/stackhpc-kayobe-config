@@ -4,12 +4,10 @@
 StackHPC Mixin Environments
 ===========================
 
-StackHPC Kayobe configuration provides a set of mixin environments, which can
-be used to apply configuration in a modular way. These provide a mechanism
-where users can opt into new sets of configuration mid-cycle, at a time of
-their choosing, and thereby facilitate gradual adoption of new features.
-Configuration may be moved into the base configuration for the next major
-release.
+The StackHPC Kayobe configuration uses mixin environments for modular
+configuration. Users can opt into these mid-cycle to gradually adopt new
+features. Mixin environments may be merged into the base configuration in later
+major releases.
 
 For more information about Kayobe environments, please see the `upstream Kayobe
 documentation
