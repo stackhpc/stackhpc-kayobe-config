@@ -250,6 +250,7 @@ stackhpc_pulp_repo_multiarch_centos_stream_9_nfv_openvswitch_version: "{{ lookup
 stackhpc_pulp_repo_multiarch_centos_stream_9_openstack_epoxy_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_openstack_epoxy' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_9_opstools_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_opstools' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_9_storage_ceph_squid_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_ceph_squid_el9_version: "{{ lookup('vars', 'stackhpc_pulp_repo_ceph_squid_el9' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_9_docker_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_9_docker' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_rhel_9_treasuredata_5_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_treasuredata_5' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_rhel_9_mariadb_10_11_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_9_mariadb_10_11' ~ arch_suffix ~ '_version') }}"
@@ -521,6 +522,18 @@ stackhpc_pulp_rpm_repos:
     url: "{{ stackhpc_release_pulp_content_url }}/centos/9-stream/storage/aarch64/ceph-squid/{{ stackhpc_pulp_repo_centos_stream_9_storage_ceph_squid_aarch64_version }}"
     distribution_name: "centos-stream-9-ceph-squid-aarch64-"
     base_path: "centos/9-stream/storage/aarch64/ceph-squid/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Ceph Squid - el9
+    url: "{{ stackhpc_release_pulp_content_url }}/ceph/rpm-squid/el9/x86_64/{{ stackhpc_pulp_repo_ceph_squid_el9_version }}"
+    distribution_name: "ceph-squid-el9-"
+    base_path: "ceph/rpm-squid/el9/x86_64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Ceph Squid - el9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/ceph/rpm-squid/el9/aarch64/{{ stackhpc_pulp_repo_ceph_squid_el9_aarch64_version }}"
+    distribution_name: "ceph-squid-el9-aarch64-"
+    base_path: "ceph/rpm-squid/el9/aarch64/"
     required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_9 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
   # EPEL 9 repository
