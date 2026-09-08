@@ -1,0 +1,17 @@
+# yamllint disable-file
+---
+{% if stackhpc_enable_openbao_monitoring | bool %}
+scrape_configs:
+  - job_name: 'openbao'
+    metrics_path: "/v1/sys/metrics"
+    params:
+      format: ['prometheus']
+    scheme: https
+    static_configs:
+{% for host in groups['controllers'] %}
+      - targets:
+        - '{{ internal_net_name | net_ip(inventory_hostname=host) }}:8200'
+        labels:
+          instance: "{{ host }}"
+{% endfor %}
+{% endif %}
