@@ -87,14 +87,11 @@ IMAGE_TO_CONTAINERS_EXCEPTIONS: Dict[str, List[str]] = {
 
 # Maps a container to the parent tag variable in the hierarchy.
 CONTAINER_TO_PREFIX_VAR_EXCEPTIONS: Dict[str, str] = {
-    "cron": "common",
-    "fluentd": "common",
     "glance_tls_proxy": "haproxy",
     "hacluster_pacemaker_remote": "hacluster",
     "heat_api_cfn": "heat",
     "ironic_neutron_agent": "neutron",
     "ironic_pxe_filter": "ironic",
-    "kolla_toolbox": "common",
     "neutron_eswitchd": "neutron_mlnx_agent",
     "neutron_tls_proxy": "haproxy",
     "nova_compute_ironic": "nova",

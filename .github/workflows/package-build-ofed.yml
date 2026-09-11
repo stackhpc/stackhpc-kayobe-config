@@ -22,7 +22,6 @@ on:
 env:
   ANSIBLE_FORCE_COLOR: True
   KAYOBE_ENVIRONMENT: ci-doca-builder
-  KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 jobs:
   workflow-setup:
     name: Setup the workflow
@@ -229,6 +228,8 @@ jobs:
           -e os_distribution="${{ matrix.distro.name }}" \
           -e os_release="${{ matrix.distro.release }}" \
           -e kolla_base_arch="${{ matrix.distro.arch }}"
+        env:
+          KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
 
       - name: Run growroot playbook
         run: |

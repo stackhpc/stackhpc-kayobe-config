@@ -12,9 +12,9 @@
 #   - "{{ stackhpc_overcloud_dib_host_image }}"
 stackhpc_overcloud_dib_host_image:
   name: "{{ stackhpc_overcloud_dib_name }}"
-  elements: "{{ stackhpc_overcloud_dib_elements }}"
+  elements: "{{ stackhpc_overcloud_dib_elements | select() }}"
   env: "{{ stackhpc_overcloud_dib_env_vars }}"
-  packages: "{{ stackhpc_overcloud_dib_packages }}"
+  packages: "{{ stackhpc_overcloud_dib_packages | select() }}"
 
 # StackHPC overcloud DIB image name.
 stackhpc_overcloud_dib_name: "deployment_image"
@@ -79,6 +79,7 @@ stackhpc_overcloud_dib_env_vars_ark:
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
+  - "acl"
   - "ethtool"
   - "git"
   - "less"
@@ -89,14 +90,14 @@ stackhpc_overcloud_dib_packages:
   - "python3"
   - "smartmontools"
   - "vim"
-  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
-  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
-  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
   - "{% if os_distribution == 'rocky' %}cloud-utils-growpart{% endif %}"
+  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
+  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}cloud-guest-utils{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
 
 # StackHPC overcloud DIB image block device configuration.
 # This image layout conforms to the CIS partition benchmarks.
