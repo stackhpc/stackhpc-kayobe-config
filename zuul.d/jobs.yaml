@@ -46,3 +46,33 @@
       nodes:
         - name: rocky-10-tenks
           label: rocky-10-tenks
+
+- job:
+    name: gns3-base
+    description: |
+      Base job for testing GNS3 deployment and physical network configuration.
+    run: zuul.d/playbooks/gns3-base/run.yml
+    timeout: 10800
+    irrelevant-files:
+      - ^\..*
+      - ^doc/.*
+      - ^kayobe-env$
+      - ^LICENSE$
+      - ^README.rst$
+      - ^releasenotes/.*
+      - ^tox.ini$
+      - ^etc/kayobe/environments/aufn-ceph/.*
+      - ^etc/kayobe/environments/aio/.*
+      - ^etc/kayobe/environments/ci-aio/.*
+      - ^etc/kayobe/environments/ci-builder/.*
+      - ^etc/kayobe/environments/ci-doca-builder/.*
+      - ^etc/kayobe/environments/ci-multinode/.*
+      - ^etc/kayobe/environments/ci-tenks/.*
+
+- job:
+    name: gns3-test-physical-network-ubuntu
+    parent: gns3-base
+    nodeset:
+      nodes:
+        - name: gns3-test-physical-network
+          label: gns3-test-physical-network
