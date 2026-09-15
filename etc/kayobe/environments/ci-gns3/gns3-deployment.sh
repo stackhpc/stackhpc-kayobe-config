@@ -76,7 +76,7 @@ host="switch1"
 if ! awk '/^\[mgmt-switches\]/{flag=1;next}/^\[/{flag=0} flag && $0 == "'"$host"'"' "$groups_file" | grep -q "$host"; then
     sed -i "/^\[mgmt-switches\]$/a ${host}" "$groups_file"
 fi
-echo "SWITCH HOST_VARS COPIED"
+echo "SWITCH GROUP_VARS COPIED"
 
 
 cd "$KAYOBE_PATH"
