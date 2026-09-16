@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 ##########################################
@@ -29,8 +28,12 @@ fi
 mkdir -p "$KAYOBE_PATH/config/src"
 if [[ ! -d $KAYOBE_CONFIG_PATH ]]; then
   echo "CLONING KAYOBE CONFIG REPO..."
-  git clone https://opendev.org/openstack/kayobe-config-dev.git \
-    "$KAYOBE_CONFIG_PATH" -b "$KAYOBE_CONFIG_REF"
+  git clone https://github.com/stackhpc/stackhpc-kayobe-config \
+    "$KAYOBE_CONFIG_PATH"
+  (
+    cd "$KAYOBE_CONFIG_PATH"
+    git checkout "$KAYOBE_CONFIG_REF"
+  )
   echo "KAYOBE CONFIG REPO CLONED"
 fi
 
