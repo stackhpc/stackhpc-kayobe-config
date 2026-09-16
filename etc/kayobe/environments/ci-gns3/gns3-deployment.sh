@@ -70,19 +70,12 @@ echo "RUNNING ANSIBLE PLAYBOOK TO INSTALL GNS3..."
 ansible-playbook -i inventory.ini trialplaybook.yml -vvv
 echo "GNS3 INSTALLED!"
 
+mkdir -p $KAYOBE_CONFIG_PATH/inventory/host_vars/
 # copy host_vars for switch to kayobe config
 sudo cp "$GNS3_ROLE_PATH/roles/gns3/files/switch1" \
   "$KAYOBE_CONFIG_PATH/etc/kayobe/inventory/host_vars/switch1"
 
 echo "SWITCH HOST_VARS COPIED"
-
-groups_file=$KAYOBE_CONFIG_PATH/etc/kayobe/inventory/groups
-host="switch1"
-if ! awk '/^\[mgmt-switches\]/{flag=1;next}/^\[/{flag=0} flag && $0 == "'"$host"'"' "$groups_file" | grep -q "$host"; then
-    sed -i "/^\[mgmt-switches\]$/a ${host}" "$groups_file"
-fi
-echo "SWITCH GROUP_VARS COPIED"
-
 
 cd "$KAYOBE_PATH"
 
