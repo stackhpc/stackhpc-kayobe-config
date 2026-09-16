@@ -61,6 +61,8 @@ echo "KAYOBE DEV ENVIRONMENT INSTALLED"
 echo "SETTING UP ENVIRONMENT..."
 source ~/kayobe-venv/bin/activate
 
+git clone https://github.com/stackhpc/ansible-role-gns3.git "$GNS3_ROLE_PATH"
+
 cd "$GNS3_ROLE_PATH"
 
 # Install GNS3
