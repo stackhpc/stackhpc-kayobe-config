@@ -58,11 +58,19 @@ sudo ip l set dummy1 master breth1
 
 echo "BRIDGE AND DUMMY INTERFACES CREATED"
 
+# Install dependencies
+if type dnf > /dev/null 2>&1; then
+    sudo dnf -y install git python3.12
+else
+    sudo apt update
+    sudo apt -y install gcc git libffi-dev python3.12-dev python-is-python3 python3.12-venv
+fi
+
 # Create Kayobe virtualenv
-mkdir -p venvs
-pushd venvs
+mkdir -p "$BASE_PATH/venvs"
+pushd "$BASE_PATH/venvs"
 if [[ ! -d kayobe ]]; then
-    /usr/bin/python3.12 -m venv kayobe
+    python3.12 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable.
@@ -70,12 +78,12 @@ set +u
 source kayobe/bin/activate
 set -u
 pip install -U pip
-pip install -r $KAYOBE_CONFIG_ROOT/requirements.txt
+pip install -r "$KAYOBE_CONFIG_ROOT/requirements.txt"
 popd
 
 # Activate environment
-pushd $BASE_PATH/src/kayobe-config
-source $KAYOBE_CONFIG_ROOT/kayobe-env --environment $KAYOBE_ENVIRONMENT
+pushd "$KAYOBE_CONFIG_ROOT"
+source kayobe-env --environment "$KAYOBE_ENVIRONMENT"
 
 if [[ ! -d "$GNS3_ROLE_PATH" ]]; then
   git clone https://github.com/stackhpc/ansible-role-gns3.git "$GNS3_ROLE_PATH"
