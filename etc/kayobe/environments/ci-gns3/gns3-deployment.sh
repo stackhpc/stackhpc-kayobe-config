@@ -12,12 +12,15 @@ BASE_PATH=~
 KAYOBE_BRANCH=master
 KAYOBE_CONFIG_REF=${KAYOBE_CONFIG_REF:-master}
 KAYOBE_ENVIRONMENT=${KAYOBE_ENVIRONMENT:-ci-gns3}
-KAYOBE_PATH=$BASE_PATH/kayobe
-KAYOBE_CONFIG_PATH=$KAYOBE_PATH/config/src/kayobe-config/etc/kayobe
-KAYOBE_CONFIG_ROOT=$KAYOBE_PATH/config/src/kayobe-config
+KAYOBE_PATH=$BASE_PATH/src/kayobe
+KAYOBE_CONFIG_ROOT=$BASE_PATH/src/kayobe-config
+KAYOBE_CONFIG_PATH=$KAYOBE_CONFIG_ROOT/etc/kayobe
 GNS3_ROLE_PATH=$BASE_PATH/gns3-ansible-role
 
 echo "STARTING DEMO SCRIPT..."
+
+cd "$BASE_PATH"
+mkdir -p "$BASE_PATH/src"
 
 # Clone repositories.
 if [[ ! -d $KAYOBE_PATH ]]; then
@@ -26,7 +29,6 @@ if [[ ! -d $KAYOBE_PATH ]]; then
   echo "KAYOBE REPO CLONED"
 fi
 
-mkdir -p "$KAYOBE_PATH/config/src"
 if [[ ! -d $KAYOBE_CONFIG_ROOT ]]; then
   echo "CLONING KAYOBE CONFIG REPO..."
   git clone https://github.com/stackhpc/stackhpc-kayobe-config \
@@ -56,17 +58,24 @@ sudo ip l set dummy1 master breth1
 
 echo "BRIDGE AND DUMMY INTERFACES CREATED"
 
-# Install kayobe dev environment
-echo "INSTALLING KAYOBE DEV ENVIRONMENT..."
-(cd "$KAYOBE_PATH" && ./dev/install-dev.sh)
+# Create Kayobe virtualenv
+mkdir -p venvs
+pushd venvs
+if [[ ! -d kayobe ]]; then
+    python3.12 -m venv kayobe
+fi
+# NOTE: Virtualenv's activate and deactivate scripts reference an
+# unbound variable.
+set +u
+source kayobe/bin/activate
+set -u
+pip install -U pip
+pip install -r ../src/kayobe-config/requirements.txt
+popd
 
-echo "KAYOBE DEV ENVIRONMENT INSTALLED"
-
-
-# Environment setup
-
-echo "SETTING UP ENVIRONMENT..."
-source ~/kayobe-venv/bin/activate
+# Activate environment
+pushd $BASE_PATH/src/kayobe-config
+source kayobe-env --environment $KAYOBE_ENVIRONMENT
 
 if [[ ! -d "$GNS3_ROLE_PATH" ]]; then
   git clone https://github.com/stackhpc/ansible-role-gns3.git "$GNS3_ROLE_PATH"
@@ -88,11 +97,6 @@ sudo cp "$GNS3_ROLE_PATH/roles/gns3/files/switch1" \
 echo "SWITCH HOST_VARS COPIED"
 
 cd "$KAYOBE_PATH"
-
-# Activate environment
-pushd "$KAYOBE_CONFIG_ROOT"
-source kayobe-env --environment "$KAYOBE_ENVIRONMENT"
-
 
 kayobe control host bootstrap
 kayobe physical network configure --group mgmt-switches
