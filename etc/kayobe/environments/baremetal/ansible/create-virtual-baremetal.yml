@@ -1,0 +1,51 @@
+---
+- name: Create virtual redfish baremetal
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Gather facts
+      setup:
+      delegate_to: localhost
+
+    - name: Clone tenks repo
+      ansible.builtin.git:
+        repo: https://opendev.org/openstack/tenks.git
+        dest: "{{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks"
+      delegate_to: localhost
+
+    - name: Set up tenks venv
+      ansible.builtin.command:
+        cmd: >-
+          python3 -m venv
+          {{ lookup('env', 'VENV_PATH') }}/tenks
+      args:
+        creates: "{{ lookup('env', 'VENV_PATH') }}/tenks/bin/activate"
+      delegate_to: localhost
+
+    - name: Install tenks requirements
+      ansible.builtin.command:
+        cmd: >-
+          {{ lookup('env', 'VENV_PATH') }}/tenks/bin/pip
+          install
+          -r {{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/requirements.txt
+      delegate_to: localhost
+
+    - name: Install Tenks Ansible Galaxy dependencies
+      ansible.builtin.command:
+        cmd: >-
+          "{{ lookup('env', 'VENV_PATH') }}/tenks/bin/ansible-galaxy"
+          install
+          -r
+          "{{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/requirements.yml"
+      args:
+        chdir: "{{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks"
+
+    - name: Run deploy.yml for tenks
+      ansible.builtin.command:
+        cmd: >-
+          {{ lookup('env', 'VENV_PATH') }}/tenks/bin/ansible-playbook
+          -i {{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/ansible/inventory
+          --extra-vars
+          @{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/environments/baremetal/ansible/tenks.yml
+          {{ lookup('env', 'KAYOBE_SOURCE_PATH') }}/tenks/ansible/deploy.yml
+      delegate_to: localhost
