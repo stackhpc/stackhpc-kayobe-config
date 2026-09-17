@@ -62,7 +62,7 @@ echo "BRIDGE AND DUMMY INTERFACES CREATED"
 mkdir -p venvs
 pushd venvs
 if [[ ! -d kayobe ]]; then
-    python3.12 -m venv kayobe
+    /usr/bin/python3.12 -m venv kayobe
 fi
 # NOTE: Virtualenv's activate and deactivate scripts reference an
 # unbound variable.
@@ -70,12 +70,12 @@ set +u
 source kayobe/bin/activate
 set -u
 pip install -U pip
-pip install -r ../src/kayobe-config/requirements.txt
+pip install -r $KAYOBE_CONFIG_ROOT/requirements.txt
 popd
 
 # Activate environment
 pushd $BASE_PATH/src/kayobe-config
-source kayobe-env --environment $KAYOBE_ENVIRONMENT
+source $KAYOBE_CONFIG_ROOT/kayobe-env --environment $KAYOBE_ENVIRONMENT
 
 if [[ ! -d "$GNS3_ROLE_PATH" ]]; then
   git clone https://github.com/stackhpc/ansible-role-gns3.git "$GNS3_ROLE_PATH"
