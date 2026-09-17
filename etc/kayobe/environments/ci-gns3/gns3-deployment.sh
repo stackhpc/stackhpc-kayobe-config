@@ -17,6 +17,15 @@ KAYOBE_CONFIG_ROOT=$BASE_PATH/src/kayobe-config
 KAYOBE_CONFIG_PATH=$KAYOBE_CONFIG_ROOT/etc/kayobe
 GNS3_ROLE_PATH=$BASE_PATH/gns3-ansible-role
 
+if [[ ! -f $BASE_PATH/vault-pw ]]; then
+    echo "Vault password file not found at $BASE_PATH/vault-pw"
+    exit 1
+fi
+
+set +x
+export KAYOBE_VAULT_PASSWORD=$(cat $BASE_PATH/vault-pw)
+set -x
+
 echo "STARTING DEMO SCRIPT..."
 
 cd "$BASE_PATH"
