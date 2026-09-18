@@ -1,0 +1,58 @@
+---
+# This workflow can be run by any other workflow which has a Kayobe environment.
+# It should be run as a composite action (https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action#creating-a-composite-action-within-the-same-repository)
+# It runs the oslo-config-validator and reports warnings/errors.
+
+name: oslo-config-validator
+inputs:
+  run-environment:
+    description: "Name run environment, used to name results artifact."
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate config
+      run: |
+        mkdir -p oslo-config-validator-results
+        docker run -t --rm \
+          -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+          -v $(pwd)/oslo-config-validator-results:/stack/oslo-config-validator-results \
+          -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+          $KAYOBE_IMAGE \
+          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-configuration-validate.sh /stack/oslo-config-validator-results
+
+    - name: Get number of errors
+      id: count-errors
+      run: |
+          echo ERROR_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'ERROR' | wc -l) >> "$GITHUB_OUTPUT"
+
+    - name: Get number of warnings
+      id: count-warnings
+      run: |
+          echo WARNING_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'WARNING' | wc -l) >> "$GITHUB_OUTPUT"
+
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
+      run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            /repos/${{ github.repository }}/check-runs \
+            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=failure' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
+
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
+      run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            /repos/${{ github.repository }}/check-runs \
+            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=success' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
+
+    - name: Upload test result artifacts
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: oslo-config-validator-results-${{ inputs.run-environment }}
+        path: |
+          oslo-config-validator-results
