@@ -90,7 +90,8 @@ jobs:
     runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
     needs:
       - runner-selection
-    permissions: {}
+    permissions:
+      checks: write
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -473,7 +474,9 @@ jobs:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
       - name: Validate config with oslo-config-validator
-        uses: ./.github/.actions/oslo-config-validator.yml
+        uses: ./.github/.actions/oslo-config-validator
+        with:
+          run-environment: ${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.architecture }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
 
       - name: Collect diagnostic information
         id: diagnostics
