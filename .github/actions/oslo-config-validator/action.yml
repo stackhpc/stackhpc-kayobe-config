@@ -4,16 +4,14 @@
 # It runs the oslo-config-validator and reports warnings/errors.
 
 name: oslo-config-validator
+inputs:
+  run-environment:
+    description: "Name run environment, used to name results artifact."
+    required: true
+
 runs:
   using: "composite"
   steps:
-    - uses: LouisBrunner/checks-action@v2.0.0
-      id: create-check
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        name: Oslo Config Validator
-        status: in_progress
-
     - name: Validate config
       run: |
         mkdir -p oslo-config-validator-results
@@ -34,27 +32,27 @@ runs:
       run: |
           echo WARNING_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'WARNING' | wc -l) >> "$GITHUB_OUTPUT"
 
-    - uses: LouisBrunner/checks-action@v2.0.0
-      if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        check_id: ${{ steps.create-check.outputs.check_id }}
-        conclusion: failure
-        output: |
-          {"summary":"${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
+      run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            /repos/${{ github.repository }}/check-runs \
+            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=failure' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
 
-    - uses: LouisBrunner/checks-action@v2.0.0
-      if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        check_id: ${{ steps.create-check.outputs.check_id }}
-        conclusion: success
-        output: |
-          {"summary":"${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
+      run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            /repos/${{ github.repository }}/check-runs \
+            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=success' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
 
     - name: Upload test result artifacts
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
-        name: oslo-config-validator-results-${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.architecture }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
+        name: oslo-config-validator-results-${{ inputs.run-environment }}
         path: |
           oslo-config-validator-results
