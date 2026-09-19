@@ -1,0 +1,70 @@
+---
+- name: Get current Raft leader
+  hosts: controllers
+  vars:
+    secret_store_bind_interface: "{{ internal_net_name | net_interface | replace('-', '_') }}"
+    secret_store_bind_address: "{{ ansible_facts[secret_store_bind_interface].ipv4.address }}"
+    secret_store_api_address: "https://{{ secret_store_bind_address }}:8200"
+  tasks:
+    - name: Set a fact about the virtualenv on the remote system
+      ansible.builtin.set_fact:
+        virtualenv: "{{ ansible_python_interpreter | dirname | dirname }}"
+      when:
+        - ansible_python_interpreter is defined
+        - not ansible_python_interpreter.startswith('/bin/')
+        - not ansible_python_interpreter.startswith('/usr/bin/')
+
+    - name: Ensure Python hvac module is installed
+      ansible.builtin.pip:
+        name: hvac
+        state: present
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+        virtualenv: "{{ virtualenv is defined | ternary(virtualenv, omit) }}"
+      become: "{{ virtualenv is not defined }}"
+
+    - name: Include secret store keys
+      ansible.builtin.include_vars:
+        file: "{{ kayobe_env_config_path }}/{{ stackhpc_ca_secret_store }}/overcloud-{{ stackhpc_ca_secret_store }}-keys.json"
+        name: secret_store_keys
+
+    - name: Query the HA status
+      ansible.builtin.uri:
+        url: "{{ secret_store_api_address }}/v1/sys/ha-status"
+        headers:
+          X-Vault-Token: "{{ secret_store_keys.root_token }}"
+        follow_redirects: none
+      register: ha_status_query
+      ignore_errors: true
+
+    - name: Query the leader
+      ansible.builtin.uri:
+        url: "{{ secret_store_api_address }}/v1/sys/leader"
+        headers:
+          X-Vault-Token: "{{ secret_store_keys.root_token }}"
+        follow_redirects: none
+      register: leader_query
+      ignore_errors: true
+
+    - name: Determine Raft leader
+      ansible.builtin.group_by:
+        key: raft_leader
+      when:
+        - ha_status_query.json is defined
+        - ha_status_query.json.nodes is defined
+        - leader_query.json is defined
+        - ha_status_query.json.nodes | length > 1
+        - leader_query.json.is_self | bool
+
+    - name: Assert that there is only one leader
+      ansible.builtin.assert:
+        that: groups['raft_leader'] | default([]) | length == 1
+        fail_msg: There are multiple OpenBao Raft leader. Check the status of the cluster.
+
+    - name: Set Raft leader index fact
+      ansible.builtin.set_fact:
+        raft_leader_index: "{{ lookup('ansible.utils.index_of', groups['controllers'], 'eq', (groups['raft_leader'] | first)) }}"
+
+    - name: Display the index of the Raft leader
+      ansible.builtin.debug:
+        msg: "raft_leader_index: {{ raft_leader_index }}"
+      run_once: true
