@@ -13,6 +13,7 @@ runs:
   using: "composite"
   steps:
     - name: Validate config
+      shell: bash
       run: |
         mkdir -p oslo-config-validator-results
         docker run -t --rm \
@@ -24,15 +25,18 @@ runs:
 
     - name: Get number of errors
       id: count-errors
+      shell: bash
       run: |
           echo ERROR_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'ERROR' | wc -l) >> "$GITHUB_OUTPUT"
 
     - name: Get number of warnings
       id: count-warnings
+      shell: bash
       run: |
           echo WARNING_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'WARNING' | wc -l) >> "$GITHUB_OUTPUT"
 
     - if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
+      shell: bash
       run: |
           gh api \
             --method POST \
@@ -42,6 +46,7 @@ runs:
             -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=failure' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
 
     - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
+      shell: bash
       run: |
           gh api \
             --method POST \
