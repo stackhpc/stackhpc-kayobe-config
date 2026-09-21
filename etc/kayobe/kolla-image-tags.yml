@@ -2,6 +2,13 @@
 # Dict of Kolla image tags to deploy for each service.
 # Each key is the tag variable prefix name, and the value is another dict,
 # where the key is the OS distro and the value is the tag to deploy.
+
+# NOTE(owenjones): When building Rocky 9 containers with updated OVN or OVS
+# it's essential that a build of the relevant packages is made in our OVN-LTS
+# repository, these are synced with Release Train, and Rocky 10 containers then
+# also built, otherwise we can end up in the position that an upgrade from
+# Rocky 9 to 10 results in an inadvertant downgrade of OVN/OVS.
+
 kolla_image_tags:
   openstack:
     rocky-9: 2025.1-rocky-9-20260809T130341
@@ -23,19 +30,25 @@ kolla_image_tags:
     rocky-9: 2025.1-rocky-9-20260809T130341
     rocky-10: 2025.1-rocky-10-20260809T130341
     ubuntu-noble: 2025.1-ubuntu-noble-20260809T130341
+  kolla-toolbox:
+    rocky-10: 
   manila:
     rocky-9: 2025.1-rocky-9-20260828T080743
-    rocky-10: 2025.1-rocky-10-20260828T080743
+    rocky-10: 
     ubuntu-noble: 2025.1-ubuntu-noble-20260828T080743
   neutron:
     rocky-9: 2025.1-rocky-9-20260901T111433
-    rocky-10: 2025.1-rocky-10-20260901T111433
+    rocky-10: 
     ubuntu-noble: 2025.1-ubuntu-noble-20260901T111433
   nova:
     rocky-9: 2025.1-rocky-9-20260828T080743
-    rocky-10: 2025.1-rocky-10-20260828T080743
+    rocky-10: 
     ubuntu-noble: 2025.1-ubuntu-noble-20260828T080743
   octavia:
     rocky-9: 2025.1-rocky-9-20260924T102304
-    rocky-10: 2025.1-rocky-10-20260924T102304
+    rocky-10: 
     ubuntu-noble: 2025.1-ubuntu-noble-20260924T102304
+  ovn:
+    rocky-10:
+  openvswitch:
+    rocky-10:
