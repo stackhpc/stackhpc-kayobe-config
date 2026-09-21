@@ -43,6 +43,12 @@ The separate Ironic Inspector service was replaced by the Ironic built-in inspec
 Known issues
 ============
 
+Ubuntu Support
+--------------
+
+Ubuntu Noble is not yet supported for this release. Development is underway,
+and will be released in the next few months.
+
 RabbitMQ
 --------
 
@@ -958,6 +964,25 @@ This will block the upgrade, but may be overridden by setting
 ``ironic_upgrade_skip_wait_check`` to ``true`` in
 ``etc/kayobe/kolla/globals.yml`` or
 ``etc/kayobe/environments/<env>/kolla/globals.yml``.
+
+.. warning::
+
+   If you are using custom service map overrides remember to synchronize the
+   customized overcloud-services.j2 and overcloud-components.j2 files with Kayobe upstream.
+
+   .. code-block:: console
+
+      git clone https://github.com/stackhpc/kayobe -b stackhpc/2026.1
+      cd kayobe/ansible/roles/kolla-ansible/templates/
+      sdiff -w 200 overcloud-services.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-services.j2
+      sdiff -w 200 overcloud-components.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-components.j2
+
+or when using environments:
+
+   .. code-block:: console
+
+      sdiff -w 200 overcloud-services.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-services.j2
+      sdiff -w 200 overcloud-components.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-components.j2
 
 To upgrade the containerised control plane services:
 
