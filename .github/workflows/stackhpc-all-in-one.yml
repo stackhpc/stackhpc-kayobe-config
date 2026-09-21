@@ -445,6 +445,11 @@ jobs:
           docker image prune -af
         if: inputs.upgrade
 
+      - name: Validate config with oslo-config-validator
+        uses: ./.github/actions/oslo-config-validator
+        with:
+          run-environment: ${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.architecture }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
+
       - name: Tempest tests
         id: tempest
         run: |
@@ -472,11 +477,6 @@ jobs:
             -e sct_version=${{ inputs.stackhpc_cloud_tests_version }}
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
-
-      - name: Validate config with oslo-config-validator
-        uses: ./.github/.actions/oslo-config-validator
-        with:
-          run-environment: ${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.architecture }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
 
       - name: Collect diagnostic information
         id: diagnostics
