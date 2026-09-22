@@ -48,22 +48,26 @@ runs:
     - if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
       shell: bash
       run: |
-          gh api \
-            --method POST \
+          curl -L \
+            -X POST \
             -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{secrets.GITHUB_TOKEN}}"
             -H "X-GitHub-Api-Version: 2026-03-10" \
-            /repos/${{ github.repository }}/check-runs \
-            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=failure' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
+            https://api.github.com/repos/${{ github.repository }}/check-runs \
+            -d
+            '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "failure", "output": {"title": "Oslo Config Validator", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
 
     - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
       shell: bash
       run: |
-          gh api \
-            --method POST \
+          curl -L \
+            -X POST \
             -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{secrets.GITHUB_TOKEN}}"
             -H "X-GitHub-Api-Version: 2026-03-10" \
-            /repos/${{ github.repository }}/check-runs \
-            -f 'name=oslo-config-validator' -f 'head_sha=${{ github.event.pull_request.head.sha }}' -f 'status=completed' -f 'conclusion=success' -f 'output[title]=Oslo Config Validator' -f 'output[summary]=${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings' -f 'output[text]='
+            https://api.github.com/repos/${{ github.repository }}/check-runs \
+            -d
+            '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "success", "output": {"title": "Oslo Config Validator", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
 
     - name: Upload test result artifacts
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
