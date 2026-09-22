@@ -115,5 +115,5 @@ echo "SWITCH HOST_VARS COPIED"
 
 cd "$KAYOBE_PATH"
 
-kayobe control host bootstrap
-kayobe physical network configure --group mgmt-switches
+kayobe control host bootstrap -vvv
+kayobe physical network configure --group mgmt-switches -vvv
