@@ -1,0 +1,104 @@
+# Developed by stackHPC
+
+{% raw %}
+
+groups:
+- name: ProxySQL
+  rules:
+
+  - alert: ProxySQLIncorrectPasswordAttempts
+    expr: increase(proxysql_access_denied_wrong_password_total[10m]) > 10
+    keep_firing_for: 1d
+    labels:
+      severity: warning
+    annotations:
+      summary: "Incorrect password attempts"
+      description: "Repeated incorrect password attempts"
+
+  - alert: ProxySQLSQLInjectionCaught
+    expr: increase(proxysql_automatic_detected_sql_injection_total[2m]) > 0
+    keep_firing_for: 2d
+    labels:
+      severity: critical
+    annotations:
+      summary: "SQL injection caught"
+      description: "Automatic filtering caught a suspected sql injection attempt"
+
+  - alert: ProxySQLMaxConnections
+    expr: increase(proxysql_access_denied_max_connections[10m]) > 0
+    labels:
+      severity: critical
+    annotations:
+      summary: "Max connections exceeded"
+      description: "Maximum connections exceeded, connections are being denied"
+
+  - alert: ProxySQLCausingMysqlErrors
+    expr: increase(proxysql_mysql_error_total[10m]) > 2
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "ProxySQL node {{ $labels.instance }} is generating mysql errors"
+      description: "ProxySQL node {{ $labels.instance }} is generating mysql errors"
+
+  - alert: ProxySQLFindingMysqlErrors
+    expr: increase(mysql_error_total[10m]) > 2
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "ProxySQL node {{ $labels.instance }} is encountering mysql errors"
+      description: "ProxySQL node {{ $labels.instance }} is encountering mysql errors"
+
+  - alert: ProxySQLMysqlQueriesSlow
+    expr: increase(proxysql_slow_queries_total[10m]) > 0
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "{{ $labels.instance }} is reporting slow mysql queries"
+      description: "mysql queries by {{ $labels.instance }} are being flagged as slow"
+
+  - alert: ProxySQLNodeShunned
+    expr: proxysql_connpool_conns_status == 2 or proxysql_connpool_conns_status == 5
+    for: 1m
+    labels:
+      severity: info
+    annotations:
+      summary: "Node {{ $labels.instance }} has been shunned"
+      description: "Node {{ $labels.instance }} has been shunned"
+
+  - alert: ProxySQLAllNodesShunned
+    expr: |
+      count by (instance, hostgroup) (proxysql_connpool_conns_status == 2 or proxysql_connpool_conns_status == 5)
+      ==
+      count by (instance, hostgroup) (proxysql_connpool_conns_status)
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "All nodes shunned in ProxySQL hostgroup {{ $labels.hostgroup }}"
+      description: "Instance {{ $labels.instance }} has no available nodes in hostgroup {{ $labels.hostgroup }}. All backends are currently SHUNNED."
+
+  - alert: ProxySQLRestarted
+    expr: |
+      proxysql_uptime_seconds_total < 360
+      and
+      proxysql_uptime_seconds_total != 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "ProxySQL  on {{ $labels.instance }} has restarted"
+      description: "ProxySQL on {{ $labels.instance }} in hostgroup {{ $labels.hostgroup }} has restarted"
+
+  - alert: ProxySQLDown
+    expr: up{job="proxysql"} == 0
+    labels:
+      severity: critical
+    annotations:
+      summary: "ProxySQL is down"
+      description: "ProxySQL on {{ $labels.instance }} is down"
+
+{% endraw %}
+
