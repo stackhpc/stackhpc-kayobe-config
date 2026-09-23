@@ -56,7 +56,7 @@ runs:
             -H "Authorization: Bearer ${{ inputs.gh-token }}" \
             -H "X-GitHub-Api-Version: 2026-03-10" \
             https://api.github.com/repos/${{ github.repository }}/check-runs \
-            -d '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "failure", "output": {"title": "Oslo Config Validator", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
+            -d '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "failure", "output": {"title": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors, ${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
 
     - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
       shell: bash
@@ -67,7 +67,7 @@ runs:
             -H "Authorization: Bearer ${{ inputs.gh-token }}" \
             -H "X-GitHub-Api-Version: 2026-03-10" \
             https://api.github.com/repos/${{ github.repository }}/check-runs \
-            -d '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "success", "output": {"title": "Oslo Config Validator", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
+            -d '{"name": "oslo-config-validator", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "success", "output": {"title": "Passed", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
 
     - name: Upload test result artifacts
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
