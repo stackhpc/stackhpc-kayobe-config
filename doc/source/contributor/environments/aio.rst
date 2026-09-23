@@ -18,7 +18,7 @@ make changes to the setup process.
 Prerequisites
 =============
 
-* a Rocky Linux 9/10 or Ubuntu Noble 24.04 host
+* a Rocky Linux 10 or Ubuntu Noble 24.04 host
 * Credentials for the StackHPC release pulp: ``ark.stackhpc.com``
 
 Automated Setup
