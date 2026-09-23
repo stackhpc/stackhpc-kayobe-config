@@ -149,8 +149,8 @@ groups:
 
   - alert: NetworkPacketErrors
     expr: |
-      irate(node_network_receive_errs_total{device!="lo"}[5m]) +
-      irate(node_network_transmit_errs_total{device!="lo"}[5m]) > {% endraw %}{{ alertmanager_packet_errors_threshold }}{% raw %}
+      rate(node_network_receive_errs_total{device!="lo"}[3m]) +
+      rate(node_network_transmit_errs_total{device!="lo"}[3m]) > {% endraw %}{{ alertmanager_packet_errors_threshold }}{% raw %}
     labels:
       severity: warning
     annotations:

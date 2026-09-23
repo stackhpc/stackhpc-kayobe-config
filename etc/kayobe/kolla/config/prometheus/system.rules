@@ -34,7 +34,7 @@ groups:
       description: "Available swap space is {{ $value | humanizePercentage }}. Running out of swap space causes OOM Kills."
 
   - alert: LowSwapSpace
-    expr: (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_critical_threshold_ratio }}{% raw %} node_memory_SwapTotal_bytes > 0
+    expr: (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes) < {% endraw %}{{ alertmanager_node_free_swap_critical_threshold_ratio }}{% raw %} and node_memory_SwapTotal_bytes > 0
     for: 1m
     labels:
       severity: critical
