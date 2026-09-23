@@ -50,7 +50,7 @@ if [[ ! -d $KAYOBE_CONFIG_ROOT ]]; then
 fi
 
 
-# Create breth1 stuff
+# Create required interfaces
 echo "CREATING BRIDGE AND DUMMY INTERFACES..."
 if ! ip l show breth1 >/dev/null 2>&1; then
   sudo ip l add breth1 type bridge
@@ -91,7 +91,7 @@ pip install -r "$KAYOBE_CONFIG_ROOT/requirements.txt"
 popd
 
 # Activate environment
-pushd "$KAYOBE_CONFIG_ROOT"
+cd "$KAYOBE_CONFIG_ROOT"
 source kayobe-env --environment "$KAYOBE_ENVIRONMENT"
 
 if [[ ! -d "$GNS3_ROLE_PATH" ]]; then
@@ -104,9 +104,8 @@ cd "$GNS3_ROLE_PATH"
 
 # Install GNS3
 echo "RUNNING ANSIBLE PLAYBOOK TO INSTALL GNS3..."
-ansible-playbook -i inventory.ini trialplaybook.yml -vvv
+ansible-playbook -i inventory.ini trialplaybook.yml -e gns3_ansible_host_vars_dir=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars -vvv
 echo "GNS3 INSTALLED!"
-
 
 cd "$KAYOBE_PATH"
 
