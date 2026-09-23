@@ -90,7 +90,8 @@ jobs:
     runs-on: ${{ needs.runner-selection.outputs.runner_name_aio }}
     needs:
       - runner-selection
-    permissions: {}
+    permissions:
+      checks: write
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
@@ -443,6 +444,15 @@ jobs:
         run: |
           docker image prune -af
         if: inputs.upgrade
+
+      - name: Validate config with oslo-config-validator
+        uses: ./.github/actions/oslo-config-validator
+        with:
+          run-environment: ${{ inputs.os_distribution }}-${{ inputs.os_release }}-${{ inputs.architecture }}-${{ inputs.neutron_plugin }}${{ inputs.upgrade && '-upgrade' || '' }}
+          kayobe-environment: ${{ env.KAYOBE_ENVIRONMENT }}
+          kayobe-vault-password: ${{ env.KAYOBE_VAULT_PASSWORD }}
+          kayobe-automation-ssh-key: ${{ steps.ssh_key.outputs.ssh_key }}
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tempest tests
         id: tempest

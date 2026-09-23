@@ -1,0 +1,77 @@
+---
+# This workflow can be run by any other workflow which has a Kayobe environment.
+# It should be run as a composite action (https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action#creating-a-composite-action-within-the-same-repository)
+# It runs the oslo-config-validator and reports warnings/errors as a check run on the PR.
+
+name: oslo-config-validator
+inputs:
+  run-environment:
+    description: "Name of the run environment, used to name results artifact."
+    required: true
+  kayobe-environment:
+    required: true
+  kayobe-vault-password:
+    required: true
+  kayobe-automation-ssh-key:
+    required: true
+  gh-token:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate config
+      shell: bash
+      env:
+        KAYOBE_ENVIRONMENT: ${{ inputs.kayobe-environment }}
+        KAYOBE_VAULT_PASSWORD: ${{ inputs.kayobe-vault-password }}
+        KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ inputs.kayobe-automation-ssh-key }}
+      run: |
+        mkdir -p oslo-config-validator-results
+        docker run -t --rm \
+          -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+          -v $(pwd)/oslo-config-validator-results:/stack/oslo-config-validator-results \
+          -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+          $KAYOBE_IMAGE \
+          /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-configuration-validate.sh /stack/oslo-config-validator-results
+
+    - name: Get number of errors
+      id: count-errors
+      shell: bash
+      run: |
+          echo ERROR_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'ERROR' | wc -l) >> "$GITHUB_OUTPUT"
+
+    - name: Get number of warnings
+      id: count-warnings
+      shell: bash
+      run: |
+          echo WARNING_COUNT=$(grep -rnw ./oslo-config-validator-results -e 'WARNING' | wc -l) >> "$GITHUB_OUTPUT"
+
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT != '0' || steps.count-warnings.outputs.WARNING_COUNT != 0 }}
+      shell: bash
+      run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ inputs.gh-token }}" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            https://api.github.com/repos/${{ github.repository }}/check-runs \
+            -d '{"name": "oslo-config-validator, ${{ inputs.run-environment }}", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "failure", "output": {"title": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors, ${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
+
+    - if: ${{ steps.count-errors.outputs.ERROR_COUNT == '0' && steps.count-warnings.outputs.WARNING_COUNT == 0 }}
+      shell: bash
+      run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ inputs.gh-token }}" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            https://api.github.com/repos/${{ github.repository }}/check-runs \
+            -d '{"name": "oslo-config-validator, ${{ inputs.run-environment }}", "head_sha": "${{ github.event.pull_request.head.sha }}", "status": "completed", "conclusion": "success", "output": {"title": "Passed", "summary": "${{ steps.count-errors.outputs.ERROR_COUNT }} errors\n${{ steps.count-warnings.outputs.WARNING_COUNT }} warnings"}}'
+
+    - name: Upload test result artifacts
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: oslo-config-validator-results-${{ inputs.run-environment }}
+        path: |
+          oslo-config-validator-results
