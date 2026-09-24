@@ -1,6 +1,6 @@
 ---
 - name: Run StackHPC Cloud tests
-  hosts: tempest_runner:overcloud
+  hosts: sct_runner:overcloud
   tags:
     - stackhpc-cloud-tests
   vars:
@@ -14,10 +14,10 @@
   tasks:
     - name: Stackhpc Cloud tests
       block:
-        - name: Assert that there is only one host in the tempest_runner group
+        - name: Assert that there is only one host in the sct_runner group
           ansible.builtin.assert:
-            that: groups.get('tempest_runner', []) | length == 1
-            fail_msg: The tempest_runner group should contain exactly one host
+            that: groups.get('sct_runner', []) | length == 1
+            fail_msg: The sct_runner group should contain exactly one host
 
         - name: Create a temporary directory for tests repo
           ansible.builtin.tempfile:
@@ -30,6 +30,14 @@
             state: directory
             suffix: sct-results
           register: results_tmpdir
+
+        - name: Create CA certificate directory
+          ansible.builtin.file:
+            state: directory
+            path: "{{ openstack_cacert_path }}"
+          register: cacert_path_remote
+          become: true
+          when: stackhpc_os_capacity_openstack_cacert is defined
 
         - name: Clone the StackHPC Cloud tests repository
           ansible.builtin.git:
@@ -66,8 +74,17 @@
             file: "{{ kayobe_env_config_path }}/kolla/passwords.yml"
             name: kolla_passwords
 
+        - name: Copy CA certificate to remote host
+          copy:
+            src: "{{ stackhpc_os_capacity_openstack_cacert }}"
+            dest: "{{ cacert_path_remote.path }}"
+            owner: "65500"
+            group: "1000"
+          become: true
+          when: stackhpc_os_capacity_openstack_cacert is defined
+
         # Monitoring tests should run once, executed on the host in the
-        # tempest_runner group.
+        # sct_runner group.
         - name: Check for StackHPC Cloud monitoring tests
           ansible.builtin.stat:
             path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/monitoring"
@@ -90,9 +107,11 @@
             OPENSEARCH_HOSTS: "{{ sct_opensearch_hosts }}"
             OPENSEARCH_PORT: "{{ sct_opensearch_port }}"
             OPENSEARCH_TLS: "{{ sct_opensearch_tls }}"
+            OPENSEARCH_VERIFY_CERTS: false
             OPENSEARCH_DASHBOARDS_URL: "{{ sct_opensearch_dashboards_url }}"
             OPENSEARCH_DASHBOARDS_USERNAME: "{{ sct_opensearch_dashboards_username }}"
             OPENSEARCH_DASHBOARDS_PASSWORD: "{{ sct_opensearch_dashboards_password }}"
+            OPENSEARCH_DASHBOARDS_CACERT: "{{ openstack_cacert_path }}"
             PROMETHEUS_URL: "{{ sct_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
@@ -113,7 +132,7 @@
             sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
           failed_when: monitoring_results.rc not in [0, 1]
           register: monitoring_results
-          when: "'tempest_runner' in group_names and stackhpc_cloud_monitoring_tests.stat.exists"
+          when: "'sct_runner' in group_names and stackhpc_cloud_monitoring_tests.stat.exists"
 
         # Host tests should run on every host in the overcloud group.
         # TODO: Use TestInfra's native Ansible or SSH connection plugins for
@@ -169,6 +188,7 @@
             recursive: true
             # For jump host
             use_ssh_args: true
+          become: true
 
         - name: Write a file containing failed test runs
           ansible.builtin.copy:
