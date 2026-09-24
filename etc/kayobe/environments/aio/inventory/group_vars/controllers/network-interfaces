@@ -12,6 +12,9 @@ aio_interface: breth1
 # Use dummy1 if it exists, otherwise the bridge will have no ports.
 aio_bridge_ports: "{{ ['dummy1'] if 'dummy1' in hostvars[inventory_hostname].ansible_facts or os_distribution == 'rocky' else [] }}"
 
+# Controller interface on the Octavia management network using VLAN.
+lb_mgmt_interface: "{{ aio_interface }}.{{ lb_mgmt_vlan }}"
+
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes
