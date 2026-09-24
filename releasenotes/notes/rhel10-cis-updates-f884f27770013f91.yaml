@@ -1,0 +1,22 @@
+---
+upgrade:
+  - |
+    Bumps the ``ansible-lockdown.rhel10_cis`` role to the 1.1.0 release.
+  - |
+    Switches default RHEL 10 crypto policy from ``FIPS`` to ``DEFAULT``
+    (``rhel10cis_crypto_policy: DEFAULT``). This only applies to the initial
+    CIS hardening execution because of `ansible-lockdown/RHEL10-CIS#111
+    <https://github.com/ansible-lockdown/RHEL10-CIS/issues/111>`__.
+fixes:
+  - |
+    Fixes compatibility with ed25519 SSH keys by changing the default RHEL 10
+    crypto policy from ``FIPS`` to ``DEFAULT``.
+  - |
+    Fixes assertion check for ed25519 SSH keys in CIS playbook to correctly
+    check ``rhel10cis_crypto_policy`` on Rocky Linux 10 hosts.
+  - |
+    Sets ``rhel10cis_auditd_disk_full_action: suspend`` to prevent hosts from
+    halting if audit log partitions become full.
+  - |
+    Disables CIS rule 5.1.5 (``rhel10cis_rule_5_1_5: false``) in SSH
+    configuration to avoid duplicate banners on interactive SSH login.

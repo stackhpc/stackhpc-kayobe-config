@@ -69,7 +69,7 @@ rhel9cis_auditd:
 # Max size of audit logs (MB)
 rhel9cis_max_log_file_size: 1024
 
-# Disable setting of boatloader password. This requires setting the variable
+# Disable setting of bootloader password. This requires setting the variable
 # `rhel9cis_bootloader_password_hash`
 rhel9cis_set_boot_pass: false
 
@@ -88,12 +88,16 @@ rhel10cis_auditd_max_log_file_size: 1024
 rhel10cis_auditd_max_log_file: 10
 rhel10cis_auditd_space_left_action: syslog
 
+# Prevent system from halting if disk is full
+rhel10cis_auditd_disk_full_action: suspend
+
 # Set an authselect profile name (required)
 rhel10cis_authselect_custom_profile_name: "stack"
 
 # Set crypto policy
+# NOTE: FIPS breaks ed25519 SSH keys
 # NOTE: FUTURE breaks wazuh agent repo metadata download
-rhel10cis_crypto_policy: FIPS
+rhel10cis_crypto_policy: DEFAULT
 
 # Skip configuration of the firewall
 rhel10cis_firewall: None
@@ -121,6 +125,9 @@ rhel10cis_rule_1_2_2_1: false
 # Skip configuration of chrony
 rhel10cis_rule_2_3_1: false
 rhel10cis_rule_2_3_2: false
+
+# Avoid duplicate banner (already enabled by pam_motd)
+rhel10cis_rule_5_1_5: false
 
 # Disable requirement for password when using sudo
 rhel10cis_rule_5_2_4: false
