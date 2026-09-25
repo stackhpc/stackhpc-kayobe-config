@@ -20,3 +20,19 @@ enable_external_api_firewalld: "{{ controller_firewalld_enabled | bool }}"
 
 # Host interface on the Octavia management network.
 octavia_network_interface: "{{ octavia_net_name | net_interface(groups['controllers'][0]) }}"
+
+# Management network registered by octavia_auto_configure.
+octavia_amp_network:
+  name: lb-mgmt-net
+  provider_network_type: vlan
+  provider_segmentation_id: "{{ lb_mgmt_vlan }}"
+  provider_physical_network: physnet1
+  external: false
+  shared: false
+  subnet:
+    name: lb-mgmt-subnet
+    cidr: "{{ lb_mgmt_cidr }}"
+    allocation_pool_start: "{{ lb_mgmt_neutron_allocation_pool_start }}"
+    allocation_pool_end: "{{ lb_mgmt_neutron_allocation_pool_end }}"
+    no_gateway_ip: true
+    enable_dhcp: true
