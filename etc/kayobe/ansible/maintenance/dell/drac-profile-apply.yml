@@ -1,0 +1,100 @@
+---
+- hosts:
+    - overcloud
+    - baremetal-compute
+  gather_facts: false
+  connection: local
+
+  collections:
+   - dellemc.openmanage
+
+  vars:
+      secrets_ipmi_username: "{{ ipmi_admin_user }}"
+      secrets_ipmi_password: "{{ ipmi_admin_password }}"
+
+      # If you re-apply RAID, this recreates the disk!
+      apply_raid: False
+      drac_shutdown_type: "Graceful" # NoReboot or Graceful or Forced
+      drac_export_path: "{{ playbook_dir }}"
+      drac_profile_query_ironic: true
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  tasks:
+    #FIXME(wszumski): Unserstand what this does
+    # - name: Import Server Configuration Profile (NIC)
+    #   idrac_server_config_profile:
+    #     command: "import"
+    #     idrac_ip: "{{ ipmi_address }}"
+    #     idrac_user: "{{ secrets_ipmi_username }}"
+    #     idrac_password: "{{ secrets_ipmi_password }}"
+    #     share_name: "{{ drac_export_path }}"
+    #     scp_file: "golden_BIOS_no_embedded_pxe.json"
+    #     job_wait: True
+    #     end_host_power_state: "On"
+    #     shutdown_type: "{{ drac_shutdown_type }}"
+    #     scp_components: "NIC"
+    #   register: idrac_nic_output
+    #   delegate_to: localhost
+    #   when: ipmi_address is defined
+    #
+
+    - block:
+      - name: Gather ironic state
+        openstack.cloud.baremetal_node_info:
+          name: "{{ inventory_hostname }}"
+        register: node
+        vars:
+          ansible_python_interpreter: "{{ ansible_playbook_python }}"
+          ansible_connection: local
+      - name: Fail if hardware fault flag set
+        fail:
+          msg: >-
+            Node has been flagged as having a hardware fault. Please clear the extra/kayobe_hardware_fault
+            flag with `openstack baremetal node unset --extra kayobe_hardware_fault_<type>` if the fault has
+            been resolved.
+        when: node.nodes.0.extra | map('regex_search', '^kayobe_hardware_fault') | select | list | default([]) | truthy
+      when: drac_profile_query_ironic | bool
+
+    - name: Import Server Configuration Profile (BIOS)
+      idrac_server_config_profile:
+        command: "import"
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+        share_name: "{{ drac_export_path }}"
+        scp_file: "server-profiles/golden_BIOS_{{ drac_profile }}.json"
+        job_wait: True
+        end_host_power_state: "On"
+        shutdown_type: "{{ drac_shutdown_type }}"
+        scp_components: "BIOS"
+        validate_certs: false
+        timeout: 60
+      register: idrac_bios_output
+      delegate_to: localhost
+      when: ipmi_address is defined
+
+    - name: Import Server Configuration Profile (RAID)
+      idrac_server_config_profile:
+        command: "import"
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+        share_name: "{{ drac_export_path }}"
+        scp_file: "server-profiles/golden_RAID_{{ drac_profile }}.json"
+        job_wait: True
+        end_host_power_state: "On"
+        shutdown_type: "{{ drac_shutdown_type }}"
+        validate_certs: false
+      register: idrac_bios_output
+      register: idrac_raid_output
+      delegate_to: localhost
+      when: ipmi_address is defined and apply_raid
+
+    - name: Reset iDRAC if bios settings were updated
+      idrac_reset:
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+        validate_certs: false
+      register: idrac_bios_output
+      when: ipmi_address is defined and idrac_bios_output.changed
