@@ -14,7 +14,7 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 Prerequisites
 =============
 
-* a VM or baremetal node with at least 64GB of RAM running Rocky Linux 9 or Ubuntu Noble.
+* a VM or baremetal node with at least 64GB of RAM running Rocky Linux 10 or Ubuntu Noble.
 
 Setup
 =====
