@@ -1,0 +1,34 @@
+---
+- hosts: overcloud
+  gather_facts: false
+  connection: local
+
+  collections:
+   - dellemc.openmanage
+
+  vars:
+    secrets_ipmi_username: "{{ ipmi_admin_user }}"
+    secrets_ipmi_password: "{{ ipmi_admin_password }}"
+    drac_export_path: "{{ playbook_dir }}/idrac_firmware_inventory/"
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  tasks:
+    - name: Get Firmware inventory
+      idrac_firmware_info:
+        idrac_ip: "{{ ipmi_address }}"
+        idrac_user: "{{ secrets_ipmi_username }}"
+        idrac_password: "{{ secrets_ipmi_password }}"
+      register: idrac_firmware_output
+      delegate_to: localhost
+      when: ipmi_address is defined
+
+    - name: Ensure output dir exists
+      file:
+        state: directory
+        path: "{{ drac_export_path }}"
+      delegate_to: localhost
+      run_once: True
+
+    - name: Write inventory to file
+      copy:
+        content: "{{ idrac_firmware_output.firmware_info }}"
+        dest: "{{ drac_export_path }}/{{ inventory_hostname }}"
