@@ -20,6 +20,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    octavia
    openstack-projects-and-users-management
    openstack-reconfiguration
+   rabbitmq
    secret-rotation
    tempest
    upgrading-openstack
