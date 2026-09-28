@@ -56,7 +56,7 @@ name: Multinode
       terraform_kayobe_multinode_version:
         description: terraform-kayobe-multinode version
         type: string
-        default: main
+        default: dfc32a0d949b8dd4d71461dd0393414cd9163530
       small_cluster:
         description: Create cluster with only 1 controller, 1 compute
         default: 'false'
@@ -96,6 +96,8 @@ jobs:
     name: Multinode
     needs: github_user_ssh_keys
     uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
+    permissions:
+      checks: write
     with:
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.host_os == 'rocky-10' && 'rocky' || 'ubuntu' }}
