@@ -1,5 +1,3 @@
-# Developed by stackHPC
-
 {% raw %}
 
 groups:
@@ -58,15 +56,6 @@ groups:
     annotations:
       summary: "{{ $labels.instance }} is reporting slow mysql queries"
       description: "mysql queries by {{ $labels.instance }} are being flagged as slow"
-
-  - alert: ProxySQLNodeShunned
-    expr: proxysql_connpool_conns_status == 2 or proxysql_connpool_conns_status == 5
-    for: 1m
-    labels:
-      severity: info
-    annotations:
-      summary: "Node {{ $labels.instance }} has been shunned"
-      description: "Node {{ $labels.instance }} has been shunned"
 
   - alert: ProxySQLAllNodesShunned
     expr: |
