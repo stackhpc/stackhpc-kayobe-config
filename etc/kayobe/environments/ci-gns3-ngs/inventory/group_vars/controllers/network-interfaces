@@ -1,0 +1,20 @@
+---
+provision_wl_interface: breth1.1234
+
+network_route_tables:
+  - name: ironic
+    id: 1
+
+# IP routing rule to process all packets from the internal API subnet using the
+# ironic routing table.
+aio_rules:
+  - from: "{{ internal_net_name | net_cidr }}"
+    table: ironic
+
+# IP routes for the ironic routing table.
+aio_routes:
+  - cidr: 0.0.0.0/0
+    gateway: 192.168.33.1
+    table: ironic
+  - cidr: "{{ internal_net_name | net_cidr }}"
+    table: ironic
