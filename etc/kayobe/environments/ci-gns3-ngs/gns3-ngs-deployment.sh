@@ -175,7 +175,7 @@ openstack baremetal node maintenance set tk1
 
 
 # get switch mac address from host vars file, is like this switch_facts_mac: "{{ switch.mac_address }}"
-switch_mac=$(grep switch_facts_mac "$KAYOBE_CONFIG_PATH/inventory/host_vars/switch1" | awk '{print $2}')
+switch_mac=$(grep switch_facts_mac "$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars/switch1" | awk '{print $2}')
 
 # Configure tk0 to connect to GNS3
 baremetal_port_uuid=$(openstack baremetal port list --node tk0 -f value -c uuid)
