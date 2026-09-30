@@ -19,6 +19,8 @@ Prerequisites
 =============
 
 * a Rocky Linux 9/10 or Ubuntu Noble 24.04 host
+* nested virtualisation (``/dev/kvm``) on the host, unless Octavia is disabled
+  by setting ``ENABLE_OCTAVIA`` to ``false``
 * Credentials for the StackHPC release pulp: ``ark.stackhpc.com``
 
 Automated Setup
@@ -74,6 +76,9 @@ following options:
   after deployment instead of the default VM smoke test.
 * ``USE_OVS`` (default: ``false``) - Whether to disable OVN and deploy using
   OVS instead.
+* ``ENABLE_OCTAVIA`` (default: ``true``) - Whether to deploy Octavia. Requires
+  nested virtualisation on the host, since amphorae are unusable under QEMU
+  emulation.
 
 Ironic
 ======
