@@ -39,6 +39,7 @@ OPENSTACK_RELEASES = [
     OpenStackRelease("2024.1", "", [ROCKY_9, UBUNTU_JAMMY]),
     OpenStackRelease("2025.1", "2024.1", [ROCKY_9, UBUNTU_NOBLE]),
     OpenStackRelease("2025.1", "", [ROCKY_10]),
+    OpenStackRelease("2026.1", "2025.1", [ROCKY_10]),
 ]
 NEUTRON_PLUGINS = ["ovs", "ovn"]
 
