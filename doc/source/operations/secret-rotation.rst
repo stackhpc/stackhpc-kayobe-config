@@ -531,7 +531,7 @@ BMC admin password rotation
 2. Change the password on the BMC and verify
 
 3. Change the current bifrost password and verify
-On seed:
+   On seed:
     .. code:: bash
 
        docker exec bifrost_deploy bash -c 'OS_CLOUD=bifrost openstack baremetal node set --driver-info ipmi_password=<new> <node>'
