@@ -2,7 +2,6 @@
 - name: Build an Octavia Amphora image
   hosts: "{{ amphora_builder_group | default('seed') }}"
   vars:
-    amphora_dib_upper_constraints_file: "{{ pip_upper_constraints_file }}"
     amphora_image_dest: "{{ image_cache_path }}/amphora-x64-haproxy-{{ openstack_release }}.qcow2"
   tasks:
     - name: Install EPEL
@@ -19,16 +18,17 @@
         packages_common:
           - debootstrap
           - git
-          - python3-venv
         packages_for_os_family:
           RedHat:
             - qemu-img
             - e2fsprogs
             - policycoreutils-python-utils
+            - python3-devel
             - yum-utils
           Debian:
             - qemu-utils
             - kpartx
+            - python3-venv
       ansible.builtin.package:
         name: "{{ packages_common + packages_for_os_family[ansible_facts.os_family] }}"
 
