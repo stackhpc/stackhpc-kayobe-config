@@ -514,3 +514,37 @@ Full password list
       private_key
       public_key
 
+BMC admin password rotation
+============================
+
+0. Hold any actions on cloud that execute any of the following commands
+    .. code:: bash
+
+       kayobe overcloud provision / deprovision, hardware inspect, bios raid configure, introspection data save
+
+
+1. Set maintenance on the affected Bifrost nodes. This stops periodic checks and blocks placement actions
+    .. code:: bash
+
+       openstack baremetal node maintenance set --reason "BMC password rotation" <node>
+
+2. Change the password on the BMC and verify
+
+3. Change the current bifrost password and verify
+    On seed:
+    .. code:: bash
+
+       docker exec bifrost_deploy bash -c 'OS_CLOUD=bifrost openstack baremetal node set --driver-info ipmi_password=<new> <node>'
+
+for each affected node (``redfish_password`` if those nodes use the redfish driver).
+
+4. Unset the maintenance on the affected node
+    .. code:: bash
+
+       openstack baremetal node maintenance unset <node>
+
+
+5. Once all the passwords are changed on BMCs and in the bifrost database, you update the secrets.yml file with the new password and run
+    .. code:: bash
+
+       kayobe seed service deploy
