@@ -410,13 +410,44 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_api_version '3'"
   - "config set client.rgw rgw_keystone_token_cache_size '10000'"
   - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
-  - "config set client.rgw rgw_keystone_verify_ssl false"
+  - "config set client.rgw rgw_keystone_verify_ssl true"
   - "config set client.rgw rgw_max_attr_name_len '1000'"
   - "config set client.rgw rgw_max_attr_size '1000'"
   - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
   - "config set client.rgw rgw_s3_auth_use_keystone true"
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
+
+In order to allow for `rgw_keystone_verify_ssl` to be set to `true` the `CA`
+used to create the internal certificate must be first copied to the `Ceph`
+host using
+
+.. code:: bash
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
+
+and then mounted within all appropriate `Ceph` daemons which can be achieved by
+adding the following to `cephadm.yml`
+
+.. code:: yaml
+
+  ca_bundle_path: >-
+    {{
+      '/etc/ssl/certs/ca-certificates.crt'
+      if os_distribution == 'ubuntu'
+      else '/etc/pki/tls/certs/ca-bundle.crt'
+    }}
+
+  cephadm_extra_container_args:
+    - "-v"
+    - "{{ ca_bundle_path }}:/etc/pki/tls/certs/ca-bundle.crt:ro"
+
+then running `kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml`
+
+.. note::
+
+  If cluster already exists then run `kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml`
+  and follow up with `ceph orch redeploy SERVICE_NAME` inside a `cephadm shell` for all services.
 
 Enable the Kolla Ansible RADOS Gateway integration in ``kolla.yml``:
 
