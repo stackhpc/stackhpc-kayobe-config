@@ -8,20 +8,6 @@ name: Pull request
 'on':
   pull_request:
 jobs:
-  # Label all newly-opened PRs as "waiting-review"
-  auto-label:
-    runs-on: ubuntu-latest
-    if: github.event.action == 'opened' && github.repository == 'stackhpc/stackhpc-kayobe-config'
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Add waiting-review label
-        run: gh pr edit "$PR_NUMBER" --add-label "waiting-review"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-
   # Detect which files have changed and use this to run jobs conditionally.
   # Note that we can't use the workflow-level paths attribute since this
   # would skip the workflow entirely, and would prevent us from making the
