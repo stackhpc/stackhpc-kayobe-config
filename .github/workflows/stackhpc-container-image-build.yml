@@ -101,13 +101,13 @@ jobs:
         run: |
           output="{'distro': ["
           if [[ ${{ inputs.rocky-linux-10 }} == 'true' ]]; then
-              output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64'},"
+              output+="{'name': 'rocky', 'release': 10, 'arch': 'amd64', 'runner': 'skc-runner-amd-01'},"
               if [[ ${{ inputs.overcloud }} == 'true' ]]; then
                 output+="{'name': 'rocky', 'release': 10, 'arch': 'aarch64', 'runner': 'sms-alternate'},"
               fi
           fi
           if [[ ${{ inputs.ubuntu-noble }} == 'true' ]]; then
-              output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64'},"
+              output+="{'name': 'ubuntu', 'release': 'noble', 'arch': 'amd64', 'runner': 'skc-runner-amd-02'},"
           fi
           # remove trailing comma
           output="${output%,}"
@@ -118,17 +118,12 @@ jobs:
         run: |
           echo "${{ steps.datetime_tag.outputs.datetime_tag }}"
 
-  runner-selection:
-    uses: ./.github/workflows/runner-selector.yml
-    with:
-      runner_env: ${{ inputs.runner_env }}
-
   container-image-build:
     name: Build Kolla container images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
     runs-on: ${{ matrix.distro.arch == 'aarch64'
       && fromJson(format('["self-hosted", "{0}", "arm64"]', matrix.distro.runner))
-      || needs.runner-selection.outputs.runner_name_container_image_build }}
+      || fromJson(format('["self-hosted", "{0}"]', matrix.distro.runner)) }}
     timeout-minutes: 720
     permissions: {}
     strategy:
@@ -136,7 +131,6 @@ jobs:
       matrix: ${{ fromJson(needs.generate-tag.outputs.matrix) }}
     needs:
       - generate-tag
-      - runner-selection
     steps:
       - name: Purge workspace
         run: sudo rm -rf "$GITHUB_WORKSPACE"/*
@@ -353,11 +347,10 @@ jobs:
     # Only for Rocky Linux for now
     name: Create Multiarch Docker Manifests
     if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.push && inputs.rocky-linux-10
-    runs-on: ${{ needs.runner-selection.outputs.runner_name_container_image_build }}
+    runs-on: skc-runner-amd-01
     permissions: {}
     needs:
       - container-image-build
-      - runner-selection
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
