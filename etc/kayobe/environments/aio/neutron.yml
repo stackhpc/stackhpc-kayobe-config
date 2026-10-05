@@ -2,8 +2,7 @@
 # Permit VLAN networks on physnet1, so that the Octavia management network can
 # share the physnet that already carries the flat 'aio' provider network.
 
-kolla_neutron_ml2_network_vlan_ranges:
-  - physical_network: "physnet1"
+kolla_neutron_ml2_network_vlan_ranges: "{{ [{'physical_network': 'physnet1'}] if kolla_enable_octavia | bool else [] }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
