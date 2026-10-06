@@ -100,6 +100,8 @@ if [[ ! -d "$GNS3_ROLE_PATH" ]]; then
   git clone https://github.com/stackhpc/ansible-role-gns3.git "$GNS3_ROLE_PATH"
 fi
 
+export KAYOBE_CONFIG_SOURCE_PATH="$KAYOBE_CONFIG_ROOT"
+export KAYOBE_VENV_PATH="$BASE_PATH/venvs/kayobe"
 
 cd "$KAYOBE_PATH"
 # Deploy overcloud
