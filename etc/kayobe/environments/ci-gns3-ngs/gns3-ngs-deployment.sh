@@ -103,11 +103,17 @@ fi
 export KAYOBE_CONFIG_SOURCE_PATH="$KAYOBE_CONFIG_ROOT"
 export KAYOBE_VENV_PATH="$BASE_PATH/venvs/kayobe"
 
-cd "$KAYOBE_PATH"
-# Deploy overcloud
-echo "DEPLOYING OVERCLOUD..."
-./dev/overcloud-deploy.sh
+# Configure host networking (bridge, routes & firewall)
+sudo $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/configure-local-networking.sh
 
+# Bootstrap the Ansible control host.
+kayobe control host bootstrap
+
+# Configure the overcloud host.
+kayobe overcloud host configure
+
+# Deploy the overcloud services
+kayobe overcloud service deploy
 
 #Tenks install
 echo "INSTALLING TENKS..."
