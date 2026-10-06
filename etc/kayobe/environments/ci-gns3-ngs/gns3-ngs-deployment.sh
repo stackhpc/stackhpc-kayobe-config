@@ -128,7 +128,7 @@ mkdir -p "$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_va
 cd "$GNS3_ROLE_PATH"
 
 # run gns3 role
-ansible-playbook -i inventory.ini $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/ngs.yml -e gns3_ansible_host_vars_dir=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars -vvv
+ansible-playbook -i inventory.ini $KAYOBE_CONFIG_ROOT/ansible/tests/gns3-ngs.yml -e gns3_ansible_host_vars_dir=$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars -vvv
 
 source "$KAYOBE_CONFIG_ROOT/kayobe-env"
 pip install -e "$KAYOBE_PATH"
