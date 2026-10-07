@@ -63,7 +63,7 @@
             baremetal_ports: "{{ baremetal_ports | default([]) + [item] }}"
           loop: "{{ port_list.stdout | from_json | community.general.json_query(_query) }}"
           vars:
-            _query: "[?\"Physical Network\"=='{{ ironic_bond_physical_network_name }}'].{uuid: UUID, mac_address: Address, port_group: \"Portgroup UUID\"}"
+            _query: "[?\"physical_network\"=='{{ ironic_bond_physical_network_name }}'].{uuid: uuid, mac_address: address, port_group: \"portgroup_uuid\"}"
 
         - name: List existing port groups
           ansible.builtin.command:

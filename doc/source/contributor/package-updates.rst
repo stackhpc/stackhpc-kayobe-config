@@ -7,13 +7,13 @@ This section describes the Release Train process of creating new package reposit
 Preparations
 ============
 
-1. Before building images, you should check for any outstanding PRs into the earliest supported release. Below are the links for the 2025.1 branches.
+1. Before building images, you should check for any outstanding PRs into the earliest supported release. Below are the links for the 2026.1 branches.
 
- kayobe-config: https://github.com/stackhpc/stackhpc-kayobe-config/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2025.1+
+ kayobe-config: https://github.com/stackhpc/stackhpc-kayobe-config/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2026.1+
 
- kolla: https://github.com/stackhpc/kolla/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2025.1+
+ kolla: https://github.com/stackhpc/kolla/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2026.1+
 
- kolla-ansible: https://github.com/stackhpc/kolla-ansible/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2025.1+
+ kolla-ansible: https://github.com/stackhpc/kolla-ansible/pulls?q=is%3Apr+is%3Aopen+base%3Astackhpc%2F2026.1+
 
  You should also check any referenced source trees in etc/kayobe/kolla.yml.
 
@@ -100,7 +100,7 @@ Checkout the new kayobe-config branch (from the draft PR):
    git fetch
    git checkout <branch-name>
 
-For Rocky Linux 9, bump the snapshot versions in /etc/yum/repos.d with:
+For Rocky Linux 10, bump the snapshot versions in /etc/yum/repos.d with:
 
 .. code-block:: console
 
@@ -165,7 +165,7 @@ Upgrading OpenStack to the next release in a multinode environment
 .. warning::
 
     This guide was written for the Wallaby release and has not been validated
-    for 2025.1. Proceed with caution.
+    for 2026.1. Proceed with caution.
 
 As this is not a full production system, only a reduced number of steps need to be followed to upgrade to a new release. Below describes these steps, with ``stackhpc/wallaby`` as the starting branch:
 

@@ -99,9 +99,10 @@ All in one testing
 The ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow accepts
 various parameters, and the following are used to create a test matrix for PRs:
 
-  - Operating System (Rocky 9, Ubuntu Noble)
+  - Operating System (Rocky Linux 10, Ubuntu Noble)
   - Neutron plugin (OVS, OVN)
   - Upgrade or no upgrade
+  - aarch64 or x86
 
 The workflow runs on an autoscaling `Actions Runner Controller (ARC)
 <https://stackhpc.github.io/stackhpc-release-train/operations/github/#github-actions-runner-controller-arc>`_
@@ -113,7 +114,7 @@ job.
 The workflow performs the following high-level steps:
 
 #. Deploy a VM on an OpenStack cloud using the `aio
-   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/2025.1/terraform/aio>`_
+   <https://github.com/stackhpc/stackhpc-kayobe-config/tree/stackhpc/2026.1/terraform/aio>`_
    Terraform configuration.
 #. Deploy OpenStack in the VM using Kayobe and the :doc:`ci-aio
    <environments/ci-aio>` environment. If this is an upgrade job, the previous
@@ -273,7 +274,7 @@ In order to create a VM on the cloud hosting the CI, we need a few things:
 - a ``clouds.yaml`` file
 - an application credential to authenticate with the cloud
 - a flavor for the VM (minimum 8GiB RAM)
-- a Rocky Linux 9 image for the VM
+- a Rocky Linux 10 image for the VM
 - a network and subnet for the VM
 - SSH connectivity from the GitHub runner to the VM
 - access from the VM to the Internet

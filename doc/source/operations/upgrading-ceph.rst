@@ -22,16 +22,16 @@ On Reef, a host with 15 OSDs was measured taking around 10 seconds to activate
 all OSDs while exiting maintenance mode. On Squid 19.2.3, a host with 22 OSDs
 was measured taking 2 minutes to activate all OSDs.
 
-This bug may be a blocker for deployments with large number of OSDs per host.
+This bug is resolved in 19.2.4.
 
 Elastic Shared Blob crash
 -------------------------
 
-There is a `known bug causing OSDs created on Squid to crash
-<https://tracker.ceph.com/issues/70390>`__. To avoid it, `disable the
-Elastic Shared Blob feature
-<https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before
-any OSDs are created or replaced:
+In Ceph Squid versions prior to 19.2.4, there is a `known bug causing OSDs
+created on Squid to crash <https://tracker.ceph.com/issues/70390>`__. To avoid
+it, `disable the Elastic Shared Blob feature
+<https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before any
+OSDs are created or replaced:
 
 .. code-block:: bash
 
@@ -137,7 +137,7 @@ local Pulp:
 
 .. code-block:: console
 
-   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-{sync,publish}.yml -e stackhpc_pulp_images_kolla_filter=none
 
 Upgrade Ceph services
 =====================
@@ -190,18 +190,6 @@ versions``. Once confirmed, run the following command:
 
    ceph osd require-osd-release squid
 
-.. warning::
-
-   There is a `known bug causing OSDs created on Squid to crash
-   <https://tracker.ceph.com/issues/70390>`__. To avoid it, `disable the
-   Elastic Shared Blob feature
-   <https://docs.clyso.com/blog/#squid-deployed-osds-are-crashing>`__ before
-   any OSDs are created or replaced:
-
-   .. code-block:: bash
-
-      ceph config set osd bluestore_elastic_shared_blobs 0
-
 Finally, verify the value of ``ceph osd get-require-min-compat-client``. On
 older Ceph deployments, it may still be set to ``jewel``, which would prevent
 using the `upmap balancer mode
@@ -212,6 +200,21 @@ requires ``luminous`` or later. Similarly, the more recent `read balancer
 
 Run ``ceph features`` to identify client versions and consider setting the
 minimum to an appropriate value:
+
+.. warning::
+
+   Before raising ``require-min-compat-client``, verify that all clients support
+   the target release. This is particularly important for users accessing
+   CephFS via the kernel client (for example, Manila shares).
+
+   Kernel clients that encounter ``pg-upmap-primary`` entries will silently
+   route I/O to the wrong OSD, causing **I/O hangs** on the affected PGs.
+   Kernel clients that encounter CRUSH MSR rules will fail to compute a PG
+   mapping, causing **I/O errors**. Do not enable either feature while kernel
+   clients are present.
+
+   See the `upstream warning
+   <https://docs.ceph.com/en/latest/rados/operations/require-min-compat-client/>`__.
 
 .. code-block:: console
 

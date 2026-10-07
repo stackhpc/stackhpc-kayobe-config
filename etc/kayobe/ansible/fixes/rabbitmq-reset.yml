@@ -12,7 +12,7 @@
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail &&
-          systemctl -a | grep -E 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
+          systemctl -a --state=loaded | grep -E 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
           awk '{ print $NF }' |
           xargs systemctl stop
         executable: "/bin/bash"
@@ -62,8 +62,8 @@
     - name: Stop app
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl stop_app'
 
-    - name: Force reset app
-      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl force_reset'
+    - name: Reset app
+      ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl reset'
 
     - name: Start app
       ansible.builtin.command: docker exec {{ container_name }} /bin/bash -c 'rabbitmqctl start_app'
@@ -86,7 +86,7 @@
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail &&
-          systemctl list-units --type=service --all --no-legend --plain |
+          systemctl list-units --state=loaded --type=service --all --no-legend --plain |
           grep -E 'kolla-(barbican|blazar|cinder|cloudkitty|designate|heat|ironic|keystone|magnum|manila|neutron|nova|octavia)' |
           awk '{ print $1 }' |
           xargs -r systemctl restart

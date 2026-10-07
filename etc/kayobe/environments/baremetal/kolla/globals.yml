@@ -3,7 +3,7 @@
 #############################################################################
 # HAProxy tunings
 
-{% if kolla_enable_ironic | bool and "genericswitch" in kolla_neutron_ml2_mechanism_drivers %}
+{% if kolla_enable_ironic | bool and "genericswitch" in (kolla_neutron_ml2_mechanism_drivers | default([], true)) %}
 # NOTE: We are increasing the HAProxy timeouts to 5 minutes and 30 seconds due
 # to the neutron
 # generic switch driver, which synchronously applies switch configuration for

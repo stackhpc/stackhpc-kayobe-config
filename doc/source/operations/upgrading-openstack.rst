@@ -35,176 +35,19 @@ Notable changes in the |current_release| Release
 There are many changes in the OpenStack |current_release| release described in
 the release notes for each project. Here are some notable ones.
 
-stackhpc.linux collection
--------------------------
+Ironic Inspector removal
+------------------------
 
-The ``stackhpc.linux`` collection version has been bumped to 1.3.0. Note this
-version uses systemd to activate virtual functions. This change is restricted
-to the ``stackhpc.linux.sriov`` role, which is not used by Kayobe. If a custom
-playbook uses this role, you can retain existing behaviour by setting
-``sriov_numvfs_driver`` to ``udev``.
-
-Neutron driver defaults
------------------------
-
-The default Neutron ML2 type drivers and tenant network types now use
-``geneve`` instead of ``vxlan`` when OVN is enabled. This affects the
-``kolla_neutron_ml2_type_drivers`` and
-``kolla_neutron_ml2_tenant_network_types`` variables.
-
-Custom inspector_keep_ports
----------------------------
-
-If you have customized ``inspector_keep_ports``, ensure it is set to one of:
-``all``, ``present``, or ``added``. If you are relying on the previous
-behaviour you should set ironic_keep_ports to present.
-
-Seed/Infra VM boot firmware
----------------------------
-
-The default boot firmware for Seed and Infra VMs has changed from ``bios`` to
-``efi``. Set ``infra_vm_boot_firmware`` and ``seed_vm_boot_firmware`` to bios
-to retain existing behaviour.
-
-Prometheus MSteams
-------------------
-
-The ``prometheus-msteams`` integration in Kolla Ansible has been removed, users
-should switch to the `native
-<https://prometheus.io/docs/alerting/latest/configuration/#msteams_config>`__
-Prometheus Teams integration.
-
-Prometheus blackbox exporter endpoints
---------------------------------------
-
-Many endpoints for the Blackbox exporter are now templated in the Kolla-Ansible
-group vars for the cloud. This means that the
-``prometheus_blackbox_exporter_endpoints`` variable can be removed from the
-environment's ``kolla/globals.yml`` file (if applicable) and the endpoints will
-fallback to the ones templated in the group vars. Backend endpoints such as
-`these <https://github.com/stackhpc/stackhpc-kayobe-config/blob/094c2e012a037309d103c08a71eb633fdeb214e7/etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter#L27-L64>`__
-are not yet templated by Kolla-Ansible.
-
-Additional endpoints may still be added.
-
-For Kolla-Ansible templating, use ``stackhpc_prometheus_blackbox_exporter_endpoints_custom``.
-For example:
-
-.. code-block:: yaml
-   :caption: ``etc/kayobe/kolla/inventory/group_vars/prometheus-blackbox-exporter``
-
-   stackhpc_prometheus_blackbox_exporter_endpoints_custom:
-     - 'custom_service:http_2xx:{{ public_protocol }}://{{ external_fqdn | put_address_in_context('url') }}:{{ custom_serivce_port }}'
-
-Alternatively, for Kayobe templating, use the ``prometheus_blackbox_exporter_endpoints_kayobe`` variable.
-For example:
-
-.. code-block:: yaml
-   :caption: ``kolla/globals.yml``
-
-   prometheus_blackbox_exporter_endpoints_kayobe:
-      - endpoints:
-         - "pulp:http_2xx:{{ pulp_url }}/pulp/api/v3/status/"
-      enabled: "{{ seed_pulp_container_enabled | bool }}"
-
-Ansible playbook subdirectories
--------------------------------
-
-The playbooks under ``etc/kayobe/ansible`` have been subdivided into different
-categories to make them easier to navigate. This change may result in merge
-conflicts where playbooks have been edited downstream, and broken hooks where
-symlinks have been used.
-
-To mitigate the impact of these changes, two scripts have been added:
-
-* ``tools/get-new-playbook-path.sh`` - Returns the new category of a given
-  playbook. For example ``tools/get-new-playbook-path.sh
-  deploy-os-capacity-exporter.yml`` returns ``deployment/``
-* ``tools/magic-symlink-fix.sh`` - Uses the previous script to attempt to fix
-  any broken symlinks in the kayobe configuration.
-
-If playbooks are referenced in different methods other than symlinks, they'll
-need to be manually resolved by operators. (e.g. Shell scripts running
-playbooks with file paths, ``import_playbook`` command in custom playbooks)
+The separate Ironic Inspector service was replaced by the Ironic built-in inspector.
 
 Known issues
 ============
 
-Cinder
-------
+Ubuntu Support
+--------------
 
-`Enhancement of Ceph integration of multiple clusters
-<https://review.opendev.org/c/openstack/kolla-ansible/+/907166>`__
-means the Cinder role now requires ``user`` and ``pool`` set to the each item of kolla dict
-variable ``cinder_ceph_backends`` at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
-For example,
-
-.. code:: yaml
-
-   cinder_ceph_backends:
-      - name: rbd-1
-         cluster: ceph
-         user: cinder
-         pool: volumes
-         enabled: true
-      - name: rbd-2
-         cluster: ceph-hdd
-         user: cinder
-         pool: volumes-hdd
-         enabled: true
-
-You can find the name of pools from ``cephadm_pools`` in cephadm.yml and name of the users
-will be ``cinder`` unless changed to otherwise.
-
-The K-A upstream change `#909974 <https://review.opendev.org/c/openstack/kolla-ansible/+/909974>`__
-requires users to manually set Cinder cluster name.
-You can find the current name of the cluster from ``cluster`` variable in
-``DEFAULT`` category in ``cinder.conf``.
-
-For example,
-
-.. code::
-
-   [DEFAULT]
-   cluster = ceph
-
-Match the name of the cluster by setting ``cinder_cluster_name`` in ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments).
-
-.. code:: yaml
-
-   cinder_cluster_name: ceph
-
-CloudKitty
-----------
-
-The Elasticsearch storage driver is no longer compatible with Opensearch storage backend.
-Set CloudKitty storage backend to ``opensearch`` if it was set to be ``elasticsearch`` before.
-This can be set at ``$KAYOBE_CONFIG_PATH/kolla/globals.yml``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/globals.yml`` if using environments)
-
-.. code:: yaml
-
-   cloudkitty_storage_backend: opensearch
-
-Ironic
-------
-
-From Dalmatian, `Kayobe no longer provides its own default driver & interfaces
-<https://review.opendev.org/c/openstack/kayobe/+/836999>`__
-for Ironic and follows Ironic's default.
-This can cause your Ironic configuration ``ironic.conf`` to regress.
-Check the configuration difference before applying and re-add your options at
-``$KAYOBE_CONFIG_PATH/kolla/config/ironic.conf``
-(``$KAYOBE_CONFIG_PATH/environments/<env>/kolla/config/ironic.conf`` if using environments)
-
-For example,
-
-.. code:: yaml
-
-   [DEFAULT]
-   enabled_network_interfaces = neutron
+Ubuntu Noble is not yet supported for this release. Development is underway,
+and will be released in the next few months.
 
 RabbitMQ
 --------
@@ -217,10 +60,40 @@ Errors like this will be logged::
 A proper fix is still WIP, in the meantime these errors can be resolved with this script:
 `<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
 
+ProxySQL
+--------
+
+During OpenStack service upgrade from 2025.1 to 2026.1, database TLS with ProxySQL will be enabled.
+To make sure all certificate files that are required by ProxySQL are prepared, run the latest
+version of the playbook ``secret-store-generate-internal-tls.yml`` before running
+``kayobe overcloud service upgrade``.
+
+1. Ensure ``kolla_enable_proxysql`` is set to ``true`` in ``kolla.yml``.
+
+2. Run the playbook to generate ProxySQL certificates.
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-generate-internal-tls.yml
+
+After running the playbook, check if the following files are generated.
+
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/ca/root.crt``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/kolla/certificates/proxysql-ca.pem``
+
+If Kayobe environment is used, check these paths.
+
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/ca/root.crt``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-cert.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-key.pem``
+* ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/certificates/proxysql-ca.pem``
+
 Security baseline
 =================
 
-As part of the 2025.1 Epoxy release we are looking to improve the security
+As part of the 2026.1 Gazpacho release we are looking to improve the security
 baseline of StackHPC OpenStack deployments. If any of the following have not
 been done, they should be completed before the upgrade begins.
 
@@ -260,122 +133,6 @@ suggestions:
   ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
   generally be found in the documentation of each project. For example, Nova
   policy: https://docs.openstack.org/nova/latest/configuration/policy.html
-
-Ubuntu Noble migration
-----------------------
-
-Ubuntu Jammy support has been removed from the 2025.1 release onwards. Hosts
-must be migrated to Ubuntu 24.04 before upgrading OpenStack services.
-You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
-documentation.
-
-
-RabbitMQ Prerequisites
-----------------------
-
-.. warning::
-
-   StackHPC Kayobe Config sets RabbitMQ 4.1 as the default for the Epoxy release.
-   Existing transient queues must be migrated to durable queues with Queue Manager
-   before upgrading to RabbitMQ 4.1.
-
-   This means that queue migration and the RabbitMQ 4.1 upgrade must be completed
-   before upgrading to Epoxy.
-
-Queue Migration
-~~~~~~~~~~~~~~~
-
-.. warning::
-
-   This migration will stop all services using RabbitMQ and cause an extended
-   API outage while queues are migrated. It should only be performed in a
-   pre-agreed maintenance window.
-
-   If you are using Azimuth or the ClusterAPI driver for Magnum, you should
-   make sure to pause reconciliation of all clusters before the API outage
-   window. See the `Azimuth docs
-   <https://azimuth-cloud.github.io/azimuth-config/operations/maintenance/>`__
-   for instructions.
-
-Set the following variables in your kolla globals file (i.e.
-``$KAYOBE_CONFIG_PATH/kolla/globals.yml`` or
-``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/globals.yml``):
-
-.. code-block:: yaml
-
-   om_enable_queue_manager: true
-   om_enable_rabbitmq_quorum_queues: true
-   om_enable_rabbitmq_transient_quorum_queue: true
-   om_enable_rabbitmq_stream_fanout: true
-
-Then execute the migration script:
-
-.. code-block:: bash
-
-   $KAYOBE_CONFIG_PATH/../../tools/rabbitmq-queue-migration.sh
-
-.. note::
-
-   After migrating to durable queues, messages are sent to all receivers, but
-   only one will respond. This results in high numbers of messages staying in
-   the ready state, so the Prometheus alert ``RabbitMQTooMuchReady`` will start
-   firing. This alert can be ignored, and will be removed when Prometheus is
-   reconfigured.
-
-RabbitMQ Upgrade
-~~~~~~~~~~~~~~~~
-
-After the queue migration is finished, upgrade RabbitMQ to 4.1.
-
-1. Sync and publish latest Kolla container images to ensure local pulp has RabbitMQ 4.1 image.
-   (This can be skipped if local pulp is not used.)
-
-   .. code-block:: bash
-
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-sync.yml
-      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp-container-publish.yml
-
-2. Upgrade RabbitMQ to 4.1 with Kolla-Ansible
-
-   .. code-block:: bash
-
-      kayobe kolla ansible run "rabbitmq-upgrade 4.1"
-
-.. _python-3-12:
-
-Python 3.12
------------
-
-From OpenStack 2025.1, Kayobe and Kolla-Ansible require Python 3.12.
-
-Ubuntu 24.04 has a default Python of version 3.12.
-You can find the upgrade procedure from :ref:`upgrading-to-ubuntu-noble`
-
-For Rocky Linux 9, install Python 3.12 manually.
-
-.. code-block:: bash
-
-   dnf install python3.12
-
-For both Operating Systems, Kayobe and Kolla-Ansible Python virtual environments
-created with older Python versions will not work with OpenStack 2025.1.
-
-Create a new Kayobe environment and bootstrap the Ansible control host with Python 3.12.
-Beokay is recommended when creating and managing the local Kayobe environment.
-You can find more information from the :ref:`beokay` documentation.
-
-.. note::
-
-   For Rocky Linux 9, ``beokay create`` must be used with the ``--python python3.12``
-   option to specify Beokay to use Python 3.12 as it is not the default.
-
-Kayobe Automation
-~~~~~~~~~~~~~~~~~
-
-For deployments using Kayobe Automation CI, the Kayobe Docker image also needs
-to be rebuilt with Python 3.12. In GitHub, run the ``Build Kayobe Docker
-Image`` workflow. In GitLab, run the ``build_kayobe_image`` pipeline. In either
-case, the image will automatically be rebuilt with Python 3.12.
 
 Preparation
 ===========
@@ -494,12 +251,6 @@ configuration.  The output of the command may be restricted using the
 Upgrading local Kayobe environment
 ----------------------------------
 
-.. warning::
-
-   Python 3.12 is required for OpenStack 2025.1 Kayobe environments.
-   The environment cannot be upgraded for this release, it must be rebuilt.
-   You can find more information at :ref:`python-3-12`
-
 The local Kayobe environment should be either recreated or upgraded to use the
 new release. It may be beneficial to keep a Kayobe environment for the old
 release in case it is necessary before the upgrade begins.
@@ -569,13 +320,13 @@ To upgrade the Ansible control host:
 Upgrading Pulp
 --------------
 
-The local Pulp server needs to be upgraded before synchronising 2025.1
+The local Pulp server needs to be upgraded before synchronising 2026.1
 container images. The following command will deploy the latest Pulp container
 without upgrading Bifrost:
 
 .. code-block:: console
 
-   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+   kayobe seed service deploy --skip-tags bifrost --tags seed-manage-containers
 
 Note that this will also update any other enabled seed containers, such as Squid.
 
@@ -675,7 +426,7 @@ Generate the new configuration to a tmpdir.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --kolla-limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --limit controllers[0],compute[0],storage[0]
 
 Save the new configuration locally.
 
@@ -1214,6 +965,25 @@ This will block the upgrade, but may be overridden by setting
 ``etc/kayobe/kolla/globals.yml`` or
 ``etc/kayobe/environments/<env>/kolla/globals.yml``.
 
+.. warning::
+
+   If you are using custom service map overrides remember to synchronize the
+   customized overcloud-services.j2 and overcloud-components.j2 files with Kayobe upstream.
+
+   .. code-block:: console
+
+      git clone https://github.com/stackhpc/kayobe -b stackhpc/2026.1
+      cd kayobe/ansible/roles/kolla-ansible/templates/
+      sdiff -w 200 overcloud-services.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-services.j2
+      sdiff -w 200 overcloud-components.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/kolla/inventory/overcloud-components.j2
+
+or when using environments:
+
+   .. code-block:: console
+
+      sdiff -w 200 overcloud-services.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-services.j2
+      sdiff -w 200 overcloud-components.j2 /home/stack/2026.1-upgrade/src/kayobe-config/etc/kayobe/environments/<env>/kolla/inventory/overcloud-components.j2
+
 To upgrade the containerised control plane services:
 
 .. code-block:: console
@@ -1225,7 +995,7 @@ scope of the upgrade:
 
 .. code-block:: console
 
-   kayobe overcloud service upgrade --tags config --kolla-tags keystone
+   kayobe overcloud service upgrade --tags keystone
 
 Updating the Octavia Amphora Image
 ----------------------------------

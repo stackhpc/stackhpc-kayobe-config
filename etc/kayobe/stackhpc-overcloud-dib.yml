@@ -12,9 +12,9 @@
 #   - "{{ stackhpc_overcloud_dib_host_image }}"
 stackhpc_overcloud_dib_host_image:
   name: "{{ stackhpc_overcloud_dib_name }}"
-  elements: "{{ stackhpc_overcloud_dib_elements }}"
+  elements: "{{ stackhpc_overcloud_dib_elements | select() }}"
   env: "{{ stackhpc_overcloud_dib_env_vars }}"
-  packages: "{{ stackhpc_overcloud_dib_packages }}"
+  packages: "{{ stackhpc_overcloud_dib_packages | select() }}"
 
 # StackHPC overcloud DIB image name.
 stackhpc_overcloud_dib_name: "deployment_image"
@@ -29,6 +29,7 @@ stackhpc_overcloud_dib_elements:
   - "vm"
   - "block-device-efi"
   - "cloud-init"
+  - "cloud-init-mlx5"
   - "{% if os_distribution == 'rocky' %}dracut-regenerate{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}lvm{% endif %}"
   - "openssh-server"
@@ -37,11 +38,9 @@ stackhpc_overcloud_dib_elements:
 # StackHPC overcloud DIB image environment variables.
 stackhpc_overcloud_dib_env_vars: "{{ stackhpc_overcloud_dib_env_vars_default | combine(stackhpc_overcloud_dib_env_vars_ark if stackhpc_build_overcloud_image_from_pulp_package_mirrors | bool else {}) }}"
 
-# By default the :9 tag is used as base image. Here we want a specific minor version.
+# By default the :10 tag is used as base image. Here we want a specific minor version.
 stackhpc_overcloud_dib_container_opts_default: >-
-    {% if os_distribution == 'rocky' and os_release == '9' %}
-      --build-arg=ROCKY_VERSION=9.{{ stackhpc_pulp_repo_rocky_9_minor_version }}
-    {% elif os_distribution == 'rocky' and os_release == '10' %}
+    {% if os_distribution == 'rocky' and os_release == '10' %}
       --build-arg=ROCKY_VERSION=10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}
     {% endif %}
 
@@ -71,9 +70,7 @@ stackhpc_overcloud_dib_env_vars_default:
 stackhpc_overcloud_dib_env_vars_ark:
   DIB_CONTAINERFILE_BUILDOPTS: >-
     --build-arg=ROCKY_USE_CUSTOM_DNF_MIRRORS=true
-    {% if os_distribution == 'rocky' and os_release == '9' %}
-      --build-arg=ROCKY_CUSTOM_DNF_MIRROR_URLS={{ [stackhpc_repo_rocky_9_baseos_url, stackhpc_repo_rocky_9_appstream_url] | join(',') }}
-    {% elif os_distribution == 'rocky' and os_release == '10' %}
+    {% if os_distribution == 'rocky' and os_release == '10' %}
       --build-arg=ROCKY_CUSTOM_DNF_MIRROR_URLS={{ [stackhpc_repo_rocky_10_baseos_url, stackhpc_repo_rocky_10_appstream_url] | join(',') }}
     {% endif %}
     {{ stackhpc_overcloud_dib_container_opts_default }}
@@ -83,6 +80,8 @@ stackhpc_overcloud_dib_env_vars_ark:
 
 # StackHPC overcloud DIB image packages.
 stackhpc_overcloud_dib_packages:
+  - "acl"
+  - "bash-completion"
   - "ethtool"
   - "git"
   - "less"
@@ -93,14 +92,14 @@ stackhpc_overcloud_dib_packages:
   - "python3"
   - "smartmontools"
   - "vim"
-  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
-  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
-  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
-  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
   - "{% if os_distribution == 'rocky' %}cloud-utils-growpart{% endif %}"
+  - "{% if os_distribution == 'rocky' %}linux-firmware{% endif %}"
+  - "{% if os_distribution == 'rocky' %}NetworkManager-config-server{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}apt-utils{% endif %}"
   - "{% if os_distribution == 'ubuntu' %}cloud-guest-utils{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}curl{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}iputils-ping{% endif %}"
+  - "{% if os_distribution == 'ubuntu' %}netbase{% endif %}"
 
 # StackHPC overcloud DIB image block device configuration.
 # This image layout conforms to the CIS partition benchmarks.

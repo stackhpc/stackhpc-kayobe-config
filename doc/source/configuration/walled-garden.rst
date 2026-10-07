@@ -78,22 +78,9 @@ proxy:
    # PyPI proxy URL (format: http(s)://[user:password@]proxy_name:port)
    pip_proxy: "{{ https_proxy }}"
 
-We typically don’t use the proxy for DNF package updates, or for
-container image downloads, since the Pulp server is hosted on the seed.
-The ``no_proxy`` setting should handle this.
-
-For Ubuntu hosts, where package repos are not hosted in a local Pulp
-server, you will also want to proxy APT requests. This can be done by
-adding the following in
-``etc/kayobe/inventory/group_vars/overcloud/proxy``:
-
-.. code:: yaml
-
-   # Apt proxy URL for HTTP. Default is empty (no proxy).
-   apt_proxy_http: "{{ http_proxy }}"
-
-   # Apt proxy URL for HTTPS. Default is {{ apt_proxy_http }}.
-   apt_proxy_https: "{{ https_proxy }}"
+We typically don’t use the proxy for package updates or for container image
+downloads, since the Pulp server is hosted on the seed. The ``no_proxy``
+setting should handle this.
 
 Typically, container images are pulled from the local Pulp server. If
 you need to be able to pull container images from external sources, it

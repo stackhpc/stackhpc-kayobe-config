@@ -9,12 +9,12 @@ This environment creates a Universe-from-nothing_-style deployment of Kayobe con
 .. warning::
 
     This guide was written for the Yoga release and has not been validated for
-    2025.1. Proceed with caution.
+    2026.1. Proceed with caution.
 
 Prerequisites
 =============
 
-* a VM or baremetal node with at least 64GB of RAM running Rocky Linux 9 or Ubuntu Noble.
+* a VM or baremetal node with at least 64GB of RAM running Rocky Linux 10 or Ubuntu Noble.
 
 Setup
 =====

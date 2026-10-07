@@ -434,16 +434,6 @@ Enable the required TLS variables in kayobe and kolla
 
 4. Deploy OpenStack
 
-   .. warning::
-
-      It is important that you are only using admin endpoints for keystone. If
-      any admin endpoints exist for other services, they must be deleted e.g.
-
-      .. code-block:: bash
-
-         openstack endpoint list --interface admin -f value | \
-         awk '!/keystone/ {print $1}' | xargs openstack endpoint delete
-
    .. code-block:: bash
 
       kayobe overcloud service deploy
@@ -459,6 +449,30 @@ Enable the required TLS variables in kayobe and kolla
    .. code-block:: bash
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
+
+Rolling back to HTTP
+--------------------
+
+If the system needs a rollback from HTTPS to HTTP, you can set variable for each TLS to false
+then re run ``kayobe overcloud service deploy``.
+
+.. code-block::
+
+   kolla_enable_tls_external: false
+   kolla_enable_tls_internal: false
+   kolla_enable_tls_backend: false
+
+Once the rollback is done, you may need to delete TLS related HAProxy rules at controller hosts.
+
+.. code-block::
+
+   # Remove TLS related HAProxy rules from all controller hosts
+   cd /etc/kolla/haproxy/services.d
+   rm neutron-tls-proxy.cfg
+   rm glance-tls-proxy.cfg
+
+   # Then restart HAProxy
+   systemctl restart kolla-haproxy-container
 
 Pulp TLS
 ========
@@ -520,7 +534,7 @@ Enable Barbican in kayobe
 
 1. Set the following in kayobe-config/etc/kayobe/kolla.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       kolla_enable_barbican: yes
 
@@ -530,7 +544,7 @@ Generate secrets_barbican_approle_secret_id
 1. Run ``uuidgen`` to generate secret id
 2. Insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_secret_id: "YOUR-SECRET-GOES-HERE"
 
@@ -548,7 +562,7 @@ Add secrets_barbican_approle_id to secrets
 
 1. Note the role id from playbook output and insert into secrets.yml or if environments are being used etc/kayobe/environments/$KAYOBE_ENVIRONMENT/secrets.yml
 
-   .. code-block::yml
+   .. code-block:: yaml
 
       secrets_barbican_approle_role_id: "YOUR-APPROLE-ID-GOES-HERE"
 
@@ -604,3 +618,60 @@ However, end users of OpenStack will not be affected.
 Overcloud migration is HA migration and no downtime is expected.
 
 It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.
+
+.. _openbao-cluster-fix:
+
+Restoring an OpenBao cluster
+============================
+
+Users can use the ``fix-openbao-overcloud.yml`` playbook to restore an OpenBao cluster.
+
+.. code-block:: bash
+
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/fix-openbao-overcloud.yml
+
+.. warning::
+
+   The playbook ``secret-store-deploy-overcloud.yml`` assumes the first
+   controller to always be the leader node.
+   **DO NOT** run ``secret-store-deploy-overcloud.yml`` alone to fix the
+   cluster.
+   If the leader OpenBao node (First controller by default) fails, the leader
+   role gets transferred to one of the other controllers.
+   Without checking which node became the new leader, there is a risk of having
+   two separate clusters as a result.
+
+The ``fix-openbao-overcloud.yml`` playbook runs two playbooks
+
+1. ``get-current-raft-leader.yml``
+2. ``secret-store-deploy-overcloud.yml``
+
+Users can also follow this procedure to fix the OpenBao cluster manually.
+
+1. Use ``get-current-raft-leader.yml`` playbook to get the index of the leader
+   controller.
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/get-current-raft-leader.yml
+
+   The last task "Display the index of the Raft leader" will show the index of
+   the new leader controller in the controllers ansible group.
+
+   .. code-block:: bash
+
+      TASK [Display the index of the Raft leader] ***********************************
+      Monday 03 August 2026  12:15:02 +0000 (0:00:00.148)       0:00:07.797 *********
+      ok: [controller-01] =>
+          msg: 'raft_leader_index: 2'
+      ok: [controller-02] =>
+          msg: 'raft_leader_index: 2'
+      ok: [controller-03] =>
+          msg: 'raft_leader_index: 2'
+
+2. Run the ``secret-store-deploy-overcloud.yml`` playbook with the index of the new
+   leader as an extra variable.
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-overcloud.yml -e raft_leader_index=2

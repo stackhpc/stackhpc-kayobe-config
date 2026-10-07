@@ -1,0 +1,15 @@
+---
+# Required to use a VLAN provider network for the Octavia management network.
+kolla_enable_neutron_provider_networks: "{{ kolla_enable_octavia | bool }}"
+
+# Load balancing, using the amphora provider driver. Overridden per-job in CI.
+kolla_enable_octavia: true
+
+# Backing store for the Octavia TaskFlow jobboard. Conditional because
+# this will not work on Upgrade jobs since stackhpc/2025.1 does not have the valkey service
+# An upgrade will then cause a missing container error during upgrade jobs runs.
+kolla_enable_valkey: "{{ kolla_enable_octavia | bool }}"
+
+###############################################################################
+# Dummy variable to allow Ansible to accept this file.
+workaround_ansible_issue_8743: yes

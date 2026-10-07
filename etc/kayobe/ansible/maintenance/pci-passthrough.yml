@@ -1,5 +1,5 @@
 ---
-- name: Enable GPU passthough
+- name: Enable GPU passthrough
   hosts: "{{ (gpu_group_map | default({})).keys() }}"
   vars:
     # This playbook will execute after nodes are deployed
@@ -18,6 +18,9 @@
       {% endfor %}
       {% for item in gpu_list | flatten | unique %}
       {% set _ = output.append(stackhpc_gpu_data[item]['vendor_id'] + ':' + stackhpc_gpu_data[item]['product_id']) %}
+      {% if stackhpc_gpu_data[item].product_audio_id is defined %}
+      {% set _ = output.append(stackhpc_gpu_data[item]['vendor_id'] + ':' + stackhpc_gpu_data[item]['product_audio_id']) %}
+      {% endif %}
       {% endfor %}
       {{ output | join(',') }}
     reboot_timeout_s: "{{ 20 * 60 }}"
@@ -26,7 +29,7 @@
       ansible.builtin.blockinfile:
         path: /etc/dracut.conf.d/gpu-vfio.conf
         block: |
-          add_drivers+="vfio vfio_iommu_type1 vfio_pci vfio_virqfd"
+          add_drivers+=" vfio vfio_iommu_type1 vfio_pci "
         owner: root
         group: root
         mode: 0660
@@ -43,7 +46,6 @@
           vfio
           vfio_iommu_type1
           vfio_pci
-          vfio_virqfd
         owner: root
         group: root
         mode: 0664

@@ -7,13 +7,13 @@
   tasks:
     - name: Get OFED module repo
       ansible.builtin.set_fact:
-        doca_modules_repos: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | selectattr('base_path', 'search', '/' ~ kolla_base_arch ~ '/') | list }}"
+        doca_modules_repos: "{{ stackhpc_pulp_rpm_repos | selectattr('name', 'search', 'OFED') | selectattr('base_path', 'search', '/rhel' ~ os_release) | selectattr('base_path', 'search', '/' ~ os_arch ~ '/') | list }}"
 
     - name: Assert OFED module repo is unique
       ansible.builtin.assert:
         that:
           - doca_modules_repos | length == 1
-        fail_msg: "Expected exactly one OFED module repo for {{ kolla_base_arch }}"
+        fail_msg: "Expected exactly one OFED module repo for {{ os_arch }}"
 
     - name: Get OFED module repo variables
       ansible.builtin.set_fact:
@@ -46,7 +46,10 @@
         password: "{{ stackhpc_release_pulp_password }}"
         name: "{{ doca_modules_repo_name }}"
         state: present
-      retries: "{{ pulp_timeout_retries | default(3) }}"
+      register: repository
+      until: repository is success
+      retries: "{{ pulp_timeout_retries | default(3) | int }}"
+      delay: "{{ pulp_delay | default(5) | int }}"
 
     - name: Upload OFED RPMs to Pulp
       pulp.squeezer.rpm_package:
@@ -59,6 +62,9 @@
         state: present
       with_items: "{{ doca_kernel_repo.stdout_lines }}"
       register: package
+      until: package is success
+      retries: "{{ pulp_timeout_retries | default(3) | int }}"
+      delay: "{{ pulp_delay | default(5) | int }}"
 
     - name: Create Pulp publication for OFED
       pulp.squeezer.rpm_publication:

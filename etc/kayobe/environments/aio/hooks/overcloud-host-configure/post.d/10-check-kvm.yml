@@ -1,0 +1,20 @@
+---
+
+- hosts: controllers
+  gather_facts: false
+  tasks:
+    - name: Check whether /dev/kvm exists
+      stat:
+        path: /dev/kvm
+      register: kvm_device
+      when: kolla_enable_octavia | bool
+
+    - name: Assert that KVM is available
+      assert:
+        that: kvm_device.stat.exists
+        fail_msg: >-
+          /dev/kvm is not present. The aio environment uses KVM when Octavia
+          is enabled, because amphorae are unusable under emulation. Enable
+          nested virtualisation on this host, or set ENABLE_OCTAVIA to false
+          in automated-setup.sh to deploy with QEMU and without Octavia.
+      when: kolla_enable_octavia | bool

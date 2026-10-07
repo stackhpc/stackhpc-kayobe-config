@@ -18,6 +18,7 @@ jobs:
       - name: Fetch open PRs and remind authors
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # Fetch open PRs with the specific label in JSON format. Extract number and author username
           prs=$(gh pr list --state open --label "waiting-author-response" --json number,author --jq '.[] | "\(.number),\(.author.login)"')

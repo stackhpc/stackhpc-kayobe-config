@@ -144,11 +144,11 @@ Build a Kayobe image:
 
    sudo DOCKER_BUILDKIT=1 docker build --file .automation/docker/kayobe/Dockerfile --tag kayobe:latest .
 
-Use the ci-aio environment:
+Use the aio environment:
 
 .. code-block:: console
 
-   export KAYOBE_ENVIRONMENT=ci-aio
+   export KAYOBE_ENVIRONMENT=aio
 
 Set the Kayobe Vault password env var:
 
