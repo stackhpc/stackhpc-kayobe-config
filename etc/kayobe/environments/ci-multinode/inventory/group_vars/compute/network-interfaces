@@ -4,11 +4,15 @@
 
 admin_oc_interface: "{{ ansible_facts.default_ipv4.interface }}"
 
-internal_interface: "{{ vxlan_interfaces[0].device }}.{{ internal_vlan }}"
+# Linux bridge containing the VXLAN mesh device. Open vSwitch reaches the mesh
+# through a veth pair from this bridge, so the host and Neutron both get frames.
+vxlan_mesh_interface: br-vxlan
 
-storage_interface: "{{ vxlan_interfaces[0].device }}.{{ storage_vlan }}"
+internal_interface: "{{ vxlan_mesh_interface }}.{{ internal_vlan }}"
 
-tunnel_interface: "{{ vxlan_interfaces[0].device }}.{{ tunnel_vlan }}"
+storage_interface: "{{ vxlan_mesh_interface }}.{{ storage_vlan }}"
+
+tunnel_interface: "{{ vxlan_mesh_interface }}.{{ tunnel_vlan }}"
 
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
