@@ -232,9 +232,11 @@ unauthenticated access to the package repositories in Ark. This avoids leaking
 Ark credentials into the built container images.
 
 Once built, images are scanned for vulnerabilities using `Grype
-<https://github.com/anchore/grype>`_ and `Syft
-<https://github.com/anchore/syft>`_. Any critical vulnerabilities will break the build,
-unless the ``push-dirty`` input is true.
+<https://github.com/anchore/grype>`_. If the ``sbom`` input is true, an SBOM is
+first generated for each image using `Syft <https://github.com/anchore/syft>`_,
+and the SBOM is scanned instead. Any critical vulnerabilities will break the
+build, unless the ``push-critical`` input is true. Vulnerabilities may be
+ignored by adding them to ``etc/kayobe/grype/allowed-vulnerabilities.yml``.
 
 If the ``push`` input is true, images are pushed to Ark, and a `container sync
 <https://stackhpc.github.io/stackhpc-release-train/usage/content-workflows/#syncing-container-images>`_

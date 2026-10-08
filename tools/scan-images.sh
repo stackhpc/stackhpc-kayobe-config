@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Disable telemetry and version check:
+# Disable version check
 export GRYPE_CHECK_FOR_APP_UPDATE=false
 export SYFT_CHECK_FOR_APP_UPDATE=false
 
 # Global variables
+# NOTE: --by-cve reports vulnerabilities by CVE ID where one exists (e.g.
+# instead of a GHSA ID), and allows ignore rules to use either ID.
 scan_common_args=" \
+                  --config .grype.yaml \
                   --fail-on high \
                   --output json \
-                  --only-fixed "
+                  --only-fixed \
+                  --by-cve "
 
 # Print usage instructions and error with wrong inputs
 usage() {
@@ -20,11 +24,11 @@ usage() {
 # Check dependencies are installed, print installation instructions otherwise
 check_deps_installed() {
   if ! grype --version > /dev/null 2>&1; then
-    echo 'Please install grype: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin'
+    echo 'Please install grype: curl -sSfL https://raw.githubusercontent.com/anchore/grype/v0.120.0/install.sh | sudo sh -s -- -b /usr/local/bin v0.120.0'
     exit 1
   fi
   if ! syft --version > /dev/null 2>&1; then
-    echo 'Please install syft: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin'
+    echo 'Please install syft: curl -sSfL https://raw.githubusercontent.com/anchore/syft/v1.54.0/install.sh | sudo sh -s -- -b /usr/local/bin v1.54.0'
     exit 1
   fi
   if ! yq --version > /dev/null 2>&1; then
@@ -80,7 +84,10 @@ generate_summary_csv() {
 
   echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > "$summary"
 
+  # NOTE: Grype reports matches of all severities, so filter on HIGH and
+  # CRITICAL here.
   jq -r '.matches
+      | map(select(.vulnerability.severity | test("^(high|critical)$"; "i")))
       | map(select(.artifact.name | test("^kernel|^linux-libc-dev") | not ))
       | group_by(.vulnerability.id)
       | map(
@@ -89,8 +96,8 @@ generate_summary_csv() {
           (map(.artifact.locations[]?.path // empty) | unique | join(";")),
           .[0].artifact.purl,
           .[0].vulnerability.id,
-          (.[0].vulnerability.fix.versions | join(";")),
-          (.[0].vulnerability.urls | first),
+          (.[0].vulnerability.fix.versions // [] | join(";")),
+          .[0].vulnerability.dataSource,
           (.[0].vulnerability.severity | ascii_upcase)
           ]
         )
@@ -115,19 +122,17 @@ generate_sbom() {
   local sbom="$1"
   local scan="$2"
   local image="$3"
-  syft "$image" \
-        -o spdx-json \
-        > "$sbom" 2> "$sbom.log"
-
-  if [ ! -s "$sbom" ]; then
+  if ! syft "docker:$image" \
+          --output spdx-json \
+          > "$sbom" 2> "$sbom.log" || [ ! -s "$sbom" ]; then
     (
-      echo "ERROR: syft didn't produce the sbom file $sbom for $image" 1>&2
+      echo "ERROR: syft failed to produce the sbom file $sbom for $image"
       echo "==== syft log ===="
       cat "$sbom.log"
     ) 1>&2
     exit 1
   else
-    echo "grype $sbom $scan_common_args"
+    echo "grype sbom:$sbom $scan_common_args"
   fi
 }
 
@@ -151,7 +156,7 @@ scan_image() {
     echo "Generating SBOM for $imagename"
     scan_command="$(generate_sbom "$sbom" "$scan" "$image")"
   else
-    scan_command="grype $image $scan_common_args"
+    scan_command="grype docker:$image $scan_common_args"
   fi
 
   # Run scan against image or SBOM, format output. If no results, delete files.
@@ -159,8 +164,8 @@ scan_image() {
   if $scan_command > "$scan" 2> "$scan.log"; then
     rm -f "$scan"
     echo "${image}" >> image-scan-output/clean-images.txt
-  # return code is 2 if a vulnerability is found with a severity higher than
-  # configured
+  # Grype exits with code 2 if any vulnerability is found at or above the
+  # --fail-on severity. Any other non-zero exit code is an error.
   elif [ $? -ne 2 ]; then
     (
       echo "ERROR: grype scan encountered an error producing $scan"
@@ -175,10 +180,11 @@ scan_image() {
     exit 1
   else
     generate_summary_csv "$scan" "$summary"
+    # The summary is empty if all vulnerabilities found are in kernel packages.
     if [ "$(tail -n +2 "$summary" | wc -l)" -eq 0 ]; then
-       echo "${image}" >> image-scan-output/clean-images.txt
+      echo "${image}" >> image-scan-output/clean-images.txt
     else
-       categorise_image "$summary" "$image"
+      categorise_image "$summary" "$image"
     fi
   fi
 }
