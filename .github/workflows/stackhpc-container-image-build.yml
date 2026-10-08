@@ -276,6 +276,8 @@ jobs:
 
       - name: Scan built container images
         run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
+        env:
+          SCAN_PARALLELISM: 8
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output

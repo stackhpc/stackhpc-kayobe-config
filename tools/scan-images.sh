@@ -47,14 +47,17 @@ file_prep() {
   touch image-scan-output/clean-images.txt image-scan-output/high-images.txt image-scan-output/critical-images.txt
 }
 
-# Gather image lists
+# Gather image lists, largest first, so that the slowest scans start early
+# rather than extending the end of the scan stage
 get_images() {
   local output_file="$1-scanned-container-images.txt"
 
   docker image ls \
     --filter "reference=ark.stackhpc.com/stackhpc-dev/*:$2*" \
-    --format "{{.Repository}}:{{.Tag}}" \
-    > "$output_file"
+    --format "{{.Repository}}:{{.Tag}}" |
+    while read -r image; do
+      echo "$(docker image inspect --format '{{.Size}}' "$image") $image"
+    done | sort -rn | cut -d " " -f 2 > "$output_file"
 
   cat "$output_file"
 }
@@ -132,6 +135,7 @@ generate_sbom() {
        SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP=false \
        syft "docker:$image" \
           --output spdx-json \
+          -v \
           > "$sbom" 2> "$sbom.log" || [ ! -s "$sbom" ]; then
     # Print the error in a single write to avoid interleaving with output
     # from images scanned in parallel.
@@ -189,6 +193,12 @@ scan_image() {
     )" 1>&2
     exit 1
   else
+    # Drop matches ignored only because they have no fix, which make up most
+    # of the scan output. Keep those ignored by the allowed vulnerabilities
+    # list.
+    jq -c '.ignoredMatches |= ((. // []) | map(select(any((.appliedIgnoreRules // [])[]; (.vulnerability // "") != ""))))' \
+      "$scan" > "$scan.tmp"
+    mv "$scan.tmp" "$scan"
     generate_summary_csv "$scan" "$summary"
     # The summary is empty if all vulnerabilities found are in kernel packages.
     if [ "$(tail -n +2 "$summary" | wc -l)" -eq 0 ]; then
