@@ -38,7 +38,8 @@ internal_net_name: internal
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
 #external_net_names:
-external_net_names: []
+external_net_names:
+  - vxlan_mesh
 
 # Name of the network used to expose the public OpenStack API endpoints.
 public_net_name: public
@@ -130,6 +131,13 @@ provision_oc_allocation_pool_start: 192.168.33.128
 provision_oc_allocation_pool_end: 192.168.33.254
 provision_oc_vlan: 107
 provision_oc_zone: "provision_oc"
+
+# Linux bridge carrying the VXLAN mesh. Without the bridge the
+# host will claim the packet and drop if not addressed to its listener.
+# A bridge is needed to flood the packet to both the OS and the OVS
+vxlan_mesh_bridge_ports: "{{ [vxlan_interfaces[0].device] }}"
+vxlan_mesh_bootproto: manual
+vxlan_mesh_mtu: "{{ ansible_facts.default_ipv4.mtu - 50 }}"
 
 ###############################################################################
 # Network virtual patch link configuration.
