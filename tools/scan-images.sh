@@ -60,13 +60,18 @@ generate_grype_config() {
   local image_vulnerabilities
   image_vulnerabilities=$(yq ."$imagename"'_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
 
+  global_vulnerabilities=$(yq '.global_allowed_vulnerabilities[]' src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
+  if [[ "$family" != "$imagename" ]]; then
+    family_vulnerabilities=$(yq ".${family}_allowed_vulnerabilities[]" src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
+  else
+    family_vulnerabilities=""
+  fi
+  image_vulnerabilities=$(yq ".${imagename}_allowed_vulnerabilities[]" src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
+
   echo "ignore:" > .grype.yaml
-  for vulnerability in $global_vulnerabilities; do
-    echo "  - vulnerability: $vulnerability" >> .grype.yaml
-  done
-  for vulnerability in $image_vulnerabilities; do
-    echo "  - vulnerability: $vulnerability" >> .grype.yaml
-  done
+  for vulnerability in $global_vulnerabilities $family_vulnerabilities $image_vulnerabilities; do
+    echo "$vulnerability"
+  done | sort -u | sed 's/^/  - vulnerability: /' >> .grype.yaml
 }
 
 # Put results into CSV
@@ -77,7 +82,7 @@ generate_summary_csv() {
   echo '"PkgName","PkgPath","PkgID","VulnerabilityID","FixedVersion","PrimaryURL","Severity"' > "$summary"
 
   jq -r '.matches
-      | map(select(.artifact.name | test("kernel") | not ))
+      | map(select(.artifact.name | test("^kernel|^linux-libc-dev") | not ))
       | group_by(.vulnerability.id)
       | map(
         [
