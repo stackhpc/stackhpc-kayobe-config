@@ -234,7 +234,9 @@ Ark credentials into the built container images.
 Once built, images are scanned for vulnerabilities using `Grype
 <https://github.com/anchore/grype>`_. If the ``sbom`` input is true, an SBOM is
 first generated for each image using `Syft <https://github.com/anchore/syft>`_,
-and the SBOM is scanned instead. Any critical vulnerabilities will break the
+and the SBOM is scanned instead. Images are scanned in parallel, four at a
+time by default; this may be changed by setting ``SCAN_PARALLELISM`` for the
+scan step. Any critical vulnerabilities will break the
 build, unless the ``push-critical`` input is true. Vulnerabilities may be
 ignored by adding them to ``etc/kayobe/grype/allowed-vulnerabilities.yml``.
 
