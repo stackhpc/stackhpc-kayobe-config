@@ -5,11 +5,13 @@ set -eo pipefail
 export GRYPE_CHECK_FOR_APP_UPDATE=false
 export SYFT_CHECK_FOR_APP_UPDATE=false
 
+# Number of images to scan in parallel
+scan_parallelism=${SCAN_PARALLELISM:-4}
+
 # Global variables
 # NOTE: --by-cve reports vulnerabilities by CVE ID where one exists (e.g.
 # instead of a GHSA ID), and allows ignore rules to use either ID.
 scan_common_args=" \
-                  --config .grype.yaml \
                   --fail-on high \
                   --output json \
                   --only-fixed \
@@ -18,6 +20,7 @@ scan_common_args=" \
 # Print usage instructions and error with wrong inputs
 usage() {
   echo "Usage: scan-images.sh <os-distribution> <image-tag> [--sbom]"
+  echo "Set SCAN_PARALLELISM to change the number of images scanned in parallel (default 4)"
   exit 2
 }
 
@@ -59,6 +62,7 @@ get_images() {
 # Generate grype configuration file
 generate_grype_config() {
   local imagename=$1
+  local config=$2
   local family
   family="${imagename%%_*}"
   local global_vulnerabilities family_vulnerabilities image_vulnerabilities
@@ -71,10 +75,10 @@ generate_grype_config() {
   fi
   image_vulnerabilities=$(yq ".${imagename}_allowed_vulnerabilities[]" src/kayobe-config/etc/kayobe/grype/allowed-vulnerabilities.yml 2> /dev/null)
 
-  echo "ignore:" > .grype.yaml
+  echo "ignore:" > "$config"
   for vulnerability in $global_vulnerabilities $family_vulnerabilities $image_vulnerabilities; do
     echo "$vulnerability"
-  done | sort -u | sed 's/^/  - vulnerability: /' >> .grype.yaml
+  done | sort -u | sed 's/^/  - vulnerability: /' >> "$config"
 }
 
 # Put results into CSV
@@ -120,19 +124,25 @@ categorise_image() {
 # Generate SBOM using syft, return correct scan command for SBOM
 generate_sbom() {
   local sbom="$1"
-  local scan="$2"
+  local config="$2"
   local image="$3"
-  if ! syft "docker:$image" \
+  # NOTE: Omit files owned by packages from the SBOM. They make up most of its
+  # size, and are not needed for vulnerability scanning.
+  if ! SYFT_FILE_METADATA_SELECTION=none \
+       SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP=false \
+       syft "docker:$image" \
           --output spdx-json \
           > "$sbom" 2> "$sbom.log" || [ ! -s "$sbom" ]; then
-    (
+    # Print the error in a single write to avoid interleaving with output
+    # from images scanned in parallel.
+    echo "$(
       echo "ERROR: syft failed to produce the sbom file $sbom for $image"
       echo "==== syft log ===="
       cat "$sbom.log"
-    ) 1>&2
+    )" 1>&2
     exit 1
   else
-    echo "grype sbom:$sbom $scan_common_args"
+    echo "grype sbom:$sbom --config $config $scan_common_args"
   fi
 }
 
@@ -146,17 +156,19 @@ scan_image() {
   local sbom="image-scan-output/${imagename}/${filename}-sbom.json"
   local scan="image-scan-output/${imagename}/${filename}-scan.json"
   local summary="image-scan-output/${imagename}/${filename}-summary.csv"
+  local config="image-scan-output/${imagename}/${filename}-grype.yaml"
+  local scan_command
 
   mkdir -p "image-scan-output/$imagename"
-  generate_grype_config "$imagename"
+  generate_grype_config "$imagename" "$config"
 
   # If SBOM is required, generate it first and scan the results, otherwise we
   # scan the image directly.
   if $generate_sbom; then
     echo "Generating SBOM for $imagename"
-    scan_command="$(generate_sbom "$sbom" "$scan" "$image")"
+    scan_command="$(generate_sbom "$sbom" "$config" "$image")"
   else
-    scan_command="grype docker:$image $scan_common_args"
+    scan_command="grype docker:$image --config $config $scan_common_args"
   fi
 
   # Run scan against image or SBOM, format output. If no results, delete files.
@@ -167,16 +179,14 @@ scan_image() {
   # Grype exits with code 2 if any vulnerability is found at or above the
   # --fail-on severity. Any other non-zero exit code is an error.
   elif [ $? -ne 2 ]; then
-    (
+    # Print the error in a single write to avoid interleaving with output
+    # from images scanned in parallel.
+    echo "$(
       echo "ERROR: grype scan encountered an error producing $scan"
       echo "Command: $scan_command"
       echo "==== grype log ===="
       cat "$scan.log"
-      if $generate_sbom; then
-        echo "==== sbom.json ===="
-        cat "$sbom"
-      fi
-    ) 1>&2
+    )" 1>&2
     exit 1
   else
     generate_summary_csv "$scan" "$summary"
@@ -186,6 +196,36 @@ scan_image() {
     else
       categorise_image "$summary" "$image"
     fi
+  fi
+}
+
+# Scan an image in a subshell so that errexit applies, and record failures
+scan_image_and_record_failure() {
+  ( scan_image "$1" ) &
+  wait $! || echo "$1" >> image-scan-output/failed-images.txt
+}
+
+# Scan images in parallel, up to scan_parallelism at a time. Stop starting new
+# scans after a failure (best effort), and fail once the running scans have
+# finished.
+scan_images() {
+  local images=$1
+
+  for image in $images; do
+    while (( $(jobs -rp | wc -l) >= scan_parallelism )); do
+      wait -n || true
+    done
+    if [ -s image-scan-output/failed-images.txt ]; then
+      break
+    fi
+    scan_image_and_record_failure "$image" &
+  done
+  wait
+
+  if [ -s image-scan-output/failed-images.txt ]; then
+    echo "ERROR: failed to scan images:" 1>&2
+    cat image-scan-output/failed-images.txt 1>&2
+    exit 1
   fi
 }
 
@@ -205,10 +245,14 @@ main() {
   check_deps_installed
   file_prep
 
+  # Update the vulnerability database once, and disable automatic updates.
+  # Grype does not lock the database, so it must not be updated while scans
+  # are running in parallel.
+  grype db update
+  export GRYPE_DB_AUTO_UPDATE=false
+
   images=$(get_images "$1" "$2")
-  for image in $images; do
-    scan_image "$image"
-  done
+  scan_images "$images"
 }
 
 main "$@"
