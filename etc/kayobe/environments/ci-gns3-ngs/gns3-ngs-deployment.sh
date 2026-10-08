@@ -106,7 +106,7 @@ export KAYOBE_VENV_PATH="$BASE_PATH/venvs/kayobe"
 # write the ubuntu user's ssh key to its own authorized_keys file.
 sudo ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
 ssh_key=$(sudo cat /home/ubuntu/.ssh/id_rsa.pub)
-echo "$ssh_key" > /home/ubuntu/.ssh/authorized_keys
+sudo echo "$ssh_key" > /home/ubuntu/.ssh/authorized_keys
 
 # Bootstrap the Ansible control host.
 kayobe control host bootstrap
