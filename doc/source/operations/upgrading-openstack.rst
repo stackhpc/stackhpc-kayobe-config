@@ -326,7 +326,7 @@ without upgrading Bifrost:
 
 .. code-block:: console
 
-   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+   kayobe seed service deploy --skip-tags bifrost --tags seed-manage-containers
 
 Note that this will also update any other enabled seed containers, such as Squid.
 
@@ -426,7 +426,7 @@ Generate the new configuration to a tmpdir.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --kolla-limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --limit controllers[0],compute[0],storage[0]
 
 Save the new configuration locally.
 
@@ -995,7 +995,7 @@ scope of the upgrade:
 
 .. code-block:: console
 
-   kayobe overcloud service upgrade --tags config --kolla-tags keystone
+   kayobe overcloud service upgrade --tags keystone
 
 Updating the Octavia Amphora Image
 ----------------------------------
