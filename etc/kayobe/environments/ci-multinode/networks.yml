@@ -134,8 +134,10 @@ provision_oc_zone: "provision_oc"
 
 # Linux bridge carrying the VXLAN mesh. Without the bridge the
 # host will claim the packet and drop if not addressed to its listener.
-# A bridge is needed to flood the packet to both the OS and the OVS
-vxlan_mesh_bridge_ports: "{{ [vxlan_interfaces[0].device] }}"
+# A bridge is needed to flood the packet to both the OS and the OVS.
+# Empty ports because stackhpc.vxlan does the enslaving via its bridge option.
+# We dont want MichaelRigart's role to overwrite the Network Manager's VXLAN handling
+vxlan_mesh_bridge_ports: []
 vxlan_mesh_bootproto: manual
 vxlan_mesh_mtu: "{{ ansible_facts.default_ipv4.mtu - 50 }}"
 

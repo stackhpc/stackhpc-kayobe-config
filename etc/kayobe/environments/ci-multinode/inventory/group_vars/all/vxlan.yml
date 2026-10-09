@@ -16,3 +16,6 @@ vxlan_vni:
 vxlan_interfaces:
   - device: "vxlan{{ vxlan_vni }}"
     group: "{{ '239.0.0.0/8' | ansible.utils.next_nth_usable(vxlan_vni) }}"
+    # Enslave the mesh to the bridge here, so the role owns the one connection
+    # profile for this device and Kayobe does not overwrite it as an ethernet.
+    bridge: br-vxlan
