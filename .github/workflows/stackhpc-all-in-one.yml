@@ -95,6 +95,9 @@ jobs:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
+      # Octavia needs KVM. The conditions are based on current state of supported amphora envs
+      # This is subject to change as support is added for other OS distributions and architectures that support KVM.
+      ENABLE_OCTAVIA: ${{ inputs.os_distribution == 'rocky' && inputs.architecture == 'x86_64' && !inputs.upgrade }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
       PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2025.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
@@ -251,6 +254,7 @@ jobs:
           os_release: "${{ env.OS_RELEASE }}"
           kolla_base_arch: ${{ env.ARCHITECTURE }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
+          kolla_enable_octavia: ${{ env.ENABLE_OCTAVIA }}
           EOF
         env:
           ARCHITECTURE: ${{ inputs.architecture }}
@@ -298,6 +302,21 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      # Octavia certificates must exist in the Kayobe environment before
+      # service deploy, which mirrors them into the Kolla configuration.
+      - name: Generate Octavia certificates
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/kolla-ansible-run.sh \
+            octavia-certificates \
+            -ke node_custom_config=/stack/kayobe-automation-env/src/kayobe-config/etc/kayobe/environments/$KAYOBE_ENVIRONMENT/kolla/config
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_OCTAVIA == 'true' }}
+
       - name: Pull container images
         run: |
           # Try up to 3 times to pull container images.
@@ -317,6 +336,7 @@ jobs:
           exit 1
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        shell: /usr/bin/bash {0}
 
       - name: Service deploy
         run: |
@@ -327,6 +347,19 @@ jobs:
             /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/overcloud-service-deploy.sh
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+
+      # Needs a running Glance, and the octavia-openrc.sh that service deploy
+      # writes as its final step.
+      - name: Register Octavia amphora image
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            bash -c 'source /stack/kayobe-automation-env/src/kayobe-config/etc/kolla/octavia-openrc.sh && /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh etc/kayobe/ansible/maintenance/octavia-amphora-image-register.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_OCTAVIA == 'true' }}
 
       - name: Configure aio resources
         run: |
@@ -457,6 +490,25 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
 
+      # Uses its own load list, which selects the matching Tempest overrides,
+      # and its own results directory so the RefStack report is not replaced.
+      - name: Octavia Tempest tests
+        id: tempest-octavia
+        run: |
+          mkdir -p tempest-artifacts-octavia
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -v $(pwd)/tempest-artifacts-octavia:/stack/tempest-artifacts-octavia \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            -e KAYOBE_AUTOMATION_TEMPEST_LOADLIST=octavia-smoke \
+            $KAYOBE_IMAGE \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/tempest.sh \
+            -e ansible_user=stack \
+            -e results_path_local=/stack/tempest-artifacts-octavia
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_OCTAVIA == 'true' }}
+
       - name: StackHPC Cloud tests
         id: stackhpc-cloud-tests
         continue-on-error: true
@@ -500,8 +552,9 @@ jobs:
           path: |
             diagnostics/
             tempest-artifacts/
+            tempest-artifacts-octavia/
             sct-results/
-        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
+        if: ${{ !cancelled() && (steps.tempest.outcome == 'success' || steps.tempest-octavia.outcome == 'success' || steps.stackhpc-cloud-tests.outcome == 'success' || steps.diagnostics.outcome == 'success') }}
 
       - name: Fail if any tests failed
         run: |
@@ -509,6 +562,13 @@ jobs:
           if [[ $(wc -l < tempest-artifacts/failed-tests) -ne 0 ]]; then
             echo "Some Tempest tests failed."
             echo "See HTML results artifact (tempest-artifacts) for details."
+            rc=1
+          fi
+          # Absent unless the Octavia Tempest step ran for this job.
+          if [[ -f tempest-artifacts-octavia/failed-tests ]] &&
+             [[ $(wc -l < tempest-artifacts-octavia/failed-tests) -ne 0 ]]; then
+            echo "Some Octavia Tempest tests failed."
+            echo "See HTML results artifact (tempest-artifacts-octavia) for details."
             rc=1
           fi
           if [[ $(wc -l < sct-results/failed-tests) -ne 0 ]]; then
