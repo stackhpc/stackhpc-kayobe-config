@@ -145,15 +145,14 @@
           register: stackhpc_cloud_host_tests
 
         - name: Get Kayobe environement
-          ansible.builtin.command:
-            cmd: >
-              echo $KAYOBE_ENVIRONMENT
+          command: "echo $KAYOBE_ENVIRONMENT"
           become: true
           register: kayobe_environment
 
         - name: Debug
           ansible.builtin.debug:
             msg: "{{ kayobe_environment }}"
+            
         - name: Run StackHPC Cloud host tests
           ansible.builtin.command:
             cmd: >
