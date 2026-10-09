@@ -40,6 +40,7 @@ jobs:
       aio: ${{ steps.changes.outputs.aio }}
       build-kayobe-image: ${{ steps.changes.outputs.build-kayobe-image }}
       check-tags: ${{ steps.changes.outputs.check-tags }}
+      doca: ${{ steps.changes.output.doca }}
     steps:
       - name: GitHub Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -306,5 +307,23 @@ jobs:
       OS_CLOUD: openstack
       if: ${{ needs.check-changes.outputs.aio == 'true' }}
       upgrade: true
+    secrets: inherit
+    if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}
+
+  doca-baremetal-test:
+    name: DOCA test
+    permissions: {}
+    needs:
+      - check-changes
+      - build-kayobe-image
+    uses: ./.github/workflows/stackhpc-all-in-one.yml
+    with:
+      kayobe_image: ${{ needs.build-kayobe-image.outputs.kayobe_image }}
+      os_distribution: rocky
+      os_release: "10"
+      ssh_username: cloud-user
+      neutron_plugin: ovn
+      OS_CLOUD: openstack
+      if: ${{ needs.check-changes.outputs.doca == 'true' }}
     secrets: inherit
     if: ${{ ! failure() && ! cancelled() && github.repository == 'stackhpc/stackhpc-kayobe-config' }}

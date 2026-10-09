@@ -25,7 +25,7 @@ variable "aio_vm_flavor" {
   type = string
 }
 
-variable "aio_vm_network" {
+variable "aio_vm_networks" {
   type = string
 }
 
@@ -63,8 +63,11 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
   config_drive = true
   user_data    = templatefile("templates/userdata.cfg.tpl", {ssh_public_key = file(var.ssh_public_key)})
   security_groups = ["kayobe-runner"]
-  network {
-    name = var.aio_vm_network
+  dynamic "network" {
+    for_each = var.aio_vm_networks
+    content {
+      name = network.value
+    }
   }
 
   block_device {
