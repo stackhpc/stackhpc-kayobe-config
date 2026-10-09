@@ -85,7 +85,8 @@
       register: image_info
       delegate_to: "{{ groups['controllers'][0] }}"
 
-    - when: image_info.images | selectattr("name", "equalto", "amphora-x64-haproxy") | selectattr("checksum", "equalto", image_checksum.stat.checksum) | list | length == 0
+    - name: Replace old Amphora image with new
+      when: image_info.images | selectattr("name", "equalto", "amphora-x64-haproxy") | selectattr("checksum", "equalto", image_checksum.stat.checksum) | list | length == 0
       block:
         - name: Ensure old Octavia Amphora image is renamed
           vars:
