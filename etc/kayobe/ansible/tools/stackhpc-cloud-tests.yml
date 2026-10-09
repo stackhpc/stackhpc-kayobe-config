@@ -144,6 +144,12 @@
             path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
           register: stackhpc_cloud_host_tests
 
+        - name: Get Kayobe environement
+          ansible.builtin.command:
+            cmd: >
+              "echo $KAYOBE_ENVIRONMENT"
+          register: kayobe_environment
+
         - name: Run StackHPC Cloud host tests
           ansible.builtin.command:
             cmd: >
@@ -153,12 +159,12 @@
               --timeout {{ sct_timeout }}
               -vv
               "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/host"
-              - e KAYOBE_ENVIRONMENT
           environment:
             DOCKER_VERSION_MIN: "{{ sct_docker_version_min }}"
             DOCKER_VERSION_MAX: "{{ sct_docker_version_max }}"
             SELINUX_STATE: "{{ sct_selinux_state }}"
             NTP_SOURCES: "{{ sct_ntp_sources }}"
+            KAYOBE_ENVIRONMENT: "{{ kayobe_environment }}"
           vars:
             # Inclusive min
             sct_docker_version_min: "27.0.0"
