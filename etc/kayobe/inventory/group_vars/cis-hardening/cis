@@ -15,12 +15,16 @@ rhel10cis_auditd_max_log_file_size: 1024
 rhel10cis_auditd_space_left_action: syslog
 rhel10cis_auditd_disk_full_action: syslog
 
+# Prevent system from halting if disk is full
+rhel10cis_auditd_disk_full_action: syslog
+
 # Set an authselect profile name (required)
 rhel10cis_authselect_custom_profile_name: "stack"
 
 # Set crypto policy
+# NOTE: FIPS breaks ed25519 SSH keys
 # NOTE: FUTURE breaks wazuh agent repo metadata download
-rhel10cis_crypto_policy: FIPS
+rhel10cis_crypto_policy: DEFAULT
 
 # Skip configuration of the firewall
 rhel10cis_firewall: None
@@ -31,12 +35,6 @@ rhel10cis_is_router: true
 # The following rules change permissions on all files on every mounted
 # filesystem. We do not want to change /var/lib/docker permissions.
 rhel10cis_no_world_write_adjust: false
-
-# Prevent remounting of /tmp
-rhel10cis_rule_1_1_2_1_1: false
-rhel10cis_rule_1_1_2_1_2: false
-rhel10cis_rule_1_1_2_1_3: false
-rhel10cis_rule_1_1_2_1_4: false
 
 # Skip enabling gpgcheck on all yum repos.
 # This conflicts with our configured doca repos, which need gpgcheck disabled.
@@ -52,6 +50,9 @@ rhel10cis_rule_2_3_2: false
 # Disable configuration of sshd
 # This task doesn't work with the version of ansible we use in 2026.1
 rhel10cis_rule_5_1_4: false
+
+# Avoid duplicate banner (already enabled by pam_motd)
+rhel10cis_rule_5_1_5: false
 
 # Disable requirement for password when using sudo
 rhel10cis_rule_5_2_4: false
