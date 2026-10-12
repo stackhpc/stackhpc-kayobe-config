@@ -140,9 +140,9 @@ cd "$KAYOBE_PATH"
 
 ./dev/overcloud-init.sh
 
-kayobe overcloud service deploy
-
 kayobe overcloud host configure
+
+kayobe overcloud service deploy
 
 # install openstack clients
 
