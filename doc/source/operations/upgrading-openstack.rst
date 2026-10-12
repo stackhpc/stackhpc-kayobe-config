@@ -134,6 +134,16 @@ suggestions:
   generally be found in the documentation of each project. For example, Nova
   policy: https://docs.openstack.org/nova/latest/configuration/policy.html
 
+Valkey Migration
+----------------
+
+.. warning::
+
+   If the deployment uses Redis, it must be migrated to Valkey before starting
+   the upgrade.
+   Please follow the instructions provided in the 2025.1 release
+   `Valkey migration documentation <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2025.1/operations/rocky-10.html#valkey-migration>`__
+
 Preparation
 ===========
 

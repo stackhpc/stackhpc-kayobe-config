@@ -619,6 +619,19 @@ Overcloud migration is HA migration and no downtime is expected.
 
 It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.
 
+.. note::
+
+   Once you are satisfied that OpenBao is operating correctly and have verified
+   that everything is working, remove the old Vault and Consul containers and
+   their associated volumes from the seed node and overcloud controllers.
+
+   .. code-block:: bash
+
+      kayobe seed host command run --become --command "docker rm vault consul"
+      kayobe seed host command run --become --command "docker volume rm vault_file vault_logs consul_data"
+      kayobe overcloud host command run --limit controllers --become --command "docker rm vault consul"
+      kayobe overcloud host command run --limit controllers --become --command "docker volume rm vault_file vault_logs consul_data"
+
 .. _openbao-cluster-fix:
 
 Restoring an OpenBao cluster
