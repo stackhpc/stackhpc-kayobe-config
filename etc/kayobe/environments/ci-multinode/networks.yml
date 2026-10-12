@@ -69,6 +69,9 @@ storage_mgmt_net_name: storage_mgmt
 # hosts
 #cleaning_net_name:
 
+# Name of the network used to manage octavia loadbalancers
+octavia_net_name: lb_mgmt
+
 ###############################################################################
 # Network definitions.
 
@@ -131,6 +134,17 @@ provision_oc_allocation_pool_start: 192.168.33.128
 provision_oc_allocation_pool_end: 192.168.33.254
 provision_oc_vlan: 107
 provision_oc_zone: "provision_oc"
+
+# Octavia load balancer management network. VLAN provider network on physnet1
+# reusing the existing VXLAN mesh
+lb_mgmt_cidr: 192.168.34.0/24
+lb_mgmt_mtu: "{{ ansible_facts.default_ipv4.mtu - 50 }}"
+lb_mgmt_vlan: 108
+lb_mgmt_allocation_pool_start: 192.168.34.3
+lb_mgmt_allocation_pool_end: 192.168.34.30
+lb_mgmt_neutron_allocation_pool_start: 192.168.34.100
+lb_mgmt_neutron_allocation_pool_end: 192.168.34.200
+lb_mgmt_zone: lb-mgmt
 
 # Linux bridge carrying the VXLAN mesh. Without the bridge the
 # host will claim the packet and drop if not addressed to its listener.

@@ -60,6 +60,10 @@ os_release: >-
 stackhpc_write_barbican_role_id_to_file: true
 stackhpc_barbican_role_id_file_path: "/tmp/barbican-role-id"
 
+# Trust store for Kayobe's own playbooks. The Octavia amphora image
+# register playbook cannot verify Glance's TLS certificate without this.
+openstack_cacert: "{{ '/etc/pki/tls/certs/ca-bundle.crt' if os_distribution == 'rocky' else '/etc/ssl/certs/ca-certificates.crt' }}"
+
 # Enable rebooting to update SELinux state
 selinux_do_reboot: true
 
