@@ -103,7 +103,7 @@ RabbitMQ nodes. The problem can appear in the logs as:
 
 A proper fix is still a work in progress. In the meantime, resolve these
 errors using the `RabbitMQ stream replica repair script
-<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__.
+<https://github.com/openstack/kolla-ansible/blob/master/contrib/ops/rabbitmq/rabbitmq-repair-stream-replicas.sh>`__.
 
 After running the script, check the RabbitMQ logs and service dashboards to
 confirm that the errors have stopped.
