@@ -69,20 +69,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-            env.http_proxy=${{ env.http_proxy }}
-            env.https_proxy=${{ env.https_proxy }}
-        # Doesn't like commas: invalid value "127.0.0.1", expecting k=v
-        # env.no_proxy='${{ env.no_proxy }}'
-        env:
-           http_proxy: ${{ inputs.http_proxy }}
-           https_proxy: ${{ inputs.https_proxy }}
-           no_proxy: ${{ inputs.no_proxy }}
-
       # Setting KAYOBE_USER_UID and KAYOBE_USER_GID to 1001 to match docker's defaults
       # so that docker can run as a privileged user within the Kayobe image.
       - name: Build and push Docker image
@@ -100,3 +86,5 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          allow:
+            - security.insecure
