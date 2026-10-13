@@ -286,6 +286,7 @@ jobs:
       - name: Run growroot
         run: |
           docker run -t --rm \
+            --security-opt apparmor=unconfined --security-opt seccomp=unconfined \
             -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
             -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
             ${{ steps.kayobe_image.outputs.kayobe_image }} \
