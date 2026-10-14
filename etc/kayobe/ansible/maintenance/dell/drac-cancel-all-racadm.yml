@@ -1,0 +1,6 @@
+---
+- hosts: baremetal-compute,overcloud
+  gather_facts: false
+  tasks:
+    - command: /opt/dell/srvadmin/bin/idracadm7 -r {{ ipmi_address }} -u root -p {{ secrets_ipmi_password }}  jobqueue delete -i JID_CLEARALL_FORCE
+      delegate_to: localhost
