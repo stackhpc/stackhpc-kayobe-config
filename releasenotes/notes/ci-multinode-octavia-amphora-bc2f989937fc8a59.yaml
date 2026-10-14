@@ -13,6 +13,12 @@ features:
     ``kvm`` unless ``kolla_enable_ovn`` is ``true``, because amphorae are
     effectively unusable (tests fail on timeouts due to slowness) under QEMU emulation during Tempest runs. Hosts
     therefore require nested virtualisation when the Amphora driver is in use.
+  - |
+    The Amphora provider driver in the ``ci-multinode`` environment is
+    supported on x86_64 hosts only, because the amphora image is built for
+    x86_64, and ``kayobe overcloud host configure`` will fail with an
+    explanatory message otherwise. Upgrades have not been tested with the
+    Amphora driver.
 upgrade:
   - |
     The VXLAN mesh device in the ``ci-multinode`` environment is now enslaved to
@@ -21,5 +27,5 @@ upgrade:
     pair from the bridge and the host and Neutron can now both receive a copy of
     each frame. A VLAN subinterface on a bare mesh device (the previous implementation) would claim (and then drop) frames before
     Open vSwitch can see them, which prevented amphorae from reaching the
-    Octavia control plane. This was prominent on amphorae boot up when it could not reach 
+    Octavia control plane. This was prominent on amphorae boot up when it could not reach
     the DHCP server.
