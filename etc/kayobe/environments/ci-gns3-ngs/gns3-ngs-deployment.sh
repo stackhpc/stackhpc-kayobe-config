@@ -128,6 +128,12 @@ sudo ip link set dev p-tk00-0-ovs master brgns3
 
 mkdir -p "$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars/"
 
+hosts_file= $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/hosts
+host="switch1"
+if ! awk '/^\[ctl-switches\]/{flag=1;next}/^\[/{flag=0} flag && $0 == "'"$host"'"' "$groups_file" | grep -q "$host"; then
+    sed -i "/^\[ctl-switches\]$/a ${host}" "$hosts_file"
+fi
+
 cd "$GNS3_ROLE_PATH"
 
 # run gns3 role
