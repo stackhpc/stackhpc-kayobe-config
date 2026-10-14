@@ -1,0 +1,25 @@
+---
+features:
+  - |
+    The ``ci-multinode`` environment now supports the Octavia Amphora provider
+    driver when ``kolla_enable_ovn`` is ``false``. The load balancer management
+    network is a VLAN provider network on the existing ``physnet1``, carried by
+    the VXLAN mesh.
+    ``tempest-ci-multinode-octavia.overrides.conf`` and
+    ``tempest-ci-multinode-octavia-smoke.overrides.conf`` are provided for
+    running the ``octavia`` and ``octavia-smoke`` Tempest load lists against it.
+  - |
+    The ``ci-multinode`` environment now sets ``nova_compute_virt_type`` to
+    ``kvm`` unless ``kolla_enable_ovn`` is ``true``, because amphorae are
+    effectively unusable (tests fail on timeouts due to slowness) under QEMU emulation during Tempest runs. Hosts
+    therefore require nested virtualisation when the Amphora driver is in use.
+upgrade:
+  - |
+    The VXLAN mesh device in the ``ci-multinode`` environment is now enslaved to
+    a Linux bridge, ``br-vxlan``, and every VLAN subinterface has moved from the
+    mesh device onto that bridge. This was the key change since Open vSwitch reaches the mesh through a veth
+    pair from the bridge and the host and Neutron can now both receive a copy of
+    each frame. A VLAN subinterface on a bare mesh device (the previous implementation) would claim (and then drop) frames before
+    Open vSwitch can see them, which prevented amphorae from reaching the
+    Octavia control plane. This was prominent on amphorae boot up when it could not reach 
+    the DHCP server.
