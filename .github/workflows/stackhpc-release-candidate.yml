@@ -1,0 +1,72 @@
+name: Create release candidate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  branch-release-candidate:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Propose release candidate
+    steps:
+      - name: Fail if branch is not dev
+        if: ${{ !startsWith(github.ref_name, 'stackhpc-dev') }}
+        run: |
+          echo "This workflow should not be triggered on non-development branches"
+          exit 1
+
+      - name: Set branch names
+        id: branches
+        env:
+          DEV: ${{ github.ref_name }}
+        run: |
+          release="${DEV#stackhpc-dev/}"
+          echo "dev=${DEV}" >> "$GITHUB_OUTPUT"
+          echo "stable=stackhpc/${release}" >> "$GITHUB_OUTPUT"
+          echo "rc=stackhpc-rc/${release}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Kayobe-config
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ steps.outputs.branches.stable }}
+          fetch-depth: 0
+          path: src/kayobe-config
+
+      - name: Set up branch and Git config
+        run: |
+          git checkout -b ${{ steps.outputs.branches.rc }}
+          git config user.name "stackhpc-ci"
+          git config user.email "22933334+stackhpc-ci@users.noreply.github.com"
+        working-directory: src/kayobe-config
+
+      - name: Fail if rc has commits that are not in stable
+        run: |
+          if git rev-parse --verify --quiet "origin/${{ steps.outputs.branches.rc }}"; then
+            extra=$(git rev-list --count "HEAD..origin/${{ steps.outputs.branches.rc }}")
+            if [ "$extra" -gt 0 ]; then
+              echo "${{ steps.outputs.branches.rc }} has $extra commit(s) not in ${{ steps.outputs.branches.stable }}"
+              exit 1
+            fi
+          fi
+        working-directory: src/kayobe-config
+
+      - name: Ensure release candidate branch exists
+        run: git push origin ${{ steps.outputs.branches.rc }}
+        working-directory: src/kayobe-config
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: src/kayobe-config
+        run: |
+          EXISTING_PR=$(gh pr list --head "${{ steps.outputs.branches.dev }}" --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr close $EXISTING_PR
+          fi
+          gh pr create \
+            --base "${{ steps.outputs.branches.rc }}" \
+            --head "${{ steps.outputs.branches.dev }}" \
+            --title "(automated) Release candidate for OpenStack ${{ steps.outputs.branches.stable }}" \
+            --label "automated" \
