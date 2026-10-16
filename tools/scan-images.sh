@@ -93,9 +93,13 @@ generate_summary_csv() {
 
   # NOTE: Grype reports matches of all severities, so filter on HIGH and
   # CRITICAL here.
+  # NOTE: Ignore kernel vulnerabilities, since containers use the host kernel.
+  # This includes kernel images found by Syft (e.g. /usr/lib/modules/*/vmlinuz),
+  # which are matched against upstream kernel versions, ignoring backports.
   jq -r '.matches
       | map(select(.vulnerability.severity | test("^(high|critical)$"; "i")))
-      | map(select(.artifact.name | test("^kernel|^linux-libc-dev") | not ))
+      | map(select(.artifact.name | test("^kernel|^linux-kernel|^linux-libc-dev") | not ))
+      | map(select(.artifact.type // "" | test("^linux-kernel") | not ))
       | group_by(.vulnerability.id)
       | map(
         [
