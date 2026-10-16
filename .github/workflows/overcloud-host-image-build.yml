@@ -550,7 +550,9 @@ jobs:
   overcloud-host-image-build-aarch64:
     name: Build aarch64 overcloud host images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config' && inputs.runner_env == 'SMS Lab' && (inputs.rocky9-aarch64 || inputs.rocky10-aarch64)
-    environment: ${{ inputs.runner_env }}
+    environment:
+      name: ${{ inputs.runner_env }}
+      deployment: false
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
