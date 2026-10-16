@@ -9,5 +9,25 @@
     ansible_python_interpreter: /usr/bin/python3
     # Work around no known_hosts entry on first boot.
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
+  pre_tasks:
+    # stackhpc.vxlan connects VXLAN to a master when an interface
+    # is of the 'bridge' type, but Network Manager cannot attach the device
+    # before the bridge exists. Kayobe creates the bridge later, so we will create it here
+    # and have Kayobe overwrite it later as needed
+    - name: Get existing NetworkManager connections
+      ansible.builtin.command: nmcli -g NAME connection show
+      become: true
+      changed_when: false
+      register: vxlan_nm_connections
+
+    - name: Ensure a bridge exists for each VXLAN interface that needs one
+      ansible.builtin.command:
+        cmd: >-
+          nmcli connection add type bridge
+          con-name {{ item.bridge }} ifname {{ item.bridge }}
+          stp no ipv4.method disabled ipv6.method disabled
+      become: true
+      loop: "{{ vxlan_interfaces | selectattr('bridge', 'defined') | list }}"
+      when: item.bridge not in vxlan_nm_connections.stdout_lines
   roles:
     - role: stackhpc.vxlan
