@@ -21,7 +21,7 @@ rabbitmq_enable_tls: "yes"
 # denominator. However, amphorae are unusable under emulation in terms of time
 # during tempest testing and Octavia times out waiting for them to spin up
 # we require KVM when the amphora driver is in use
-nova_compute_virt_type: "{{ 'qemu' if kolla_enable_ovn | bool else 'kvm' }}"
+nova_compute_virt_type: "{{ 'kvm' if octavia_amphora_driver_enabled | bool else 'qemu' }}"
 
 # Reduce the control plane's memory footprint by limiting the number of worker
 # processes to two per-service when running in a VM.
@@ -48,15 +48,15 @@ opensearch_heap_size: 1g
 # apply, which sets amphora in octavia_provider_drivers. That
 # makes it true for the amphora driver and false for the OVN driver as needed
 
-octavia_provider_drivers: "{{ 'ovn:OVN provider' if kolla_enable_ovn | bool else 'amphora:Amphora provider' }}"
-octavia_provider_agents: "{{ 'ovn' if kolla_enable_ovn | bool else 'amphora_agent' }}"
+octavia_provider_drivers: "{{ 'amphora:Amphora provider' if octavia_amphora_driver_enabled | bool else 'ovn:OVN provider' }}"
+octavia_provider_agents: "{{ 'amphora_agent' if octavia_amphora_driver_enabled | bool else 'ovn' }}"
 
 # Host interface the health manager binds to. octavia.conf references this
 # unconditionally, so fall back to the internal network on OVN, which is what
 # kolla's api_interface default resolves to.
-octavia_network_interface: "{{ (octavia_net_name if not kolla_enable_ovn | bool else internal_net_name) | net_interface(groups['controllers'][0]) }}"
+octavia_network_interface: "{{ (octavia_net_name if octavia_amphora_driver_enabled | bool else internal_net_name) | net_interface(groups['controllers'][0]) }}"
 
-# Management network registered by octavia_auto_configure, so only on OVS.
+# Management network registered by octavia_auto_configure, so only with amphora.
 octavia_amp_network:
   name: lb-mgmt-net
   provider_network_type: vlan

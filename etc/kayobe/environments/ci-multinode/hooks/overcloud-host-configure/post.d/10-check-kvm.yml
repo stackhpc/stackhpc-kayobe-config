@@ -9,15 +9,15 @@
         fail_msg: >-
           The Octavia amphora driver is only supported on x86_64 hosts, because
           the amphora image is built for x86_64. This host is
-          {{ ansible_facts.architecture }}. Set kolla_enable_ovn to true to
-          deploy with the OVN provider driver instead.
-      when: not kolla_enable_ovn | bool
+          {{ ansible_facts.architecture }}. Set octavia_amphora_driver_enabled
+          to false to deploy with the OVN provider driver instead.
+      when: octavia_amphora_driver_enabled | bool
 
     - name: Check whether /dev/kvm exists
       stat:
         path: /dev/kvm
       register: kvm_device
-      when: not kolla_enable_ovn | bool
+      when: octavia_amphora_driver_enabled | bool
 
     - name: Assert that KVM is available
       assert:
@@ -26,5 +26,6 @@
           /dev/kvm is not present. The ci-multinode environment uses KVM when
           the Octavia amphora driver is in use, because amphorae are unusable
           under emulation. Enable nested virtualisation on this host, or set
-          kolla_enable_ovn to true to deploy with the OVN provider driver.
-      when: not kolla_enable_ovn | bool
+          octavia_amphora_driver_enabled to false to deploy with the OVN
+          provider driver.
+      when: octavia_amphora_driver_enabled | bool

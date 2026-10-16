@@ -2,17 +2,20 @@
 features:
   - |
     The ``ci-multinode`` environment now supports the Octavia Amphora provider
-    driver when ``kolla_enable_ovn`` is ``false``. The load balancer management
-    network is a VLAN provider network on the existing ``physnet1``, carried by
-    the VXLAN mesh.
-    ``tempest-ci-multinode-octavia.overrides.conf`` and
+    driver. It is opt-in through ``octavia_amphora_driver_enabled``, which
+    defaults to ``false`` because the cloud hosting the CI jobs (Leaf Cloud for now) does not provide
+    nested virtualisation. When it is ``false`` the environment continues to use
+    the OVN provider driver as before. The load balancer management network is a
+    VLAN provider network on the existing ``physnet1``, carried by the VXLAN
+    mesh. ``tempest-ci-multinode-octavia.overrides.conf`` and
     ``tempest-ci-multinode-octavia-smoke.overrides.conf`` are provided for
     running the ``octavia`` and ``octavia-smoke`` Tempest load lists against it.
   - |
-    The ``ci-multinode`` environment now sets ``nova_compute_virt_type`` to
-    ``kvm`` unless ``kolla_enable_ovn`` is ``true``, because amphorae are
-    effectively unusable (tests fail on timeouts due to slowness) under QEMU emulation during Tempest runs. Hosts
-    therefore require nested virtualisation when the Amphora driver is in use.
+    The ``ci-multinode`` environment sets ``nova_compute_virt_type`` to ``kvm``
+    when ``octavia_amphora_driver_enabled`` is ``true``, because amphorae are
+    effectively unusable (tests fail on timeouts due to slowness) under QEMU
+    emulation during Tempest runs. Hosts therefore require nested virtualisation
+    when the Amphora driver is in use.
   - |
     The Amphora provider driver in the ``ci-multinode`` environment is
     supported on x86_64 hosts only, because the amphora image is built for
