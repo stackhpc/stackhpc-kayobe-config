@@ -1,0 +1,19 @@
+---
+###############################################################################
+# Local Pulp server configuration
+
+# Whether to enable TLS for Pulp.
+pulp_enable_tls: true
+
+# Path to a TLS certificate to use when TLS is enabled.
+pulp_cert_path: "{{ kayobe_env_config_path ~ '/pulp/certificates/pulp.crt' if pulp_enable_tls | bool else '' }}"
+
+# Path to a TLS key to use when TLS is enabled.
+pulp_key_path: "{{ kayobe_env_config_path ~ '/pulp/certificates/pulp.key' if pulp_enable_tls | bool else '' }}"
+
+###############################################################################
+# Local Pulp access credentials
+
+# Credentials for non-admin user within Pulp.
+pulp_stack_username: stack
+pulp_stack_password: "{{ notdefined | mandatory(msg='Please set a password for the stack pulp user') }}"
