@@ -14,11 +14,22 @@
 #   - CVE-2023-31047
 global_allowed_vulnerabilities:
   - CVE-2026-102268
+  # Go os.Root junction traversal, which only affects Windows.
+  - CVE-2026-56857
+  # Go HTTP/2 server connection flow control bypass (DoS). Remove once
+  # upstream binaries are built with Go 1.26.9+ and golang.org/x/net 0.60.0+.
+  - CVE-2026-78663
 
+# CVE-2024-24790 and CVE-2025-22871 are in the Ubuntu podman and buildah
+# packages, which are not used to serve HTTP.
 bifrost_base_allowed_vulnerabilities:
+  - CVE-2024-24790
+  - CVE-2025-22871
   - CVE-2025-68121
 
 bifrost_deploy_allowed_vulnerabilities:
+  - CVE-2024-24790
+  - CVE-2025-22871
   - CVE-2025-68121
 
 etcd_allowed_vulnerabilities:
@@ -40,8 +51,13 @@ letsencrypt_lego_allowed_vulnerabilities:
 opensearch_allowed_vulnerabilities:
   - CVE-2026-75595
 
+# CVE-2026-106445 and CVE-2026-106446 are in handlebars, and require
+# compiling untrusted templates with allowProtoMethodsByDefault, or untrusted
+# ASTs. User templates are compiled from strings with kbn-handlebars instead.
 opensearch_dashboards_allowed_vulnerabilities:
   - CVE-2026-59873
+  - CVE-2026-106445
+  - CVE-2026-106446
 
 prometheus_alertmanager_allowed_vulnerabilities:
   - CVE-2026-33186
@@ -63,8 +79,11 @@ prometheus_libvirt_exporter_allowed_vulnerabilities:
 prometheus_memcached_exporter_allowed_vulnerabilities:
   - CVE-2025-68121
 
+# CVE-2025-22871 requires a proxy in front of the server that accepts bare LF
+# in chunk extensions. Exporters are scraped directly by Prometheus.
 prometheus_mtail_allowed_vulnerabilities:
   - CVE-2024-24790
+  - CVE-2025-22871
   - CVE-2025-68121
   - CVE-2026-33186
 
@@ -76,9 +95,11 @@ prometheus_node_exporter_allowed_vulnerabilities:
 
 prometheus_openstack_exporter_allowed_vulnerabilities:
   - CVE-2024-24790
+  - CVE-2025-22871
   - CVE-2025-68121
 
 prometheus_openstack_network_exporter_allowed_vulnerabilities:
+  - CVE-2025-22871
   - CVE-2025-68121
 
 ###############################################################################
