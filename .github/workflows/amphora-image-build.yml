@@ -31,7 +31,9 @@ jobs:
   amphora-image-build:
     name: Build Amphora image
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: ${{ inputs.runner_env }}
+    environment:
+      name: ${{ inputs.runner_env }}
+      deployment: false
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
