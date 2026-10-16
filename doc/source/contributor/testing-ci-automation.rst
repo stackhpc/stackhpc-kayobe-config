@@ -234,7 +234,9 @@ Ark credentials into the built container images.
 Once built, images are scanned for vulnerabilities using `Grype
 <https://github.com/anchore/grype>`_. If the ``sbom`` input is true, an SBOM is
 first generated for each image using `Syft <https://github.com/anchore/syft>`_,
-and the SBOM is scanned instead. Images are scanned in parallel, four at a
+and the SBOM is scanned instead. The SBOM uses the Syft JSON format, which
+preserves the function symbols captured from Go binaries, so that Grype only
+reports Go vulnerabilities in code compiled into the binary. Images are scanned in parallel, four at a
 time by default; this may be changed by setting ``SCAN_PARALLELISM`` for the
 scan step. Any critical vulnerabilities will break the
 build, unless the ``push-critical`` input is true. Vulnerabilities may be

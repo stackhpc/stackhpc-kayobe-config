@@ -131,10 +131,15 @@ generate_sbom() {
   local image="$3"
   # NOTE: Omit files owned by packages from the SBOM. They make up most of its
   # size, and are not needed for vulnerability scanning.
+  # NOTE: Capture function symbols from Go binaries for the standard library
+  # and golang.org/x/ modules, so that Grype only matches vulnerabilities in
+  # code that is compiled into the binary, rather than any use of the module.
+  # The Syft JSON format is required, since SPDX does not preserve the symbols.
   if ! SYFT_FILE_METADATA_SELECTION=none \
        SYFT_RELATIONSHIPS_PACKAGE_FILE_OWNERSHIP=false \
+       SYFT_GOLANG_CAPTURE_SYMBOLS=extended-stdlib \
        syft "docker:$image" \
-          --output spdx-json \
+          --output syft-json \
           -v \
           > "$sbom" 2> "$sbom.log" || [ ! -s "$sbom" ]; then
     # Print the error in a single write to avoid interleaving with output
