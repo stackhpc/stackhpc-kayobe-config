@@ -100,7 +100,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.head_ref || github.ref_name }}
           cache-to: type=inline
 
       - name: Send message to Slack via Workflow Builder
