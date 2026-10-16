@@ -477,6 +477,61 @@ stackhpc_pulp_rpm_repos:
     base_path: "docker-ce/centos/10/aarch64/stable/"
     required: "{{ stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
 
+  - name: Fluentd LTS 6 for RHEL 10
+    url: "{{ stackhpc_release_pulp_content_url }}/fluentd/lts/6/redhat/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_fluent_6_version }}"
+    distribution_name: "rhel-10-fluentd-lts-6-"
+    base_path: "fluentd/lts/6/redhat/10/x86_64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Fluentd LTS 6 for RHEL 10 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/fluentd/lts/6/redhat/10/aarch64/{{ stackhpc_pulp_repo_rhel_10_fluent_6_aarch64_version }}"
+    distribution_name: "rhel-10-fluentd-lts-6-aarch64-"
+    base_path: "fluentd/lts/6/redhat/10/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: Grafana
+    url: "{{ stackhpc_release_pulp_content_url }}/grafana/oss/rpm/{{ stackhpc_pulp_repo_grafana_version }}"
+    distribution_name: "grafana-"
+    base_path: "grafana/oss/rpm/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: OpenSearch 3.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch/3.x/yum/{{ stackhpc_pulp_repo_opensearch_3_x_version }}"
+    distribution_name: "opensearch-3-x-"
+    base_path: "opensearch/3.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: OpenSearch Dashboards 3.x
+    url: "{{ stackhpc_release_pulp_content_url }}/opensearch-dashboards/3.x/yum/{{ stackhpc_pulp_repo_opensearch_dashboards_3_x_version }}"
+    distribution_name: "opensearch-dashboards-3-x-"
+    base_path: "opensearch-dashboards/3.x/yum/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  - name: ProxySQL 3.0 for AlmaLinux 10
+    url: "{{ stackhpc_release_pulp_content_url }}/ProxySQL/proxysql-3.0.x/almalinux/10/{{ stackhpc_pulp_repo_almalinux_10_proxysql_3_0_version }}"
+    distribution_name: "almalinux-10-proxysql-3.0-"
+    base_path: "ProxySQL/proxysql-3.0.x/almalinux/10/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
+  # NOTE: RabbitMQ repositories are still el9 upstream.
+  - name: RabbitMQ - Erlang - RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang/el/9/x86_64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version }}"
+    distribution_name: "rhel9-rabbitmq-erlang-"
+    base_path: "rabbitmq/erlang/el/9/x86_64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: RabbitMQ - Erlang 27 - RHEL 9 - aarch64
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/erlang-27/el/9/aarch64/{{ stackhpc_pulp_repo_rhel9_rabbitmq_erlang_27_aarch64_version }}"
+    distribution_name: "rhel9-rabbitmq-erlang-27-aarch64-"
+    base_path: "rabbitmq/erlang-27/el/9/aarch64/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool and 'aarch64' in stackhpc_pulp_rpm_architectures }}"
+
+  - name: RabbitMQ - Server - RHEL 9
+    url: "{{ stackhpc_release_pulp_content_url }}/rabbitmq/rabbitmq-server/el/9/noarch/{{ stackhpc_pulp_repo_rhel9_rabbitmq_server_version }}"
+    distribution_name: "rhel9-rabbitmq-server-"
+    base_path: "rabbitmq/rabbitmq-server/el/9/noarch/"
+    required: "{{ stackhpc_pulp_sync_for_local_container_build | bool and stackhpc_pulp_sync_el_10 | bool }}"
+
   # Additional RHEL 10 repositories
   - name: MariaDB 11.4 for RHEL 10
     url: "{{ stackhpc_release_pulp_content_url }}/mariadb-11.4/yum/rhel/10/x86_64/{{ stackhpc_pulp_repo_rhel_10_mariadb_11_4_version }}"
