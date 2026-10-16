@@ -1,0 +1,23 @@
+[Unit]
+Description=Early configuration for Mellanox SR-IOV and VF-LAG
+{% for nic in vflag_pfs %}
+Requires=sys-subsystem-net-devices-{{ nic }}.device
+After=sys-subsystem-net-devices-{{ nic }}.device
+{% endfor %}
+Requires=network-pre.target
+Before=network-pre.target
+{% if ansible_facts.os_family == "Debian" %}
+Requires=systemd-networkd.service
+Before=systemd-networkd.service
+{% endif %}
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mlnx-vflag-early
+RemainAfterExit=yes
+
+[Install]
+WantedBy=network-pre.target
+{% if ansible_facts.os_family == "Debian" %}
+WantedBy=systemd-networkd.service
+{% endif %}

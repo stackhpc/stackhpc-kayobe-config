@@ -1,0 +1,138 @@
+---
+# Setup of VF-LAG systemd configuration.
+# This playbook should execute after kayobe overcloud host configure has completed.
+
+- name: Enable SRIOV
+  hosts: vflag
+  tags:
+    - sriov
+  handlers:
+    - name: Reboot
+      ansible.builtin.set_fact:
+        kayobe_needs_reboot: true
+  tasks:
+    # NOTE: define sriov_devices in group_vars
+    - name: Include SRIOV role
+      ansible.builtin.include_role:
+        name: stackhpc.linux.sriov
+      vars:
+        sriov_install_enabled: true
+      when:
+        - sriov_devices is defined
+        - sriov_devices | length > 0
+
+- name: Prepare hosts for VF-LAG support
+  hosts: vflag
+  tags:
+    - vflag
+  vars:
+    # This playbook will execute after nodes are deployed
+    # and before overcloud host configure - we can't assume
+    # users and venvs exist.
+    ansible_user: "{{ ansible_user }}"
+    ansible_python_interpreter: "/usr/bin/python3"
+  tasks:
+    # TC offload requires kernel-modules-extra (act_ct module)
+    - name: Ensure kernel-modules-extra is installed
+      ansible.builtin.package:
+        name: kernel-modules-extra
+        state: present
+      become: true
+      when: ansible_facts.os_family == "RedHat"
+
+    # /etc/sysconfig is a RedHat convention - create equivalent here
+    - name: Create /etc/sysconfig for Ubuntu
+      become: true
+      ansible.builtin.file:
+        path: /etc/sysconfig
+        owner: "root"
+        group: "root"
+        mode: 0755
+        state: directory
+      when: ansible_facts.os_family == "Debian"
+
+    # Write /etc/sysconfig/sriov configuration to match this host
+    - name: Define parameters in /etc/sysconfig/sriov
+      ansible.builtin.template:
+        src: "sysconfig-sriov.j2"
+        dest: "/etc/sysconfig/sriov"
+        owner: "root"
+        group: "root"
+        mode: 0755
+      become: true
+      notify: Reboot and wait
+
+    - name: Transfer VF-LAG helper scripts to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: 0755
+      become: true
+      with_items:
+        - "mlnx-vflag-early"
+        - "mlnx-vflag-final"
+      notify: Reboot and wait
+
+    - name: Transfer VF-LAG systemd units to /etc/systemd/system
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: 0644
+      become: true
+      with_items:
+        - "mlnx-vflag-early.service"
+        - "mlnx-vflag-final.service"
+      notify: Reboot and wait
+
+    - name: Enable VF-LAG systemd units
+      ansible.builtin.systemd:
+        daemon_reload: true
+        name: "{{ item }}"
+        enabled: true
+      become: true
+      with_items:
+        - "mlnx-vflag-early.service"
+        - "mlnx-vflag-final.service"
+      notify: Reboot and wait
+
+    # Purge some stuff that OFED typically installs
+    # which may race with the setup we perform.
+
+    - name: Disable OFED openibd service
+      ansible.builtin.systemd:
+        name: "openibd.service"
+        enabled: false
+        state: "stopped"
+      become: true
+
+    - name: Move the openib config file
+      ansible.builtin.command: "mv /etc/infiniband/openib.cf /etc/infiniband/openib.cf-"
+      args:
+        removes: "/etc/infiniband/openib.cf"
+        creates: "/etc/infiniband/openib.cf-"
+      become: true
+
+    # There appears to be an issue where the reciprocal symlink from a
+    # WantedBy= to a Wants= doesn't get created.  Explicitly ensure it exists.
+    - name: Ensure the .wants symlink exists (Ubuntu)
+      when: ansible_facts.os_family == "Debian"
+      become: true
+      block:
+        - name: Ensure the .wants directory exists
+          ansible.builtin.file:
+            path: "/etc/systemd/system/systemd-networkd.service.wants"
+            state: "directory"
+        - name: Ensure the .wants symlink exists
+          ansible.builtin.file:
+            path: "/etc/systemd/system/systemd-networkd.service.wants/mlnx-vflag-early.service"
+            src: "/etc/systemd/system/mlnx-vflag-early.service"
+            state: "link"
+
+  handlers:
+    - name: Reboot and wait
+      ansible.builtin.set_fact:
+        kayobe_needs_reboot: true
