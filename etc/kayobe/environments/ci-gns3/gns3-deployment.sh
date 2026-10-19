@@ -9,8 +9,8 @@
 set -eux
 
 BASE_PATH=~
-KAYOBE_BRANCH=master
-KAYOBE_CONFIG_REF=${KAYOBE_CONFIG_REF:-master}
+KAYOBE_BRANCH=stackhpc/2026.1
+KAYOBE_CONFIG_REF=${KAYOBE_CONFIG_REF:-stackhpc/2026.1}
 KAYOBE_ENVIRONMENT=${KAYOBE_ENVIRONMENT:-ci-gns3}
 KAYOBE_PATH=$BASE_PATH/src/kayobe
 KAYOBE_CONFIG_ROOT=$BASE_PATH/src/kayobe-config
@@ -34,7 +34,7 @@ mkdir -p "$BASE_PATH/src"
 # Clone repositories.
 if [[ ! -d $KAYOBE_PATH ]]; then
   echo "CLONING KAYOBE REPO..."
-  git clone https://github.com/openstack/kayobe.git "$KAYOBE_PATH" -b "$KAYOBE_BRANCH"
+  git clone https://github.com/stackhpc/kayobe.git "$KAYOBE_PATH" -b "$KAYOBE_BRANCH"
   echo "KAYOBE REPO CLONED"
 fi
 
