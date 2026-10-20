@@ -43,10 +43,6 @@ neutron_dns_domain: "{{ root_domain }}."
 opensearch_heap_size: 1g
 
 # Octavia load balancer configuration.
-#
-# octavia_auto_configure is not set since removing it lets kolla's own default
-# apply, which sets amphora in octavia_provider_drivers. That
-# makes it true for the amphora driver and false for the OVN driver as needed
 
 octavia_provider_drivers: "{{ 'amphora:Amphora provider' if octavia_amphora_driver_enabled | bool else 'ovn:OVN provider' }}"
 octavia_provider_agents: "{{ 'amphora_agent' if octavia_amphora_driver_enabled | bool else 'ovn' }}"
