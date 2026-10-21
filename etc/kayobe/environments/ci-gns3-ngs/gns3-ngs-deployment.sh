@@ -114,6 +114,8 @@ kayobe overcloud host configure
 # Deploy the overcloud services
 kayobe overcloud service deploy
 
+cd "$KAYOBE_PATH"
+
 #Tenks install
 echo "INSTALLING TENKS..."
 if [[ ! -d "$TENKS_PATH" ]]; then
