@@ -1,0 +1,95 @@
+---
+# Kayobe network configuration.
+
+###############################################################################
+# Network role to network mappings.
+
+# Name of the network used by the seed to manage the bare metal overcloud
+# hosts via their out-of-band management controllers.
+oob_oc_net_name: "power_mgmt_net"
+
+# Name of the network used by the seed to provision the bare metal overcloud
+# hosts.
+provision_oc_net_name: provision_ctrl_net
+
+###############################################################################
+# Network definitions.
+
+hs_bond_mtu: 9150
+
+### System networks ###
+
+# Power/Management network IP information.
+power_mgmt_net_cidr: "10.128.0.0/24"
+power_mgmt_net_allocation_pool_start: "10.128.0.10"
+power_mgmt_net_allocation_pool_end: "10.128.0.250"
+power_mgmt_net_switch_vlan: 2
+power_mgmt_net_mtu: 1500
+
+# External/Admin network IP information.
+# This network is used for management access.
+external_admin_net_cidr: "10.128.5.0/24"
+external_admin_net_allocation_pool_start: "10.128.5.5"
+external_admin_net_allocation_pool_end: "10.128.5.9"
+external_admin_net_switch_vlan: 7
+external_admin_net_mtu: 1500
+external_admin_net_gateway: "10.128.5.250"
+
+# Provisioning/Control network IP information.
+provision_ctrl_net_cidr: "10.128.1.0/24"
+provision_ctrl_net_allocation_pool_start: "10.128.1.10"
+provision_ctrl_net_allocation_pool_end: "10.128.1.127"
+provision_ctrl_net_inspection_allocation_pool_start: "10.128.1.128"
+provision_ctrl_net_inspection_allocation_pool_end: "10.128.1.250"
+provision_ctrl_net_switch_vlan: 3
+provision_ctrl_net_mtu: 1500
+
+### Production networks ###
+
+# Internal API network IP information.
+production_internal_net_vip_address: "10.128.2.2"
+production_internal_net_cidr: "10.128.2.0/24"
+production_internal_net_allocation_pool_start: "10.128.2.10"
+production_internal_net_allocation_pool_end: "10.128.2.250"
+production_internal_net_vlan: 4
+production_internal_net_mtu: 9000
+
+# Storage network IP information.
+production_storage_net_cidr: "10.128.3.0/24"
+production_storage_net_allocation_pool_start: "10.128.3.10"
+production_storage_net_allocation_pool_end: "10.128.3.250"
+production_storage_net_vlan: 5
+production_storage_net_mtu: "{{ hs_bond_mtu }}"
+#production_storage_net_gateway: "10.128.3.254"
+
+# Storage Management network IP information.
+production_storage_mgmt_net_cidr: "10.128.4.0/24"
+production_storage_mgmt_net_allocation_pool_start: "10.128.4.10"
+production_storage_mgmt_net_allocation_pool_end: "10.128.4.250"
+production_storage_mgmt_net_vlan: 6
+production_storage_mgmt_net_mtu: 9000
+
+### Staging networks ###
+
+# Internal API network IP information.
+staging_internal_net_vip_address: "10.128.10.2"
+staging_internal_net_cidr: "10.128.10.0/24"
+staging_internal_net_allocation_pool_start: "10.128.10.10"
+staging_internal_net_allocation_pool_end: "10.128.10.150"
+staging_internal_net_vlan: 104
+staging_internal_net_mtu: 9000
+
+# Storage network IP information.
+staging_storage_net_cidr: "10.128.11.0/24"
+staging_storage_net_allocation_pool_start: "10.128.11.10"
+staging_storage_net_allocation_pool_end: "10.128.11.250"
+staging_storage_net_vlan: 105
+staging_storage_net_mtu: "{{ hs_bond_mtu }}"
+#staging_storage_net_gateway: "10.128.11.254"
+
+# Storage Management network IP information.
+staging_storage_mgmt_net_cidr: "10.128.12.0/24"
+staging_storage_mgmt_net_allocation_pool_start: "10.128.12.10"
+staging_storage_mgmt_net_allocation_pool_end: "10.128.12.250"
+staging_storage_mgmt_net_vlan: 106
+staging_storage_mgmt_net_mtu: 9000

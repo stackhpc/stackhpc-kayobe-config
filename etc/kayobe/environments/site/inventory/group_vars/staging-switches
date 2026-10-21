@@ -1,0 +1,327 @@
+---
+###############################################################################
+# Global configuration.
+
+switch_type: dell-sonic
+ansible_connection: "network_cli"
+ansible_network_os: "dellemc.enterprise_sonic.sonic"
+ansible_command_timeout: 120
+ansible_user: "{{ secrets_switch_admin_user }}"
+ansible_ssh_pass: "{{ secrets_ipmi_password }}"
+switch_auth_pass: omit
+
+switch_config: "{{ switch_config_nested | flatten }}"
+
+switch_config_nested:
+  - "{{ switch_config_hostname }}"
+  - "{{ switch_config_lldp }}"
+  #TODO: NTP
+  # - "{{ switch_config_ntp }}"
+  - "{{ switch_config_spanning_tree }}"
+  - "{{ switch_config_breakout }}"
+  #TODO: PFC
+  #- "{{ switch_config_pfc }}"
+  - "{{ switch_config_mclag }}"
+  - "{{ switch_config_vrf }}"
+  - "{{ switch_config_portchannel_fwddecl }}"
+
+switch_interface_config: >-
+  {{ switch_interface_config_vlans |
+     combine(switch_interface_config_bonds) |
+     combine(switch_interface_config_ethernet) }}
+
+switch_fabric_mtu: 9216
+switch_clear_vlans: false
+
+# Virtual router
+switch_config_vrf: []
+
+###############################################################################
+# Interface configuration.
+
+# Interface configuration. Dict mapping switch interface names to configuration
+# dicts. Each dict contains a description item and a 'config' item which should
+# contain a list of per-interface configuration.
+switch_interface_config_ethernet: {}
+switch_interface_config_bonds: {}
+
+# Use an additional indirection here to enable parameter expansion
+switch_interface_config_vlans_template: |-
+  vlan {{ staging_internal_net_vlan }}:
+    description: Staging-Internal-API
+    config:
+      - no shutdown
+      - mtu {{ staging_internal_net_mtu }}
+  vlan {{ staging_storage_net_vlan }}:
+    description: Staging-Ceph-Storage
+    config:
+      - no shutdown
+      - mtu {{ staging_storage_net_mtu }}
+  vlan {{ staging_storage_mgmt_net_vlan }}:
+    description: Staging-Ceph-Storage-Management
+    config:
+      - no shutdown
+      - mtu {{ staging_storage_mgmt_net_mtu }}
+  vlan {{ openchami_provision_net_vlan }}:
+    description: OpenCHAMI-Provision
+    config:
+      - no shutdown
+      - mtu {{ openchami_provision_net_mtu }}
+  vlan {{ openchami_tenant_net_vlan }}:
+    description: OpenCHAMI-Tenant
+    config:
+      - no shutdown
+      - mtu {{ openchami_tenant_net_mtu }}
+
+# Switches or groups can extend/overwrite the VLAN interface dictionary
+switch_interface_config_vlans_template_extra: {}
+
+switch_interface_config_tenant_vlans_template: |-
+  {% set result = {} %}
+  {%- for vlan_id in range(tenant_vlan_min, tenant_vlan_max+1) -%}
+  {%  set cfg_entry = { 'description': 'tenant-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
+  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
+  {%- endfor -%}
+  {%- for vlan_id in range(tenant_auxiliary_vlan_min, tenant_auxiliary_vlan_max+1) -%}
+  {%  set cfg_entry = { 'description': 'auxiliary-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
+  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
+  {%- endfor -%}
+  {{ result }}
+
+switch_interface_config_vlans: >-
+  {{ (switch_interface_config_vlans_template | from_yaml) |
+      combine(switch_interface_config_vlans_template_extra | from_yaml) |
+      combine(switch_interface_config_tenant_vlans_template | from_yaml) }}
+
+###############################################################################
+# Interface variables and templates.
+
+switch_interface_config_lag_member_base: |
+  - no shutdown
+  #TODO: PFC
+  #- no flow-control rx
+  #- no flow-control tx
+  #- priority-flow-control mode on
+
+# Member of a port-channel for the high-speed networks
+switch_interface_config_host_lag_member_template: |-
+  {{ switch_interface_config_lag_member_base }}
+  #TODO: There's an ordering issue here. We need to set the MTU on first configure to make it match the port channel, but on subsequent configures it fails because we can't change the MTU once an interface is assigned to a port channel.
+  - mtu {{ switch_fabric_mtu }}
+  - channel-group %(channel)d
+
+# OpenStack compute hypervisor data interface configuration
+switch_interface_config_host_lag_member: "{{ switch_interface_config_host_lag_member_template | from_yaml }}"
+
+# Member of a port-channel for the high-speed fabric links
+switch_interface_config_fabric_lag_member_template: |-
+  {{ switch_interface_config_lag_member_base }}
+  #TODO: There's an ordering issue here. We need to set the MTU on first configure to make it match the port channel, but on subsequent configures it fails because we can't change the MTU once an interface is assigned to a port channel.
+  - mtu {{ switch_fabric_mtu }}
+  - channel-group %(channel)d
+
+# Fabric interface configuration
+switch_interface_config_fabric_lag_member: "{{ switch_interface_config_fabric_lag_member_template | from_yaml }}"
+
+# Bonded Ethernet interface configuration
+switch_interface_config_lag_template: |
+  - mclag {{ switch_mclag_domain_id }}
+  - no shutdown
+  - mtu {{ switch_fabric_mtu }}
+  - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
+  - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+
+# Switch fabric MLAG link
+switch_interface_config_fabric_hs_template: |-
+  {{ switch_interface_config_lag_template }}
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_fabric_trunk_hs_vlans | unique | join(',') }}
+
+switch_interface_config_fabric_hs: "{{ switch_interface_config_fabric_hs_template | from_yaml }}"
+
+# Ceph server port channel configuration
+switch_interface_config_ceph_hs_template: |-
+  {{ switch_interface_config_lag_template }}
+  - no switchport access vlan
+  - switchport trunk allowed vlan {{ switch_ceph_trunk_hs_vlans | unique | join(',') }}
+  - spanning-tree port type edge
+
+switch_interface_config_ceph_hs: "{{ switch_interface_config_ceph_hs_template | from_yaml }}"
+
+switch_interface_config_compute_hs_template: |-
+  {{ switch_interface_config_lag_template }}
+  - switchport trunk allowed vlan {{ switch_compute_trunk_hs_vlans | unique | join(',') }}
+  - spanning-tree port type edge
+
+switch_interface_config_compute_hs: "{{ switch_interface_config_compute_hs_template | from_yaml }}"
+
+switch_interface_config_ceph_ctrl_template: |-
+  {{ switch_interface_config_lag_template }}
+  - fallback
+  - switchport access vlan {{ provision_ctrl_net_switch_vlan }}
+  {% if switch_ceph_trunk_ctrl_vlans | length > 0 %}
+  - switchport trunk allowed vlan {{ switch_ceph_trunk_ctrl_vlans | unique | join(',') }}
+  {% endif %}
+  - spanning-tree port type edge
+
+switch_interface_config_ceph_ctrl: "{{ switch_interface_config_ceph_ctrl_template | from_yaml }}"
+
+switch_interface_config_compute_ctrl_template: |-
+  {{ switch_interface_config_lag_template }}
+  - fallback
+  - switchport access vlan {{ openchami_provision_net_vlan }}
+  {% if switch_ceph_trunk_ctrl_vlans | length > 0 %}
+  - switchport trunk allowed vlan {{ switch_compute_trunk_ctrl_vlans | unique | join(',') }}
+  {% endif %}
+  - spanning-tree port type edge
+
+switch_interface_config_compute_ctrl: "{{ switch_interface_config_compute_ctrl_template | from_yaml }}"
+
+################################################################################
+# Port VLAN memberships
+
+# VLANs to trunk to ceph nodes on the provision/ctrl interface
+# These networks may be required if public S3 object storage is enabled
+switch_ceph_trunk_ctrl_vlans: []
+
+# VLANs to trunk to compute nodes on the provision/ctrl interface
+switch_compute_trunk_ctrl_vlans: []
+
+# VLANs to trunk to Ceph nodes on the high-speed interface
+switch_ceph_trunk_hs_vlans:
+  - "{{ staging_internal_net_vlan }}"
+  - "{{ staging_storage_net_vlan }}"
+  - "{{ staging_storage_mgmt_net_vlan }}"
+
+# VLANs to trunk to Compute nodes on the high-speed interface
+switch_compute_trunk_hs_vlans:
+  - "{{ staging_storage_net_vlan }}"
+  - "{{ openchami_tenant_net_vlan }}"
+
+# VLANs to trunk on fabric links
+switch_fabric_trunk_hs_vlans:
+  - "{{ provision_ctrl_net_switch_vlan }}"
+  - "{{ openchami_provision_net_vlan }}
+  - "{{ openchami_tenant_net_vlan }}"
+  - "{{ staging_internal_net_vlan }}"
+  - "{{ staging_storage_net_vlan }}"
+  - "{{ staging_storage_mgmt_net_vlan }}"
+
+###############################################################################
+# Switch global config
+
+# Switch hostname
+switch_config_hostname:
+  - "hostname {{ inventory_hostname }}"
+
+# Enable Rapid PVST
+switch_config_spanning_tree:
+  - "spanning-tree mode rapid-pvst"
+
+# LLDP configuration.
+switch_config_lldp:
+  - "lldp enable"
+
+# Switch management timekeeping
+# switch_config_ntp:
+#   - "ntp server {{ oob_oc_net_name | net_ip(groups['seed'] | first) }}"
+#   - "ntp server ntp0.services.bris.ac.uk"
+#   - "ntp server ntp1.services.bris.ac.uk"
+#   - "ntp server ntp2.services.bris.ac.uk"
+
+# Port breakouts.
+switch_config_breakout: []
+
+# switch_config_pfc:
+#   - "llfc enable"
+#   - "qos-map traffic-class OpenStack"
+#   # For some reason when configuring queue 0 the qos-group gets starred on the cli
+# # - "queue 0 qos-group 0-2"
+#   - " queue 4 qos-group 4"
+#   - " queue 5 qos-group 5"
+#   - " queue 6 qos-group 6"
+#   - " queue 7 qos-group 7"
+#   # Configure traffic class mappings to QoS groups:
+#   - "class-map type network-qos TenantVLANs"
+#   - " match qos-group 0"
+#   - "class-map type network-qos InternalAPI"
+#   - " match qos-group 4"
+#   - "class-map type network-qos Storage"
+#   - " match qos-group 5"
+#   - "class-map type network-qos StorageManagement"
+#   - " match qos-group 6"
+#   - "class-map type network-qos TenantTunnel"
+#   - " match qos-group 7"
+#   # Set policies for each of the defined traffic classes
+#   - "policy-map type network-qos OpenStack"
+#   - " class TenantVLANs"
+#   - "  pause"
+#   - "  pfc-cos 0"
+#   - " class InternalAPI"
+#   - "  pause"
+#   - "  pfc-cos 4"
+#   - " class Storage"
+#   - "  pause"
+#   - "  pfc-cos 5"
+#   - " class StorageManagement"
+#   - "  pause"
+#   - "  pfc-cos 6"
+#   - " class TenantTunnel"
+#   - "  pause"
+#   - "  pfc-cos 7"
+#   # These class-map names need to follow this Qx format apparently.
+#   - "class-map type queuing Q0"
+#   - " match queue 0"
+#   - "class-map type queuing Q4"
+#   - " match queue 4"
+#   - "class-map type queuing Q5"
+#   - " match queue 5"
+#   - "class-map type queuing Q6"
+#   - " match queue 6"
+#   - "class-map type queuing Q7"
+#   - " match queue 7"
+#   #
+#   - "policy-map type queuing qos_OpenStack"
+#   - " class Q0"
+#   - "  bandwidth percent 30"
+#   - " class Q4"
+#   - "  bandwidth percent 10"
+#   - " class Q5"
+#   - "  bandwidth percent 20"
+#   - " class Q6"
+#   - "  bandwidth percent 20"
+#   - " class Q7"
+#   - "  bandwidth percent 20"
+#   # Declare all 802.1p CoS values on ingress should be trusted and honoured:
+#   - "system qos"
+#   - " trust-map dot1p default"
+
+
+switch_config_mclag:
+  - "interface PortChannel {{ switch_mclag_port_channel }}"
+  - ' description "MCLAG PortChannel"'
+  - " mtu {{ switch_fabric_mtu }}"
+  - "interface {{ switch_mclag_interface_1 }}"
+  - " description MCLAG"
+  - " channel-group {{ switch_mclag_port_channel }}"
+  - " no shutdown"
+  - "interface {{ switch_mclag_interface_2 }}"
+  - " description MCLAG"
+  - " channel-group {{ switch_mclag_port_channel }}"
+  - " no shutdown"
+  - "mclag domain {{ switch_mclag_domain_id }}"
+  - " peer-link PortChannel {{ switch_mclag_port_channel }}"
+  - " source-ip {{ switch_mclag_source_ip }}"
+  - " peer-ip {{ switch_mclag_peer_ip }}"
+  - " mclag-system-mac {{ switch_mclag_system_mac }}"
+
+
+switch_config_portchannel_fwddecl_template: |-
+  {% set result = [] %}
+  {%- for intf in switch_interface_config_bonds.keys() -%}
+  {% set _ = result.append('interface ' ~ intf) %}
+  {% set _ = result.append('exit') %}
+  {%- endfor -%}
+  {{ result }}
+
+switch_config_portchannel_fwddecl: "{{ switch_config_portchannel_fwddecl_template | from_yaml }}"
