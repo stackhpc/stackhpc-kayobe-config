@@ -101,6 +101,8 @@
 
     # Purge some stuff that OFED typically installs
     # which may race with the setup we perform.
+    - name: Gather service facts
+      ansible.builtin.service_facts:
 
     - name: Disable OFED openibd service
       ansible.builtin.systemd:
@@ -108,6 +110,7 @@
         enabled: false
         state: "stopped"
       become: true
+      when: "'openibd.service' in ansible_facts.services"
 
     - name: Move the openib config file
       ansible.builtin.command: "mv /etc/infiniband/openib.cf /etc/infiniband/openib.cf-"
