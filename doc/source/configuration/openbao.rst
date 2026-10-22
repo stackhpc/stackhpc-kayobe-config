@@ -460,6 +460,8 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
 
+.. _openbao-pulp-tls:
+
 Pulp TLS
 ========
 
