@@ -11,6 +11,13 @@ name: Multinode
         description: Multinode cluster name
         type: string
         required: true
+      runner_env:
+        description: Which cloud to run on
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
       host_os:
         description: Host OS
         type: choice
@@ -95,8 +102,9 @@ jobs:
   multinode:
     name: Multinode
     needs: github_user_ssh_keys
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@INFRA-1972-Multinode-Runner-And-Cloud-Selection
     with:
+      runner_env: ${{ inputs.runner_env }}
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.host_os == 'rocky-10' && 'rocky' || 'ubuntu' }}
       os_release: ${{ inputs.host_os == 'rocky-10' && '10' || 'noble' }}
