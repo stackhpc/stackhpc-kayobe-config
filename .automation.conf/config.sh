@@ -34,6 +34,19 @@ if [ ! -z ${KAYOBE_ENVIRONMENT:+x} ]; then
     # export KAYOBE_AUTOMATION_TEMPEST_SKIPLIST=ci-multinode-tempest-full
   fi
 
+  # Octavia's provider driver is the only Tempest setting that varies between
+  # load lists, so select it here rather than keeping a near-duplicate
+  # overrides file per provider
+  if [[ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST:-}" == octavia* ]]; then
+    generated="$(mktemp -d)/tempest-${KAYOBE_ENVIRONMENT}-${KAYOBE_AUTOMATION_TEMPEST_LOADLIST}.overrides.conf"
+    cp "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" "$generated"
+    if [[ "${KAYOBE_AUTOMATION_TEMPEST_LOADLIST}" == *ovn* ]]; then
+      #rewrite provider value based on driver being used
+      crudini --set "$generated" load_balancer provider ovn
+    fi
+    KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES="$generated"
+  fi
+
 fi
 
 if [[ -z "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES:+x}" ]] || [[ ! -e "${KAYOBE_AUTOMATION_TEMPEST_CONF_OVERRIDES}" ]]; then
