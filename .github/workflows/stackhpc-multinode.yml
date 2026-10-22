@@ -11,6 +11,13 @@ name: Multinode
         description: Multinode cluster name
         type: string
         required: true
+      runner_env:
+        description: Which cloud to run on
+        type: choice
+        default: SMS Lab
+        options:
+          - SMS Lab
+          - Leafcloud
       host_os:
         description: Host OS
         type: choice
@@ -99,6 +106,7 @@ jobs:
     permissions:
       checks: write
     with:
+      runner_env: ${{ inputs.runner_env }}
       multinode_name: ${{ inputs.multinode_name }}
       os_distribution: ${{ inputs.host_os == 'rocky-10' && 'rocky' || 'ubuntu' }}
       os_release: ${{ inputs.host_os == 'rocky-10' && '10' || 'noble' }}
