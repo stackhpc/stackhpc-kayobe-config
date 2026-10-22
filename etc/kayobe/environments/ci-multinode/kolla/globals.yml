@@ -44,8 +44,16 @@ opensearch_heap_size: 1g
 
 # Octavia load balancer configuration.
 
-octavia_provider_drivers: "{{ 'amphora:Amphora provider' if octavia_amphora_driver_enabled | bool else 'ovn:OVN provider' }}"
-octavia_provider_agents: "{{ 'amphora_agent' if octavia_amphora_driver_enabled | bool else 'ovn' }}"
+# Enable every driver this deployment can support and let the Tempest load
+# list choose which one to actually use.
+octavia_provider_drivers: >-
+  {{ ((['amphora:Amphora provider'] if octavia_amphora_driver_enabled | bool else [])
+     + (['ovn:OVN provider'] if kolla_enable_ovn | bool else []))
+     | join(', ') }}
+octavia_provider_agents: >-
+  {{ ((['amphora_agent'] if octavia_amphora_driver_enabled | bool else [])
+     + (['ovn'] if kolla_enable_ovn | bool else []))
+     | join(', ') }}
 
 # Host interface the health manager binds to. octavia.conf references this
 # unconditionally, so fall back to the internal network on OVN, which is what
