@@ -21,11 +21,14 @@
       register: vxlan_nm_connections
 
     - name: Ensure a bridge exists for each VXLAN interface that needs one
-      ansible.builtin.command:
-        cmd: >-
-          nmcli connection add type bridge
-          con-name {{ item.bridge }} ifname {{ item.bridge }}
-          stp no ipv4.method disabled ipv6.method disabled
+      community.general.nmcli:
+        type: bridge
+        conn_name: "{{ item.bridge }}"
+        ifname: "{{ item.bridge }}"
+        stp: false
+        method4: disabled
+        method6: disabled
+        state: present
       become: true
       loop: "{{ vxlan_interfaces | selectattr('bridge', 'defined') | list }}"
       when: item.bridge not in vxlan_nm_connections.stdout_lines
