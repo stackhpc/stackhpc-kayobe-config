@@ -1,0 +1,38 @@
+# Used by the ci-gns3-ngs environment
+- hosts: gns3
+  become: true
+  roles:
+    - role: gns3
+      vars:
+        gns3_project_name: ngs_project
+        switch_type: dellos10
+        gns3_switch_model: "Dell OS10 S4000-10.5.6.13.327"
+        gns3_cloud_node_quantity: 1
+        gns3_cloud_interfaces:
+        - cloud: Cloud1
+          interface: breth1
+          name: breth1
+          port_number: 0
+          type: ethernet
+        - cloud: Cloud2
+          interface: breth1
+          name: breth1
+          port_number: 0
+          type: ethernet
+        - cloud: Cloud3
+          interface: brgns3
+          name: brgns3
+          port_number: 0
+          type: ethernet
+        gns3_links:
+        - source_node:   "{{ gns3_switch_model }}"
+          source_adapter: 0
+          source_port: 0 #mgmt 1/1/1
+          target_node: Cloud1
+          target_adapter: 0
+          target_port: 0
+        gns3_switch_boot_delay: 181
+        gns3_integration_mode: "ngs"
+        vlan_tag: 1234
+        os_controller_interface: "eth 1/1/1"
+        baremetal_interface: "eth 1/1/2"

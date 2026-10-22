@@ -1,0 +1,14 @@
+---
+kolla_neutron_ml2_mechanism_drivers:
+  - genericswitch
+  - l2population
+  - openvswitch
+
+kolla_neutron_ml2_generic_switch_hosts: "{{ groups['ctl-switches'] }}"
+
+kolla_neutron_ml2_generic_switch_extra:
+  ngs_mac_address: "{{ switch_facts_mac }}"
+# Do not add VLANs to switch. VLANS will need to be
+# statically configured on the switches.
+  ngs_manage_vlans: false
+  secret: "admin"
