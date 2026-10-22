@@ -1,0 +1,21 @@
+#!/bin/bash
+# Unbind ONLY the pciehp (hotplug) service from {{ pciehp_disable_vendor_id }}:{{ pciehp_disable_vendor_id }} parent bridges, leaving AER/PME intact
+for dev in $(lspci -d {{ pciehp_disable_vendor_id }}:{{ pciehp_disable_vendor_id }} -D | awk '{print $1}'); do
+    # Extract the PCI address of the parent bridge
+    parent=$(basename "$(dirname "$(readlink -f /sys/bus/pci/devices/"$dev")")")
+    logger "Parent found for $dev -> $parent"
+    # Check all PCIe sub-services registered to this bridge
+    for svc in /sys/bus/pci/devices/"$parent"/"${parent}":pcie*; do
+        if [ -e "$svc/driver/unbind" ]; then
+            driver=$(basename $(readlink -f "$svc/driver"))
+            # If this specific service is hotplug, unbind it
+            if [ "$driver" = "pciehp" ]; then
+                svc_name=$(basename "$svc")
+                if ! echo "$svc_name" > "$svc/driver/unbind"; then
+                    logger "Failed to unbind pciehp driver from $parent"
+                fi
+                logger "Unbound pciehp driver from $parent"
+            fi
+        fi
+    done
+done
