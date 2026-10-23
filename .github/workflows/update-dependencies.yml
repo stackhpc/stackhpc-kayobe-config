@@ -30,7 +30,7 @@ jobs:
       - name: Checkout Kayobe-config
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.branch == 'stackhpc/2026.1' && replace(inputs.branch, '/', '-dev/') || inputs.branch }}
           path: src/kayobe-config
 
       - name: Set sanitised branch name
@@ -172,9 +172,8 @@ jobs:
             gh pr close $EXISTING_PR
           fi
           gh pr create \
-            --base "${{ inputs.branch }}" \
+            --base "${{ inputs.branch == 'stackhpc/2026.1' && replace(inputs.branch, '/', '-dev/') || inputs.branch }}" \
             --head "${{ steps.branch_name.outputs.name }}" \
             --title "(automated) Bump dependencies for OpenStack ${{ inputs.branch }}" \
             --body-file ../../pr_body.md \
             --label "automated" \
-
