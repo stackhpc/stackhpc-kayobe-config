@@ -1,0 +1,110 @@
+#!/bin/bash
+
+[ -f /etc/sysconfig/sriov ] && source /etc/sysconfig/sriov
+
+# Defaults
+
+# The network devices on which we create VFs.
+SRIOV_PFS=${SRIOV_PFS:-"enp65s0f0np0 enp65s0f1np1"}
+
+# The number of VFs to create on each PF
+SRIOV_VF_COUNT=${SRIOV_VF_COUNT:-8}
+
+# The number of combined channels to enable on each PF
+SRIOV_PF_CHANNELS=${SRIOV_PF_CHANNELS:-63}
+
+# The number of combined channels to enable on each representor
+SRIOV_VF_CHANNELS=${SRIOV_VF_CHANNELS:-18}
+
+
+function sriov_vf_create
+{
+    PF_NIC=$1
+    VF_COUNT=$2
+
+    cd /sys/class/net/$PF_NIC/device
+    PF_PCI=pci/$(basename $(realpath $PWD))
+    logger -t mlnx-vflag-early "Creating $VF_COUNT VFs for $PF_NIC ($PF_PCI)"
+
+    echo $VF_COUNT > sriov_numvfs
+    logger -t mlnx-vflag-early "STIG: VFs created for $PF_NIC: $(ls -d virtfn*)"
+    while [[ $(echo virtfn* | wc -w) != "$VF_COUNT" ]]
+    do
+	    logger -t mlnx-vflag-early "STIG: waiting for VFs for $PF_NIC: got $(ls -d virtfn*)"
+	    sleep 1
+    done
+    for i in $(readlink virtfn*)
+    do
+	logger -t mlnx-vflag-early "Unbinding $(basename $i)"
+	echo $(basename $i) > /sys/bus/pci/drivers/mlx5_core/unbind
+    done
+
+    # Put the NIC eSwitch into devlink mode
+    devlink dev eswitch set $PF_PCI mode switchdev
+    logger -t mlnx-vflag-early "After enabling switchdev: $(devlink dev eswitch show $PF_PCI)"
+}
+
+function enable_tc_offload
+{
+    PF_NIC=$1
+    TC_OFFLOAD=$(ethtool -k $PF_NIC | grep hw-tc-offload | awk '{print $2}')
+    if [[ "$TC_OFFLOAD" != "on" ]]
+    then
+	logger -t mlnx-vflag-early "Enabling HW TC offload for $PF_NIC"
+	ethtool -K $PF_NIC hw-tc-offload on
+    fi
+}
+
+function hwrep_ethtool
+{
+    # There isn't an obvious way to connect a representor port
+    # back to the PF or VF, so apply tuning to all representor ports
+    # served by the mlx5e_rep driver.
+    hwrep_devs=$(cd /sys/class/net; for i in *
+    do
+	ethtool -i $i 2> /dev/null |
+            awk -v dev=$i '$1=="driver:" && $2=="mlx5e_rep" {print dev}'
+    done)
+
+    for i in $hwrep_devs
+    do
+        # Magic values provided by Mellanox engineering
+	logger -t mlnx-vflag-early "Tuning receive channels for representor $i"
+    ethtool -L $i combined $SRIOV_VF_CHANNELS
+
+	# Enable hardware TC offload for each representor device
+    enable_tc_offload $i
+    done
+}
+
+for PF in $SRIOV_PFS
+do
+    # Validate that the NIC exists as a network device
+    if [[ ! -d /sys/class/net/$PF ]]
+    then
+	logger -t mlnx-vflag-early "NIC $PF not found, aborting"
+	echo "mlnx-vflag-early: NIC $PF not found" >&2
+        exit -1
+    fi
+
+    # Validate that the NIC is not already up and active in a bond
+    # It appears this could be fatal.
+    dev_flags=$(ip link show dev $PF | grep -o '<.*>')
+    grep -q '\<SLAVE\>' <<< $dev_flags
+    if [[ $? -eq 0 ]]
+    then
+	logger -t mlnx-vflag-early "NIC $PF already part of a bond, aborting"
+	echo "mlnx-vflag-early: NIC $PF already part of a bond" >&2
+        exit -1
+    fi
+
+    sriov_vf_create $PF $SRIOV_VF_COUNT
+    enable_tc_offload $PF
+
+    # Raise the receive channels configured for this PF, if too low
+    logger -t mlnx-vflag-early "Tuning receive channels for PF $PF"
+    ethtool -L $PF combined $SRIOV_PF_CHANNELS
+done
+
+/sbin/udevadm settle --timeout=20
+hwrep_ethtool

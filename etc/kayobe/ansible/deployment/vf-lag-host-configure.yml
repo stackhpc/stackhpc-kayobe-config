@@ -10,6 +10,7 @@
     - name: Reboot
       ansible.builtin.set_fact:
         kayobe_needs_reboot: true
+      listen: reboot
   tasks:
     # NOTE: define sriov_devices in group_vars
     - name: Include SRIOV role
@@ -29,7 +30,7 @@
     # This playbook will execute after nodes are deployed
     # and before overcloud host configure - we can't assume
     # users and venvs exist.
-    ansible_user: "{{ ansible_user }}"
+    ansible_user: "{{ bootstrap_user }}"
     ansible_python_interpreter: "/usr/bin/python3"
   tasks:
     # TC offload requires kernel-modules-extra (act_ct module)
@@ -54,7 +55,7 @@
     # Write /etc/sysconfig/sriov configuration to match this host
     - name: Define parameters in /etc/sysconfig/sriov
       ansible.builtin.template:
-        src: "sysconfig-sriov.j2"
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/files/sysconfig-sriov.j2"
         dest: "/etc/sysconfig/sriov"
         owner: "root"
         group: "root"
@@ -64,7 +65,7 @@
 
     - name: Transfer VF-LAG helper scripts to /usr/local/bin
       ansible.builtin.copy:
-        src: "{{ item }}"
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') + '/ansible/files/' + item }}"
         dest: "/usr/local/bin/{{ item }}"
         owner: "root"
         group: "root"
@@ -77,7 +78,7 @@
 
     - name: Transfer VF-LAG systemd units to /etc/systemd/system
       ansible.builtin.template:
-        src: "{{ item }}.j2"
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') + '/ansible/templates/' + item }}.j2"
         dest: "/etc/systemd/system/{{ item }}"
         owner: "root"
         group: "root"
