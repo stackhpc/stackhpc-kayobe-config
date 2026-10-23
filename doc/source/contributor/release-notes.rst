@@ -45,8 +45,8 @@ Their objective is to be clear and naturally readable.
   involved, and what happens if no action is taken.
 - **Keep it short.** One to three sentences is usually enough. If you find
   yourself writing more, split it into more bullet points, or link to a docs
-  page. instead
-- Use double backtics: `````` for ``variables``, ``files``, ``commands`` and
+  page.
+- Use double backticks: `````` for ``variables``, ``files``, ``commands`` and
   ``versions``, and to use links in text (```Kolla fix <https://...>`__``)
   rather than bare URLs.
 
@@ -59,6 +59,10 @@ Which section to use
   behaviour on upgrade. **This is not for dependency bumps**.
 - **security**: CVE fixes and accepted vulnerabilities.
 - **deprecations**: features or variables that will be removed.
+
+Note that dependency bumps, such as a Python package or Ansible Collection,
+count as a feature. The exception to this is when there is when the new version
+fixes a known bug (fixes) or includes a major breaking change (upgrade).
 
 Examples
 --------
