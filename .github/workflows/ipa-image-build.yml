@@ -53,7 +53,9 @@ jobs:
   create-tag:
     name: Create a tag to be added to resulting images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: ${{ inputs.runner_env }}
+    environment:
+      name: ${{ inputs.runner_env }}
+      deployment: false
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
