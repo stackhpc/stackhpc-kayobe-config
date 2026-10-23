@@ -1,0 +1,27 @@
+{% if stackhpc_enable_openbao_monitoring | bool %}
+{% raw %}
+
+groups:
+- name: OpenBao
+  rules:
+
+  - alert: OpenBaoSealed
+    expr: vault_core_unsealed{job="openbao"} == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "OpenBao is sealed (instance {{ $labels.instance }})"
+      description: "OpenBao on {{ $labels.instance }} has been sealed for more than 5 minutes. Unseal the overcloud secret store before generating new certificates."
+
+  - alert: OpenBaoUnhealthy
+    expr: min by (node_id) (vault_autopilot_node_healthy{job="openbao"}) == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "OpenBao node is unhealthy (node {{ $labels.node_id }})"
+      description: "OpenBao autopilot has reported {{ $labels.node_id }} as unhealthy for more than 5 minutes."
+
+{% endraw %}
+{% endif %}
