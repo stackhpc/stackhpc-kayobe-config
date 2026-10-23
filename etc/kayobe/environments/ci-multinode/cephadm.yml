@@ -71,7 +71,54 @@ cephadm_keys:
 # List of Cephadm commands to run. See stackhpc.cephadm.commands role for format.
 cephadm_commands_pre: []
 
-cephadm_commands_post: "{{ cephadm_commands_manila_cephfs_native if (kolla_enable_manila | bool and kolla_enable_manila_backend_cephfs_native | bool) else [] }}"
+cephadm_commands_post: >-
+  {{
+    (cephadm_commands_manila_cephfs_native
+      if (kolla_enable_manila | bool and kolla_enable_manila_backend_cephfs_native | bool)
+      else [])
+    +
+    (cephadm_commands_rgw
+      if (kolla_enable_ceph_rgw | bool)
+      else [])
+  }}
 cephadm_commands_manila_cephfs_native:
   - "fs new manila-cephfs cephfs_metadata cephfs_data"
   - "orch apply mds manila-cephfs"
+
+cephadm_commands_rgw:
+  - "config set client.rgw rgw_content_length_compat true"
+  - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
+  - "config set client.rgw rgw_enforce_swift_acls true"
+  - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
+  - "config set client.rgw rgw_keystone_admin_domain Default"
+  - "config set client.rgw rgw_keystone_admin_password {{ (lookup('file', kayobe_env_config_path ~ '/kolla/passwords.yml') | from_yaml).ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_project service"
+  - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
+  - "config set client.rgw rgw_keystone_api_version '3'"
+  - "config set client.rgw rgw_keystone_token_cache_size '10000'"
+  - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_verify_ssl true"
+  - "config set client.rgw rgw_max_attr_name_len '1000'"
+  - "config set client.rgw rgw_max_attr_size '1000'"
+  - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
+  - "config set client.rgw rgw_s3_auth_use_keystone true"
+  - "config set client.rgw rgw_swift_account_in_url true"
+  - "config set client.rgw rgw_swift_versioning_enabled true"
+
+cephadm_radosgw_services:
+  - id: myrgw
+    count_per_host: 1
+    spec:
+      rgw_frontend_port: 8100
+
+ca_bundle_path: >-
+  {{
+    '/etc/ssl/certs/ca-certificates.crt'
+    if os_distribution == 'ubuntu'
+    else '/etc/pki/tls/certs/ca-bundle.crt'
+  }}
+
+cephadm_extra_container_args:
+  - "-v"
+  - "{{ ca_bundle_path }}:/etc/pki/tls/certs/ca-bundle.crt:ro"

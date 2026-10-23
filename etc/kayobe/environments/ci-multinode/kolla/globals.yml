@@ -71,3 +71,13 @@ external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 # Cinder clustering requires more than one cinder-volume, which follows the controller count.
 cinder_cluster_name: "{{ 'stackhpc_test_cinder_cluster' if groups['controllers'] | length > 1 else '' }}"
 
+# RGW configuration
+ceph_rgw_swift_compatibility: false
+ceph_rgw_swift_account_in_url: true
+
+ceph_rgw_hosts:
+{% for rgw in groups['rgws'] %}
+  - host: "{{ hostvars[rgw].ansible_hostname }}"
+    ip: "{{ lookup('vars', storage_net_name ~ '_ips')[rgw] }}"
+    port: 8100
+{% endfor %}
