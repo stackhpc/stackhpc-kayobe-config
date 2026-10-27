@@ -21,7 +21,8 @@ switch_config_nested:
   - "{{ switch_config_breakout }}"
   #TODO: PFC
   #- "{{ switch_config_pfc }}"
-  - "{{ switch_config_mclag }}"
+  #TODO: is this needed?
+  #- "{{ switch_config_mclag }}"
   - "{{ switch_config_vrf }}"
   - "{{ switch_config_portchannel_fwddecl }}"
 
@@ -112,8 +113,7 @@ switch_interface_config_fabric_ctrl_template: |-
 switch_interface_config_fabric_ctrl: "{{ switch_interface_config_fabric_ctrl_template | from_yaml }}"
 
 switch_interface_config_ceph_ctrl_template: |-
-  {{ switch_interface_config_lag_template }}
-  - fallback
+  - no shutdown
   - switchport access vlan {{ provision_ctrl_net_switch_vlan }}
   {% if switch_ceph_trunk_ctrl_vlans | length > 0 %}
   - switchport trunk allowed vlan {{ switch_ceph_trunk_ctrl_vlans | unique | join(',') }}
@@ -123,8 +123,7 @@ switch_interface_config_ceph_ctrl_template: |-
 switch_interface_config_ceph_ctrl: "{{ switch_interface_config_ceph_ctrl_template | from_yaml }}"
 
 switch_interface_config_ceph_mgmt_ctrl_template: |-
-  {{ switch_interface_config_lag_template }}
-  - fallback
+  - no shutdown
   - no switchport access vlan
   - switchport trunk allowed vlan {{ switch_ceph_mgmt_trunk_ctrl_vlans | unique | join(',') }}
   - spanning-tree port type edge
@@ -132,8 +131,7 @@ switch_interface_config_ceph_mgmt_ctrl_template: |-
 switch_interface_config_ceph_mgmt: "{{ switch_interface_config_ceph_mgmt_hs_template | from_yaml }}"
 
 switch_interface_config_compute_ctrl_template: |-
-  {{ switch_interface_config_lag_template }}
-  - fallback
+  - no shutdown
   - switchport access vlan {{ openchami_provision_net_vlan }}
   {% if switch_ceph_trunk_ctrl_vlans | length > 0 %}
   - switchport trunk allowed vlan {{ switch_compute_trunk_ctrl_vlans | unique | join(',') }}
@@ -155,6 +153,7 @@ switch_compute_trunk_ctrl_vlans: []
 # VLANs to trunk to mgmt node on the provision/ctrl interface
 switch_ceph_mgmt_trunk_ctrl_vlans:
   - "{{ provision_ctrl_net_switch_vlan }}"
+  - "{{ braid_oob_net_vlan }}"
   - "{{ openchami_provision_net_vlan }}"
 
 # VLANs to trunk on fabric links
