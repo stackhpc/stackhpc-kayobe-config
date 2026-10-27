@@ -71,22 +71,10 @@ switch_interface_config_vlans_template: |-
 # Switches or groups can extend/overwrite the VLAN interface dictionary
 switch_interface_config_vlans_template_extra: {}
 
-switch_interface_config_tenant_vlans_template: |-
-  {% set result = {} %}
-  {%- for vlan_id in range(tenant_vlan_min, tenant_vlan_max+1) -%}
-  {%  set cfg_entry = { 'description': 'tenant-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
-  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
-  {%- endfor -%}
-  {%- for vlan_id in range(tenant_auxiliary_vlan_min, tenant_auxiliary_vlan_max+1) -%}
-  {%  set cfg_entry = { 'description': 'auxiliary-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
-  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
-  {%- endfor -%}
-  {{ result }}
 
 switch_interface_config_vlans: >-
   {{ (switch_interface_config_vlans_template | from_yaml) |
-      combine(switch_interface_config_vlans_template_extra | from_yaml) |
-      combine(switch_interface_config_tenant_vlans_template | from_yaml) }}
+      combine(switch_interface_config_vlans_template_extra | from_yaml) }}
 
 ###############################################################################
 # Interface variables and templates.

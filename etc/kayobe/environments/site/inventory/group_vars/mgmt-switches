@@ -61,22 +61,9 @@ switch_interface_config_vlans_template: |-
 # Switches or groups can extend/overwrite the VLAN interface dictionary
 switch_interface_config_vlans_template_extra: {}
 
-switch_interface_config_tenant_vlans_template: |-
-  {% set result = {} %}
-  {%- for vlan_id in range(tenant_vlan_min, tenant_vlan_max+1) -%}
-  {%  set cfg_entry = { 'description': 'tenant-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
-  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
-  {%- endfor -%}
-  {%- for vlan_id in range(tenant_auxiliary_vlan_min, tenant_auxiliary_vlan_max+1) -%}
-  {%  set cfg_entry = { 'description': 'auxiliary-vlan-' ~ vlan_id, 'config': ['no shutdown'] }  %}
-  {%  set _ = result.update( {'vlan ' ~ vlan_id: cfg_entry } )  %}
-  {%- endfor -%}
-  {{ result }}
-
 switch_interface_config_vlans: >-
   {{ (switch_interface_config_vlans_template | from_yaml) |
-      combine(switch_interface_config_vlans_template_extra | from_yaml) |
-      combine(switch_interface_config_tenant_vlans_template | from_yaml) }}
+      combine(switch_interface_config_vlans_template_extra | from_yaml) }}
 
 ###############################################################################
 # Interface variables and templates.
@@ -167,8 +154,8 @@ switch_compute_trunk_ctrl_vlans: []
 
 # VLANs to trunk to mgmt node on the provision/ctrl interface
 switch_ceph_mgmt_trunk_ctrl_vlans:
-  - "{{ provision_ctrl_net_switch_vlan }}
-  - "{{ openchami_provision_net_vlan }}
+  - "{{ provision_ctrl_net_switch_vlan }}"
+  - "{{ openchami_provision_net_vlan }}"
 
 # VLANs to trunk on fabric links
 switch_fabric_trunk_ctrl_vlans:
