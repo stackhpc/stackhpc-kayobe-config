@@ -114,6 +114,15 @@ and DOCA configuration is applied on DOCA hosts.
     [vflag:children]
     mlnx
 
+NICs should be defined in the compute inventory variables to configure VF-LAG for hardware
+offload. Populate the ``vflag_pfs`` and ``vflag_numvfs`` variables, an example is below
+using bonded interfaces.
+
+.. code-block:: yaml
+
+  vflag_pfs: "{{ bond_hs_net_bond_interfaces }}"
+  vflag_numvfs: <number of virtual functions>
+
 A playbook is provided to ensure VF-LAG and OFED setup is applied on ``vflag`` hosts. To run
 the configuration playbook:
 

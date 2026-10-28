@@ -33,6 +33,14 @@
     ansible_user: "{{ bootstrap_user }}"
     ansible_python_interpreter: "/usr/bin/python3"
   tasks:
+    - name: Check if VF-LAG vars are defined
+      ansible.builtin.fail:
+        msg: "vflag_pfs and vflag_numvfs should be defined before running this script"
+      when:
+        - vflag_pfs is not defined
+        - vflag_numvfs is not defined
+        - vflag_pfs | length <= 0
+
     # TC offload requires kernel-modules-extra (act_ct module)
     - name: Ensure kernel-modules-extra is installed
       ansible.builtin.package:
