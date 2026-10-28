@@ -12,8 +12,8 @@ https://github.com/stackhpc/stackhpc-specs/blob/main/release-train/skc-regular-r
 Release cadence
 ===============
 
-Typically, StackHPC OpenStack will have a new release every 3 months. Release candidates may
-be branched 2-3 weeks before release to ensure sufficient testing. Essential bug and security
+StackHPC OpenStack will have a new release at least every 3 months. Release candidates may
+be branched up to 3 weeks before release to ensure sufficient testing. Essential bug and security
 fixes may be backported to stable if required.
 
 Release candidate
