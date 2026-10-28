@@ -12,14 +12,11 @@ how to do this. Also, see the :kolla-ansible-doc:`Kolla Ansible docs on CloudKit
 <reference/rating/cloudkitty-guide.html>`
 for more details.
 
-Enable CloudKitty and disable InfluxDB, as we are using OpenSearch as the
-storage backend. Set the following in ``kolla.yml``:
+Enable CloudKitty by setting the following in ``kolla.yml``:
 
 .. code-block:: yaml
 
   kolla_enable_cloudkitty: true
-  # Explicitly disable influxdb as we are using OpenSearch as the CloudKitty backend
-  kolla_enable_influxdb: false
 
 Set Prometheus as the backend for both the collector and fetcher, and
 OpenSearch as the storage backend. Set the following in ``kolla/globals.yml``:
