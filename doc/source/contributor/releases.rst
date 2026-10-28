@@ -94,7 +94,7 @@ Following sufficient testing of a release candidate (usually 2-3 weeks) a stable
 Run the ``stackhpc-release.yml`` workflow to create a merge request of RC ``stackhpc-rc/current_release>``
 targeting stable ``stackhpc/<current_release>``.
 
-Ensure all CI passes and a release manager reviews before merging. It's encoureged to repeat a basic multinode
+Ensure all CI passes and a release manager reviews before merging. It's encouraged to repeat a basic multinode
 test to ensure testing consistency before merging. Once merged, the ``stackhpc-rc/<current_release>`` branch
 can be deleted.
 
