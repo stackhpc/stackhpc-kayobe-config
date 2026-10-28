@@ -18,24 +18,16 @@ switch_config_nested:
   #TODO: NTP
   # - "{{ switch_config_ntp }}"
   - "{{ switch_config_spanning_tree }}"
-  - "{{ switch_config_breakout }}"
   #TODO: PFC
   #- "{{ switch_config_pfc }}"
-  #TODO: is this needed?
-  #- "{{ switch_config_mclag }}"
-  - "{{ switch_config_vrf }}"
-  - "{{ switch_config_portchannel_fwddecl }}"
 
 switch_interface_config: >-
   {{ switch_interface_config_vlans |
      combine(switch_interface_config_bonds) |
      combine(switch_interface_config_ethernet) }}
 
-switch_fabric_mtu: 9216
+switch_fabric_mtu: 9100
 switch_clear_vlans: false
-
-# Virtual router
-switch_config_vrf: []
 
 ###############################################################################
 # Interface configuration.
@@ -58,6 +50,16 @@ switch_interface_config_vlans_template: |-
     config:
       - no shutdown
       - mtu {{ openchami_provision_net_mtu }}
+  vlan {{ external_admin_net_vlan }}:
+    description: External-Admin
+    config:
+      - no shutdown
+      - mtu {{ external_admin_net_mtu }}
+  vlan {{ power_mgmt_net_vlan }}:
+    description: Power-Management
+    config:
+      - no shutdown
+      - mtu {{ power_mgmt_net_mtu }}
 
 # Switches or groups can extend/overwrite the VLAN interface dictionary
 switch_interface_config_vlans_template_extra: {}
@@ -69,45 +71,19 @@ switch_interface_config_vlans: >-
 ###############################################################################
 # Interface variables and templates.
 
-switch_interface_config_lag_member_base: |
-  - no shutdown
-  #TODO: PFC
-  #- no flow-control rx
-  #- no flow-control tx
-  #- priority-flow-control mode on
-
-# Member of a port-channel for the high-speed and provision-ctrl networks
-switch_interface_config_host_lag_member_template: |-
-  {{ switch_interface_config_lag_member_base }}
-  #TODO: There's an ordering issue here. We need to set the MTU on first configure to make it match the port channel, but on subsequent configures it fails because we can't change the MTU once an interface is assigned to a port channel.
-  - mtu {{ switch_fabric_mtu }}
-  - channel-group %(channel)d
-
-# OpenStack compute hypervisor data interface configuration
-switch_interface_config_host_lag_member: "{{ switch_interface_config_host_lag_member_template | from_yaml }}"
-
 # Member of a port-channel for the high-speed fabric links
-switch_interface_config_fabric_lag_member_template: |-
-  {{ switch_interface_config_lag_member_base }}
-  #TODO: There's an ordering issue here. We need to set the MTU on first configure to make it match the port channel, but on subsequent configures it fails because we can't change the MTU once an interface is assigned to a port channel.
+switch_interface_config_fabric_member_template: |-
+  - no shutdown
   - mtu {{ switch_fabric_mtu }}
-  - channel-group %(channel)d
 
 # Fabric interface configuration
-switch_interface_config_fabric_lag_member: "{{ switch_interface_config_fabric_lag_member_template | from_yaml }}"
-
-# Bonded Ethernet interface configuration
-switch_interface_config_lag_template: |
-  - mclag {{ switch_mclag_domain_id }}
-  - no shutdown
-  - mtu {{ switch_fabric_mtu }}
-  - "{{ 'no switchport trunk allowed vlan 1-4093' if switch_clear_vlans else '' }}"
-  - "{{ 'no switchport access vlan' if switch_clear_vlans else '' }}"
+switch_interface_config_fabric_member: "{{ switch_interface_config_fabric_member_template | from_yaml }}"
 
 # Switch fabric MLAG link
 switch_interface_config_fabric_ctrl_template: |-
-  {{ switch_interface_config_lag_template }}
-  - no switchport access vlan
+  - no shutdown
+  - mtu {{ switch_fabric_mtu }}
+  - switchport access vlan {{ braid_oob_net_vlan }}
   - switchport trunk allowed vlan {{ switch_fabric_trunk_ctrl_vlans | unique | join(',') }}
 
 switch_interface_config_fabric_ctrl: "{{ switch_interface_config_fabric_ctrl_template | from_yaml }}"
@@ -128,7 +104,7 @@ switch_interface_config_ceph_mgmt_ctrl_template: |-
   - switchport trunk allowed vlan {{ switch_ceph_mgmt_trunk_ctrl_vlans | unique | join(',') }}
   - spanning-tree port type edge
 
-switch_interface_config_ceph_mgmt: "{{ switch_interface_config_ceph_mgmt_hs_template | from_yaml }}"
+switch_interface_config_ceph_mgmt_ctrl: "{{ switch_interface_config_ceph_mgmt_ctrl_template | from_yaml }}"
 
 switch_interface_config_compute_ctrl_template: |-
   - no shutdown
@@ -160,9 +136,8 @@ switch_ceph_mgmt_trunk_ctrl_vlans:
 switch_fabric_trunk_ctrl_vlans:
   - "{{ provision_ctrl_net_switch_vlan }}"
   - "{{ openchami_provision_net_vlan }}"
-  #TODO: confirm if these are needed here
-  # - "{{ external_admin_net_switch_vlan }}"
-  # - "{{ power_mgmt_net_switch_vlan }}"
+  - "{{ external_admin_net_vlan }}"
+  - "{{ power_mgmt_net_vlan }}"
 
 ###############################################################################
 # Switch global config
@@ -185,9 +160,6 @@ switch_config_lldp:
 #   - "ntp server ntp0.services.bris.ac.uk"
 #   - "ntp server ntp1.services.bris.ac.uk"
 #   - "ntp server ntp2.services.bris.ac.uk"
-
-# Port breakouts.
-switch_config_breakout: []
 
 # switch_config_pfc:
 #   - "llfc enable"
@@ -252,33 +224,3 @@ switch_config_breakout: []
 #   # Declare all 802.1p CoS values on ingress should be trusted and honoured:
 #   - "system qos"
 #   - " trust-map dot1p default"
-
-
-switch_config_mclag:
-  - "interface PortChannel {{ switch_mclag_port_channel }}"
-  - ' description "MCLAG PortChannel"'
-  - " mtu {{ switch_fabric_mtu }}"
-  - "interface {{ switch_mclag_interface_1 }}"
-  - " description MCLAG"
-  - " channel-group {{ switch_mclag_port_channel }}"
-  - " no shutdown"
-  - "interface {{ switch_mclag_interface_2 }}"
-  - " description MCLAG"
-  - " channel-group {{ switch_mclag_port_channel }}"
-  - " no shutdown"
-  - "mclag domain {{ switch_mclag_domain_id }}"
-  - " peer-link PortChannel {{ switch_mclag_port_channel }}"
-  - " source-ip {{ switch_mclag_source_ip }}"
-  - " peer-ip {{ switch_mclag_peer_ip }}"
-  - " mclag-system-mac {{ switch_mclag_system_mac }}"
-
-
-switch_config_portchannel_fwddecl_template: |-
-  {% set result = [] %}
-  {%- for intf in switch_interface_config_bonds.keys() -%}
-  {% set _ = result.append('interface ' ~ intf) %}
-  {% set _ = result.append('exit') %}
-  {%- endfor -%}
-  {{ result }}
-
-switch_config_portchannel_fwddecl: "{{ switch_config_portchannel_fwddecl_template | from_yaml }}"

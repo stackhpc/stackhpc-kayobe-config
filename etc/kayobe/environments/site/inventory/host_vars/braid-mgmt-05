@@ -10,114 +10,60 @@ ansible_host: 10.128.16.12
 ###############################################################################
 # Interface configuration.
 # The leaf switch pairs in production environment have identical connections
-switch_interface_config_bonds:
-  "PortChannel 1":
-    description: "cephdata01"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=1) }}"
-  "PortChannel 2":
-    description: "cephdata02"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=2) }}"
-  "PortChannel 3":
-    description: "cephdata03"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=3) }}"
-  "PortChannel 4":
-    description: "cephdata04"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=4) }}"
-  "PortChannel 5":
-    description: "cephdata05"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=5) }}"
-  "PortChannel 6":
-    description: "cephdata06"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=6) }}"
-  "PortChannel 7":
-    description: "cephdata07"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=7) }}"
-  "PortChannel 8":
-    description: "cephdata08"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=8) }}"
-  "PortChannel 9":
-    description: "cephdata09"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=9) }}"
-  "PortChannel 10":
-    description: "cephdata10"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=10) }}"
-  "PortChannel 11":
-    description: "cephdata11"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=11) }}"
-  "PortChannel 12":
-    description: "k8s01"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=12) }}"
-  "PortChannel 13":
-    description: "cephstaging01"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=13) }}"
-  "PortChannel 14":
-    description: "cephrados01"
-    config: "{{ switch_interface_config_ceph_ctrl | format(channel=14) }}"
-  # "PortChannel 31":
-  #   description: "25gb_staging01"
-  #   config: "{{ switch_interface_config_fabric_ctrl | format(channel=31) }}"
-  # "PortChannel 32":
-  #   description: "braid-leaf-03"
-  #   config: "{{ switch_interface_config_fabric_ctrl | format(channel=32) }}"
-  # "PortChannel 33":
-  #   description: "braid-leaf-04"
-  #   config: "{{ switch_interface_config_fabric_ctrl | format(channel=33) }}"
-  # "PortChannel 34":
-  #   description: "braid-mgmt-04"
-  #   config: "{{ switch_interface_config_fabric_ctrl | format(channel=34) }}"
+switch_interface_config_bonds: {}
 
 switch_interface_config_ethernet:
   "Eth 1/45":
     description: "cephdata01"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=1) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/44":
     description: "cephdata02"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=2) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/43":
     description: "cephdata03"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=3) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/42":
     description: "cephdata04"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=4) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/41":
     description: "cephdata05"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=5) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/40":
     description: "cephdata06"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=6) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/39":
     description: "cephdata07"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=7) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/38":
     description: "cephdata08"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=8) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/37":
     description: "cephdata09"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=9) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/36":
     description: "cephdata10"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=10) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/35":
     description: "cephdata11"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=11) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/48":
     description: "k8s01"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=12) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/47":
     description: "cephstaging01"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=13) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
   "Eth 1/46":
     description: "cephrados01"
-    config: "{{ switch_interface_config_host_lag_member | format(channel=14) }}"
-  # "Eth 1/5":
-  #   description: "25gb_staging01"
-  #   config: "{{ switch_interface_config_fabric_lag_member | format(channel=31) }}"
-  # "Eth 1/2":
-  #   description: "braid-leaf-03"
-  #   config: "{{ switch_interface_config_fabric_lag_member | format(channel=32) }}"
-  # "Eth 1/1":
-  #   description: "braid-leaf-04"
-  #   config: "{{ switch_interface_config_fabric_lag_member | format(channel=33) }}"
-  # "Eth 1/51":
-  #   description: "braid-mgmt-04"
-  #   config: "{{ switch_interface_config_fabric_lag_member | format(channel=34) }}"
+    config: "{{ switch_interface_config_ceph_ctrl }}"
+  "Eth 1/5":
+    description: "braid-staging-01"
+    config: "{{ switch_interface_config_fabric_member }}"
+  "Eth 1/2":
+    description: "braid-leaf-03"
+    config: "{{ switch_interface_config_fabric_member }}"
+  "Eth 1/1":
+    description: "braid-leaf-04"
+    config: "{{ switch_interface_config_fabric_member }}"
+  "Eth 1/51":
+    description: "braid-mgmt-04"
+    config: "{{ switch_interface_config_fabric_ctrl }}"
