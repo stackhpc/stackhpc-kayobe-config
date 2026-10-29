@@ -1,0 +1,62 @@
+name: Merge request - stable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  branch-release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Propose release
+    steps:
+      - name: Fail if branch is not rc
+        if: ${{ !startsWith(github.ref_name, 'stackhpc-rc') }}
+        run: |
+          echo "This workflow should not be triggered on non-RC branches"
+          exit 1
+
+      - name: Set branch names
+        id: branches
+        env:
+          RC: ${{ github.ref_name }}
+        run: |
+          release="${RC#stackhpc-rc/}"
+          echo "rc=${RC}" >> "$GITHUB_OUTPUT"
+          echo "stable=stackhpc/${release}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Kayobe-config
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ steps.branches.outputs.stable }}
+          path: src/kayobe-config
+
+      - name: Set up branch and Git config
+        run: |
+          git checkout ${{ steps.branches.outputs.rc }}
+          git config user.name "stackhpc-ci"
+          git config user.email "22933334+stackhpc-ci@users.noreply.github.com"
+        working-directory: src/kayobe-config
+
+      - name: Initialise PR Body
+        run: |
+          echo "This PR was created automatically to branch ${{ steps.branches.outputs.stable }}." > pr_body.md
+          echo "" >> pr_body.md
+          echo "### Changes" >> pr_body.md
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: src/kayobe-config
+        run: |
+          EXISTING_PR=$(gh pr list --head "${{ steps.branches.outputs.rc }}" --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr close $EXISTING_PR
+          fi
+          gh pr create \
+            --base "${{ steps.branches.outputs.stable }}" \
+            --head "${{ steps.branches.outputs.rc }}" \
+            --title "(automated) Stable release for StackHPC OpenStack ${{ steps.branches.outputs.stable }}" \
+            --body-file ../../pr_body.md \
+            --label "automated" \
