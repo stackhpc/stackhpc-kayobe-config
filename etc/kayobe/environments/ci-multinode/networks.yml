@@ -38,7 +38,8 @@ internal_net_name: internal
 # If external_net_name is defined, external_net_names will default to a list
 # containing one item, external_net_name.
 #external_net_names:
-external_net_names: []
+external_net_names:
+  - vxlan_mesh
 
 # Name of the network used to expose the public OpenStack API endpoints.
 public_net_name: public
@@ -67,6 +68,9 @@ storage_mgmt_net_name: storage_mgmt
 # Name of the network used to perform cleaning on the bare metal workload
 # hosts
 #cleaning_net_name:
+
+# Name of the network used to manage octavia loadbalancers
+octavia_net_name: lb_mgmt
 
 ###############################################################################
 # Network definitions.
@@ -130,6 +134,26 @@ provision_oc_allocation_pool_start: 192.168.33.128
 provision_oc_allocation_pool_end: 192.168.33.254
 provision_oc_vlan: 107
 provision_oc_zone: "provision_oc"
+
+# Octavia load balancer management network. VLAN provider network on physnet1
+# reusing the existing VXLAN mesh
+lb_mgmt_cidr: 192.168.34.0/24
+lb_mgmt_mtu: "{{ ansible_facts.default_ipv4.mtu - 50 }}"
+lb_mgmt_vlan: 108
+lb_mgmt_allocation_pool_start: 192.168.34.3
+lb_mgmt_allocation_pool_end: 192.168.34.30
+lb_mgmt_neutron_allocation_pool_start: 192.168.34.100
+lb_mgmt_neutron_allocation_pool_end: 192.168.34.200
+lb_mgmt_zone: lb-mgmt
+
+# Linux bridge carrying the VXLAN mesh. Without the bridge the
+# host will claim the packet and drop if not addressed to its listener.
+# A bridge is needed to flood the packet to both the OS and the OVS.
+# Empty ports because stackhpc.vxlan does the enslaving via its bridge option.
+# We dont want MichaelRigart's role to overwrite the Network Manager's VXLAN handling
+vxlan_mesh_bridge_ports: []
+vxlan_mesh_bootproto: manual
+vxlan_mesh_mtu: "{{ ansible_facts.default_ipv4.mtu - 50 }}"
 
 ###############################################################################
 # Network virtual patch link configuration.

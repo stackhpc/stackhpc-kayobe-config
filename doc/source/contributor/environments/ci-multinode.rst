@@ -17,6 +17,7 @@ beyond the defaults. This includes:
 
 * Manila
 * Magnum
+* Octavia
 * Wazuh
 
 .. seealso::
@@ -300,6 +301,57 @@ with:
 
 There are various other options for sonobuoy, see the `documentation
 <https://sonobuoy.io/docs/>`_ for more details.
+
+Octavia
+=======
+
+Octavia is deployed by default, with whichever of its two provider drivers the
+cluster is able to support.
+
+Amphorae are unusably slow under emulation, so it needs nested virtualisation on the compute hosts. It also
+needs a management network, which is described in :doc:`../../operations/octavia`.
+
+The **OVN** driver programs require an OVN deployment, and supports only the ``SOURCE_IP_PORT``
+balancing algorithm with TCP, UDP and SCTP listeners.
+
+Which drivers are enabled follows from two variables, and everything else is
+derived from them:
+
+``octavia_amphora_driver_enabled``
+  Whether the compute hosts can run amphorae. Automatically checked
+  for nested virtualisation support on all compute hosts.
+``kolla_enable_ovn``
+  Whether this is an OVN deployment. The GitHub Actions workflows set this per
+  job from their ``neutron_plugin`` input.
+
+That gives four combinations:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Deployment
+     - Nested virtualisation
+     - Drivers enabled
+   * - OVN
+     - yes
+     - amphora and OVN
+   * - OVN
+     - no
+     - OVN
+   * - ML2/OVS
+     - yes
+     - amphora
+   * - ML2/OVS
+     - no
+     - none, so Octavia is not deployed
+
+When the amphora driver is enabled, ``nova_compute_virt_type`` becomes ``kvm``,
+
+Tempest runs one load list per enabled driver, because Tempest's
+``load_balancer.provider`` setting takes a single value. The lists are
+``octavia-smoke`` for the amphora driver and ``octavia-ovn-smoke`` for the OVN
+one, and ``.automation.conf/config.sh`` sets the provider to match the list it
+was given.
 
 Wazuh
 ======
