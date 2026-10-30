@@ -99,9 +99,10 @@ cinder_cluster_name: "{{ 'stackhpc_test_cinder_cluster' if groups['controllers']
 ceph_rgw_swift_compatibility: false
 ceph_rgw_swift_account_in_url: true
 
+# host is only an haproxy label, and inject_facts_as_vars is disabled, so used the inventory hostname.
 ceph_rgw_hosts:
 {% for rgw in groups['rgws'] %}
-  - host: "{{ hostvars[rgw].ansible_hostname }}"
+  - host: "{{ rgw }}"
     ip: "{{ lookup('vars', storage_net_name ~ '_ips')[rgw] }}"
     port: 8100
 {% endfor %}
