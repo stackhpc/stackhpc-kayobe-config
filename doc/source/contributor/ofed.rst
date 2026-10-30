@@ -2,8 +2,6 @@
 OFED
 ====
 
-Warning: Experimental workflow subject to change
-
 The Nvidia DOCA framework is distributed as part of StackHPC Release Train for OFED driver support,
 this repository is synced into Ark as part of the Release Train workflows, however to ensure
 compatibility with Release Train packages, we are required to build OFED modules with support for
@@ -104,3 +102,30 @@ playbook:
 .. code-block:: console
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/tools/install-doca.yml
+
+Host configuration
+------------------
+
+Ensure DOCA hosts are a member of the ``vflag`` group, this will be needed to ensure VF-LAG
+and DOCA configuration is applied on DOCA hosts.
+
+.. code-block:: ini
+
+    [vflag:children]
+    mlnx
+
+NICs should be defined in the compute inventory variables to configure VF-LAG for hardware
+offload. Populate the ``vflag_pfs`` and ``vflag_numvfs`` variables, an example is below
+using bonded interfaces.
+
+.. code-block:: yaml
+
+  vflag_pfs: "{{ bond_hs_net_bond_interfaces }}"
+  vflag_numvfs: <number of virtual functions>
+
+A playbook is provided to ensure VF-LAG and OFED setup is applied on ``vflag`` hosts. To run
+the configuration playbook:
+
+.. code-block:: console
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/vf-lag-host-configure.yml
