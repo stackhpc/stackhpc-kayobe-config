@@ -105,6 +105,9 @@ cephadm_commands_rgw:
   - "config set client.rgw rgw_s3_auth_use_keystone true"
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
+  # The RGW daemons already exist by now and most rgw_keystone_* options cannot
+  # be updated at runtime, so recreate them to pick up the settings above.
+  - "orch redeploy rgw.myrgw"
 
 cephadm_radosgw_services:
   - id: myrgw
