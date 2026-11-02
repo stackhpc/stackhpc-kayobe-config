@@ -8,6 +8,7 @@ KAYOBE_AIO_LVM=true
 KAYOBE_CONFIG_EDIT_PAUSE=false
 AIO_RUN_TEMPEST=false
 USE_OVS=false
+ENABLE_OCTAVIA=true
 
 # NOTE(Alex-Welsh): These values should not be changed unless you are sure you
 # know what you are doing.
@@ -92,6 +93,18 @@ disable_ovn() {
     fi
 }
 
+# Disable Octavia if requested. Octavia requires nested virtualisation.
+disable_octavia() {
+    local override="$BASE_PATH/src/kayobe-config/etc/kayobe/environments/aio/zz-disable-octavia.yml"
+    if [[ "$ENABLE_OCTAVIA" != true ]]; then
+        echo "Disabling Octavia..."
+        echo "kolla_enable_octavia: false" > "$override"
+    else
+        # Remove a stale override from an earlier run in this checkout.
+        rm -f "$override"
+    fi
+}
+
 # Remove LVM configuration if not using LVM
 remove_lvm_configuration() {
     if ! sudo vgdisplay | grep -q lvm2; then
@@ -171,11 +184,42 @@ kayobe_overcloud_host_configure() {
     deactivate
 }
 
+# Generate Octavia certificates into the environment configuration
+kayobe_octavia_certificates() {
+    if [[ "$ENABLE_OCTAVIA" != true ]]; then
+        echo "Skipping Octavia certificates, Octavia is disabled"
+        return
+    fi
+    echo "Generating Octavia certificates..."
+    activate_kayobe_env
+    kayobe kolla ansible run octavia-certificates \
+        -ke node_custom_config="$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/kolla/config"
+    set +x
+    deactivate
+}
+
 # Run Kayobe overcloud service deployment
 kayobe_overcloud_service_deploy() {
     echo "Running Kayobe overcloud service deploy..."
     activate_kayobe_env
     kayobe overcloud service deploy
+    set +x
+    deactivate
+}
+
+# Register the Octavia amphora image in Glance
+kayobe_octavia_amphora_image() {
+    if [[ "$ENABLE_OCTAVIA" != true ]]; then
+        echo "Skipping Octavia amphora image, Octavia is disabled"
+        return
+    fi
+    echo "Registering Octavia amphora image..."
+    activate_kayobe_env
+    # Tracing would print the Octavia service password from the openrc file.
+    set +x
+    source "$KOLLA_CONFIG_PATH/octavia-openrc.sh"
+    set -x
+    kayobe playbook run "$KAYOBE_CONFIG_PATH/ansible/maintenance/octavia-amphora-image-register.yml"
     set +x
     deactivate
 }
@@ -199,7 +243,9 @@ run_kayobe_commands() {
     kayobe_control_host_bootstrap
     kayobe_run_init_playbooks
     kayobe_overcloud_host_configure
+    kayobe_octavia_certificates
     kayobe_overcloud_service_deploy
+    kayobe_octavia_amphora_image
     kayobe_test_overcloud_vm
 }
 
@@ -283,6 +329,7 @@ run_deploy_prereqs() {
     install_dependencies
     clone_repositories
     disable_ovn
+    disable_octavia
     pause_for_configuration
     remove_lvm_configuration
     setup_virtualenv
@@ -313,7 +360,9 @@ help() {
     echo "  run_deploy_prereqs"
     echo "  kayobe_control_host_bootstrap"
     echo "  kayobe_overcloud_host_configure"
+    echo "  kayobe_octavia_certificates"
     echo "  kayobe_overcloud_service_deploy"
+    echo "  kayobe_octavia_amphora_image"
     echo "  generate_kayobe_env_script"
     echo "  generate_openstack_env_script"
     echo "  run_kayobe_commands"
@@ -335,7 +384,9 @@ main() {
                 configure_network) configure_network ;;
                 kayobe_control_host_bootstrap) kayobe_control_host_bootstrap ;;
                 kayobe_overcloud_host_configure) kayobe_overcloud_host_configure ;;
+                kayobe_octavia_certificates) kayobe_octavia_certificates ;;
                 kayobe_overcloud_service_deploy) kayobe_overcloud_service_deploy ;;
+                kayobe_octavia_amphora_image) kayobe_octavia_amphora_image ;;
                 generate_kayobe_env_script) generate_kayobe_env_script ;;
                 generate_openstack_env_script) generate_openstack_env_script ;;
                 run_kayobe_commands) run_kayobe_commands ;;

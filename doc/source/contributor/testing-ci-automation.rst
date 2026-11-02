@@ -99,7 +99,7 @@ All in one testing
 The ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow accepts
 various parameters, and the following are used to create a test matrix for PRs:
 
-  - Operating System (Rocky 9, Rocky 10, Ubuntu Noble)
+  - Operating System (Rocky Linux 10, Ubuntu Noble)
   - Neutron plugin (OVS, OVN)
   - Upgrade or no upgrade
   - aarch64 or x86
@@ -231,9 +231,16 @@ A Pulp authentication proxy container is deployed on the runner that provides
 unauthenticated access to the package repositories in Ark. This avoids leaking
 Ark credentials into the built container images.
 
-Once built, images are scanned for vulnerabilities using `Trivy
-<https://trivy.dev/>`_. Any critical vulnerabilities will break the build,
-unless the ``push-dirty`` input is true.
+Once built, images are scanned for vulnerabilities using `Grype
+<https://github.com/anchore/grype>`_. If the ``sbom`` input is true, an SBOM is
+first generated for each image using `Syft <https://github.com/anchore/syft>`_,
+and the SBOM is scanned instead. The SBOM uses the Syft JSON format, which
+preserves the function symbols captured from Go binaries, so that Grype only
+reports Go vulnerabilities in code compiled into the binary. Images are scanned in parallel, four at a
+time by default; this may be changed by setting ``SCAN_PARALLELISM`` for the
+scan step. Any critical vulnerabilities will break the
+build, unless the ``push-critical`` input is true. Vulnerabilities may be
+ignored by adding them to ``etc/kayobe/grype/allowed-vulnerabilities.yml``.
 
 If the ``push`` input is true, images are pushed to Ark, and a `container sync
 <https://stackhpc.github.io/stackhpc-release-train/usage/content-workflows/#syncing-container-images>`_
@@ -274,7 +281,7 @@ In order to create a VM on the cloud hosting the CI, we need a few things:
 - a ``clouds.yaml`` file
 - an application credential to authenticate with the cloud
 - a flavor for the VM (minimum 8GiB RAM)
-- a Rocky Linux 9 or Rocky Linux 10 image for the VM
+- a Rocky Linux 10 image for the VM
 - a network and subnet for the VM
 - SSH connectivity from the GitHub runner to the VM
 - access from the VM to the Internet

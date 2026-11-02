@@ -68,5 +68,6 @@ designate_forwarders_addresses: "1.1.1.1; 8.8.8.8"
 enable_external_api_firewalld: true
 external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 
-# Test cinder cluster
-cinder_cluster_name: "stackhpc_test_cinder_cluster"
+# Cinder clustering requires more than one cinder-volume, which follows the controller count.
+cinder_cluster_name: "{{ 'stackhpc_test_cinder_cluster' if groups['controllers'] | length > 1 else '' }}"
+

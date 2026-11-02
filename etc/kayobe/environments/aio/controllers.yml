@@ -6,8 +6,8 @@
 # to setup the Kayobe user account. Default is {{ os_distribution }}.
 controller_bootstrap_user: "{{ os_distribution if os_distribution == 'ubuntu' else 'cloud-user' }}"
 
-controller_extra_network_interfaces:
-  - ethernet
+# Octavia management network. Not added by only setting octavia_net_name
+controller_extra_network_interfaces: "{{ ['ethernet'] + (['lb_mgmt'] if kolla_enable_octavia | bool else []) }}"
 
 # Controller lvm configuration. See intentory/group_vars/controllers/lvm.yml
 # for the exact configuration.

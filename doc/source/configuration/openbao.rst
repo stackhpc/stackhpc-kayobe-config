@@ -450,6 +450,30 @@ Enable the required TLS variables in kayobe and kolla
 
       kayobe overcloud host command run --command "systemctl restart kolla-nova_compute-container.service" --become --show-output -l compute
 
+Rolling back to HTTP
+--------------------
+
+If the system needs a rollback from HTTPS to HTTP, you can set variable for each TLS to false
+then re run ``kayobe overcloud service deploy``.
+
+.. code-block::
+
+   kolla_enable_tls_external: false
+   kolla_enable_tls_internal: false
+   kolla_enable_tls_backend: false
+
+Once the rollback is done, you may need to delete TLS related HAProxy rules at controller hosts.
+
+.. code-block::
+
+   # Remove TLS related HAProxy rules from all controller hosts
+   cd /etc/kolla/haproxy/services.d
+   rm neutron-tls-proxy.cfg
+   rm glance-tls-proxy.cfg
+
+   # Then restart HAProxy
+   systemctl restart kolla-haproxy-container
+
 Pulp TLS
 ========
 
@@ -594,6 +618,19 @@ However, end users of OpenStack will not be affected.
 Overcloud migration is HA migration and no downtime is expected.
 
 It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.
+
+.. note::
+
+   Once you are satisfied that OpenBao is operating correctly and have verified
+   that everything is working, remove the old Vault and Consul containers and
+   their associated volumes from the seed node and overcloud controllers.
+
+   .. code-block:: bash
+
+      kayobe seed host command run --become --command "docker rm vault consul"
+      kayobe seed host command run --become --command "docker volume rm vault_file vault_logs consul_data"
+      kayobe overcloud host command run --limit controllers --become --command "docker rm vault consul"
+      kayobe overcloud host command run --limit controllers --become --command "docker volume rm vault_file vault_logs consul_data"
 
 .. _openbao-cluster-fix:
 

@@ -20,6 +20,15 @@ groups:
       summary: "Container killed (instance {{ $labels.instance }})"
       description: "A container has disappeared"
 
+  - alert: ContainerNotHealthy
+    expr: container_health_state{name!=""} == 0
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container not healthy (instance {{ $labels.instance }})"
+      description: "Container {{ $labels.name }} has not been healthy for more than 10 minutes"
+
   - alert: ContainerCpuUsage
     expr: (sum(rate(container_cpu_usage_seconds_total{name!=""}[3m])) BY (instance, name) * 100) > 3000
     for: 2m

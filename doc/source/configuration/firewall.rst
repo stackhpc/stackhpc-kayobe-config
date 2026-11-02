@@ -40,7 +40,7 @@ Controller firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   controller_firewalld_default_zone: trusted
+   controller_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -69,7 +69,7 @@ Compute firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   compute_firewalld_default_zone: trusted
+   compute_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -98,7 +98,7 @@ Storage firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   storage_firewalld_default_zone: trusted
+   storage_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -130,7 +130,7 @@ Monitoring firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   monitoring_firewalld_default_zone: trusted
+   monitoring_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -162,7 +162,7 @@ control host Infrastructure VMs.
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   infra_vm_firewalld_default_zone: trusted
+   infra_vm_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -194,7 +194,7 @@ Seed firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   seed_firewalld_default_zone: trusted
+   seed_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not
@@ -223,7 +223,7 @@ Seed Hypervisor firewalld Configuration
    # the default zone will not be changed.
    # Predefined zones are listed here:
    # https://firewalld.org/documentation/zone/predefined-zones.html
-   seed_hypervisor_firewalld_default_zone: trusted
+   seed_hypervisor_firewalld_default_zone: drop
 
    # A list of firewall rules to apply. Each item is a dict containing
    # arguments to pass to the firewalld module. Arguments are omitted if not

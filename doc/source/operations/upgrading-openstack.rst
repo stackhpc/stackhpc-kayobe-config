@@ -52,13 +52,9 @@ and will be released in the next few months.
 RabbitMQ
 --------
 
-After some upgrades, it has been seen that RabbitMQ streams do not have replicas across all RabbitMQ nodes.
-Errors like this will be logged::
-
-   Basic.consume: (406) PRECONDITION_FAILED - stream queue 'compute_fanout' in vhost '/' does not have a running replica on the local node
-
-A proper fix is still WIP, in the meantime these errors can be resolved with this script:
-`<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
+After some upgrades, RabbitMQ streams may not have replicas across all
+RabbitMQ nodes. See :doc:`rabbitmq` for the error to look for and the current
+repair procedure.
 
 ProxySQL
 --------
@@ -133,6 +129,16 @@ suggestions:
   ``kolla/config/<service>/policy.yaml``. Policy reference documentation can
   generally be found in the documentation of each project. For example, Nova
   policy: https://docs.openstack.org/nova/latest/configuration/policy.html
+
+Valkey Migration
+----------------
+
+.. warning::
+
+   If the deployment uses Redis, it must be migrated to Valkey before starting
+   the upgrade.
+   Please follow the instructions provided in the 2025.1 release
+   `Valkey migration documentation <https://stackhpc-kayobe-config.readthedocs.io/en/stackhpc-2025.1/operations/rocky-10.html#valkey-migration>`__
 
 Preparation
 ===========
@@ -326,7 +332,7 @@ without upgrading Bifrost:
 
 .. code-block:: console
 
-   kayobe seed service deploy --kolla-tags none --tags seed-manage-containers
+   kayobe seed service deploy --skip-tags bifrost --tags seed-manage-containers
 
 Note that this will also update any other enabled seed containers, such as Squid.
 
@@ -426,7 +432,7 @@ Generate the new configuration to a tmpdir.
 
 .. code-block:: console
 
-   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --kolla-limit controllers[0],compute[0],storage[0]
+   kayobe overcloud service configuration generate --node-config-dir /tmp/kolla --limit controllers[0],compute[0],storage[0]
 
 Save the new configuration locally.
 
@@ -995,7 +1001,7 @@ scope of the upgrade:
 
 .. code-block:: console
 
-   kayobe overcloud service upgrade --tags config --kolla-tags keystone
+   kayobe overcloud service upgrade --tags keystone
 
 Updating the Octavia Amphora Image
 ----------------------------------

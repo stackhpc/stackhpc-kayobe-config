@@ -130,8 +130,8 @@ Moving from multiple Nova Compute Instances to a single instance
 
   .. code-block:: console
 
-    $ ssh controller2 sudo docker rm -f nova_compute_ironic
-    $ ssh controller3 sudo docker rm -f nova_compute_ironic
+    $ ssh controller2 'sudo systemctl disable kolla-nova_compute_ironic-container.service && sudo rm /etc/systemd/system/kolla-nova_compute_ironic-container.service && sudo docker rm -f nova_compute_ironic'
+    $ ssh controller3 'sudo systemctl disable kolla-nova_compute_ironic-container.service && sudo rm /etc/systemd/system/kolla-nova_compute_ironic-container.service && sudo docker rm -f nova_compute_ironic'
 
 8. Ensure that all Ironic nodes are using the single remaining Nova Compute
    Ironic instance. Eg. Baremetal nodes in use by compute instances will not
@@ -252,7 +252,7 @@ Remove the old container:
 
 .. code-block:: console
 
-  $ ssh controller1 sudo docker rm -f nova_compute_ironic
+  $ ssh controller1 'sudo systemctl disable kolla-nova_compute_ironic-container.service && sudo rm /etc/systemd/system/kolla-nova_compute_ironic-container.service && sudo docker rm -f nova_compute_ironic'
 
 Deploy the new service:
 

@@ -25,7 +25,6 @@ rebooting, decommissioning or making any disruptive configuration change.
 Monitoring
 ----------
 
-* `Back up InfluxDB <https://docs.influxdata.com/influxdb/v1.8/administration/backup_and_restore/>`__
 * `Back up OpenSearch <https://opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/snapshots/snapshot-restore/>`__
 * `Back up Prometheus <https://prometheus.io/docs/prometheus/latest/querying/api/#snapshot>`__
 

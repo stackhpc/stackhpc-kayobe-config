@@ -1,0 +1,15 @@
+---
+features:
+  - |
+    Octavia is now enabled by default in the ``aio`` environment, using the
+    Amphora provider driver. A ``tempest-aio-octavia.overrides.conf`` file is
+    provided for running the ``octavia`` Tempest load list against it.
+upgrade:
+  - |
+    The ``aio`` environment now sets ``nova_compute_virt_type`` to ``kvm``
+    when Octavia is enabled, because amphorae are effectively unusable under
+    QEMU emulation. Hosts running the ``aio`` environment therefore require
+    nested virtualisation, and ``kayobe overcloud host configure`` will fail
+    with an explanatory message if ``/dev/kvm`` is not present. Set
+    ``ENABLE_OCTAVIA`` to ``false`` in ``automated-setup.sh`` to deploy
+    without Octavia, which restores the previous ``qemu`` behaviour.
