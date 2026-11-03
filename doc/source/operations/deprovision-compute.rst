@@ -119,13 +119,11 @@ Remove it from ``etc/kayobe/inventory/overcloud`` and any group vars, then:
 Deprovision the Hardware
 ========================
 
-From the seed. ``undeploy`` wipes and returns it to ``available``:
+From the seed.
 
 .. code-block:: console
 
    sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node undeploy <node>'
-
-Only if it is leaving the estate entirely. This also drops it from Bifrost:
 
 .. code-block:: console
 
