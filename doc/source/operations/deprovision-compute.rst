@@ -1,13 +1,13 @@
-=============================
+#############################
 Deprovisioning a Compute Node
-=============================
+#############################
 
 This procedure removes a compute node from service, drains it, removes all
 traces of it from the control plane and Kayobe configuration, and finally
 deprovisions the hardware in Bifrost.
 
 Check the Hypervisor
-====================
+~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: console
 
@@ -15,7 +15,7 @@ Check the Hypervisor
    openstack server list --all-projects --host <node>
 
 Put It Into Maintenance Mode
-============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: console
 
@@ -29,7 +29,7 @@ Or use the OpenStack CLI:
    openstack compute service set --disable --disable-reason "decommission <ticket>" <node> nova-compute
 
 Drain the Node
-==============
+~~~~~~~~~~~~~~
 
 .. code-block:: console
 
@@ -52,7 +52,7 @@ Unpause any paused instances.
    openstack server migrate <id> --wait
 
 Confirm It's Empty
-==================
+~~~~~~~~~~~~~~~~~~
 
 On the to-be-decommissioned node:
 
@@ -61,7 +61,7 @@ On the to-be-decommissioned node:
    docker exec nova_libvirt virsh list --all
 
 Destroy Containers and Systemd Units
-====================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: console
 
@@ -69,7 +69,7 @@ Destroy Containers and Systemd Units
    docker stop $(docker ps -aq); docker rm $(docker ps -aq)
 
 Remove It From the Control Plane
-================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
 
@@ -103,7 +103,7 @@ On a controller, check if the chassis exists and delete it:
    sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only chassis-del <node>
 
 Remove It From Kayobe and Monitoring
-====================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Until this runs, Prometheus keeps scraping its exporters, and haproxy/fluentd
 keep referencing it.
@@ -119,7 +119,7 @@ Remove it from ``etc/kayobe/inventory/overcloud`` and any group vars, then:
    kayobe overcloud service reconfigure --kolla-limit controllers,monitoring
 
 Deprovision the Hardware
-========================
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 From the seed.
 
@@ -132,7 +132,7 @@ From the seed.
    sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node delete <node>'
 
 Verification
-============
+~~~~~~~~~~~~
 
 .. code-block:: console
 
