@@ -1,10 +1,11 @@
 ---
 
-- hosts: compute
+- name: Check KVM support for the Octavia amphora driver
+  hosts: compute
   gather_facts: true
   tasks:
     - name: Assert that the host architecture supports the amphora driver
-      assert:
+      ansible.builtin.assert:
         that: ansible_facts.architecture == 'x86_64'
         fail_msg: >-
           The Octavia amphora driver is only supported on x86_64 hosts, because
@@ -14,13 +15,13 @@
       when: octavia_amphora_driver_enabled | bool
 
     - name: Check whether /dev/kvm exists
-      stat:
+      ansible.builtin.stat:
         path: /dev/kvm
       register: kvm_device
       when: octavia_amphora_driver_enabled | bool
 
     - name: Assert that KVM is available
-      assert:
+      ansible.builtin.assert:
         that: kvm_device.stat.exists
         fail_msg: >-
           /dev/kvm is not present. The ci-multinode environment uses KVM when
