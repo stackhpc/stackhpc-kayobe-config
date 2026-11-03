@@ -70,10 +70,10 @@ selinux_do_reboot: true
 ###############################################################################
 # Octavia.
 
-# Use Octavia's amphora provider driver, which needs nested virtualisation on
-# the compute hosts. Detected during overcloud host configure by
-# pre.d/15-detect-nested-virt.yml, which overrides this fallback.
-octavia_amphora_driver_enabled: false
+# Use Octavia's amphora provider driver, which needs nested virtualisation.
+# This assumes if kvm exists on Control host it will exist on computes as well, which the
+# 10-check-kvm.yml hook then verifies.
+octavia_amphora_driver_enabled: "{{ '/dev/kvm' is exists }}"
 
 ###############################################################################
 # Extra vars.

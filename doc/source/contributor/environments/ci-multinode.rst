@@ -318,8 +318,10 @@ Which drivers are enabled follows from two variables, and everything else is
 derived from them:
 
 ``octavia_amphora_driver_enabled``
-  Whether the compute hosts can run amphorae. Automatically checked
-  for nested virtualisation support on all compute hosts.
+  Whether the compute hosts can run amphorae. Derived from whether
+  ``/dev/kvm`` exists on the Ansible control host, which then assumes the same for
+  all compute hosts in a CI cluster. The ``10-check-kvm.yml`` hook then verifies
+  the compute hosts themselves, and fails the deployment if they differ.
 ``kolla_enable_ovn``
   Whether this is an OVN deployment. The GitHub Actions workflows set this per
   job from their ``neutron_plugin`` input.
