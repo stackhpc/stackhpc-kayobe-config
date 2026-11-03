@@ -1,0 +1,12 @@
+---
+fixes:
+  - |
+    Added a playbook ``disable-pciehp-driver.yml`` that fixes race condition
+    between vfio-pci and pciehp (hotplug) drivers. This race condition causes
+    Nova to fail spawning VM with attached PCI devices (e.g. GPUs) with QEMU
+    error: "Assertion 0 <= irq_num && irq_num < PCI_NUM_PINS' failed".
+    If certain PCI devices are affected by this, users can use the playbook
+    with setting 3 variables.
+    * ``disable_pciehp_hosts``: List of hosts or groups to apply the fix
+    * ``disable_pciehp_vendor_id``: Vendor ID of the device to fix
+    * ``disable_pciehp_product_id``: Product ID of the device to fix

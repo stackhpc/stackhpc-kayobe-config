@@ -105,50 +105,9 @@ To deprovision an existing hypervisor, run:
 Removing a Hypervisor
 ---------------------
 
-To remove a hypervisor without replacing it, proceed as follows:
+To remove a hypervisor without replacing it, proceed as follows.
 
-#. :ref:`Disable the hypervisor to avoid scheduling any new instances on it <taking-a-hypervisor-out-of-service>`
-#. :ref:`Evacuate all instances <evacuating-all-instances>`
-#. (optionally) Deprovision the hypervisor
-
-   .. code-block:: console
-
-      kayobe overcloud deprovision --limit <Hypervisor hostname>
-
-   .. warning::
-
-      Always use ``--limit`` with ``kayobe overcloud deprovision`` on a production
-      system. Running this command without a limit will deprovision all overcloud
-      hosts.
-
-#. Physically remove the node from the deployment
-
-#. Delete the node in Bifrost:
-
-   .. code-block:: console
-
-      docker exec -it bifrost_deploy bash
-      (bifrost-deploy)[root@seed bifrost-base]# export OS_CLOUD=bifrost
-      (bifrost-deploy)[root@seed bifrost-base]# openstack baremetal node delete <Hostname>
-
-#. Delete the compute service in OpenStack:
-
-   .. code-block:: console
-
-      openstack compute service list | grep <Hypervisor hostname>
-      openstack compute service delete <Service ID>
-
-#. Delete the network agents in OpenStack:
-
-   .. code-block:: console
-
-      openstack network agent list | grep <Hypervisor hostname>
-      openstack network agent delete <Agent IDs>
-
-#. Remove the node from the Kayobe configuration. Ensure the node is removed
-   from the inventory and ``network-allocation.yml``. Other configuration files
-   may also be removed, but this is dependent on the deployment. Recursive
-   ``grep`` can help here.
+.. include:: deprovision-compute.rst
 
 .. _evacuating-all-instances:
 
