@@ -105,7 +105,8 @@ To deprovision an existing hypervisor, run:
 Removing a Hypervisor
 ---------------------
 
-To remove a hypervisor without replacing it, proceed as follows:
+To remove a hypervisor without replacing it, proceed as follows. For compute
+nodes, see :doc:`deprovision-compute` for a more detailed procedure.
 
 #. :ref:`Disable the hypervisor to avoid scheduling any new instances on it <taking-a-hypervisor-out-of-service>`
 #. :ref:`Evacuate all instances <evacuating-all-instances>`
