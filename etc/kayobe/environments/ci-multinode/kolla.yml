@@ -5,7 +5,8 @@ kolla_enable_cinder: true
 kolla_enable_designate: true
 kolla_enable_magnum: true
 kolla_enable_neutron_provider_networks: true
-kolla_enable_octavia: true
+# Deploy Octavia only when a provider driver can actually work here.
+kolla_enable_octavia: "{{ octavia_amphora_driver_enabled | bool or kolla_enable_ovn | bool }}"
 kolla_enable_valkey: true
 
 kolla_enable_tls_external: true
