@@ -129,10 +129,6 @@ From the seed.
 
    sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node delete <node>'
 
-.. code-block:: console
-
-   kayobe overcloud inventory discover
-
 Verification
 ============
 
