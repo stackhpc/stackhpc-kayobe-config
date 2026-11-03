@@ -40,7 +40,6 @@ The playbook only handles ``--status ACTIVE``, so clear the rest by hand:
 .. code-block:: console
 
    openstack server list --all-projects --host <node> --status SHUTOFF
-   openstack server list --all-projects --host <node> --status PAUSED
    openstack server list --all-projects --host <node> --status ERROR
 
 Cold migrate each one:
