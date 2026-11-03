@@ -1,68 +1,146 @@
-# 1. Check the hypervisor
+=============================
+Deprovisioning a Compute Node
+=============================
 
-openstack compute service list --host <node>
-openstack server list --all-projects --host <node>
+This procedure removes a compute node from service, drains it, removes all
+traces of it from the control plane and Kayobe configuration, and finally
+deprovisions the hardware in Bifrost.
 
-# 2. Put it into maintenance mode:
-source ~/<your_checkout>/src/kayobe-config/etc/kolla/public-openrc.sh
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-disable.yml --limit <node> -e disabled_reason="decommission <ticket>"
+Check the Hypervisor
+====================
 
-# or use openstack cli
-openstack compute service set --disable --disable-reason "decommission <ticket>" <node> nova-compute
+.. code-block:: console
 
-# 3. Drain the node
+   openstack compute service list --host <node>
+   openstack server list --all-projects --host <node>
 
-kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-drain.yml --limit <node>
+Put It Into Maintenance Mode
+============================
 
-# the playbook only handles --status ACTIVE, so clear the rest by hand
-openstack server list --all-projects --host <node> --status SHUTOFF
-openstack server list --all-projects --host <node> --status PAUSED
-openstack server list --all-projects --host <node> --status ERROR
-# cold migrate each one
-openstack server migrate <id> --wait
+.. code-block:: console
 
-# 4. Confirm it's empty
-# on to-be-decommissioned node
-docker exec nova_libvirt virsh list --all
+   source ~/<your_kayobe_config_checkout_dir>/src/kayobe-config/etc/kolla/public-openrc.sh
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-disable.yml --limit <node> -e disabled_reason="decommission <ticket>"
 
-# 5. Destroy containers and systemd units
+Or use the OpenStack CLI:
 
-sudo systemctl disable --now $(systemctl list-units 'kolla*' --all --plain --no-legend | awk '{print $1}')
-docker stop $(docker ps -aq); docker rm $(docker ps -aq)
+.. code-block:: console
 
-6. Remove it from the control plane
+   openstack compute service set --disable --disable-reason "decommission <ticket>" <node> nova-compute
 
-# only now, with nothing running - delete any of these while its container is up
-# and it re-registers, the OVN metadata agent especially (Chassis_Private derived)
-openstack compute service delete <service-id>
-# If present openstack resource provider list --name <node>
-openstack resource provider delete <uuid>
-# Get list of net agents openstack network agent list --host <node>
-openstack network agent delete <agent-id>
-3 On a controller check if chassis exists and delete sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only --columns=chassis_name,ip,type list Encap
-sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only chassis-del <node>
+Drain the Node
+==============
 
-7. Remove it from Kayobe and monitoring
+.. code-block:: console
 
-# until this runs, Prometheus keeps scraping its exporters and haproxy/fluentd
-# keep referencing it
-grep -rn '<node>' $KAYOBE_CONFIG_PATH/
-# remove it from etc/kayobe/inventory/overcloud and any group vars, then:
-kayobe overcloud service reconfigure --kolla-limit controllers,monitoring
+   kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/maintenance/nova-compute-drain.yml --limit <node>
 
-8. Deprovision the hardware
+The playbook only handles ``--status ACTIVE``, so clear the rest by hand:
 
-# from the seed - undeploy wipes and returns it to 'available'
-sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node undeploy <node>'
+.. code-block:: console
 
-# only if it is leaving the estate entirely - also drops it from Bifrost
-sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node delete <node>'
+   openstack server list --all-projects --host <node> --status SHUTOFF
+   openstack server list --all-projects --host <node> --status PAUSED
+   openstack server list --all-projects --host <node> --status ERROR
 
-kayobe overcloud inventory discover
+Cold migrate each one:
 
-9. Verification
+.. code-block:: console
 
-sudo docker exec rabbitmq rabbitmqctl list_connections --silent peer_host | sort -u
-sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only --columns=chassis_name,ip,type list Encap
-openstack compute service list
-openstack network agent list
+   openstack server migrate <id> --wait
+
+Confirm It's Empty
+==================
+
+On the to-be-decommissioned node:
+
+.. code-block:: console
+
+   docker exec nova_libvirt virsh list --all
+
+Destroy Containers and Systemd Units
+====================================
+
+.. code-block:: console
+
+   sudo systemctl disable --now $(systemctl list-units 'kolla*' --all --plain --no-legend | awk '{print $1}')
+   docker stop $(docker ps -aq); docker rm $(docker ps -aq)
+
+Remove It From the Control Plane
+================================
+
+.. warning::
+
+   Only now, with nothing running. Delete any of these while its container is
+   up and it re-registers, the OVN metadata agent especially
+   (``Chassis_Private`` derived).
+
+.. code-block:: console
+
+   openstack compute service delete <service-id>
+
+If present:
+
+.. code-block:: console
+
+   openstack resource provider list --name <node>
+   openstack resource provider delete <uuid>
+
+Get the list of network agents:
+
+.. code-block:: console
+
+   openstack network agent list --host <node>
+   openstack network agent delete <agent-id>
+
+On a controller, check if the chassis exists and delete it:
+
+.. code-block:: console
+
+   sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only --columns=chassis_name,ip,type list Encap
+   sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only chassis-del <node>
+
+Remove It From Kayobe and Monitoring
+====================================
+
+Until this runs, Prometheus keeps scraping its exporters, and haproxy/fluentd
+keep referencing it.
+
+.. code-block:: console
+
+   grep -rn '<node>' $KAYOBE_CONFIG_PATH/
+
+Remove it from ``etc/kayobe/inventory/overcloud`` and any group vars, then:
+
+.. code-block:: console
+
+   kayobe overcloud service reconfigure --kolla-limit controllers,monitoring
+
+Deprovision the Hardware
+========================
+
+From the seed. ``undeploy`` wipes and returns it to ``available``:
+
+.. code-block:: console
+
+   sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node undeploy <node>'
+
+Only if it is leaving the estate entirely. This also drops it from Bifrost:
+
+.. code-block:: console
+
+   sudo docker exec -it bifrost_deploy bash -c 'export OS_CLOUD=bifrost; openstack baremetal node delete <node>'
+
+.. code-block:: console
+
+   kayobe overcloud inventory discover
+
+Verification
+============
+
+.. code-block:: console
+
+   sudo docker exec rabbitmq rabbitmqctl list_connections --silent peer_host | sort -u
+   sudo docker exec ovn_sb_db ovn-sbctl --no-leader-only --columns=chassis_name,ip,type list Encap
+   openstack compute service list
+   openstack network agent list
