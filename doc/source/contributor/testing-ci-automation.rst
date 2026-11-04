@@ -343,12 +343,13 @@ in the StackHPC OpenStack GitHub Workflows repository. Note that since this
 workflow is in a different repository and we reference it with a tag, changes
 to the reusable workflow are not picked up until the tag is bumped.
 
-The cloud to deploy on is chosen by the ``runner_env`` input, which names a
-GitHub environment and so selects the credentials, flavors and network used.
-The on-demand workflow offers this as a choice and defaults to SMS Lab, while
-the periodic workflow use Leafcloud. ``MULTINODE_FIP_POOL`` is read only on Leafcloud, where the runner
-reaches the Ansible control host through a floating IP rather than its private
-address.
+The target cloud is selected by the ``runner_env`` input, which names a GitHub
+environment and determines the credentials, flavors and network used.
+The on-demand workflow presents this as a choice, defaulting to SMS Lab; the
+periodic workflow always uses Leafcloud.
+
+``MULTINODE_FIP_POOL`` is read only on Leafcloud, where the runner reaches the
+Ansible control host through a floating IP rather than its private address.
 
 The workflow runs on an autoscaling `Actions Runner Controller (ARC)
 <https://stackhpc.github.io/stackhpc-release-train/operations/github/#github-actions-runner-controller-arc>`_
