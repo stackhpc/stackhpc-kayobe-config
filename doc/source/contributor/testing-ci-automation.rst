@@ -8,6 +8,10 @@ CI hosting clouds
 Several GitHub Actions workflows run on public runners, but some require
 private runners. For these, we use a CI hosting cloud.
 
+Leafcloud and SMS Lab are both supported for hosting CI workloads. Manually
+triggered multinode workflows default to SMS Lab; the periodic multinode
+workflow uses Leafcloud.
+
 Leafcloud
 ---------
 
@@ -342,8 +346,7 @@ to the reusable workflow are not picked up until the tag is bumped.
 The cloud to deploy on is chosen by the ``runner_env`` input, which names a
 GitHub environment and so selects the credentials, flavors and network used.
 The on-demand workflow offers this as a choice and defaults to SMS Lab, while
-the periodic workflow uses Leafcloud at the moment (This can be updated later
-as needed). ``MULTINODE_FIP_POOL`` is read only on Leafcloud, where the runner
+the periodic workflow use Leafcloud. ``MULTINODE_FIP_POOL`` is read only on Leafcloud, where the runner
 reaches the Ansible control host through a floating IP rather than its private
 address.
 
