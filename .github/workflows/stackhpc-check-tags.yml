@@ -15,8 +15,10 @@ on:
         type: boolean
         default: true
     secrets:
+      # NOTE: Secrets are optional so that the workflow can be skipped cleanly
+      # (via the 'if' input) on pull requests from forks, which receive no secrets.
       KAYOBE_VAULT_PASSWORD:
-        required: true
+        required: false
 
 env:
   ANSIBLE_FORCE_COLOR: True
@@ -24,13 +26,23 @@ jobs:
   check-tags:
     name: Check container image tags
     if: ${{ inputs.if && ! cancelled() }}
-    runs-on: arc-skc-aio-runner
+    # Use a GitHub-hosted runner for pull requests from forks; the job fails
+    # immediately in that case (see below).
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-24.04' || 'arc-skc-aio-runner' }}
     permissions: {}
     env:
       KAYOBE_ENVIRONMENT: ci-aio
       KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD }}
       KAYOBE_IMAGE: ${{ inputs.kayobe_image }}
     steps:
+      # Pull requests from forks do not have access to secrets. Fail early
+      # rather than skipping
+      - name: Fail for pull requests from forks
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::This pull request is from a fork, so it does not have access to the secrets needed for this job. A maintainer must run this CI before the pull request can be merged."
+          exit 1
+
       - name: Install package dependencies
         run: |
           sudo apt update

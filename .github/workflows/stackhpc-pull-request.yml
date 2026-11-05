@@ -26,6 +26,9 @@ jobs:
       aio: ${{ steps.changes.outputs.aio }}
       build-kayobe-image: ${{ steps.changes.outputs.build-kayobe-image }}
       check-tags: ${{ steps.changes.outputs.check-tags }}
+      # Whether the PR comes from a branch in this repository. PRs from forks
+      # receive no secrets and a read-only token.
+      trusted: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: GitHub Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -128,7 +131,9 @@ jobs:
       - check-changes
     uses: ./.github/workflows/stackhpc-build-kayobe-image.yml
     with:
-      if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' }}
+      # Pull requests from forks get a read-only token so cannot push the image.
+      # The jobs that use the image fail for forks with an explanation.
+      if: ${{ needs.check-changes.outputs.build-kayobe-image == 'true' && needs.check-changes.outputs.trusted == 'true' }}
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
 
   check-tags:
