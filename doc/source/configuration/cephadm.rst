@@ -404,7 +404,7 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
   - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
   - "config set client.rgw rgw_keystone_admin_domain Default"
-  - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_password {{ (lookup('file', kayobe_env_config_path ~ '/kolla/passwords.yml') | from_yaml).ceph_rgw_keystone_password }}"
   - "config set client.rgw rgw_keystone_admin_project service"
   - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
   - "config set client.rgw rgw_keystone_api_version '3'"
@@ -434,22 +434,12 @@ be set in Kolla ``globals.yml`` too:
   ceph_rgw_swift_compatibility: false
   ceph_rgw_swift_account_in_url: true
 
-``secrets_ceph_rgw_keystone_password`` should be stored in the Kayobe
-``secrets.yml``, and set to the same value as ``ceph_rgw_keystone_password`` in
-the Kolla ``passwords.yml``. As such, you will need to configure Keystone
-before deploying the RADOS gateways. If you are using the Kolla load balancer
-(see :ref:`RGWs-with-hyper-converged-Ceph` for more info), you can specify the
-``haproxy`` and ``loadbalancer`` tags here too.
+You will need to configure Keystone before deploying the RADOS gateways.
+If you are using the Kolla load balancer (see :ref:`RGWs-with-hyper-converged-Ceph` for more info), you can specify the ``haproxy`` and ``loadbalancer`` tags here too.
 
-.. code:: yaml
-
-  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
-
-There are two options for load balancing RADOS Gateway:
-
-1. HA with Ceph Ingress services
-2. RGWs with hyper-converged Ceph (using the Kolla Ansible deployed HAProxy
-   load balancer)
+There are two options for load balancing RADOS Gateway either HA with Ceph Ingress services or RGWs with hyper-converged Ceph (using the Kolla Ansible deployed HAProxy
+load balancer).
+Both of the approaches are discussed in subsequent sections.
 
 .. _RGWs-with-hyper-converged-Ceph:
 
@@ -480,6 +470,12 @@ add definitions of your Ceph hosts to Kolla ``globals.yml``:
       ip: <host IP on storage net>
       port: 8100
 
+Make sure to reconfigure the appropriate Kolla services to complete Ceph RGW integration.
+
+.. code:: yaml
+
+  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
+
 HA with Ingress services
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -509,6 +505,12 @@ RGWs to use the Kolla-deployed haproxy. Set the following in Kolla
 .. code:: yaml
 
   enable_ceph_rgw_loadbalancer: false
+
+Make sure to reconfigure the appropriate Kolla services to complete Ceph RGW integration.
+
+.. code:: yaml
+
+  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
 
 Deployment
 ==========
