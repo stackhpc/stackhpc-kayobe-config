@@ -8,11 +8,15 @@ CI hosting clouds
 Several GitHub Actions workflows run on public runners, but some require
 private runners. For these, we use a CI hosting cloud.
 
+Leafcloud and SMS Lab are both supported for hosting CI workloads. Manually
+triggered multinode workflows default to SMS Lab; the periodic multinode
+workflow uses Leafcloud.
+
 Leafcloud
 ---------
 
-`Leafcloud <https://www.leaf.cloud/>`_ is currently the only supported cloud
-for hosting CI workloads.
+`Leafcloud <https://www.leaf.cloud/>`_ is one of two supported clouds for
+hosting CI workloads, alongside SMS lab.
 
 Workloads run in the ``stackhpc-ci`` project, and CI workflows authenticate
 using a ci+skc@stackhpc.com user account. This is an alias for the
@@ -29,8 +33,9 @@ require access to the cloud or benefit from data-locality with Ark.
 SMS Lab
 -------
 
-SMS lab will soon be added as a supported CI hosting cloud.  Several
-considerations must be made when porting CI to Leafcloud.
+SMS lab is a supported CI hosting cloud. It runs the all-in-one jobs, and the
+multinode workflows can target it through their ``runner_env`` input. Several
+considerations must be made when porting CI to it.
 
 Many of our CI and other workflows require access to large volumes of data
 stored in Ark. This includes package repositories, container images, disk
@@ -337,6 +342,14 @@ Both workflows use a `reusable workflow
 in the StackHPC OpenStack GitHub Workflows repository. Note that since this
 workflow is in a different repository and we reference it with a tag, changes
 to the reusable workflow are not picked up until the tag is bumped.
+
+The target cloud is selected by the ``runner_env`` input, which names a GitHub
+environment and determines the credentials, flavors and network used.
+The on-demand workflow presents this as a choice, defaulting to SMS Lab; the
+periodic workflow always uses Leafcloud.
+
+``MULTINODE_FIP_POOL`` is read only on Leafcloud, where the runner reaches the
+Ansible control host through a floating IP rather than its private address.
 
 The workflow runs on an autoscaling `Actions Runner Controller (ARC)
 <https://stackhpc.github.io/stackhpc-release-train/operations/github/#github-actions-runner-controller-arc>`_
