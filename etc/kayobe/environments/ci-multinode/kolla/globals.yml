@@ -95,3 +95,16 @@ external_api_firewalld_zone: "{{ public_net_name | net_zone }}"
 # Cinder clustering requires more than one cinder-volume, which follows the controller count.
 cinder_cluster_name: "{{ 'stackhpc_test_cinder_cluster' if groups['controllers'] | length > 1 else '' }}"
 
+# RGW configuration
+ceph_rgw_swift_compatibility: false
+ceph_rgw_swift_account_in_url: true
+
+{% set rgw_storage_ips = lookup('vars', storage_net_name ~ '_ips', default={}) %}
+# host is only an haproxy label, and inject_facts_as_vars is disabled, so used the inventory hostname.
+# Hosts without an address are skipped, as this is also rendered before IP allocation has run.
+ceph_rgw_hosts:
+{% for rgw in groups['rgws'] if rgw in rgw_storage_ips %}
+  - host: "{{ rgw }}"
+    ip: "{{ rgw_storage_ips[rgw] }}"
+    port: 8100
+{% endfor %}
