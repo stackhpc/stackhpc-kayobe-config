@@ -1,0 +1,1 @@
+SYSTEM_SCOPE_SERVICES = ['ironic']
