@@ -96,6 +96,11 @@ jobs:
   Uses the ``.github/workflows/stackhpc-all-in-one.yml`` reusable workflow.
   See :ref:`below <testing-ci-aio>` for further details.
 
+A separate workflow, ``.github/workflows/stackhpc-release-note-check.yml``, runs
+the ``Release note check`` job on each PR. It fails if a PR breaks the rules in
+``.github/release-note-rules.yml``, but it is not a required status check, so it
+does not block merging.
+
 .. _testing-ci-aio:
 
 All in one testing
