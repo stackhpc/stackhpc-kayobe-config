@@ -32,7 +32,7 @@
 current_series = "2026.1"
 previous_series = "2025.1"
 branch = f"stackhpc/{current_series}"
-ceph_series = "squid"
+ceph_series = "tentacle"
 
 # Substitutions loader
 rst_prolog = """
