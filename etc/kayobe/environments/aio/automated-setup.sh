@@ -9,6 +9,7 @@ KAYOBE_CONFIG_EDIT_PAUSE=false
 AIO_RUN_TEMPEST=false
 USE_OVS=false
 ENABLE_OCTAVIA=true
+TEST_OVERCLOUD_VM=true
 
 # NOTE(Alex-Welsh): These values should not be changed unless you are sure you
 # know what you are doing.
@@ -246,7 +247,9 @@ run_kayobe_commands() {
     kayobe_octavia_certificates
     kayobe_overcloud_service_deploy
     kayobe_octavia_amphora_image
-    kayobe_test_overcloud_vm
+    if [[ "$TEST_OVERCLOUD_VM" == true ]]; then
+        kayobe_test_overcloud_vm
+    fi
 }
 
 # Run Tempest tests
