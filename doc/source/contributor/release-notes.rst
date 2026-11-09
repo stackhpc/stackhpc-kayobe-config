@@ -29,6 +29,10 @@ If it *only* affects maintainers of ``stackhpc-kayobe-config``, it does not
 need a release note. Do not add a release note for changes that only affect
 docs or CI.
 
+The ``Release note check`` CI job flags PRs that break these rules for specific
+paths. To change which paths it checks, edit
+``.github/release-note-rules.yml``.
+
 Style
 -----
 
