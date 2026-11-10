@@ -38,8 +38,11 @@ jobs:
     name: Multinode periodic
     needs:
       - generate-inputs
-    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.8.1
+    permissions:
+      checks: write
+    uses: stackhpc/stackhpc-openstack-gh-workflows/.github/workflows/multinode.yml@1.10.0
     with:
+      runner_env: Leafcloud
       multinode_name: mn-periodic-${{ github.run_id }}
       os_distribution: ${{ needs.generate-inputs.outputs.os_distribution }}
       os_release: ${{ needs.generate-inputs.outputs.os_release }}
