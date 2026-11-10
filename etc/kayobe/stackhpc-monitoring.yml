@@ -64,8 +64,8 @@ stackhpc_os_capacity_scrape_interval: 900
 # Whether the redfish exporter is enabled.
 stackhpc_enable_redfish_exporter: false
 
-# How often to scrape the BMCs in seconds.
-stackhpc_redfish_exporter_scrape_interval: "{{ [8 * groups['redfish_exporter_targets'] | length, 300] | max }}"
+# How often to scrape the BMCs in seconds. Recommended to keep under 5 mins to avoid data expiring in Prometheus.
+stackhpc_redfish_exporter_scrape_interval: "{{ [groups['redfish_exporter_targets'] | length, 240] | max }}"
 
 # Credentials
 redfish_exporter_default_username: "{{ ipmi_username }}"
