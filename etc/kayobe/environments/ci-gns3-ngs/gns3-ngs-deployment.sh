@@ -9,7 +9,7 @@
 set -eux
 
 BASE_PATH=~
-KAYOBE_BRANCH=stackhpc/2026.1
+KAYOBE_BRANCH=ngs-changes
 #TODO: revert KAYOBE_CONFIG_REF to stackhpc/2026.1 when we're ready to merge this PR #2636
 #KAYOBE_CONFIG_REF=${KAYOBE_CONFIG_REF:-stackhpc/2026.1}
 KAYOBE_CONFIG_REF=gns3-ngs
