@@ -114,6 +114,8 @@ kayobe overcloud host configure
 # Deploy the overcloud services
 kayobe overcloud service deploy
 
+source $KAYOBE_CONFIG_ROOT/etc/kolla/public-openrc.sh
+
 kayobe overcloud post configure
 
 cd "$KAYOBE_PATH"
