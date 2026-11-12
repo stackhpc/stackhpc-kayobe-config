@@ -101,6 +101,10 @@
               source {{ venv_path }}/bin/activate &&
               ./diskimage-create.sh -i ubuntu-minimal -s 3 -g {{ openstack_branch }} >> /var/log/octavia-amphora-image-build.log 2>&1
             chdir: "{{ src_path }}/diskimage-create"
+          environment:
+            # diskimage-create.sh's -g covers amphora-agent but not octavia-lib,
+            # whose element still hardcodes the renamed stable/ branch.
+            DIB_REPOREF_octavia_lib: "{{ openstack_branch }}"
           changed_when: true
 
         - name: Copy image to image store
