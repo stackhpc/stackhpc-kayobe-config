@@ -56,7 +56,8 @@ kernel. Commit the new DOCA releases to development in
 IPA
 ^^^
 
-Note: This section is currently not required while CentOS IPA is in use.
+Note: Release Train IPA uses CentOS Stream 10 as a base, so will not use newer
+kernel and package versions bumped in ``pulp-repo-versions.yml``.
 
 To build new IPA images from the latest package sync; run the
 ``ipa-image-build.yml`` and ``ipa-image-promote.yml`` workflows. Commit the new

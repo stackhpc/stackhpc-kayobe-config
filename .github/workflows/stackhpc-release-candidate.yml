@@ -44,7 +44,7 @@ jobs:
       - name: Fail if rc has commits that are not in stable
         run: |
           if git rev-parse --verify --quiet "origin/${{ steps.branches.outputs.rc }}"; then
-            extra=$(git rev-list --count "HEAD..origin/${{ steps.branches.outputs.rc }}")
+            extra=$(git rev-list --count "${{ steps.outputs.branches.stable }}..origin/${{ steps.branches.outputs.rc }}")
             if [ "$extra" -gt 0 ]; then
               echo "${{ steps.branches.outputs.rc }} has $extra commit(s) not in ${{ steps.branches.outputs.stable }}"
               exit 1
