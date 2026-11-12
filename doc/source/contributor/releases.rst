@@ -37,7 +37,8 @@ Syncing package repositories
 
 In the ``stackhpc-release-train`` repository; run a full package sync
 (``package-sync.yml``) with Ark. To get an updated package repository versions
-for SKC run ``package-update.yml``, then commit this to the development branch.
+for SKC run ``package-update-kayobe.yml``, then commit this to the development
+branch.
 
 More information on Release Train workflows is available in the
 ``stackhpc-release-train`` repository:
