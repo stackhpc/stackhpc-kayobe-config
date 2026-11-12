@@ -114,6 +114,8 @@ kayobe overcloud host configure
 # Deploy the overcloud services
 kayobe overcloud service deploy
 
+kayobe overcloud post configure
+
 cd "$KAYOBE_PATH"
 
 #Tenks install
