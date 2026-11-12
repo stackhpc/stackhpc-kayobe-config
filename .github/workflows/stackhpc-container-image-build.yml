@@ -246,6 +246,10 @@ jobs:
           args="$args -e kolla_base_distro_version=${{ matrix.distro.release }}"
           args="$args -e kolla_tag=${{ steps.write-kolla-tag.outputs.kolla-tag }}"
           args="$args -e stackhpc_repo_mirror_auth_proxy_enabled=true"
+          args="$args -e base_path=$GITHUB_WORKSPACE/opt/kayobe"
+          # NOTE: We override pulp_auth_proxy_conf_path to a path shared by the
+          # runner and dind containers.
+          args="$args -e pulp_auth_proxy_conf_path=/home/runner/_work/pulp_proxy"
           source venvs/kayobe/bin/activate &&
           source src/kayobe-config/kayobe-env --environment ci-builder &&
           kayobe seed container image build $args
