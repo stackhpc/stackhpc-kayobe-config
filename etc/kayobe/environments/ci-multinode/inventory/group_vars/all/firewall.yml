@@ -5,3 +5,8 @@ stackhpc_firewalld_rules_extra:
     network: "{{ admin_oc_net_name }}"
     zone: "{{ admin_oc_net_name | net_zone }}"
     state: enabled
+  # Prometheus scrapes the Ceph mgr exporter over admin_oc, but the base rule opens 9283 on provision_oc.
+  - port: 9283/tcp
+    network: "{{ admin_oc_net_name }}"
+    zone: "{{ admin_oc_net_name | net_zone }}"
+    state: "{{ 'enabled' if kolla_enable_prometheus_ceph_mgr_exporter | bool and 'mgrs' in group_names else 'disabled' }}"

@@ -115,6 +115,8 @@
             PROMETHEUS_URL: "{{ sct_prometheus_url }}"
             PROMETHEUS_USERNAME: "{{ sct_prometheus_username }}"
             PROMETHEUS_PASSWORD: "{{ sct_prometheus_password }}"
+            CEPH_MGR_EXPORTER_ENABLED: "{{ sct_ceph_mgr_exporter_enabled }}"
+            CEPH_RGW_ENABLED: "{{ sct_ceph_rgw_enabled }}"
             SKIP_SCT: "{{ skip_sct | default(none) }}"
           vars:
             kolla_external_scheme: "{{ 'https' if kolla_enable_tls_external | bool else 'http' }}"
@@ -132,6 +134,8 @@
             sct_prometheus_url: "{{ kolla_internal_scheme }}://{{ kolla_internal_fqdn }}:9091"
             sct_prometheus_username: admin
             sct_prometheus_password: "{{ kolla_passwords.prometheus_password }}"
+            sct_ceph_mgr_exporter_enabled: "{{ kolla_enable_prometheus_ceph_mgr_exporter | default(false) }}"
+            sct_ceph_rgw_enabled: "{{ kolla_enable_ceph_rgw | default(false) }}"
           failed_when: monitoring_results.rc not in [0, 1]
           register: monitoring_results
           when: "'sct_runner' in group_names and stackhpc_cloud_monitoring_tests.stat.exists"
@@ -174,6 +178,52 @@
           become: true
           when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
 
+        # Ceph tests need a monitor host, where cephadm places the Ceph
+        # configuration and the admin keyring.
+        - name: Check for StackHPC Cloud ceph tests
+          ansible.builtin.stat:
+            path: "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/ceph"
+          register: stackhpc_cloud_ceph_tests
+
+        - name: Run StackHPC Cloud ceph tests
+          ansible.builtin.command:
+            cmd: >
+              {{ sct_venv }}/bin/py.test
+              --html={{ results_tmpdir.path }}/ceph-{{ inventory_hostname }}.html
+              --self-contained-html
+              --timeout {{ sct_timeout }}
+              -vv
+              "{{ repo_tmpdir.path }}/stackhpc_cloud_tests/ceph"
+          environment:
+            CEPH_MON_COUNT: "{{ sct_ceph_mon_count }}"
+            CEPH_MGR_COUNT: "{{ sct_ceph_mgr_count }}"
+            CEPH_OSD_COUNT: "{{ sct_ceph_osd_count }}"
+            CEPH_RGW_COUNT: "{{ sct_ceph_rgw_count }}"
+            CEPH_RGW_ENABLED: "{{ sct_ceph_rgw_enabled }}"
+            CEPH_MGR_EXPORTER_ENABLED: "{{ sct_ceph_mgr_exporter_enabled }}"
+            CEPH_HEALTH_ALLOWED_CHECKS: "{{ sct_ceph_health_allowed_checks }}"
+            CEPH_EXPECTED_POOLS: "{{ sct_ceph_expected_pools }}"
+            CEPH_EXPECTED_KEYS: "{{ sct_ceph_expected_keys }}"
+            SKIP_SCT: "{{ skip_sct | default(none) }}"
+          vars:
+            sct_ceph_mon_count: "{{ groups['mons'] | default([]) | length }}"
+            sct_ceph_mgr_count: "{{ groups['mgrs'] | default([]) | length }}"
+            # Not derivable from the inventory, since a storage host runs one
+            # OSD per disk and disk count per host can change.
+            # Set it per environment to check for a missing OSD.
+            sct_ceph_osd_count: "{{ stackhpc_cloud_tests_ceph_osd_count | default('') }}"
+            sct_ceph_rgw_count: "{{ groups['rgws'] | default([]) | length }}"
+            sct_ceph_rgw_enabled: "{{ kolla_enable_ceph_rgw | default(false) }}"
+            sct_ceph_mgr_exporter_enabled: "{{ kolla_enable_prometheus_ceph_mgr_exporter | default(false) }}"
+            # Health warnings that are expected in this deployment.
+            sct_ceph_health_allowed_checks: "{{ stackhpc_cloud_tests_ceph_health_allowed_checks | default('') }}"
+            sct_ceph_expected_pools: "{{ cephadm_pools | default([]) | to_json }}"
+            sct_ceph_expected_keys: "{{ cephadm_keys | default([]) | to_json }}"
+          failed_when: ceph_results.rc not in [0, 1]
+          register: ceph_results
+          become: true
+          when: "'mons' in group_names and stackhpc_cloud_ceph_tests.stat.exists"
+
         # Host test results will be owned by root - we need to read and delete them
         - name: Change permissions on SCT host test results
           ansible.builtin.file:
@@ -181,6 +231,13 @@
             mode: "666"
           become: true
           when: "'overcloud' in group_names and stackhpc_cloud_host_tests.stat.exists"
+
+        - name: Change permissions on SCT ceph test results
+          ansible.builtin.file:
+            path: "{{ results_tmpdir.path }}/ceph-{{ inventory_hostname }}.html"
+            mode: "666"
+          become: true
+          when: "'mons' in group_names and stackhpc_cloud_ceph_tests.stat.exists"
 
         - name: Change permissions on SCT monitoring test results
           ansible.builtin.file:
@@ -213,6 +270,9 @@
               {% endif %}
               {% if hostvars[host].host_results.rc | default(0) != 0 %}
               host-{{ host }}.html
+              {% endif %}
+              {% if hostvars[host].ceph_results.rc | default(0) != 0 %}
+              ceph-{{ host }}.html
               {% endif %}
               {% endfor %}
           ansible.builtin.copy:
