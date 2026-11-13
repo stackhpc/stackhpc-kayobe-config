@@ -140,41 +140,116 @@ Runner Deployment
 10. Repeat the above steps for each environment you intend to deploy runners within.
     You can share the fine-grained access token between environments.
 
+OpenBao Deployment
+------------------
+
+OpenBao is optional when deploying GitHub workflows but recommended, instead of storing numerous secrets within GitHub, including the SSH private key, just the OpenBao token will be stored instead.
+
+OpenBao must be installed on the same host as the runners.
+If you have multiple environments that each have their own runners then OpenBao must be installed on each host.
+However, if you have a single host that is shared between environments then OpenBao only needs to be installed once which can be achieved by running the following playbook.
+
+.. code-block:: bash
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-openbao-runners.yml
+
+.. note::
+
+    This playbook configures OpenBao to listen on the Docker network bridge `docker0` which will be accessible to the containers running the Kayobe Automation.
+    If running OpenBao between environments care should be taken to ensure OpenBao listens on an interface which is accessible to all runners.
+
+.. note::
+
+    If you are sharing OpenBao between environments then you will need to rerun the playbook under each environment to ensure that the correct secrets are available to the runners.
+    You may use :code:`--tags add_secrets` to skip the deployment within other environments.
+    For this to work you will need to copy :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` from the deployment environment to the other environments in addition to copying the host definition of the gitlab runner and its network IP.
+
+Once the above playbook has been applied you need to grab the root token from :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` as you will need this for the GitHub `BAO_TOKEN` secret.
+
+This would also be an opportune time to encrypt the :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` to protect the contents.
+
+.. code-block:: bash
+
+    ansible-vault encrypt $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json --vault-password-file ~/.vault.password
+
 Workflow Deployment
 -------------------
 
 1. Edit :code:`$KAYOBE_CONFIG_PATH/inventory/group_vars/github-writer/writer.yml` in the base configuration making the appropriate changes to your deployments specific needs. See documentation for `stackhpc.kayobe_workflows.github <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/github>`__.
 
+If using OpenBao then make sure to configure the :code:`github_checkout_hook` and :code:`github_kayobe_arguments` variables to include the appropriate steps to retrieve secrets from OpenBao and export them as environment variables for use within the workflows.
+
+.. code-block:: yaml
+
+    github_checkout_hook: !unsafe |
+      - name: Import secrets via OpenBao
+        id: secrets
+        uses: hashicorp/vault-action@v3.0.0
+        with:
+          # Access OpenBao via the docker bridge
+          url: http://172.17.0.1:8200
+          token: ${{ secrets[format('{0}_BAO_TOKEN', inputs.kayobe_environment || matrix.environment)] }}
+          secrets: |
+            kayobe-automation/${{ inputs.kayobe_environment || matrix.environment }} kayobe_vault_password | KAYOBE_VAULT_PASSWORD ;
+            kayobe-automation/${{ inputs.kayobe_environment || matrix.environment }} kayobe_automation_ssh_private_key | KAYOBE_AUTOMATION_SSH_PRIVATE_KEY ;
+            kayobe-automation/${{ inputs.kayobe_environment || matrix.environment }} kayobe_tempest_openrc | TEMPEST_OPENRC ;
+
+    github_kayobe_arguments:
+      KAYOBE_VAULT_PASSWORD: !unsafe "${{ env.KAYOBE_VAULT_PASSWORD }}"
+      KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: !unsafe "${{ env.KAYOBE_AUTOMATION_SSH_PRIVATE_KEY }}"
+      TEMPEST_OPENRC: !unsafe "${{ env.TEMPEST_OPENRC }}"
+
 2. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/write-github-workflows.yml`
 
 3. Add all required secrets and variables to repository either via the GitHub UI or GitHub CLI (may require repository owner)
 
-+----------------------------------------------------------------------------------+
-|                                      Secrets                                     |
-+===================================+==============================================+
-|         Single Environment        |             Multiple Environments            |
-+-----------------------------------+----------------------------------------------+
-| KAYOBE_AUTOMATION_SSH_PRIVATE_KEY | <ENV_NAME>_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY |
-+-----------------------------------+----------------------------------------------+
-|       KAYOBE_VAULT_PASSWORD       |  <ENV_NAME>_KAYOBE_VAULT_PASSWORD            |
-+-----------------------------------+----------------------------------------------+
-|         REGISTRY_PASSWORD         |         <ENV_NAME>_REGISTRY_PASSWORD         |
-+-----------------------------------+----------------------------------------------+
-|           TEMPEST_OPENRC          |     <ENV_NAME>_TEMPEST_OPENRC                |
-+-----------------------------------+----------------------------------------------+
+    3.1 The following secrets and variables are always required for the :code:`pulp registry` to be used within the workflows
 
-    +-------------------------------------------------------+
-    |                   VARIABLES                           |
-    +====================+==================================+
-    | Single Environment |  Multiple Environments           |
-    +--------------------+----------------------------------+
-    |    REGISTRY_URL    | <ENV_NAME>_REGISTRY_URL          |
-    +--------------------+----------------------------------+
-    |  REGISTRY_USERNAME |    <ENV_NAME>_REGISTRY_USERNAME  |
-    +--------------------+----------------------------------+
+        +----------------------------------------------------------------------------------+
+        |                                      Secrets                                     |
+        +===================================+==============================================+
+        |         Single Environment        |             Multiple Environments            |
+        +-----------------------------------+----------------------------------------------+
+        |         REGISTRY_PASSWORD         |         <ENV_NAME>_REGISTRY_PASSWORD         |
+        +-----------------------------------+----------------------------------------------+
 
-Note the above tables shows the secrets and variables one may need to add to GitHub for a successful deployment.
-When adding secrets and variables make sure to adhere to the naming standards and ensure the :code:`<ENV_NAME>` is replaced with all supported kayobe environments in uppercase.
+        +-------------------------------------------------------+
+        |                   VARIABLES                           |
+        +====================+==================================+
+        | Single Environment |  Multiple Environments           |
+        +--------------------+----------------------------------+
+        |    REGISTRY_URL    |    <ENV_NAME>_REGISTRY_URL       |
+        +--------------------+----------------------------------+
+        |  REGISTRY_USERNAME |    <ENV_NAME>_REGISTRY_USERNAME  |
+        +--------------------+----------------------------------+
+
+    3.2 **If OpenBao is being used** then the following secret is required to allow workflows access to OpenBao's secrets
+
+        This is where you use the root token previously grabbed from :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json`.
+
+        +-----------------------------------------------+
+        |                 Secrets                       |
+        +====================+==========================+
+        | Single Environment |  Multiple Environments   |
+        +--------------------+--------------------------+
+        |      BAO_TOKEN     |   <ENV_NAME>_BAO_TOKEN   |
+        +--------------------+--------------------------+
+
+    3.3 **If OpenBao is not being used** then the following secrets are required
+
+        +----------------------------------------------------------------------------------+
+        |                                      Secrets                                     |
+        +===================================+==============================================+
+        |         Single Environment        |             Multiple Environments            |
+        +-----------------------------------+----------------------------------------------+
+        | KAYOBE_AUTOMATION_SSH_PRIVATE_KEY | <ENV_NAME>_KAYOBE_AUTOMATION_SSH_PRIVATE_KEY |
+        +-----------------------------------+----------------------------------------------+
+        |       KAYOBE_VAULT_PASSWORD       |      <ENV_NAME>_KAYOBE_VAULT_PASSWORD        |
+        +-----------------------------------+----------------------------------------------+
+        |           TEMPEST_OPENRC          |         <ENV_NAME>_TEMPEST_OPENRC            |
+        +-----------------------------------+----------------------------------------------+
+
+    When adding secrets and variables make sure to adhere to the naming standards and ensure the :code:`<ENV_NAME>` is replaced with all supported kayobe environments in uppercase.
 
 4. Commit and push all newly generated workflows found under :code:`.github/workflows`
 
@@ -209,19 +284,19 @@ Runner Deployment
     Whether the host is in an infra-vm or not it will need access to the :code:`admin_network` or :code:`provision_oc_network`, :code:`public_network` and the :code:`pulp registry` on the seed.
     The steps will assume that an infra-vm will be used for the purpose of hosting the runners.
 
-2. Edit the environment's :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` to define the host(s) that will host the runners.
+2. Edit the environment's :code:`$KAYOBE_CONFIG_PATH/environments/${KAYOBE_ENVIRONMENT}/inventory/hosts` to define the host(s) that will host the runners.
 
 .. code-block:: ini
 
     [gitlab-runners]
     gitlab-runner-01
 
-4. Provide all the relevant Kayobe :code:`group_vars` for :code:`gitlab-runners` under :code:`${KAYOBE_CONFIG_PATH}/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/gitlab-runners`
+4. Provide all the relevant Kayobe :code:`group_vars` for :code:`gitlab-runners` under :code:`$KAYOBE_CONFIG_PATH/environments/${KAYOBE_ENVIRONMENT}/inventory/group_vars/gitlab-runners`
     * `infra-vms` ensuring all required `infra_vm_extra_network_interfaces` are defined
     * `network-interfaces`
     * `allocated IPs`
 
-5. Edit the ``${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
+5. Edit the ``$KAYOBE_CONFIG_PATH/inventory/group_vars/gitlab-runners/runners.yml`` file which will contain the variables required to deploy a series of runners.
    Below is an example of how GitLab runners can be configured for deployment.
    In this example we have two runners, one for production and one for staging and will both be deployed on the same host.
    This might not be possible for all deployments as multiple environments may require different runners as no single runner can serve all environments.
@@ -287,7 +362,7 @@ Runner Deployment
 
     kayobe infra vm host configure --limit gitlab-runner-01
 
-9. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/deploy-gitlab-runner.yml`
+9. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/deploy-gitlab-runner.yml`
 
 10. Check runners have registered properly by visiting the repository's :code:`CI/CD` tab -> :code:`Runners`
 
@@ -299,25 +374,31 @@ OpenBao Deployment
 ------------------
 
 OpenBao must be installed on the same host as the runners.
-If you have multiple environments that each have the own runners then OpenBao must be installed on each host.
-However, if you have a single host that is shared between environments then OpenBao only needs to be installed once and can be achieved by running the following playbook.
+If you have multiple environments that each have their own runners then OpenBao must be installed on each host.
+However, if you have a single host that is shared between environments then OpenBao only needs to be installed once which can be achieved by running the following playbook.
 
 .. code-block:: bash
 
-    kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/deploy-openbao-kayobe-automation.yml
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-deploy-openbao-runners.yml
+
+.. note::
+
+    This playbook configures OpenBao to listen on localhost using the loopback interface `lo` which will be accessible to the containers running the Kayobe Automation.
+    If running OpenBao between environments care should be taken to ensure OpenBao listens on an interface which is accessible to all runners.
 
 .. note::
 
     If you are sharing OpenBao between environments then you will need to rerun the playbook under each environment to ensure that the correct secrets are available to the runners.
     You may use :code:`--tags add_secrets` to skip the deployment within other environments.
-    For this to work you will need to copy :code:`vault/kayobe-automation-keys.json` from the first environment to the other environments in addition to copying the host definition of the gitlab runner add network IP.
+    For this to work you will need to copy :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` from the deployment environment to the other environments in addition to copying the host definition of the gitlab runner and its network IP.
 
-Once the above playbook has been applied you need to grab the root token from :code:`vault/kayobe-automation-keys.json` as you will need this to enable JWT support.
-This would also be an opportune time to encrypt the :code:`vault/kayobe-automation-keys.json` to protect the contents.
+Once the above playbook has been applied you need to grab the root token from :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` as you will need this to enable JWT support.
+
+This would also be an opportune time to encrypt the :code:`$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json` to protect the contents.
 
 .. code-block:: bash
 
-    ansible-vault encrypt vault/kayobe-automation-keys.json --vault-password-file ~/.vault.password
+    ansible-vault encrypt $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao/kayobe-automation-keys.json --vault-password-file ~/.vault.password
 
 In order to enable JWT support the following steps must be carried out within the openbao container on the runner host.
 
@@ -364,13 +445,13 @@ In order to enable JWT support the following steps must be carried out within th
 GitLab Pipelines
 ----------------
 
-1. Edit :code:`${KAYOBE_CONFIG_PATH}/inventory/group_vars/gitlab-writer/writer.yml` or environment equivalent the appropriate changes to your deployments specific needs.
+1. Edit :code:`$KAYOBE_CONFIG_PATH/inventory/group_vars/gitlab-writer/writer.yml` or environment equivalent the appropriate changes to your deployments specific needs.
 See documentation for `stackhpc.kayobe_workflows.gitlab <https://github.com/stackhpc/ansible-collection-kayobe-workflows/tree/main/roles/gitlab>`__.
 Following the instructions in the documentation will allow you to customise the workflows to fit within your deployment.
 If using multiple environments ensure that :code:`gitlab_kayobe_environments` is updated to reflect all environments present in the deployment.
 Also consider the impact runbooks might have as the runbooks are designed with a particular cloud in mind and may not be suitable for all deployments such as hyperconverged deployments with Ceph on hypervisors.
 
-2. Run :code:`kayobe playbook run ${KAYOBE_CONFIG_PATH}/ansible/deployment/write-gitlab-pipelines.yml`
+2. Run :code:`kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/write-gitlab-pipelines.yml`
 
 3. Commit and push all newly generated pipelines found under root of the repository.
 
