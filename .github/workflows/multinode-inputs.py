@@ -65,6 +65,8 @@ def main() -> None:
         "stackhpc_kayobe_config_previous_version": get_branch(scenario.openstack_release.previous_version),
         "terraform_kayobe_multinode_version": get_tkm_version(scenario.openstack_release.version),
         "terraform_kayobe_multinode_previous_version": get_tkm_version(scenario.openstack_release.previous_version),
+        # Upgrades stay on Leafcloud, all other jobs run on SMS Lab
+        "runner_env": "Leafcloud" if scenario.upgrade == "major" else "SMS Lab",
     }
     for name, value in inputs.items():
         write_output(name, value)
