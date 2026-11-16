@@ -613,9 +613,9 @@ Copy on write optimisations
 
 Copy on write optimisations are currently disabled by default due to
 `security concerns <https://bugs.launchpad.net/kolla-ansible/+bug/1992153>`__.
-To enable them, set ``stackhpc_enable_ceph_cow_optimisations`` to ``true`` in
-``etc/kayobe/stackhpc.yml``. Setting this flag to ``true`` causes Kayobe to
-render a `glance.conf` file with the following content:
+To enable them, set ``stackhpc_enable_ceph_glance_cow_optimisations`` to
+``true`` in ``etc/kayobe/stackhpc.yml``. Setting this flag to ``true`` causes
+Kayobe to render a ``glance.conf`` file with the following content:
 
 .. code:: ini
 
@@ -686,4 +686,3 @@ otherwise, just reconfigure glance:
 .. code:: console
 
    kayobe overcloud service deploy -kt glance
-
