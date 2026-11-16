@@ -1,0 +1,22 @@
+---
+security:
+  - |
+    Fixed ``secret-store-generate-internal-tls.yml`` playbook copying key of
+    intermediate CA when creating proxysql-ca.pem resulting leaking the key to
+    controller hosts.
+    If user's system already generated proxysql-ca.pem before, the CA chain can
+    be rotated by using ``secret-store-rotate-ca-chain.yml``
+    playbook.
+    Once the CA chain is rotated, users need to regenerate all certificates
+    (e.g. OpenStack TLS certificates) issued by previous CA chain then deploy
+    them and the new root CA cert to hosts.
+    More information can be found from 'Rotating entire CA chain' section of
+    StackHPC Kayobe Config documentation.
+fixes:
+  - |
+    Fixed ``secret-store-generate-internal-tls.yml`` playbook copying key of
+    intermediate CA when creating proxysql-ca.pem resulting leaking the key to
+    controller hosts.
+features:
+  - |
+    Bumped stackhpc.hashicorp collection to 2.9.1
