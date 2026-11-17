@@ -12,57 +12,80 @@ kolla_base_distro: "{% raw %}{{ 'centos' if ansible_facts.distribution == 'Rocky
 
 kayobe_image_tags:
   openstack:
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
+    ubuntu: yoga-20231024T093507
+  # not rebuilt on this branch.
+  bifrost:
     centos: yoga-20231024T093507
     rocky: yoga-20231218T141822
     ubuntu: yoga-20231024T093507
   cinder:
-    centos: yoga-20240701T132344
-    rocky: yoga-20240701T132344
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20240701T132344
   cloudkitty:
-    centos: yoga-20240503T150127
-    rocky: yoga-20240503T150127
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20240503T150127
   glance:
-    centos: yoga-20240702T105751
-    rocky: yoga-20240702T105751
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20240702T105751
   heat:
-    centos: yoga-20240320T082414
-    rocky: yoga-20240320T082414
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20240320T082414
+  # not rebuilt on this branch.
+  influxdb:
+    centos: yoga-20231024T093507
+    rocky: yoga-20231218T141822
+    ubuntu: yoga-20231024T093507
   keystone:
-    centos: yoga-20260528T064235
-    rocky: yoga-20260528T064235
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20260528T064235
+  # not rebuilt on this branch.
+  kolla_toolbox:
+    centos: yoga-20231024T093507
+    rocky: yoga-20231218T141822
+    ubuntu: yoga-20231024T093507
   magnum:
     centos: yoga-20240416T102136
     rocky: yoga-20240416T102136
     ubuntu: yoga-20240416T102136
   neutron:
-    centos: yoga-20250319T135834
-    rocky: yoga-20250319T135834
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20250319T135834
   nova:
-    centos: yoga-20240724T085253
-    rocky: yoga-20240724T085253
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20240724T085253
   nova_libvirt:
     centos: yoga-20231113T171023
     rocky: yoga-20240105T120257
     ubuntu: yoga-20231103T161400
   octavia:
-    centos: yoga-20261009T134909
-    rocky: yoga-20261009T135519
+    centos: yoga-20261117T104728
+    rocky: yoga-20261117T112912
     ubuntu: yoga-20261009T135614
+  # not rebuilt on this branch.
+  rabbitmq:
+    centos: yoga-20231024T093507
+    rocky: yoga-20231218T141822
+    ubuntu: yoga-20231024T093507
 
+bifrost_tag: "{% raw %}{{ kayobe_image_tags['bifrost'][kolla_base_distro] }}{% endraw %}"
 cloudkitty_tag: "{% raw %}{{ kayobe_image_tags['cloudkitty'][kolla_base_distro] }}{% endraw %}"
 cinder_tag: "{% raw %}{{ kayobe_image_tags['cinder'][kolla_base_distro] }}{% endraw %}"
 glance_tag: "{% raw %}{{ kayobe_image_tags['glance'][kolla_base_distro] }}{% endraw %}"
 grafana_tag: yoga-20240510T114335
 heat_tag: "{% raw %}{{ kayobe_image_tags['heat'][kolla_base_distro] }}{% endraw %}"
 horizon_tag: yoga-20240510T114335
+influxdb_tag: "{% raw %}{{ kayobe_image_tags['influxdb'][kolla_base_distro] }}{% endraw %}"
 keystone_tag: "{% raw %}{{ kayobe_image_tags['keystone'][kolla_base_distro] }}{% endraw %}"
+kolla_toolbox_tag: "{% raw %}{{ kayobe_image_tags['kolla_toolbox'][kolla_base_distro] }}{% endraw %}"
 magnum_tag: "{% raw %}{{ kayobe_image_tags['magnum'][kolla_base_distro] }}{% endraw %}"
 neutron_tag: "{% raw %}{{ kayobe_image_tags['neutron'][kolla_base_distro] }}{% endraw %}"
 nova_tag: "{% raw %}{{ kayobe_image_tags['nova'][kolla_base_distro] }}{% endraw %}"
@@ -70,6 +93,7 @@ nova_libvirt_tag: "{% raw %}{{ kayobe_image_tags['nova_libvirt'][kolla_base_dist
 octavia_tag: "{% raw %}{{ kayobe_image_tags['octavia'][kolla_base_distro] }}{% endraw %}"
 opensearch_tag: yoga-20231219T221916
 prometheus_tag: yoga-20240510T145442
+rabbitmq_tag: "{% raw %}{{ kayobe_image_tags['rabbitmq'][kolla_base_distro] }}{% endraw %}"
 
 # These overrides are currently redundant, but are kept because it's not obvious that you need them if setting haproxy_tag
 glance_tls_proxy_tag: "{% raw %}{{ haproxy_tag | default(openstack_tag) }}{% endraw %}"
