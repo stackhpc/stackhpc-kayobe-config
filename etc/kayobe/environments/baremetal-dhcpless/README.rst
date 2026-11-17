@@ -145,6 +145,130 @@ For more complex layouts (bonds, VLANs, several NICs), override
 ``network_data.json`` format. See
 ``inventory/group_vars/baremetal-dhcpless/ironic.yml`` for all variables.
 
+Example inventory
+^^^^^^^^^^^^^^^^^
+
+The following example enrols three Redfish nodes on the ``provision_wl``
+network (``provision_wl_net_name: provision_wl``), ``10.2.0.0/24``. Neutron
+allocates from ``10.2.0.100-10.2.0.199``, so the nodes' static IPs are taken
+from outside that range.
+
+Enable the environment:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/.kayobe-environment
+
+   dependencies:
+     - baremetal-dhcpless
+
+Define the network. The inspection, cleaning and provisioning networks must
+all be the DHCP-less network. The gateway is only needed if the Ironic API is
+not on this network:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/networks.yml
+
+   provision_wl_net_name: provision_wl
+   inspection_net_name: provision_wl
+   cleaning_net_name: provision_wl
+
+   provision_wl_cidr: 10.2.0.0/24
+   provision_wl_inspection_gateway: 10.2.0.1
+   provision_wl_neutron_allocation_pool_start: 10.2.0.100
+   provision_wl_neutron_allocation_pool_end: 10.2.0.199
+
+Add the nodes to a driver group and to ``baremetal-dhcpless``:
+
+.. code-block:: ini
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/hosts
+
+   [baremetal-redfish]
+   node0 redfish_address=https://10.1.0.10
+   node1 redfish_address=https://10.1.0.11
+   node2 redfish_address=https://10.1.0.12
+
+   [baremetal-dhcpless]
+   node0
+   node1
+   node2
+
+Allocate the static IPs. These must be outside the Neutron allocation pool:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/network-allocation.yml
+
+   provision_wl_ips:
+     node0: 10.2.0.10
+     node1: 10.2.0.11
+     node2: 10.2.0.12
+
+Each node then selects its NIC in a different way:
+
+* ``node0`` has a single enabled NIC (or its BMC reports a PXE interface), so
+  no further configuration is needed and the MAC is discovered by Redfish
+  inspection.
+* ``node1`` has several NICs, so the one on ``provision_wl`` is selected by
+  its Redfish ``EthernetInterface`` ``Id``:
+
+  .. code-block:: yaml
+     :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars/node1/dhcpless.yml
+
+     ironic_dhcpless_redfish_interface: NIC.Integrated.1-1-1
+
+* ``node2``'s BMC does not report its NICs, so the MAC address is set
+  explicitly and inspection is skipped. Its ramdisk is also configured with an
+  LACP bond of two NICs instead of a single NIC. The port is created for
+  ``ironic_dhcpless_mac_address``:
+
+  .. code-block:: yaml
+     :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars/node2/dhcpless.yml
+
+     ironic_dhcpless_mac_address: 52:54:00:d3:6a:71
+     ironic_dhcpless_mac_address_2: 52:54:00:d3:6a:72
+
+     ironic_dhcpless_network_data:
+       links:
+         - id: nic0
+           type: phy
+           ethernet_mac_address: "{{ ironic_dhcpless_mac_address }}"
+           mtu: "{{ ironic_dhcpless_mtu | int }}"
+         - id: nic1
+           type: phy
+           ethernet_mac_address: "{{ ironic_dhcpless_mac_address_2 }}"
+           mtu: "{{ ironic_dhcpless_mtu | int }}"
+         - id: bond0
+           type: bond
+           bond_links: [nic0, nic1]
+           bond_mode: 802.3ad
+           bond_miimon: 100
+           ethernet_mac_address: "{{ ironic_dhcpless_mac_address }}"
+           mtu: "{{ ironic_dhcpless_mtu | int }}"
+       networks:
+         - id: "{{ ironic_dhcpless_network }}"
+           network_id: "{{ ironic_dhcpless_network }}"
+           type: ipv4
+           link: bond0
+           ip_address: "{{ ironic_dhcpless_ip_address }}"
+           netmask: "{{ ironic_dhcpless_netmask }}"
+           routes: "{{ ironic_dhcpless_routes }}"
+       services: []
+
+Set the BMC credentials, which are shared by all ``baremetal-redfish`` nodes:
+
+.. code-block:: yaml
+   :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/secrets.yml
+
+   secrets_redfish_baremetal_username: <username>
+   secrets_redfish_baremetal_password: <password>
+
+Finally, register the nodes and check the result:
+
+.. code-block:: console
+
+   kayobe baremetal compute register
+   openstack baremetal node show node0 -c boot_interface -c network_data
+   openstack baremetal port list --node node0 --long
+
 Inspection
 ^^^^^^^^^^
 
