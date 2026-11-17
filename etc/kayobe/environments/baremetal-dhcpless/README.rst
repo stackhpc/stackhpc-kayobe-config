@@ -130,9 +130,18 @@ A ``post.d`` hook for ``baremetal compute register``
   allows this in the ``enroll``, ``manageable`` and ``available`` states, or
   in maintenance mode, so the hook fails for a deployed node that doesn't
   already have the right boot interface,
-* ensures a PXE-enabled Ironic port exists for the MAC address, failing if
-  the MAC belongs to a different node. Set ``ironic_dhcpless_create_port`` to
-  ``false`` to skip this.
+* ensures that a PXE-enabled Ironic port exists for each physical (``phy``)
+  link in ``ironic_dhcpless_network_data``, failing if a MAC address belongs
+  to a different node. Set ``ironic_dhcpless_create_port`` to ``false`` to
+  skip this,
+* disables PXE on the node's other ports. Ironic binds every PXE-enabled port
+  to the provisioning, cleaning, inspection and rescue networks, but the
+  ramdisk only configures the NICs in ``network_data``. Redfish inspection
+  enables PXE on every NIC it finds, and this environment stops in-band
+  inspection from changing ``pxe_enabled`` (see `Inspection`_), so nothing
+  else corrects this. Set ``ironic_dhcpless_disable_pxe_on_other_ports`` to
+  ``false`` to skip this. Changes to ``pxe_enabled`` on a deployed node take
+  effect at its next cleaning or deployment.
 
 The playbook is idempotent and can also be run on its own:
 
@@ -217,8 +226,8 @@ Each node then selects its NIC in a different way:
 
 * ``node2``'s BMC does not report its NICs, so the MAC address is set
   explicitly and inspection is skipped. Its ramdisk is also configured with an
-  LACP bond of two NICs instead of a single NIC. The port is created for
-  ``ironic_dhcpless_mac_address``:
+  LACP bond of two NICs instead of a single NIC. PXE-enabled ports are
+  ensured for both NICs, and PXE is disabled on the node's other ports:
 
   .. code-block:: yaml
      :caption: $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/inventory/host_vars/node2/dhcpless.yml

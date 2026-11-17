@@ -60,10 +60,16 @@ ironic_dhcpless_boot_interface: >-
   {{ 'idrac-redfish-virtual-media' if ironic_driver == 'idrac'
      else 'redfish-virtual-media' }}
 
-# Whether to ensure a PXE-enabled Ironic port exists for
-# ironic_dhcpless_mac_address. Redfish inspection creates ports for enabled
-# NICs.
+# Whether to ensure that a PXE-enabled Ironic port exists for each physical
+# (phy) link in ironic_dhcpless_network_data. Redfish inspection creates ports
+# for enabled NICs.
 ironic_dhcpless_create_port: true
+
+# Whether to disable PXE on Ironic ports that are not physical links in
+# ironic_dhcpless_network_data. Ironic binds every PXE-enabled port to the
+# provisioning, cleaning, inspection and rescue networks, but the ramdisk only
+# configures the NICs in the network data.
+ironic_dhcpless_disable_pxe_on_other_ports: true
 
 # Network data in OpenStack config drive (network_data.json) format. This is
 # set on the node's network_data field and is used by glean in the IPA ramdisk
