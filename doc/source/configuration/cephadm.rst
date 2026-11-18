@@ -393,11 +393,35 @@ Ceph RGWs require additional configuration to:
 
   * Allow cross-project and public object access.
 
-The set of commands below configure all of these.
+The set of commands below configure all of these, and should be appended to ``cephadm_commands_post``.
+
+For Ceph Tentacle and above:
 
 .. code:: yaml
 
-  # Append the following to cephadm_commands_post:
+  - "config set client.rgw rgw_content_length_compat true"
+  - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
+  - "config set client.rgw rgw_enforce_swift_acls true"
+  - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
+  - "config set client.rgw rgw_keystone_admin_domain Default"
+  - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_project service"
+  - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
+  - "config set client.rgw rgw_keystone_token_cache_size '10000'"
+  - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_verify_ssl true"
+  - "config set client.rgw rgw_max_attr_name_len '1000'"
+  - "config set client.rgw rgw_max_attr_size '1000'"
+  - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
+  - "config set client.rgw rgw_s3_auth_use_keystone true"
+  - "config set client.rgw rgw_swift_account_in_url true"
+  - "config set client.rgw rgw_swift_versioning_enabled true"
+
+For Ceph Squid and below:
+
+.. code:: yaml
+
   - "config set client.rgw rgw_content_length_compat true"
   - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
   - "config set client.rgw rgw_enforce_swift_acls true"
