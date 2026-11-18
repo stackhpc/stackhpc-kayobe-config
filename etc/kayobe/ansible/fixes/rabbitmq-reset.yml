@@ -7,6 +7,10 @@
   become: true
   gather_facts: false
   tasks:
+    - name: Reload systemd unit definitions
+      ansible.builtin.systemd:
+        daemon_reload: true
+
     # The following services use RabbitMQ.
     - name: Stop OpenStack services
       ansible.builtin.shell:
