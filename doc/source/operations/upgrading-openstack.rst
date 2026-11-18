@@ -215,7 +215,7 @@ Errors like this will be logged::
    Basic.consume: (406) PRECONDITION_FAILED - stream queue 'compute_fanout' in vhost '/' does not have a running replica on the local node
 
 A proper fix is still WIP, in the meantime these errors can be resolved with this script:
-`<https://gist.github.com/MoteHue/00ba4b85b8e708c46060e025deee8a78>`__
+`<https://github.com/openstack/kolla-ansible/blob/master/contrib/ops/rabbitmq/rabbitmq-repair-stream-replicas.sh>`__
 
 Security baseline
 =================
