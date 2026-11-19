@@ -26,6 +26,22 @@ alertmanager_packet_drop_threshold: 1
 # packets/s averaged over 5 minutes.
 alertmanager_packet_errors_threshold: 1
 
+# Threshold to trigger a LowNFSShareSpace alert on NFS share usage (ratio).
+# When the ratio of used NFS space is higher than each of these values, warning
+# and critical alerts will be triggered respectively.
+alertmanager_nfs_share_usage_warning_threshold_ratio: 0.8
+alertmanager_nfs_share_usage_critical_threshold_ratio: 0.9
+
+# Regular expression used to exclude mountpoints from the StorageFillingUp
+# alert. Any mountpoint matching this regex will not trigger the alert.
+# Empty by default, meaning no mountpoints are excluded.
+alertmanager_storage_filling_up_excluded_mountpoints: ""
+
+# Regular expression used to exclude hosts from the StorageFillingUp alert.
+# Any host whose nodename matches this regex will not trigger the alert.
+# Empty by default, meaning no hosts are excluded.
+alertmanager_storage_filling_up_excluded_hosts: ""
+
 # Number of RabbitMQ nodes in the cluster.
 alertmanager_number_of_rabbitmq_nodes: "{{ groups['controllers'] | length }}"
 

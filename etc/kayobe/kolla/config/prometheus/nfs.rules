@@ -1,0 +1,25 @@
+{% raw %}
+
+groups:
+- name: NFS
+  rules:
+
+  - alert: LowNFSShareSpace
+    expr: (1 - (node_filesystem_avail_bytes{fstype=~"nfs|nfs4"}) / node_filesystem_size_bytes{fstype=~"nfs|nfs4"}) >= {% endraw %}{{ alertmanager_nfs_share_usage_warning_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Prometheus exporter at {{ $labels.instance }} reports {{ $labels.device }} is getting full"
+      description: "{{ $labels.device }} is {{ $value | humanizePercentage }} full."
+
+  - alert: LowNFSShareSpace
+    expr: (1 - (node_filesystem_avail_bytes{fstype=~"nfs|nfs4"}) / node_filesystem_size_bytes{fstype=~"nfs|nfs4"}) >= {% endraw %}{{ alertmanager_nfs_share_usage_critical_threshold_ratio }}{% raw %}
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Prometheus exporter at {{ $labels.instance }} reports {{ $labels.device }} is getting full"
+      description: "{{ $labels.device }} is {{ $value | humanizePercentage }} full."
+
+{% endraw %}
