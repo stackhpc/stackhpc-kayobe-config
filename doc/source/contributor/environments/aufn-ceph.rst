@@ -112,7 +112,7 @@ Once the seed vm is provisioned, deploy a local pulp server on the seed and then
 
 .. parsed-literal::
 
-    kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
+    kayobe seed service deploy --tags seed-deploy-containers
     $KAYOBE_CONFIG_PATH/environments/aufn-ceph/configure-local-networking.sh
 
 We can now sync the contents of the local pulp server with that of SMS test pulp and then complete the seed VM setup:

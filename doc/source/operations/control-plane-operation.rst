@@ -232,7 +232,7 @@ Reconfigure Opensearch with new values:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-tags opensearch
+   kayobe overcloud service reconfigure --tags opensearch
 
 For more information see the `upstream documentation
 <https://docs.openstack.org/kolla-ansible/latest/reference/logging-and-monitoring/central-logging-guide.html#applying-log-retention-policies>`__.

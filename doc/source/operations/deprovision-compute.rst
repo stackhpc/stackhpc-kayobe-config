@@ -116,7 +116,7 @@ Remove it from ``etc/kayobe/inventory/overcloud`` and any group vars, then:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-limit controllers,monitoring
+   kayobe overcloud service reconfigure --limit controllers,monitoring
 
 Deprovision the Hardware
 ~~~~~~~~~~~~~~~~~~~~~~~~

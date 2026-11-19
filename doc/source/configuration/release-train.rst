@@ -274,7 +274,7 @@ has not yet been deployed. This can be avoided with the following workflow:
 
 .. code-block:: console
 
-   kayobe seed service deploy --tags seed-deploy-containers --kolla-tags none
+   kayobe seed service deploy --tags seed-deploy-containers
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
    kayobe seed service deploy

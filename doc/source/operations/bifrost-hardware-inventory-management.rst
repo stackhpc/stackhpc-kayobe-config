@@ -71,7 +71,7 @@ We can then provision and configure them:
 
    kayobe overcloud provision --limit <Hostname>
    kayobe overcloud host configure --limit <Hostname>
-   kayobe overcloud service deploy --limit <Hostname> --kolla-limit <Hostname>
+   kayobe overcloud service deploy --limit <Hostname>
 
 .. note::
 
