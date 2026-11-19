@@ -35,6 +35,8 @@ kolla_image_tags:
 # Monitoring and alerting related settings
 
 opensearch_heap_size: 8g
+# TODO(priteau): Remove mitigation once vulnerability is patched
+opensearch_java_opts: "{% raw %}{% if opensearch_heap_size %}-Xms{{ opensearch_heap_size }} -Xmx{{ opensearch_heap_size }}{% endif %} -Dlog4j2.formatMsgNoLookups=true -XX:-UseBASE64Intrinsics{% endraw %}"
 prometheus_cmdline_extras: "--storage.tsdb.retention.time=30d"
 
 # Additional command line flags for node exporter to enable texfile collector for disk metrics and create textfile docker volume
