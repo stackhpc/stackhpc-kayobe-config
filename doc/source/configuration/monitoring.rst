@@ -61,7 +61,7 @@ Prometheus and Grafana
 
 .. code-block:: console
 
-    kayobe overcloud service reconfigure -kt grafana,prometheus
+    kayobe overcloud service reconfigure -t grafana,prometheus
 
 (Note: If you run into an error when reconfiguring Grafana, it could be due to
 `this <https://bugs.launchpad.net/kolla-ansible/+bug/1997984>`__ bug and at
@@ -245,7 +245,7 @@ To enable the change:
 .. code-block:: console
 
     kayobe playbook run etc/kayobe/ansible/tools/prometheus-network-names.yml
-    kayobe overcloud service reconfigure --kt prometheus
+    kayobe overcloud service reconfigure -t prometheus
 
 This first generates a template based on the prometheus.yml.j2
 ``etc/kayobe/ansible/`` and which is further templated for use with
@@ -319,11 +319,11 @@ Deploy the exporter on the seed:
 
 .. code-block:: console
 
-    kayobe seed service deploy -t seed-deploy-containers -kt none
+    kayobe seed service deploy -t seed-deploy-containers
 
 It is required that you re-configure the Prometheus, Grafana
 services following deployment, to do this run the following Kayobe command.
 
 .. code-block:: console
 
-    kayobe overcloud service reconfigure -kt grafana,prometheus
+    kayobe overcloud service reconfigure -t grafana,prometheus

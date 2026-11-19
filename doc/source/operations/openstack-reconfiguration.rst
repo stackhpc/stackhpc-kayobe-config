@@ -21,7 +21,7 @@ Then, reconfigure Cinder services with Kayobe:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-tags cinder
+   kayobe overcloud service reconfigure --tags cinder
 
 However, the service itself, no longer in Ansible's manifest of managed state,
 must be manually stopped and prevented from restarting.
@@ -111,7 +111,7 @@ above. Run the following command:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-tags haproxy
+   kayobe overcloud service reconfigure --tags haproxy
 
 .. _taking-a-hypervisor-out-of-service:
 

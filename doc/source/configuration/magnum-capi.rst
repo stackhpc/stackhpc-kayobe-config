@@ -113,7 +113,7 @@ Next, copy the CAPI management cluster's kubeconfig file into your stackhpc-kayo
 
 The presence of a kubeconfig file in the Magnum config directory is used by Kolla to determine whether the CAPI Helm driver should be enabled.
 
-If Magnum is already deployed, apply the configuration with ``kayobe overcloud service reconfigure -kt magnum``.
+If Magnum is already deployed, apply the configuration with ``kayobe overcloud service reconfigure -t magnum``.
 
 If Magnum is not yet deployed, enable it and its dependencies in your kayobe environment's ``kolla.yml`` file:
 

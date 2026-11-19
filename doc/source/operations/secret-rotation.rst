@@ -158,7 +158,7 @@ Full method
 
        .. code:: bash
 
-          kayobe seed service deploy -t seed-deploy-containers -kt none
+          kayobe seed service deploy -t seed-deploy-containers
 
        (note you will need to skip Docker registry login since the password will
        now be ‘incorrect’ e.g. ``-e deploy_containers_registry_attempt_login=false``)

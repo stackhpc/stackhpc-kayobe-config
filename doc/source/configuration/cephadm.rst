@@ -498,7 +498,7 @@ before deploying the RADOS gateways. If you are using the Kolla load balancer
 
 .. code:: yaml
 
-  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
+  kayobe overcloud service deploy -t ceph-rgw,keystone,haproxy,loadbalancer
 
 There are two options for load balancing RADOS Gateway:
 
@@ -703,10 +703,10 @@ If you had to change the keyrings, you will need to reconfigure glance, nova and
 
 .. code:: console
 
-   kayobe overcloud service deploy -kt glance,nova,cinder
+   kayobe overcloud service deploy -t glance,nova,cinder
 
 otherwise, just reconfigure glance:
 
 .. code:: console
 
-   kayobe overcloud service deploy -kt glance
+   kayobe overcloud service deploy -t glance

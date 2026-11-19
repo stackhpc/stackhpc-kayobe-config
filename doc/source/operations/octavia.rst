@@ -200,7 +200,7 @@ This has a lifetime of 1 year.
 
    .. code-block:: console
 
-      kayobe overcloud service reconfigure -kt octavia
+      kayobe overcloud service reconfigure -t octavia
 
 #. Run Tempest with the `octavia` test list to check it is working. See
    :ref:`running_tempest_with_kayobe_automation`.

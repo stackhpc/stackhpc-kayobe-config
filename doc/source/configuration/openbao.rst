@@ -377,7 +377,7 @@ HAProxy integration is no longer required for generating OpenStack control plane
 
    .. code-block::
 
-      kayobe overcloud service deploy -kt haproxy
+      kayobe overcloud service deploy -t haproxy
 
 .. _openbao-certificates:
 
@@ -508,7 +508,7 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
    .. code-block::
 
-      kayobe seed service deploy -t seed-deploy-containers -kt none
+      kayobe seed service deploy -t seed-deploy-containers
 
 5. Set CA for docker registry
 
@@ -593,7 +593,7 @@ Deploy Barbican
 
    .. code-block:: bash
 
-      kayobe overcloud service deploy -kt barbican
+      kayobe overcloud service deploy -t barbican
 
 .. _vault-bao-migration:
 
