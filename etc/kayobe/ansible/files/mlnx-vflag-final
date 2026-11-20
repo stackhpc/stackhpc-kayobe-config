@@ -1,0 +1,42 @@
+#!/bin/bash
+
+[ -f /etc/sysconfig/sriov ] && source /etc/sysconfig/sriov
+
+function sriov_vf_bind
+{
+    PF_NIC=$1
+    if [[ ! -d /sys/class/net/$PF_NIC ]]
+    then
+	logger -t mlnx-vflag-final "NIC $PF_NIC not found, aborting"
+	echo "mlnx-vflag-final: NIC $PF_NIC not found" >&2
+        exit -1
+    fi
+
+    # Validate that the NIC is configured to be part of a bond.
+    dev_flags=$(ip link show dev $PF_NIC | grep -o '<.*>')
+    grep -q '\<SLAVE\>' <<< $dev_flags
+    if [[ $? -ne 0 ]]
+    then
+	logger -t mlnx-vflag-final "NIC $PF_NIC not part of a bond, VF-LAG abort"
+	echo "mlnx-vflag-final: NIC $PF_NIC not part of a bond, VF-LAG abort." >&2
+        exit -1
+    fi
+
+    # It appears we need to rebind the VFs to NIC devices, and then
+    # attach the NIC devices to the OVS bridge to which our bond is attached.
+    cd /sys/class/net/$PF_NIC/device
+    PF_PCI=pci/$(basename $(realpath $PWD))
+    for i in $(readlink virtfn*)
+    do
+	logger -t mlnx-vflag-final "Binding $(basename $i)"
+	echo $(basename $i) > /sys/bus/pci/drivers/mlx5_core/bind
+    done
+}
+
+# The network devices on which we create VFs.
+SRIOV_PFS=${SRIOV_PFS:-"enp65s0f0np0 enp65s0f1np1"}
+
+for PF in $SRIOV_PFS
+do
+    sriov_vf_bind $PF
+done
