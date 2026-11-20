@@ -304,13 +304,17 @@ stackhpc_pulp_repo_rocky_10_crb_aarch64_version: "{{ lookup('vars', 'stackhpc_pu
 stackhpc_pulp_repo_rocky_10_highavailability_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_highavailability_aarch64_version') }}"
 stackhpc_pulp_repo_rocky_10_security_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rocky_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_security_aarch64_version') }}"
 
+# EPEL is now split by minor release
+stackhpc_pulp_repo_epel_10_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_version') }}"
+stackhpc_pulp_repo_epel_10_aarch64_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ '_aarch64_version') }}"
+
 # Rocky 10 Multiarch repositories
 stackhpc_pulp_repo_multiarch_centos_stream_10_nfv_openvswitch_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_nfv_openvswitch' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_10_ovn_lts_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_ovn_lts' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_10_storage_ceph_squid_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_storage_ceph_squid' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_centos_stream_10_docker_version: "{{ lookup('vars', 'stackhpc_pulp_repo_centos_stream_10_docker' ~ arch_suffix ~ '_version') }}"
 stackhpc_pulp_repo_multiarch_rhel_10_mariadb_11_4_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel_10_mariadb_11_4' ~ arch_suffix ~ '_version') }}"
-stackhpc_pulp_repo_multiarch_epel_10_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10' ~ arch_suffix ~ '_version') }}"
+stackhpc_pulp_repo_multiarch_epel_10_version: "{{ lookup('vars', 'stackhpc_pulp_repo_epel_10_' ~ stackhpc_pulp_repo_rocky_10_minor_version ~ arch_suffix ~ '_version') }}"
 # These are still el9 upstream
 stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel9_rabbitmq_erlang' ~ arch_suffix ~ '_version', default=stackhpc_pulp_repo_rhel9_rabbitmq_erlang_version) }}"
 stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_27_version: "{{ lookup('vars', 'stackhpc_pulp_repo_rhel9_rabbitmq_erlang_27' ~ arch_suffix ~ '_version', default=stackhpc_pulp_repo_multiarch_rhel9_rabbitmq_erlang_version) }}"
@@ -431,14 +435,14 @@ stackhpc_pulp_rpm_repos:
 
   # EPEL 10 repository
   - name: Extra Packages for Enterprise Linux 10 - x86_64
-    url: "{{ stackhpc_release_pulp_content_url }}/epel/10/Everything/x86_64/{{ stackhpc_pulp_repo_epel_10_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/Everything/x86_64/{{ stackhpc_pulp_repo_epel_10_version }}"
     distribution_name: "extra-packages-for-enterprise-linux-10-x86_64-"
     base_path: "epel/10/Everything/x86_64/"
     sync_policy: mirror_content_only
     required: "{{ stackhpc_pulp_sync_el_10 | bool and 'x86_64' in stackhpc_pulp_rpm_architectures }}"
 
   - name: Extra Packages for Enterprise Linux 10 - aarch64
-    url: "{{ stackhpc_release_pulp_content_url }}/epel/10/Everything/aarch64/{{ stackhpc_pulp_repo_epel_10_aarch64_version }}"
+    url: "{{ stackhpc_release_pulp_content_url }}/epel/10.{{ stackhpc_pulp_repo_rocky_10_minor_version }}/Everything/aarch64/{{ stackhpc_pulp_repo_epel_10_aarch64_version }}"
     distribution_name: "extra-packages-for-enterprise-linux-10-aarch64-"
     base_path: "epel/10/Everything/aarch64/"
     sync_policy: mirror_content_only
