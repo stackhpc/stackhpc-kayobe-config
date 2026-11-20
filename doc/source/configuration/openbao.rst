@@ -221,6 +221,73 @@ cannot be unsealed with an expired certificate.
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-unseal-overcloud.yml
 
+Rotating entire CA chain
+------------------------
+
+Users can rotate the entire CA chain with
+``secret-store-rotate-ca-chain.yml`` playbook. This playbook destroy the old
+CA chain then create a new one. This does not tear down existing OpenBao
+clusters.
+
+Recommended rotating procedure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Back up old certificates and keys
+
+   .. code-block:: bash
+
+      # For OpenBao
+      cp -r $KAYOBE_CONFIG_PATH/openbao $KAYOBE_CONFIG_PATH/openbao-backup
+      # With Kayobe environment
+      cp -r $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao-backup
+
+      # For Hashicorp Vault
+      cp -r $KAYOBE_CONFIG_PATH/vault $KAYOBE_CONFIG_PATH/vault-backup
+      # With Kayobe environment
+      cp -r $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault-backup
+
+2. Back up both seed and overcloud OpenBao
+
+3. Run rotate CA chain playbook
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-rotate-ca-chain.yml
+
+4. Confirm new certificates and keys are generated
+
+   Following certificates/keys will be updated under
+   ``$KAYOBE_CONFIG_PATH/openbao`` or
+   ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao``.
+   (For Hashicorp Vault, the path is ``$KAYOBE_CONFIG_PATH/vault`` or
+   ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault``)
+
+   - ``OS-TLS-ROOT.pem``
+   - ``OS-TLS-INT.crt``
+   - ``OS-TLS-INT.pem``
+   - ``overcloud.crt`` or ``<kolla_internal_fqdn>.crt`` if ``kolla_internal_fqdn`` is defined
+   - ``overcloud.key`` or ``<kolla_internal_fqdn>.key`` if ``kolla_internal_fqdn`` is defined
+
+5. Encrypt files with keys
+
+   .. code-block:: bash
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass OS-TLS-INT.pem
+      # if kolla_internal_fqdn is defined
+      ansible-vault encrypt --vault-password-file ~/vault.pass <kolla_internal_fqdn>.key
+      # else
+      ansible-vault encrypt --vault-password-file ~/vault.pass overcloud.key
+
+Rotating CA chain does not stop already deployed root CA certificate continue
+validating TLS certificates in use.
+
+Regenerate TLS certificates with new CA chain by following instructions
+at :ref:`Certificates generation<certificates-generation>`, then deploy the new
+root CA cert and TLS certificates by following instructions at
+:ref:`Certificates deployment<openbao-certificates>`.
+
+.. _certificates-generation:
+
 Certificates generation
 =======================
 
