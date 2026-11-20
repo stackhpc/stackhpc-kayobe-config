@@ -26,6 +26,13 @@ baremetal
 
 .. include:: ../../../etc/kayobe/environments/baremetal/README.rst
 
+.. _mixin-baremetal-dhcpless:
+
+baremetal-dhcpless
+------------------
+
+.. include:: ../../../etc/kayobe/environments/baremetal-dhcpless/README.rst
+
 .. _mixin-baremetal-policy:
 
 baremetal-policy
