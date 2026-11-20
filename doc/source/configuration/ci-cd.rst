@@ -233,41 +233,41 @@ Runner Deployment
     gitlab_runner_coordinator_url: "https://gitlab.example.com"
     gitlab_runner_runners:
       - name: "Kayobe Automation Runner [Production] #1"
-          executor: docker
-          docker_image: 'alpine'
-          token: "{{ secrets_gitlab_production_runner_token }}"
-          env_vars:
-            - "GIT_CONFIG_COUNT=1"
-            - "GIT_CONFIG_KEY_0=safe.directory"
-            - "GIT_CONFIG_VALUE_0=*"
-          tags:
-            - kayobe
-            - openstack
-            - production
-          docker_volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-            - "/opt/.docker/config.json:/root/.docker/config.json:ro"
-            - "/cache"
-          extra_configs:
+        executor: docker
+        docker_image: 'alpine'
+        token: "{{ secrets_gitlab_production_runner_token }}"
+        env_vars:
+          - "GIT_CONFIG_COUNT=1"
+          - "GIT_CONFIG_KEY_0=safe.directory"
+          - "GIT_CONFIG_VALUE_0=*"
+        tags:
+          - kayobe
+          - openstack
+          - production
+        docker_volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "/opt/.docker/config.json:/root/.docker/config.json:ro"
+          - "/cache"
+        extra_configs:
           runners.docker:
             network_mode: host
       - name: "Kayobe Automation Runner [Staging] #1"
-          executor: docker
-          docker_image: 'alpine'
-          token: "{{ secrets_gitlab_staging_runner_token }}"
-          env_vars:
-            - "GIT_CONFIG_COUNT=1"
-            - "GIT_CONFIG_KEY_0=safe.directory"
-            - "GIT_CONFIG_VALUE_0=*"
-          tags:
-            - kayobe
-            - openstack
-            - staging
-          docker_volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-            - "/opt/.docker/config.json:/root/.docker/config.json:ro"
-            - "/cache"
-          extra_configs:
+        executor: docker
+        docker_image: 'alpine'
+        token: "{{ secrets_gitlab_staging_runner_token }}"
+        env_vars:
+          - "GIT_CONFIG_COUNT=1"
+          - "GIT_CONFIG_KEY_0=safe.directory"
+          - "GIT_CONFIG_VALUE_0=*"
+        tags:
+          - kayobe
+          - openstack
+          - staging
+        docker_volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "/opt/.docker/config.json:/root/.docker/config.json:ro"
+          - "/cache"
+        extra_configs:
           runners.docker:
             network_mode: host
 
