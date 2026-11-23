@@ -10,6 +10,11 @@ on:
         options:
           - SMS Lab
           - Leafcloud
+      create_skc_pr:
+        description: Propose a PR to update the Amphora image tag?
+        type: boolean
+        required: false
+        default: true
     secrets:
       KAYOBE_VAULT_PASSWORD_CI_BUILDER:
         required: true
@@ -38,7 +43,9 @@ jobs:
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
-    permissions: {}
+    permissions:
+      # Required to dispatch the Amphora image tag update workflow.
+      actions: write
     steps:
 
       - name: Install Package dependencies
@@ -270,3 +277,21 @@ jobs:
           OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
           OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         if: always()
+
+      - name: Trigger Amphora image tag update
+        run: |
+          gh workflow run \
+          update-amphora-image-tag.yml \
+          --repo stackhpc/stackhpc-kayobe-config \
+          --ref "$BRANCH_NAME" \
+          -f amphora_tag="$AMPHORA_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          AMPHORA_TAG: ${{ steps.image_tag.outputs.image_tag }}
+        if: ${{ inputs.create_skc_pr && steps.build_amphora.outcome == 'success' }}
+
+      - name: Display link to Amphora image tag update workflow
+        run: |
+          echo "::notice Amphora image tag update workflow: https://github.com/stackhpc/stackhpc-kayobe-config/actions/workflows/update-amphora-image-tag.yml"
+        if: ${{ inputs.create_skc_pr && steps.build_amphora.outcome == 'success' }}
