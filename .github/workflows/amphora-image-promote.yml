@@ -4,9 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Tag to promote
+        description: Tag to promote. Defaults to the tag in configuration.
         type: string
-        required: true
+        required: false
+        default: ''
 env:
   ANSIBLE_FORCE_COLOR: True
 jobs:
@@ -25,6 +26,25 @@ jobs:
           BRANCH=$(awk -F'=' '/defaultbranch/ {print $2}' .gitreview)
           echo "openstack_release=${BRANCH}" | sed -E "s,(stable|unmaintained)/,," >> $GITHUB_OUTPUT
         working-directory: src/kayobe-config
+
+      # The tag defaults to the one in configuration, so that a routine promote
+      # cannot publish an image the configuration does not reference. The input
+      # overrides it, for cases such as rolling back to an earlier image which
+      # would have more steps if manual promotion was removed completely.
+      - name: Gather Amphora image tag
+        id: amphora_image_tag
+        run: |
+          config_tag=$(grep ^stackhpc_amphora_image_version: etc/kayobe/stackhpc.yml | awk '{print $2}' | tr -d '"')
+          if [[ -n "$OVERRIDE_TAG" ]]; then
+            echo "Promoting $OVERRIDE_TAG (override; configuration references $config_tag)"
+            echo "image_tag=$OVERRIDE_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "Promoting $config_tag (from configuration)"
+            echo "image_tag=$config_tag" >> $GITHUB_OUTPUT
+          fi
+        working-directory: src/kayobe-config
+        env:
+          OVERRIDE_TAG: ${{ inputs.image_tag }}
 
       - name: Setup networking
         run: |
@@ -65,5 +85,5 @@ jobs:
           -e repository_name="amphora-images-${{ steps.openstack_release.outputs.openstack_release }}" \
           -e pulp_base_path="amphora-images/${{ steps.openstack_release.outputs.openstack_release }}"
         env:
-          ARTIFACT_TAG: ${{ inputs.image_tag }}
+          ARTIFACT_TAG: ${{ steps.amphora_image_tag.outputs.image_tag }}
           KAYOBE_VAULT_PASSWORD: ${{ secrets.KAYOBE_VAULT_PASSWORD_CI_BUILDER }}
