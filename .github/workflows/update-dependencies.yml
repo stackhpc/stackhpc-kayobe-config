@@ -168,8 +168,10 @@ jobs:
 
       - name: Check for new commits
         id: check_commits
+        env:
+          BASE: ${{ steps.branches.outputs.branch }}
         run: |
-          count=$(git rev-list --count ${{ inputs.branch }}..HEAD)
+          count=$(git rev-list --count "${BASE}..HEAD")
           if [ "$count" -gt 0 ]; then
             echo "has_commits=true" >> $GITHUB_OUTPUT
           else
