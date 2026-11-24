@@ -39,12 +39,14 @@ jobs:
         id: branches
         env:
           STABLE: ${{ inputs.branch }}
+          DEV: ${{ inputs.dev }}
         run: |
-          if [[ ${{ inputs.dev }} ]]; then
+          if [[ "${DEV}" == "true" ]]; then
             release="${STABLE#stackhpc/}"
             echo "branch=stackhpc-dev/${release}" >> "$GITHUB_OUTPUT"
           else
-            echo "branch=${{ inputs.branch }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${STABLE}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Checkout Kayobe-config
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -166,8 +168,10 @@ jobs:
 
       - name: Check for new commits
         id: check_commits
+        env:
+          BASE: ${{ steps.branches.outputs.branch }}
         run: |
-          count=$(git rev-list --count ${{ inputs.branch }}..HEAD)
+          count=$(git rev-list --count "${BASE}..HEAD")
           if [ "$count" -gt 0 ]; then
             echo "has_commits=true" >> $GITHUB_OUTPUT
           else
