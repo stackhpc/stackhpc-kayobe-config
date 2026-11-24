@@ -33,8 +33,6 @@ jobs:
         env:
           AMPHORA_TAG: ${{ inputs.amphora_tag }}
 
-      # The tag is passed via the environment rather than interpolated into the
-      # script, to avoid the input being evaluated as shell.
       - name: Update Amphora image tag
         run: |
           sed -i "/^stackhpc_amphora_image_version:/s/.*/stackhpc_amphora_image_version: \"$AMPHORA_TAG\"/" etc/kayobe/stackhpc.yml
