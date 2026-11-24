@@ -24,6 +24,15 @@ jobs:
           ref: ${{ github.ref_name }}
           path: ${{ github.workspace }}/src/kayobe-config
 
+      - name: Validate the Amphora image tag
+        run: |
+          if [[ ! "$AMPHORA_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Refusing tag '$AMPHORA_TAG': expected only letters, digits, dots, underscores and hyphens."
+            exit 1
+          fi
+        env:
+          AMPHORA_TAG: ${{ inputs.amphora_tag }}
+
       # The tag is passed via the environment rather than interpolated into the
       # script, to avoid the input being evaluated as shell.
       - name: Update Amphora image tag
