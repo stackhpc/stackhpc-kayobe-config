@@ -549,7 +549,11 @@ Pulp TLS
    For clouds in production consider the impact of enabling TLS on specific hosts as Docker daemon will be restarted and this will disrupt deployments of Ceph Reef and older.
    As Vault is deprecated and will be removed in future releases this process only works for OpenBao
 
-To enable TLS for Pulp we first need to generate the certificates and the proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+To enable TLS for Pulp we first need to generate the certificates and then proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+
+.. note::
+
+   Make sure port 443 is open on the seed before enabling pulp TLS.
 
 1. Generate the certificate
 
@@ -557,25 +561,27 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-generate-certificate.yml
 
-2. Copy CA to truststore
+2. Encrypt the key
+
+   .. code-block::
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/pulp/certificates/pulp.key
+      or
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/pulp/certificates/pulp.key
+
+3. Copy CA to truststore
 
    .. code-block::
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
 
-3. Enable TLS for Pulp
+4. Enable TLS for Pulp
 
    .. code-block::
       :caption: $KAYOBE_CONFIG_PATH/pulp.yml
 
       # Whether to enable TLS for Pulp.
       pulp_enable_tls: true
-
-4. Redeploy Pulp
-
-   .. code-block::
-
-      kayobe seed service deploy -t seed-deploy-containers
 
 5. Set CA for docker registry
 
@@ -586,6 +592,18 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
       docker_registry_ca: "{{ kayobe_env_config_path ~ '/openbao/OS-TLS-INT.crt' if pulp_enable_tls | bool else '' }}"
 
 6. Perform host configure to reconfigure APT, DNF and docker/podman settings
+
+   .. code-block::
+
+      kayobe seed host configure -t dnf,apt,container-engine
+
+7. Redeploy Pulp
+
+   .. code-block::
+
+      kayobe seed service deploy -t seed-deploy-containers
+
+8. Perform host configure to reconfigure APT, DNF and docker/podman settings
 
    .. code-block::
 
