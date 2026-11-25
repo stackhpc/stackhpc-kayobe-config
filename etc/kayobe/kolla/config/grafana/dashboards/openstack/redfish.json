@@ -6,8 +6,8 @@
     "name": "redfish",
     "namespace": "default",
     "uid": "7c552b49-18a4-4b7c-b04c-ad27cd66d9f3",
-    "resourceVersion": "1794310813304084",
-    "generation": 21,
+    "resourceVersion": "1795686385049432",
+    "generation": 23,
     "creationTimestamp": "2026-08-27T15:16:45Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "3324506523295744"
@@ -17,11 +17,11 @@
       "grafana.app/folder": "bfwggplhy6dj4d",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "OpenStack",
-      "grafana.app/sourceChecksum": "b7be8e2b446d2923e6d0bd6801505b70",
+      "grafana.app/sourceChecksum": "de26ca844591d91c9f074664e981b9d8",
       "grafana.app/sourcePath": "/var/lib/grafana/dashboards/openstack/redfish.json",
-      "grafana.app/sourceTimestamp": "1794310809000",
+      "grafana.app/sourceTimestamp": "1795686380000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-11-10T11:40:13Z",
+      "grafana.app/updatedTimestamp": "2026-11-26T09:46:25Z",
       "grafana.app/folderTitle": "OpenStack",
       "grafana.app/folderUrl": "/dashboards/f/bfwggplhy6dj4d/openstack"
     }
@@ -1087,7 +1087,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "(redfish_chassis_power_powersupply_state{server=~\"$server\", job!=\"redfish-exporter-collectlog\"}) or vector(0)",
+                        "expr": "(redfish_chassis_power_powersupply_state{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
                         "format": "table",
                         "instant": true,
                         "interval": "",
@@ -1110,7 +1110,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "(redfish_chassis_power_powersupply_health{server=~\"$server\", job!=\"redfish-exporter-collectlog\"}) or vector(0)",
+                        "expr": "(redfish_chassis_power_powersupply_health{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
                         "format": "table",
                         "instant": true,
                         "interval": "",
@@ -1133,7 +1133,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "(redfish_chassis_power_powersupply_health_rollup{server=~\"$server\", job!=\"redfish-exporter-collectlog\"}) or vector(0)",
+                        "expr": "(redfish_chassis_power_powersupply_health_rollup{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
                         "format": "table",
                         "instant": true,
                         "interval": "",
@@ -1142,6 +1142,78 @@
                       "version": "v0"
                     },
                     "refId": "HealthRollup"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "(redfish_chassis_power_powersupply_power_input_watts{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "Input Watts"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "(redfish_chassis_power_powersupply_power_output_watts{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "Output Watts"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "(redfish_chassis_power_powersupply_power_efficiency_percentage{server=~\"$server\", job!=\"redfish-exporter-collectlog\"})",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "Efficiency"
                   }
                 }
               ],
@@ -1160,6 +1232,12 @@
                   "spec": {
                     "options": {
                       "fields": {
+                        "Value #Efficiency": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
                         "Value #Health": {
                           "aggregations": [
                             "lastNotNull"
@@ -1167,6 +1245,24 @@
                           "operation": "aggregate"
                         },
                         "Value #HealthRollup": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "Value #Input Watts": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "Value #Output Watts": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "Value #Rated Efficiency": {
                           "aggregations": [
                             "lastNotNull"
                           ],
@@ -1186,7 +1282,15 @@
                           "aggregations": [
                             "lastNotNull"
                           ],
-                          "operation": "aggregate"
+                          "operation": "groupby"
+                        },
+                        "power_supply_id": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        },
+                        "resource": {
+                          "aggregations": [],
+                          "operation": "groupby"
                         }
                       }
                     }
@@ -1201,11 +1305,18 @@
                       "includeByName": {},
                       "indexByName": {},
                       "renameByName": {
+                        "Value #Efficiency (lastNotNull)": "Efficiency",
                         "Value #Health (lastNotNull)": "Health",
                         "Value #HealthRollup (lastNotNull)": "HealthRollup",
+                        "Value #Input Watts (lastNotNull)": "Input Watts",
+                        "Value #Output Watts (lastNotNull)": "Output Watts",
+                        "Value #Rated Efficiency (lastNotNull)": "Efficiency",
                         "Value #State (lastNotNull)": "State",
                         "chassis_id": "Chassis",
-                        "power_supply (lastNotNull)": "PS Name"
+                        "power_supply": "Name",
+                        "power_supply (lastNotNull)": "PS Name",
+                        "power_supply_id": "ID",
+                        "resource": "Datasource"
                       }
                     }
                   }
@@ -1228,6 +1339,27 @@
                       ],
                       "match": "any",
                       "type": "exclude"
+                    }
+                  }
+                },
+                {
+                  "group": "filterFieldsByName",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "include": {
+                        "names": [
+                          "Chassis",
+                          "Name",
+                          "Datasource",
+                          "State",
+                          "Health",
+                          "HealthRollup",
+                          "Input Watts",
+                          "Output Watts",
+                          "Efficiency"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1346,7 +1478,7 @@
                               "6": {
                                 "color": "dark-yellow",
                                 "index": 5,
-                                "text": "Staritng"
+                                "text": "Starting"
                               },
                               "7": {
                                 "color": "dark-red",
@@ -1379,15 +1511,39 @@
                         ]
                       }
                     ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Datasource",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Power": {
+                                "index": 0,
+                                "text": "Power (legacy)"
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               },
               "options": {
                 "cellHeight": "sm",
-                "showHeader": true
+                "showHeader": true,
+                "zebraStriping": false
               }
             },
-            "version": "13.2.3"
+            "version": "13.3.0"
           }
         }
       },
