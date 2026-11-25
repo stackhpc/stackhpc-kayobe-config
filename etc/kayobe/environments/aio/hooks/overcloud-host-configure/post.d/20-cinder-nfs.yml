@@ -17,10 +17,16 @@
             state: directory
             mode: "0755"
 
+        - name: Ensure the exports directory exists
+          file:
+            path: /etc/exports.d
+            state: directory
+            mode: "0755"
+
         - name: Ensure the Cinder NFS share is exported
           copy:
-            content: "/var/lib/cinder-nfs {{ storage_net_name | net_cidr }}(rw,sync,no_subtree_check,no_root_squash)\n"
-            dest: /etc/exports
+            content: "/var/lib/cinder-nfs {{ storage_net_name | net_ip(groups['controllers'][0]) }}(rw,sync,no_subtree_check,no_root_squash)\n"
+            dest: /etc/exports.d/cinder.exports
             mode: "0644"
 
         - name: Ensure the NFS server is running
