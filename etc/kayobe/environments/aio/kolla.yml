@@ -10,6 +10,13 @@ kolla_enable_octavia: true
 # An upgrade will then cause a missing container error during upgrade jobs runs.
 kolla_enable_valkey: "{{ kolla_enable_octavia | bool }}"
 
+# Block storage, backed by an NFS share exported from the controller.
+kolla_enable_cinder: true
+kolla_enable_cinder_backend_nfs: true
+
+# Cinder backup defaults to the Ceph driver, and no Ceph cluster is deployed in aio
+kolla_enable_cinder_backup: false
+
 ###############################################################################
 # Dummy variable to allow Ansible to accept this file.
 workaround_ansible_issue_8743: yes

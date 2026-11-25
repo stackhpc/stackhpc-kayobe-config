@@ -1,0 +1,33 @@
+---
+
+- hosts: controllers
+  tasks:
+    - name: Export an NFS share for the Cinder NFS backend
+      when: kolla_enable_cinder_backend_nfs | bool
+      become: true
+      block:
+        - name: Ensure the NFS server package is installed
+          package:
+            name: "{{ 'nfs-kernel-server' if ansible_facts.os_family == 'Debian' else 'nfs-utils' }}"
+            state: present
+
+        - name: Ensure the Cinder NFS export directory exists
+          file:
+            path: /var/lib/cinder-nfs
+            state: directory
+            mode: "0755"
+
+        - name: Ensure the Cinder NFS share is exported
+          copy:
+            content: "/var/lib/cinder-nfs {{ storage_net_name | net_cidr }}(rw,sync,no_subtree_check,no_root_squash)\n"
+            dest: /etc/exports
+            mode: "0644"
+
+        - name: Ensure the NFS server is running
+          service:
+            name: "{{ 'nfs-kernel-server' if ansible_facts.os_family == 'Debian' else 'nfs-server' }}"
+            state: started
+            enabled: true
+
+        - name: Ensure the Cinder NFS share is active
+          command: exportfs -ra
