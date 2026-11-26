@@ -21,9 +21,14 @@ beginning migrations:
 
 Update Configuration
 ====================
-
 Merge in the latest ``stackhpc-kayobe-config`` - ``stackhpc/2025.1`` branch by
 :ref:`updating your base configuration <updating-configuration>`.
+
+Activate your environment then update Kayobe:
+
+.. code-block:: console
+
+   pip install --force-reinstall -r $KAYOBE_CONFIG_PATH/../../requirements.txt
 
 Then upgrade the control environment:
 
@@ -31,6 +36,32 @@ Then upgrade the control environment:
 
    kayobe control host upgrade
 
+Deploy latest Rocky 9 images
+============================
+Before beginning the migration make sure you deploy the latest Rocky 9 container images.
+
+Sync the latest Rocky 9 container images:
+
+.. code-block:: console
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-sync.yml
+
+.. code-block:: console
+
+    kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-container-publish.yml
+
+Then pull the images to hosts and deploy:
+
+.. code-block:: console
+
+   kayobe overcloud container image pull
+
+.. code-block:: console
+
+    kayobe overcloud service deploy
+
+Enable Rocky 10
+===============
 Update your environment's ``globals.yml``:
 
 .. code-block:: yaml
@@ -46,18 +77,10 @@ update your environment's ``kolla.yml``:
     -kolla_enable_redis: true
     +kolla_enable_valkey: true
 
-Update Kayobe
-=============
-Ensure you have the latest version of Kayobe installed, from your kayobe environment:
-
-.. code-block:: console
-
-   pip install -U kayobe
-
-Sync Release Train artifacts
-============================
-New StackHPC Release Train content should be synced to the local Pulp server. This includes host
-packages and container images.
+Sync new Release Train artifacts
+================================
+Rocky 10 StackHPC Release Train content should now be synced to the local Pulp server. This includes new
+host packages and container images.
 
 To sync host packages:
 
@@ -129,18 +152,6 @@ It is possible to build a specific set of images by supplying one or more image 
 
     kayobe overcloud container image build --push ironic- nova-api
 
-Deploy latest Rocky 9 images
-============================
-Before beginning the migration make sure you deploy the latest Rocky 9 container images.
-
-.. code-block:: console
-
-   kayobe overcloud container image pull
-
-.. code-block:: console
-
-    kayobe overcloud service deploy
-
 Prepare host images
 =========================================
 
@@ -174,10 +185,6 @@ Potential Issues
 * Rocky 10 has a maximum interface name length of 15 characters; depending on device names and the VLAN ID it
   is possible for this to be exceeded. Work is in progress to add a pre-check to stop deployment if interface
   names exceed this limit. Systemd link files are a potential option for implementing custom interface naming.
-* A bug within QEMU image causes failure during the mounting of devices using 4k block sizes
-  (`qemu-img: /dev/loop0: Failed to clear the new image's first sector: Invalid argument`). Currently the only
-  workaround for deploying on Rocky 10 with these devices is to build nova, cinder, ironic, and glance container
-  images using CentOS Stream 10 packages.
 * Once a controller starts migration, RabbitMQ on other nodes can start raising errors about
   missing cluster fanouts which doesn't resolve once the migration is complete, this can be fixed
   post-migration by resetting RabbitMQ:
@@ -186,7 +193,9 @@ Potential Issues
 
     kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/rabbitmq-reset.yml --skip-tags restart-openstack
 
-* *Possibly need to update interface names*
+* If you store container volumes on a separate local disk which persists between host provisions, some services may fail to deploy
+  on the new host due to finding the existing container volume and not completing bootstrap steps. Removing these volumes before
+  deploying services on the new host is recommended.
 
 Controllers
 ===========
@@ -196,9 +205,19 @@ Full procedure for one host
 ---------------------------
 #. `Back up your database <https://docs.openstack.org/kayobe/2025.1/administration/overcloud.html#performing-database-backups>`__
 
-   #. Ensure the backup is moved off the controller that is to be migrated, before it is deprovisioned.
+   .. code-block:: console
+
+      kayobe overcloud database backup
+
+   The completed backup will normally be stored on the first controller in the controllers group, identify this and ensure backups
+   are moved off the controller before migrating it.
 
 #. If the controller is running Ceph services:
+
+   .. caution::
+
+      If the controller is acting as the ceph bootstrap host (it's the first host in the ``mons`` group), additional steps are
+      required to use an alternative host to bootstrap, familiarise yourself with the steps for migrating the bootstrap host below.
 
    #. Place host in maintenance mode:
 
@@ -282,7 +301,11 @@ Full procedure for one host
 
 #. If the controller is running Ceph OSD services:
 
-   #. **Deploy public key/install cephadm - this step needs checking**
+   #. Deploy ``cephadm`` on the controller:
+
+      .. code-block:: console
+
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml
 
    #. Take the host out of maintenance mode:
 
@@ -297,7 +320,13 @@ Full procedure for one host
 
         ceph -s
 
-#. Deploy overcloud services, this should be run against all controllers:
+   #. If OSDs remain down with warning ``stray daemon(s) not managed by cephadm``, activate them using:
+
+      .. code-block:: console
+
+         ceph cephadm osd activate <host>
+
+#. Deploy overcloud services, note that this should always be run against all controllers:
 
    .. code-block:: console
 
@@ -369,7 +398,11 @@ Full procedure for a batch of hosts
 
 #. If the hosts are running Ceph services:
 
-   #. **Deploy public key/install cephadm - this step needs checking**
+   #. Deploy ``cephadm`` on the hosts:
+
+      .. code-block:: console
+
+         kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml
 
    #. Take the hosts out of maintenance mode:
 
@@ -383,6 +416,12 @@ Full procedure for a batch of hosts
       .. code-block:: console
 
         ceph -s
+
+   #. If OSDs remain down with warning ``stray daemon(s) not managed by cephadm``, activate them on relevant hosts using:
+
+      .. code-block:: console
+
+         ceph cephadm osd activate <host>
 
 #. Deploy overcloud services on the hosts:
 
@@ -403,6 +442,12 @@ Full procedure for a batch of hosts
 
 Storage
 =======
+Migrate storage hosts one-by-one, waiting for the cluster to return to a healthy state before continuing.
+
+.. caution::
+
+   Care should be taken before migrating the first host in the ``mons`` group (the bootstrap host), SSH keys will need to be copied
+   and another host will need to be used as the bootstrap host in it's place during cephadm deployment.
 
 Full procedure for one host
 ---------------------------
@@ -411,6 +456,9 @@ Full procedure for one host
    .. code-block:: console
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/ceph-enter-maintenance.yml --limit <host>
+
+#. If the host is the bootstrap host, copy SSH keys (``cephadm.id``, ``cephadm.id.pub``, ``cephadm.pub``) from
+   ``/etc/ceph`` to the same location on another monitor host, ensuring file ownership and permissions are retained.
 
 #. Check nothing is running on the host, from any cephadm shell:
 
@@ -440,7 +488,18 @@ Full procedure for one host
 
       kayobe overcloud host configure --limit <host>
 
-#. **Deploy public key/install cephadm - this step needs checking**
+#. If migrating the bootstrap host, deploy ``cephadm`` on the host using the monitor host you previously copied keys to
+   as the bootstrap host:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml -e cephadm_bootstrap_host=<host>
+
+#. Otherwise, deploy ``cephadm`` on the host:
+
+   .. code-block:: console
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml
 
 #. Take the host out of maintenance mode:
 
@@ -454,6 +513,12 @@ Full procedure for one host
    .. code-block:: console
 
     ceph -s
+
+#. If OSDs remain down with warning ``stray daemon(s) not managed by cephadm``, activate them on relevant hosts using:
+
+   .. code-block:: console
+
+      ceph cephadm osd activate <host>
 
 #. Deploy overcloud services on the host:
 
@@ -562,5 +627,3 @@ Ansible Control Host
 ====================
 Due to the variety of approaches taken to setup control hosts, this section is left as an exercise
 for the cloud operator.
-
-*But we could maybe give some pointers about things to watch out for?*
