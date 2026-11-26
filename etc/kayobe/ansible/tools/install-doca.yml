@@ -9,6 +9,21 @@
     doca_kernel_arch: "{{ 'x86.64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
     doca_kernel_version: "{{ stackhpc_doca_kernel_version_matrix[ansible_facts.distribution_version | string] }}.{{ doca_kernel_arch }}"
   tasks:
+    - name: Fail if kernel modules are not available for this release
+      ansible.builtin.fail:
+        msg: "DOCA kernel modules are not available for {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version | string }}"
+      when: stackhpc_doca_kernel_version_matrix[ansible_facts.distribution_version | string] is none
+
+    - name: Get currently installed kernel
+      ansible.builtin.command: uname --kernel-release
+      register: installed_kernel_version
+      changed_when: false
+
+    - name: Fail if installed kernel version does not match expected version
+      ansible.builtin.fail:
+        msg: "The currently installed kernel {{ installed_kernel_version.stdout | replace ('_', '.') | replace('-', '.') }} does not match expected kernel {{ doca_kernel_version }}"
+      when: installed_kernel_version.stdout | replace('_', '.') | replace('-', '.') != doca_kernel_version
+
     - name: Install kernel repo
       ansible.builtin.dnf:
         name: doca-kernel-repo
