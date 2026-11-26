@@ -101,6 +101,8 @@ jobs:
       # Octavia needs KVM. The conditions are based on current state of supported amphora envs
       # This is subject to change as support is added for other OS distributions and architectures that support KVM.
       ENABLE_OCTAVIA: ${{ inputs.os_distribution == 'rocky' && inputs.architecture == 'x86_64' && !inputs.upgrade }}
+      # Cinder disabled for upgrade jobs. Needs backport of cinder on previous release
+      ENABLE_CINDER: ${{ !inputs.upgrade }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
       PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2025.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
@@ -258,6 +260,8 @@ jobs:
           kolla_base_arch: ${{ env.ARCHITECTURE }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           kolla_enable_octavia: ${{ env.ENABLE_OCTAVIA }}
+          kolla_enable_cinder: ${{ env.ENABLE_CINDER }}
+          kolla_enable_cinder_backend_nfs: ${{ env.ENABLE_CINDER }}
           EOF
         env:
           ARCHITECTURE: ${{ inputs.architecture }}
