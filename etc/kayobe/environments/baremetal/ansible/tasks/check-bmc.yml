@@ -1,0 +1,14 @@
+---
+# Optional: bmc_check_retries (default 0), bmc_check_delay (default 2).
+- name: Check BMC is up
+  ansible.builtin.uri:
+    url: "{{ baremetal_redfish_url + '/redfish/v1' }}"
+    method: GET
+    status_code: 200
+    validate_certs: "{{ baremetal_redfish_validate_certs }}"
+    ca_path: "{{ baremetal_redfish_ca_path or omit }}"
+    timeout: 10
+  register: bmc_check
+  until: bmc_check.status == 200
+  retries: "{{ bmc_check_retries | default(0) }}"
+  delay: "{{ bmc_check_delay | default(2) }}"

@@ -1,0 +1,71 @@
+---
+- name: Install OpenStack client
+  ansible.builtin.import_playbook: install-openstack-cli.yml
+
+- name: Recover baremetal machines
+  hosts: baremetal-redfish
+  gather_facts: false
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+  tasks:
+    - name: Recover baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Respect the controller's ansible_host when delegating.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+        ansible_python_interpreter: "{{ venv }}/bin/python"
+      environment: "{{ openstack_auth_env }}"
+      block:
+        - name: Gather information about baremetal nodes
+          openstack.cloud.baremetal_node_info:
+            name: "{{ inventory_hostname }}"
+          environment: "{{ openstack_auth_env_system_scope }}"
+          register: bmnode
+
+        - name: Fail if baremetal node is not registered in Ironic
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} is not registered in Ironic."
+          when: bmnode.nodes | length == 0
+
+        - name: Set facts for provision state
+          ansible.builtin.set_fact:
+            bmnode_prov: "{{ bmnode.nodes[0].provision_state }}"
+
+        - name: Recover BMC
+          when: bmnode_prov in ['deploy failed', 'error', 'clean failed']
+          block:
+            - name: Reboot BMC
+              community.general.redfish_command:
+                category: Manager
+                command: PowerReboot
+                resource_id: 1
+                baseuri: "{{ baremetal_redfish_url | urlsplit('netloc') }}"
+                username: "{{ ironic_username }}"
+                password: "{{ ironic_password }}"
+                validate_certs: "{{ baremetal_redfish_validate_certs }}"
+                ca_path: "{{ baremetal_redfish_ca_path or omit }}"
+
+            - name: Wait 300 seconds for the BMC port to become open
+              ansible.builtin.wait_for:
+                port: "{{ baremetal_redfish_url | urlsplit('port') or 443 }}"
+                host: "{{ baremetal_redfish_url | urlsplit('hostname') }}"
+                delay: 20
+                timeout: 300
+
+            - name: Check BMC back up again
+              ansible.builtin.import_tasks: tasks/check-bmc.yml
+              vars:
+                bmc_check_retries: 24  # 24 * 5 seconds = 2 minutes
+                bmc_check_delay: 5
+
+        - name: Manage baremetals in 'clean failed' state
+          ansible.builtin.command: "{{ venv }}/bin/openstack baremetal node manage {{ inventory_hostname }}"
+          when: bmnode_prov == 'clean failed'
+
+        - name: Undeploy baremetals in 'deploy failed' or 'error' state
+          ansible.builtin.command: "{{ venv }}/bin/openstack baremetal node undeploy {{ inventory_hostname }}"
+          when: bmnode_prov in ['deploy failed', 'error']
+
+- name: Make baremetal nodes available
+  ansible.builtin.import_playbook: ./baremetal-4-clean.yml

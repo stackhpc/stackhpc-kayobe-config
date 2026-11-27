@@ -1,0 +1,141 @@
+---
+- name: Install OpenStack client
+  ansible.builtin.import_playbook: install-openstack-cli.yml
+
+- name: Ensure baremetal node fields match configured group vars
+  hosts: baremetal-compute
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_update_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+    baremetal_update_unsafe_states:
+      - active
+      - deploying
+      - wait call-back
+      - rescue
+      - rescuing
+    ironic_update_field_map:
+      - { field: driver, var: ironic_driver, option: driver }
+      - { field: resource_class, var: ironic_resource_class, option: resource-class }
+      - { field: chassis_uuid, var: ironic_chassis_id, option: chassis-uuid }
+      - { field: bios_interface, var: ironic_bios_interface, option: bios-interface }
+      - { field: boot_interface, var: ironic_boot_interface, option: boot-interface }
+      - { field: console_interface, var: ironic_console_interface, option: console-interface }
+      - { field: deploy_interface, var: ironic_deploy_interface, option: deploy-interface }
+      - { field: inspect_interface, var: ironic_inspect_interface, option: inspect-interface }
+      - { field: management_interface, var: ironic_management_interface, option: management-interface }
+      - { field: network_interface, var: ironic_network_interface, option: network-interface }
+      - { field: power_interface, var: ironic_power_interface, option: power-interface }
+      - { field: raid_interface, var: ironic_raid_interface, option: raid-interface }
+      - { field: rescue_interface, var: ironic_rescue_interface, option: rescue-interface }
+      - { field: storage_interface, var: ironic_storage_interface, option: storage-interface }
+      - { field: vendor_interface, var: ironic_vendor_interface, option: vendor-interface }
+  tasks:
+    - name: Check Ironic variables are defined
+      ansible.builtin.assert:
+        that:
+          - ironic_driver | default('', true) | length > 0
+          - ironic_properties | default({}, true) | length > 0
+          - ironic_resource_class | default('', true) | length > 0
+        fail_msg: One or more Ironic variables are undefined.
+
+    - block:
+        - name: Show baremetal node
+          ansible.builtin.import_tasks: tasks/show-node.yml
+
+        - name: Parse baremetal node
+          ansible.builtin.set_fact:
+            ironic_node: "{{ node_show.stdout | from_json }}"
+
+        # NOTE: Report mismatches even for nodes that are not updated.
+        - name: Determine field mismatches
+          ansible.builtin.set_fact:
+            ironic_field_mismatches: >-
+              {{ ironic_field_mismatches | default([]) +
+                 [{'option': item.option, 'value': lookup('vars', item.var)}] }}
+          loop: "{{ ironic_update_field_map }}"
+          loop_control:
+            label: "{{ item.field }}"
+          when:
+            - lookup('vars', item.var, default='') | default('', true) | length > 0
+            - (ironic_node[item.field] | default('', true)) != lookup('vars', item.var)
+            - item.field != 'resource_class' or ironic_node.extra.kayobe_released is defined
+
+        - name: Determine property mismatches
+          ansible.builtin.set_fact:
+            ironic_property_mismatches: >-
+              {{ ironic_property_mismatches | default([]) +
+                 [{'key': item.key, 'value': item.value}] }}
+          loop: "{{ ironic_properties | dict2items }}"
+          loop_control:
+            label: "{{ item.key }}"
+          when: (ironic_node.properties[item.key] | default('') | string) != (item.value | string)
+
+        - name: Report node still needs updating
+          ansible.builtin.debug:
+            msg: >-
+              {{ inventory_hostname }} is in provision state
+              '{{ ironic_node.provision_state }}' so was not updated, but
+              still needs updating: fields={{ ironic_field_mismatches | default([]) }}
+              properties={{ ironic_property_mismatches | default([]) }}
+          when:
+            - ironic_node.provision_state in baremetal_update_unsafe_states
+            - >-
+              (ironic_field_mismatches | default([]) | length > 0) or
+              (ironic_property_mismatches | default([]) | length > 0)
+
+        - name: Report node skipped, already in sync
+          ansible.builtin.debug:
+            msg: >-
+              {{ inventory_hostname }} is in provision state
+              '{{ ironic_node.provision_state }}', skipped field update but
+              no mismatches were found.
+          when:
+            - ironic_node.provision_state in baremetal_update_unsafe_states
+            - (ironic_field_mismatches | default([]) | length == 0)
+            - (ironic_property_mismatches | default([]) | length == 0)
+
+        - name: Update mismatched baremetal node fields
+          ansible.builtin.command:
+            cmd: >-
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }}
+              {% for m in ironic_field_mismatches | default([]) %}
+              --{{ m.option }} {{ m.value }}
+              {% endfor %}
+              {% for m in ironic_property_mismatches | default([]) %}
+              --property {{ m.key }}={{ m.value }}
+              {% endfor %}
+          register: node_set
+          failed_when:
+            - node_set.rc != 0
+          changed_when: true
+          when:
+            - ironic_node.provision_state not in baremetal_update_unsafe_states
+            - >-
+              (ironic_field_mismatches | default([]) | length > 0) or
+              (ironic_property_mismatches | default([]) | length > 0)
+
+        - name: Report updated fields
+          ansible.builtin.debug:
+            msg: >-
+              Updated {{ inventory_hostname }}:
+              fields={{ ironic_field_mismatches | default([]) }}
+              properties={{ ironic_property_mismatches | default([]) }}
+          when:
+            - ironic_node.provision_state not in baremetal_update_unsafe_states
+            - >-
+              (ironic_field_mismatches | default([]) | length > 0) or
+              (ironic_property_mismatches | default([]) | length > 0)
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Respect the controller's ansible_host when delegating.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
+

@@ -1,5 +1,74 @@
 ---
-ironic_properties:
-  capabilities: "{{ ironic_capabilities }}"
+# NOTE: Mirrors https://review.opendev.org/c/openstack/kayobe/+/952979 (unmerged).
+
+ironic_bios_interface:
+
+ironic_boot_interface:
+
+ironic_chassis_id:
+
+ironic_console_interface:
+
+ironic_deploy_interface:
+
+ironic_driver:
+
+ironic_system_id:
+ironic_redfish_id_prefix: /redfish/v1/Systems/
+ironic_redfish_id: "{{ (ironic_redfish_id_prefix ~ ironic_system_id) if ironic_system_id else none }}"
+
+ironic_address: "{{ redfish_address | default(ipmi_address, true) }}"
+ironic_username: "{{ inspector_redfish_username }}"
+ironic_password: "{{ inspector_redfish_password }}"
+
+ironic_driver_info_default: >-
+  {{ {'ipmi_address': ironic_address,
+      'redfish_system_id': ironic_redfish_id,
+      'redfish_address': ironic_address,
+      'redfish_username': ironic_username,
+      'redfish_password': ironic_password} |
+     dict2items | selectattr('value') | items2dict }}
+
+ironic_driver_info_extra: {}
+
+ironic_driver_info: "{{ ironic_driver_info_default | combine(ironic_driver_info_extra) }}"
+
+ironic_inspect_interface:
+
+ironic_management_interface:
+
+ironic_network_interface:
+
+ironic_power_interface:
 
 ironic_capabilities: "boot_option:local,boot_mode:uefi"
+
+ironic_properties_default:
+  capabilities: "{{ ironic_capabilities }}"
+
+ironic_properties_extra: {}
+
+ironic_properties: "{{ ironic_properties_default | combine(ironic_properties_extra) }}"
+
+ironic_raid_interface:
+
+ironic_rescue_interface:
+
+ironic_resource_class:
+
+ironic_storage_interface:
+
+ironic_vendor_interface:
+
+# Boolean or CA bundle path.
+ironic_redfish_verify_ca: false
+baremetal_redfish_ca_path: >-
+  {{ ironic_redfish_verify_ca
+     if (ironic_redfish_verify_ca is string and ironic_redfish_verify_ca.startswith('/'))
+     else '' }}
+baremetal_redfish_validate_certs: >-
+  {{ baremetal_redfish_ca_path | length > 0 or ironic_redfish_verify_ca | bool }}
+
+baremetal_redfish_url: >-
+  {{ none if not ironic_address else
+     (ironic_address if '://' in ironic_address else 'https://' ~ ironic_address) }}
