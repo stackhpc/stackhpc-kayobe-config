@@ -1,2 +1,4 @@
 ---
-cinder_backend_ceph: "yes"
+# Conditional because nova-cell requires the Cinder keyring whenever this is
+# set, even on upgrade jobs where Cinder and Ceph are not deployed.
+cinder_backend_ceph: "{{ 'yes' if kolla_enable_cinder | bool else 'no' }}"
