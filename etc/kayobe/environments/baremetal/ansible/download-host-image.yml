@@ -1,4 +1,7 @@
 ---
+- name: Install OpenStack client
+  ansible.builtin.import_playbook: install-openstack-cli.yml
+
 - name: Download an overcloud host image from Ark
   hosts: controllers
   vars:
@@ -9,9 +12,10 @@
       {{ openstack_release }}/{{ os_distribution }}/{{ os_release }}/\
       {{ stackhpc_overcloud_host_image_version }}/\
       overcloud-{{ os_distribution }}-{{ os_release }}.qcow2"
-    overcloud_host_image_name: "overcloud-{{ os_distribution }}-{{ os_release }}-{{ stackhpc_rocky_9_overcloud_host_image_version }}"
+    overcloud_host_image_name: "overcloud-{{ os_distribution }}-{{ os_release }}-{{ stackhpc_overcloud_host_image_version }}"
     overcloud_host_image_ironic: false
     overcloud_host_image_glance: true
+    venv: "{{ virtualenv_path }}/openstack-cli"
   tasks:
     - name: Print image information
       ansible.builtin.debug:
@@ -20,12 +24,7 @@
           OS Release: {{ os_release }}
           Image tag: {{ stackhpc_overcloud_host_image_version }}
 
-    - name: Install dependencies
-      ansible.builtin.pip:
-        name: openstacksdk
-        state: latest
-
-    - name: Download image artifact
+    - name: Download overcloud host image
       ansible.builtin.get_url:
         url: "{{ stackhpc_overcloud_host_image_url_no_auth }}"
         username: "{{ stackhpc_release_pulp_username }}"
@@ -33,25 +32,26 @@
         force_basic_auth: true
         unredirected_headers:
           - Authorization
-        #dest: /tmp/{{ overcloud_host_image_name }}.qcow2
         dest: "/var/lib/docker/volumes/ironic/_data/{{ overcloud_host_image_name }}.qcow2"
         tmp_dest: "/var/lib/docker/volumes/ironic/_data/"
         mode: "0644"
       register: image_download_result
-      # until: image_download_result.status_code in [200, 304]
-      # retries: 3
-      # delay: 60
+      until: image_download_result is succeeded
+      retries: 3
+      delay: 60
       become: true
 
-    - name: Upload an image to Glance
+    - name: Upload overcloud host image to Glance
       openstack.cloud.image:
         name: "{{ overcloud_host_image_name }}"
         container_format: bare
         disk_format: qcow2
         state: present
-        #filename: /tmp/{{ overcloud_host_image_name }}.qcow2
         filename: /var/lib/docker/volumes/ironic/_data/{{ overcloud_host_image_name }}.qcow2
+      vars:
+        ansible_python_interpreter: "{{ venv }}/bin/python"
       run_once: true
+      delegate_to: "{{ groups['controllers'][0] }}"
       environment: "{{ openstack_auth_env }}"
       when: overcloud_host_image_glance | bool
       become: true

@@ -1,5 +1,8 @@
 ---
-- name: Check baremetal node bmc is up
+- name: Install OpenStack client
+  ansible.builtin.import_playbook: install-openstack-cli.yml
+
+- name: Ensure baremetal nodes have completed agent inspection
   hosts: baremetal-redfish
   gather_facts: false
   max_fail_percentage: >-
@@ -20,25 +23,15 @@
         # NOTE: Without this, the controller's ansible_host variable will not
         # be respected when using delegate_to.
         ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
-        agent_inspect_timeout: "{{ 60 * 20 }}"  # 20 minutes
+        agent_inspect_timeout: "{{ 60 * 30 }}"  # 30 minutes
       environment: "{{ openstack_auth_env }}"
       block:
 
         - name: Show baremetal node
-          ansible.builtin.command:
-            cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
-          register: node_show
-          failed_when:
-            - node_show.rc != 0
-          changed_when: false
+          ansible.builtin.import_tasks: tasks/show-node.yml
 
         - name: Check BMC is up
-          ansible.builtin.uri:
-            url: "{{ ironic_redfish_address + '/redfish/v1' }}"
-            method: GET
-            status_code: 200
-            validate_certs: false
-            timeout: 10
+          ansible.builtin.import_tasks: tasks/check-bmc.yml
 
         - name: Check for agent inspection details
           ansible.builtin.set_fact:
@@ -46,18 +39,19 @@
             inspect_interface: "{{ (node_show.stdout | from_json)['inspect_interface'] }}"
             network_interface: "{{ (node_show.stdout | from_json)['network_interface'] }}"
             provision_state: "{{ (node_show.stdout | from_json)['provision_state'] }}"
+            node_uuid: "{{ (node_show.stdout | from_json)['uuid'] }}"
 
         - name: Output when agent inspection was done
           ansible.builtin.debug:
             msg: "{{ inventory_hostname }} inspected at {{ kayobe_agent_inspect_done }}."
-          when: kayobe_agent_inspect_done != ""
+          when: kayobe_agent_inspect_done is truthy
 
         - name: Fail if not in manageable state
           ansible.builtin.fail:
             msg: "{{ inventory_hostname }} has the wrong provision_state: {{ provision_state }}"
           when:
             - provision_state not in ["manageable", "inspect failed"]
-            - kayobe_agent_inspect_done == ""
+            - kayobe_agent_inspect_done is falsy
 
         - name: If we failed inspect, move back to managable
           ansible.builtin.command:
@@ -69,7 +63,7 @@
           changed_when: true
           when:
             - provision_state == "inspect failed"
-            - kayobe_agent_inspect_done == ""
+            - kayobe_agent_inspect_done is falsy
 
         - name: Move to agent inspect interface
           ansible.builtin.command:
@@ -80,29 +74,67 @@
             - node_set.rc != 0
           changed_when: true
           when:
-            - kayobe_agent_inspect_done == ""
+            - kayobe_agent_inspect_done is falsy
             - inspect_interface == "redfish"
 
+        # TODO: Only set networks when the ironic.conf defaults don't apply.
         - name: Ensure we using the flat network interface and correct network
           ansible.builtin.command:
             cmd: |
-              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface flat --driver-info inspection_network={{ ironic_flat_provisioning_network }} --driver-info cleaning_network={{ ironic_flat_provisioning_network }} --driver-info provision_network={{ ironic_flat_provisioning_network }}
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --network-interface flat --driver-info inspection_network={{ kolla_ironic_inspection_network }} --driver-info cleaning_network={{ kolla_ironic_cleaning_network }} --driver-info provision_network={{ kolla_ironic_provisioning_network }}
           register: node_set
           failed_when:
             - node_set.rc != 0
           changed_when: true
           when:
-            - kayobe_agent_inspect_done == ""
+            - kayobe_agent_inspect_done is falsy or set_networks | default(False)
 
-        - name: Wait for inspection
+        - name: List baremetal ports for node
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal port list --node {{ inventory_hostname }} -f json"
+          register: node_port_list
+          failed_when:
+            - node_port_list.rc != 0
+          changed_when: false
+
+        - name: Create initial inspection port
+          ansible.builtin.command:
+            cmd: "{{ venv }}/bin/openstack baremetal port create --node {{ node_uuid }} --pxe-enabled True {{ nic_mac_address }}"
+          register: node_port_create
+          failed_when:
+            - node_port_create.rc != 0
+          changed_when: true
+          when:
+            - kayobe_agent_inspect_done is falsy
+            - node_port_list.stdout | from_json | length == 0
+            - nic_mac_address is defined
+
+        - name: Start inspection
           ansible.builtin.command:
             cmd: |
               {{ venv }}/bin/openstack baremetal node inspect {{ inventory_hostname }} --wait {{ agent_inspect_timeout }}
+          async: "{{ agent_inspect_timeout * 2 }}"
+          poll: 0
+          register: inspect_sleeper
+          when: kayobe_agent_inspect_done is falsy
+
+        - name: Wait for inspection
+          ansible.builtin.async_status:
+            jid: "{{ inspect_sleeper.ansible_job_id }}"
           register: node_inspect
+          until: node_inspect is finished
+          retries: "{{ 2 * agent_inspect_timeout / 10 }}"
+          poll: 10
           failed_when:
             - node_inspect.rc != 0
           changed_when: true
-          when: kayobe_agent_inspect_done == ""
+          when: kayobe_agent_inspect_done is falsy
+
+        - name: Apply root device override
+          ansible.builtin.command:
+            cmd: |
+              {{ venv }}/bin/openstack baremetal node set {{ inventory_hostname }} --property root_device='{{ ironic_root_device_override | to_json }}'
+          when: ironic_root_device_override is truthy
 
         - name: Note when agent inspection is done
           ansible.builtin.command:
@@ -112,4 +144,4 @@
           failed_when:
             - node_set.rc != 0
           changed_when: true
-          when: kayobe_agent_inspect_done == ""
+          when: kayobe_agent_inspect_done is falsy

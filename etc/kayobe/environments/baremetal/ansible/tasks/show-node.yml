@@ -1,0 +1,8 @@
+---
+- name: Show baremetal node
+  ansible.builtin.command:
+    cmd: "{{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }} -f json"
+  register: node_show
+  failed_when:
+    - node_show.rc != 0
+  changed_when: false

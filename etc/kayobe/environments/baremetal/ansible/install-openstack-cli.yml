@@ -1,0 +1,17 @@
+---
+- name: Install OpenStack client
+  hosts: "{{ groups['controllers'][0] }}"
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+  tasks:
+    - name: Set up openstack cli virtualenv
+      ansible.builtin.pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+          - python-ironicclient
+        state: latest
+        virtualenv_command: "python3.{{ ansible_facts.python.version.minor }} -m venv"
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"

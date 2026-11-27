@@ -1,0 +1,75 @@
+---
+- name: Install OpenStack client
+  ansible.builtin.import_playbook: install-openstack-cli.yml
+
+- name: Ensure baremetal nodes do not override the IPA deploy images
+  hosts: baremetal-compute
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+
+  tasks:
+    - name: Show and check baremetal node
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Respect the controller's ansible_host when delegating.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
+      block:
+
+        - name: Show baremetal node
+          ansible.builtin.import_tasks: tasks/show-node.yml
+
+        - name: Check for IPA image flags
+          ansible.builtin.set_fact:
+            deploy_kernel: "{{ (node_show.stdout | from_json)['driver_info'].get('deploy_kernel') }}"
+            deploy_ramdisk: "{{ (node_show.stdout | from_json)['driver_info'].get('deploy_ramdisk') }}"
+            maintenance: "{{ (node_show.stdout | from_json)['maintenance'] }}"
+
+        - when: deploy_kernel is truthy or deploy_ramdisk is truthy
+          block:
+
+            - name: Put node into maintenance mode
+              ansible.builtin.command:
+                cmd: "{{ venv }}/bin/openstack baremetal node maintenance set {{ inventory_hostname }}"
+              register: node_maint_set
+              when: maintenance is falsy
+              failed_when:
+                - node_maint_set.rc != 0
+              changed_when: true
+
+            - name: Unset IPA image flags
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal node unset {{ inventory_hostname }}
+                  {% if deploy_kernel is truthy %}
+                  --driver-info deploy_kernel
+                  {% endif %}
+                  {% if deploy_ramdisk is truthy %}
+                  --driver-info deploy_ramdisk
+                  {% endif %}
+              register: node_set
+              failed_when:
+                - node_set.rc != 0
+              changed_when: true
+
+          always:
+
+            - name: Bring node out of maintenance mode
+              ansible.builtin.command:
+                cmd: "{{ venv }}/bin/openstack baremetal node maintenance unset {{ inventory_hostname }}"
+              register: node_maint_unset
+              when:
+                - maintenance is falsy
+                - node_maint_set.rc == 0
+              failed_when:
+                - node_maint_unset.rc != 0
+              changed_when: true

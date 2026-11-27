@@ -1,3 +1,5 @@
+# NOTE: Prefer redfish; avoid idrac and ipmi on new deployments.
+
 [baremetal-compute-idrac]
 [baremetal-compute-ipmi]
 [baremetal-compute-redfish]
@@ -6,11 +8,16 @@
 [baremetal-overcloud-ipmi]
 [baremetal-overcloud-redfish]
 
-[baremetal-compute:children]
+# See add-port-groups.yml.
+[baremetal-compute-is-bonded]
+
+# Tenant instances.
+[baremetal-tenant:children]
 baremetal-compute-idrac
 baremetal-compute-ipmi
 baremetal-compute-redfish
 
+# Overcloud hosts, see provision-nova.yml.
 [baremetal-overcloud:children]
 baremetal-overcloud-idrac
 baremetal-overcloud-ipmi
@@ -28,6 +35,10 @@ baremetal-overcloud-ipmi
 baremetal-compute-redfish
 baremetal-overcloud-redfish
 
-[baremetal:children]
-baremetal-compute
+# Driver groups listed so their group_vars take precedence.
+[baremetal-compute:children]
+baremetal-tenant
 baremetal-overcloud
+baremetal-idrac
+baremetal-ipmi
+baremetal-redfish
