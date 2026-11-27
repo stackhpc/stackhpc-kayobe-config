@@ -44,7 +44,9 @@ jobs:
   create-tag:
     name: Create a tag to be added to resulting images
     if: github.repository == 'stackhpc/stackhpc-kayobe-config'
-    environment: ${{ inputs.runner_env }}
+    environment:
+      name: ${{ inputs.runner_env }}
+      deployment: false
     runs-on: ${{ needs.runner-selection.outputs.runner_name_image_build }}
     needs:
       - runner-selection
@@ -149,7 +151,7 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "${{ env.VM_NAME }}"
-          aio_vm_image = "Ubuntu-24.04"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE_GAZPACHO }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
           aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"
@@ -460,7 +462,7 @@ jobs:
           ssh_public_key = "id_rsa.pub"
           ssh_username = "ubuntu"
           aio_vm_name = "${{ env.VM_NAME }}"
-          aio_vm_image = "Ubuntu-24.04-arm64"
+          aio_vm_image = "${{ vars.HOST_IMAGE_BUILD_IMAGE_ARM64_GAZPACHO }}"
           aio_vm_flavor = "${{ vars.HOST_IMAGE_BUILD_FLAVOR }}"
           aio_vm_network = "${{ vars.HOST_IMAGE_BUILD_NETWORK }}"
           aio_vm_subnet = "${{ vars.HOST_IMAGE_BUILD_SUBNET }}"

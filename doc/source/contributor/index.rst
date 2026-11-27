@@ -9,6 +9,7 @@ This guide is for contributors of the StackHPC Kayobe configuration project.
 
    documentation
    release-notes
+   releases
    environments/index
    package-updates
    pre-commit

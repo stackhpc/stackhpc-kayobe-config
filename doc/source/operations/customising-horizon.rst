@@ -89,7 +89,7 @@ Deploy with:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-tags horizon
+   kayobe overcloud service reconfigure --tags horizon
 
 Troubleshooting
 ---------------

@@ -25,7 +25,6 @@ rebooting, decommissioning or making any disruptive configuration change.
 Monitoring
 ----------
 
-* `Back up InfluxDB <https://docs.influxdata.com/influxdb/v1.8/administration/backup_and_restore/>`__
 * `Back up OpenSearch <https://opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/snapshots/snapshot-restore/>`__
 * `Back up Prometheus <https://prometheus.io/docs/prometheus/latest/querying/api/#snapshot>`__
 
@@ -233,7 +232,7 @@ Reconfigure Opensearch with new values:
 
 .. code-block:: console
 
-   kayobe overcloud service reconfigure --kolla-tags opensearch
+   kayobe overcloud service reconfigure --tags opensearch
 
 For more information see the `upstream documentation
 <https://docs.openstack.org/kolla-ansible/latest/reference/logging-and-monitoring/central-logging-guide.html#applying-log-retention-policies>`__.

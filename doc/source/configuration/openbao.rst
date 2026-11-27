@@ -221,6 +221,73 @@ cannot be unsealed with an expired certificate.
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-unseal-overcloud.yml
 
+Rotating entire CA chain
+------------------------
+
+Users can rotate the entire CA chain with
+``secret-store-rotate-ca-chain.yml`` playbook. This playbook destroy the old
+CA chain then create a new one. This does not tear down existing OpenBao
+clusters.
+
+Recommended rotating procedure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Back up old certificates and keys
+
+   .. code-block:: bash
+
+      # For OpenBao
+      cp -r $KAYOBE_CONFIG_PATH/openbao $KAYOBE_CONFIG_PATH/openbao-backup
+      # With Kayobe environment
+      cp -r $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao-backup
+
+      # For Hashicorp Vault
+      cp -r $KAYOBE_CONFIG_PATH/vault $KAYOBE_CONFIG_PATH/vault-backup
+      # With Kayobe environment
+      cp -r $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault-backup
+
+2. Back up both seed and overcloud OpenBao
+
+3. Run rotate CA chain playbook
+
+   .. code-block:: bash
+
+      kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/secret-store/secret-store-rotate-ca-chain.yml
+
+4. Confirm new certificates and keys are generated
+
+   Following certificates/keys will be updated under
+   ``$KAYOBE_CONFIG_PATH/openbao`` or
+   ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/openbao``.
+   (For Hashicorp Vault, the path is ``$KAYOBE_CONFIG_PATH/vault`` or
+   ``$KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/vault``)
+
+   - ``OS-TLS-ROOT.pem``
+   - ``OS-TLS-INT.crt``
+   - ``OS-TLS-INT.pem``
+   - ``overcloud.crt`` or ``<kolla_internal_fqdn>.crt`` if ``kolla_internal_fqdn`` is defined
+   - ``overcloud.key`` or ``<kolla_internal_fqdn>.key`` if ``kolla_internal_fqdn`` is defined
+
+5. Encrypt files with keys
+
+   .. code-block:: bash
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass OS-TLS-INT.pem
+      # if kolla_internal_fqdn is defined
+      ansible-vault encrypt --vault-password-file ~/vault.pass <kolla_internal_fqdn>.key
+      # else
+      ansible-vault encrypt --vault-password-file ~/vault.pass overcloud.key
+
+Rotating CA chain does not stop already deployed root CA certificate continue
+validating TLS certificates in use.
+
+Regenerate TLS certificates with new CA chain by following instructions
+at :ref:`Certificates generation<certificates-generation>`, then deploy the new
+root CA cert and TLS certificates by following instructions at
+:ref:`Certificates deployment<openbao-certificates>`.
+
+.. _certificates-generation:
+
 Certificates generation
 =======================
 
@@ -377,7 +444,7 @@ HAProxy integration is no longer required for generating OpenStack control plane
 
    .. code-block::
 
-      kayobe overcloud service deploy -kt haproxy
+      kayobe overcloud service deploy -t haproxy
 
 .. _openbao-certificates:
 
@@ -482,7 +549,11 @@ Pulp TLS
    For clouds in production consider the impact of enabling TLS on specific hosts as Docker daemon will be restarted and this will disrupt deployments of Ceph Reef and older.
    As Vault is deprecated and will be removed in future releases this process only works for OpenBao
 
-To enable TLS for Pulp we first need to generate the certificates and the proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+To enable TLS for Pulp we first need to generate the certificates and then proceed to configure all hosts that use Pulp to add the root CA to their truststore.
+
+.. note::
+
+   Make sure port 443 is open on the seed before enabling pulp TLS.
 
 1. Generate the certificate
 
@@ -490,25 +561,27 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/pulp/pulp-generate-certificate.yml
 
-2. Copy CA to truststore
+2. Encrypt the key
+
+   .. code-block::
+
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/pulp/certificates/pulp.key
+      or
+      ansible-vault encrypt --vault-password-file ~/vault.pass $KAYOBE_CONFIG_PATH/environments/$KAYOBE_ENVIRONMENT/pulp/certificates/pulp.key
+
+3. Copy CA to truststore
 
    .. code-block::
 
       kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
 
-3. Enable TLS for Pulp
+4. Enable TLS for Pulp
 
    .. code-block::
       :caption: $KAYOBE_CONFIG_PATH/pulp.yml
 
       # Whether to enable TLS for Pulp.
       pulp_enable_tls: true
-
-4. Redeploy Pulp
-
-   .. code-block::
-
-      kayobe seed service deploy -t seed-deploy-containers -kt none
 
 5. Set CA for docker registry
 
@@ -519,6 +592,18 @@ To enable TLS for Pulp we first need to generate the certificates and the procee
       docker_registry_ca: "{{ kayobe_env_config_path ~ '/openbao/OS-TLS-INT.crt' if pulp_enable_tls | bool else '' }}"
 
 6. Perform host configure to reconfigure APT, DNF and docker/podman settings
+
+   .. code-block::
+
+      kayobe seed host configure -t dnf,apt,container-engine
+
+7. Redeploy Pulp
+
+   .. code-block::
+
+      kayobe seed service deploy -t seed-deploy-containers
+
+8. Perform host configure to reconfigure APT, DNF and docker/podman settings
 
    .. code-block::
 
@@ -593,7 +678,7 @@ Deploy Barbican
 
    .. code-block:: bash
 
-      kayobe overcloud service deploy -kt barbican
+      kayobe overcloud service deploy -t barbican
 
 .. _vault-bao-migration:
 
@@ -618,6 +703,19 @@ However, end users of OpenStack will not be affected.
 Overcloud migration is HA migration and no downtime is expected.
 
 It is recommended to run ``vault-bao-migration-change-config.yml`` after all Vault deployments have been migrated to OpenBao.
+
+.. note::
+
+   Once you are satisfied that OpenBao is operating correctly and have verified
+   that everything is working, remove the old Vault and Consul containers and
+   their associated volumes from the seed node and overcloud controllers.
+
+   .. code-block:: bash
+
+      kayobe seed host command run --become --command "docker rm vault consul"
+      kayobe seed host command run --become --command "docker volume rm vault_file vault_logs consul_data"
+      kayobe overcloud host command run --limit controllers --become --command "docker rm vault consul"
+      kayobe overcloud host command run --limit controllers --become --command "docker volume rm vault_file vault_logs consul_data"
 
 .. _openbao-cluster-fix:
 

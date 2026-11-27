@@ -1,0 +1,69 @@
+---
+# This playbook addresses a specific issue when QEMU triggers vfio-pci reset for PCI devices
+# before attaching them to a VM on Rocky Linux 10 (kernel 6.12) hypervisors.
+# The DMESG log reports race condition between vfio-pci driver and pciehp driver as follows.
+# The time taken from vfio-pci driver cutting power of PCI devices to reset gets long enough
+# for pciehp driver to assume that the device is yanked out of the board and make the path
+# inaccessible. Example log:
+# vfio-pci 0000:04:00.0: resetting
+# pcieport 0000:02:01.0: pciehp: Slot(4012): Link Down/Up ignored
+# vfio-pci 0000:04:00.0: reset done
+# vfio-pci 0000:04:00.0: Unable to change power state from D0 to D3hot, device inaccessible
+# pcieport 0000:02:01.0: pciehp: Slot(4012): Link Down
+# pcieport 0000:02:01.0: pciehp: Slot(4012): Card not present
+
+# To deploy this playbook, use the following commands:
+# kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/fixes/disable-pciehp-driver.yml -e disable_pciehp_hosts=<target_hosts> -e disable_pciehp_vendor_id=<vendor_id> -e disable_pciehp_product_id=<product_id>
+
+# Ideally, this playbook should be called from pre hook playbook of overcloud host configure
+# that feeds variable disable_pciehp_hosts, disable_pciehp_vendor_id and disable_pciehp_product_id.
+# Enable with Kayobe Hooks by running for example:
+# touch ${KAYOBE_CONFIG_PATH}/ansible/fix-v100.yml
+# mkdir -p ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+# cd ${KAYOBE_CONFIG_PATH}/hooks/overcloud-host-configure/pre.d
+# ln -s ../../../ansible/fix-v100.yml 99-fix-v100.yml
+# Then call this playbook with import playbook:
+# - ansible.builtin.import_playbook: "{{ lookup('ansible.builtin.env', 'KAYOBE_CONFIG_PATH')  }}/ansible/fixes/disable-pciehp-driver.yml"
+#   vars:
+#     disable_pciehp_hosts: compute_v100
+#     disable_pciehp_vendor_id: 10de
+#     disable_pciehp_product_id: 1db6
+
+- name: Create Systemd Unit to disable pciehp driver for the parent PCI bridge of {{ disable_pciehp_vendor_id }}:{{ disable_pciehp_product_id }}
+  hosts: "{{ disable_pciehp_hosts }}"
+  become: true
+  vars:
+    disable_pciehp_hosts: []  # Edit this variable to target the hosts with specific PCI device
+    disable_pciehp_vendor_id: ""
+    disable_pciehp_product_id: ""
+    script_location: "/usr/local/bin/unbind-{{ disable_pciehp_vendor_id }}-{{ disable_pciehp_product_id }}-pciehp-driver.sh"
+  tasks:
+    - name: Assert that disable_pciehp_vendor_id and disable_pciehp_product_id is set
+      ansible.builtin.assert:
+        that:
+          - disable_pciehp_vendor_id != ""
+          - disable_pciehp_product_id != ""
+        fail_msg: "You must set variables 'disable_pciehp_vendor_id' and 'disable_pciehp_product_id'"
+
+    - name: Template pciehp disable script
+      ansible.builtin.template:
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/templates/disable-pciehp.sh.j2"
+        dest: "{{ script_location }}"
+        mode: "0544"
+
+    - name: Create systemd service for disabling pciehp driver for {{ disable_pciehp_vendor_id }}:{{ disable_pciehp_product_id }}
+      ansible.builtin.template:
+        src: "{{ lookup('env', 'KAYOBE_CONFIG_PATH') }}/ansible/templates/disable-pciehp.service.j2"
+        dest: /etc/systemd/system/disable-{{ disable_pciehp_vendor_id }}-{{ disable_pciehp_product_id }}-pciehp-driver.service
+      notify: Reload systemd
+
+    - name: Enable and start systemd service for disabling pciehp driver for {{ disable_pciehp_vendor_id }}:{{ disable_pciehp_product_id }}
+      ansible.builtin.systemd:
+        name: disable-{{ disable_pciehp_vendor_id }}-{{ disable_pciehp_product_id }}-pciehp-driver
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true

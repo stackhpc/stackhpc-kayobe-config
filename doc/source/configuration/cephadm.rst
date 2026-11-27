@@ -21,8 +21,8 @@ create or modify Ceph cluster deployments. Supported features are:
 Resources
 =========
 
--  https://docs.ceph.com/en/squid/cephadm/index.html
--  https://docs.ceph.com/en/squid/
+-  https://docs.ceph.com/en/tentacle/cephadm/index.html
+-  https://docs.ceph.com/en/tentacle/
 -  https://github.com/stackhpc/ansible-collection-cephadm
 
 Configuration
@@ -393,11 +393,35 @@ Ceph RGWs require additional configuration to:
 
   * Allow cross-project and public object access.
 
-The set of commands below configure all of these.
+The set of commands below configure all of these, and should be appended to ``cephadm_commands_post``.
+
+For Ceph Tentacle and above:
 
 .. code:: yaml
 
-  # Append the following to cephadm_commands_post:
+  - "config set client.rgw rgw_content_length_compat true"
+  - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
+  - "config set client.rgw rgw_enforce_swift_acls true"
+  - "config set client.rgw rgw_keystone_accepted_admin_roles 'admin'"
+  - "config set client.rgw rgw_keystone_accepted_roles 'member, admin'"
+  - "config set client.rgw rgw_keystone_admin_domain Default"
+  - "config set client.rgw rgw_keystone_admin_password {{ secrets_ceph_rgw_keystone_password }}"
+  - "config set client.rgw rgw_keystone_admin_project service"
+  - "config set client.rgw rgw_keystone_admin_user 'ceph_rgw'"
+  - "config set client.rgw rgw_keystone_token_cache_size '10000'"
+  - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
+  - "config set client.rgw rgw_keystone_verify_ssl true"
+  - "config set client.rgw rgw_max_attr_name_len '1000'"
+  - "config set client.rgw rgw_max_attr_size '1000'"
+  - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
+  - "config set client.rgw rgw_s3_auth_use_keystone true"
+  - "config set client.rgw rgw_swift_account_in_url true"
+  - "config set client.rgw rgw_swift_versioning_enabled true"
+
+For Ceph Squid and below:
+
+.. code:: yaml
+
   - "config set client.rgw rgw_content_length_compat true"
   - "config set client.rgw rgw_enable_apis 's3, swift, swift_auth, admin'"
   - "config set client.rgw rgw_enforce_swift_acls true"
@@ -410,13 +434,44 @@ The set of commands below configure all of these.
   - "config set client.rgw rgw_keystone_api_version '3'"
   - "config set client.rgw rgw_keystone_token_cache_size '10000'"
   - "config set client.rgw rgw_keystone_url {{ 'https' if kolla_enable_tls_internal | bool else 'http' }}://{{ kolla_internal_fqdn }}:5000"
-  - "config set client.rgw rgw_keystone_verify_ssl false"
+  - "config set client.rgw rgw_keystone_verify_ssl true"
   - "config set client.rgw rgw_max_attr_name_len '1000'"
   - "config set client.rgw rgw_max_attr_size '1000'"
   - "config set client.rgw rgw_max_attrs_num_in_req '1000'"
   - "config set client.rgw rgw_s3_auth_use_keystone true"
   - "config set client.rgw rgw_swift_account_in_url true"
   - "config set client.rgw rgw_swift_versioning_enabled true"
+
+In order to allow for `rgw_keystone_verify_ssl` to be set to `true` the `CA`
+used to create the internal certificate must be first copied to the `Ceph`
+host using
+
+.. code:: bash
+
+  kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/deployment/copy-ca-to-hosts.yml
+
+and then mounted within all appropriate `Ceph` daemons which can be achieved by
+adding the following to `cephadm.yml`
+
+.. code:: yaml
+
+  ca_bundle_path: >-
+    {{
+      '/etc/ssl/certs/ca-certificates.crt'
+      if os_distribution == 'ubuntu'
+      else '/etc/pki/tls/certs/ca-bundle.crt'
+    }}
+
+  cephadm_extra_container_args:
+    - "-v"
+    - "{{ ca_bundle_path }}:/etc/pki/tls/certs/ca-bundle.crt:ro"
+
+then running `kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml`
+
+.. note::
+
+  If cluster already exists then run `kayobe playbook run $KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-deploy.yml`
+  and follow up with `ceph orch redeploy SERVICE_NAME` inside a `cephadm shell` for all services.
 
 Enable the Kolla Ansible RADOS Gateway integration in ``kolla.yml``:
 
@@ -443,7 +498,7 @@ before deploying the RADOS gateways. If you are using the Kolla load balancer
 
 .. code:: yaml
 
-  kayobe overcloud service deploy -kt ceph-rgw,keystone,haproxy,loadbalancer
+  kayobe overcloud service deploy -t ceph-rgw,keystone,haproxy,loadbalancer
 
 There are two options for load balancing RADOS Gateway:
 
@@ -582,9 +637,9 @@ Copy on write optimisations
 
 Copy on write optimisations are currently disabled by default due to
 `security concerns <https://bugs.launchpad.net/kolla-ansible/+bug/1992153>`__.
-To enable them, set ``stackhpc_enable_ceph_cow_optimisations`` to ``true`` in
-``etc/kayobe/stackhpc.yml``. Setting this flag to ``true`` causes Kayobe to
-render a `glance.conf` file with the following content:
+To enable them, set ``stackhpc_enable_ceph_glance_cow_optimisations`` to
+``true`` in ``etc/kayobe/stackhpc.yml``. Setting this flag to ``true`` causes
+Kayobe to render a ``glance.conf`` file with the following content:
 
 .. code:: ini
 
@@ -648,11 +703,10 @@ If you had to change the keyrings, you will need to reconfigure glance, nova and
 
 .. code:: console
 
-   kayobe overcloud service deploy -kt glance,nova,cinder
+   kayobe overcloud service deploy -t glance,nova,cinder
 
 otherwise, just reconfigure glance:
 
 .. code:: console
 
-   kayobe overcloud service deploy -kt glance
-
+   kayobe overcloud service deploy -t glance

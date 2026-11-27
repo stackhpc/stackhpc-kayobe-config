@@ -7,11 +7,19 @@ on:
         description: Branch to update. Must exist in all repositories. e.g. stackhpc/2026.1
         type: string
         required: true
+      dev:
+        description: Development branch enabled
+        type: boolean
+        required: true
   workflow_dispatch:
     inputs:
       branch:
         description: Branch to update. Must exist in all repositories. e.g. stackhpc/2026.1
         type: string
+        required: true
+      dev:
+        description: Development branch enabled
+        type: boolean
         required: true
 
 jobs:
@@ -27,10 +35,23 @@ jobs:
       kolla-ansible-tag: ${{ steps.latest_kolla_ansible_tag.outputs.latest_tag || steps.current_kolla_ansible_version.outputs.version }}
       kayobe-tag: ${{ steps.latest_kayobe_tag.outputs.latest_tag || steps.current_kayobe_version.outputs.version }}
     steps:
+      - name: Set branch conditions
+        id: branches
+        env:
+          STABLE: ${{ inputs.branch }}
+          DEV: ${{ inputs.dev }}
+        run: |
+          if [[ "${DEV}" == "true" ]]; then
+            release="${STABLE#stackhpc/}"
+            echo "branch=stackhpc-dev/${release}" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=${STABLE}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout Kayobe-config
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ steps.branches.outputs.branch }}
           path: src/kayobe-config
 
       - name: Set sanitised branch name
@@ -147,8 +168,10 @@ jobs:
 
       - name: Check for new commits
         id: check_commits
+        env:
+          BASE: ${{ steps.branches.outputs.branch }}
         run: |
-          count=$(git rev-list --count ${{ inputs.branch }}..HEAD)
+          count=$(git rev-list --count "${BASE}..HEAD")
           if [ "$count" -gt 0 ]; then
             echo "has_commits=true" >> $GITHUB_OUTPUT
           else
@@ -172,9 +195,8 @@ jobs:
             gh pr close $EXISTING_PR
           fi
           gh pr create \
-            --base "${{ inputs.branch }}" \
+            --base "${{ steps.branches.outputs.branch }}" \
             --head "${{ steps.branch_name.outputs.name }}" \
             --title "(automated) Bump dependencies for OpenStack ${{ inputs.branch }}" \
             --body-file ../../pr_body.md \
             --label "automated" \
-
