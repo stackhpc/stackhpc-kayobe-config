@@ -1,0 +1,13 @@
+[Unit]
+Description=Final configuration for Mellanox SR-IOV and VF-LAG
+Wants=network-online.target
+After=network-online.target
+Before=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mlnx-vflag-final
+RemainAfterExit=yes
+
+[Install]
+WantedBy=docker.service
