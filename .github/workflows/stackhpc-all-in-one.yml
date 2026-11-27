@@ -101,6 +101,8 @@ jobs:
       # Octavia needs KVM. The conditions are based on current state of supported amphora envs
       # This is subject to change as support is added for other OS distributions and architectures that support KVM.
       ENABLE_OCTAVIA: ${{ inputs.os_distribution == 'rocky' && inputs.architecture == 'x86_64' && !inputs.upgrade }}
+      # Cinder disabled for upgrade jobs. Needs backport of cinder on previous release
+      ENABLE_CINDER: ${{ !inputs.upgrade }}
       # NOTE(upgrade): Reference the PREVIOUS release here.
       PREVIOUS_KAYOBE_IMAGE: ghcr.io/stackhpc/stackhpc-kayobe-config:stackhpc-2025.1
       # NOTE(upgrade): Reference the PREVIOUS release branch here.
@@ -258,6 +260,7 @@ jobs:
           kolla_base_arch: ${{ env.ARCHITECTURE }}
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           kolla_enable_octavia: ${{ env.ENABLE_OCTAVIA }}
+          kolla_enable_cinder: ${{ env.ENABLE_CINDER }}
           EOF
         env:
           ARCHITECTURE: ${{ inputs.architecture }}
@@ -319,6 +322,30 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: ${{ env.ENABLE_OCTAVIA == 'true' }}
+
+      - name: Deploy Ceph
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_CINDER == 'true' }}
+
+      - name: Gather Ceph keys
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_CINDER == 'true' }}
 
       - name: Pull container images
         run: |

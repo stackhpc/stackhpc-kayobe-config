@@ -38,6 +38,12 @@ variable "aio_vm_volume_size" {
   default = 50
 }
 
+# Blank volume used as a Ceph OSD device by the ci-aio environment.
+variable "aio_vm_data_volume_size" {
+  type = number
+  default = 10
+}
+
 variable "aio_vm_tags" {
   type = list(string)
   default = []
@@ -72,6 +78,16 @@ resource "openstack_compute_instance_v2" "kayobe-aio" {
     source_type           = "image"
     volume_size           = var.aio_vm_volume_size
     boot_index            = 0
+    destination_type      = "volume"
+    delete_on_termination = true
+  }
+
+  # Blank Ceph OSD device. Left unformatted so that cephadm claims it and
+  # skips the partitioned boot volume.
+  block_device {
+    source_type           = "blank"
+    volume_size           = var.aio_vm_data_volume_size
+    boot_index            = -1
     destination_type      = "volume"
     delete_on_termination = true
   }

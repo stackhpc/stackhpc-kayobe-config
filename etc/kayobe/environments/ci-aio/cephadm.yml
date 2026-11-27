@@ -1,0 +1,43 @@
+---
+# Cephadm deployment configuration.
+
+# Claim the blank volume attached by terraform. Skips partitioned
+# boot volume which is the other one on aio
+cephadm_osd_spec:
+  service_type: osd
+  service_id: osd_spec_default
+  placement:
+    host_pattern: "*"
+  data_devices:
+    all: true
+
+cephadm_commands_pre_extra:
+  - "config set global osd_pool_default_size 1"
+  - "config set global osd_pool_default_min_size 1"
+  - "osd pool set .mgr size 1"
+  - "osd pool set .mgr min_size 1"
+  # The 4GiB default is too much for a single node test cluster.
+  - "config set osd osd_memory_target 1073741824"
+
+cephadm_ec_profiles: []
+cephadm_crush_rules: []
+
+cephadm_pools:
+  - name: volumes
+    application: rbd
+    state: present
+
+cephadm_keys:
+  - name: client.cinder
+    caps:
+      mon: "profile rbd"
+      osd: "profile rbd pool=volumes"
+      mgr: "profile rbd pool=volumes"
+    state: present
+
+kolla_ceph_glance_required: false
+
+# Need for images from quay.io Fails if None or missing
+cephadm_registry_url: ""
+cephadm_registry_username: ""
+cephadm_registry_password: ""
