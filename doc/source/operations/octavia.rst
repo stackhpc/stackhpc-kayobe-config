@@ -2,6 +2,30 @@
 Octavia
 =======
 
+Management network requirements
+===============================
+
+The Amphora provider driver runs each load balancer inside its own virtual
+machine, called an amphora. The Octavia services and the amphorae talk to each
+other directly, so they need to share a network:
+
+* Octavia connects to each amphora on TCP port 9443 to configure it.
+* Each amphora sends health reports back to Octavia on UDP port 5555.
+
+Octavia therefore needs an address of its own on the management network, and
+Neutron needs a network on the same segment to attach the amphorae to.
+
+If both of those are carried by the same network interface on the host, that
+interface must be a Linux bridge. When a plain interface has VLAN subinterfaces
+on it, the host keeps the traffic for itself and Open vSwitch never receives it,
+so amphorae start up but Octavia cannot reach them. A Linux bridge passes a copy
+of the traffic to everything attached to it, so the host and Open vSwitch both
+receive it.
+
+The ``ci-multinode`` environment is set up this way: the VXLAN mesh device sits
+inside a Linux bridge, and Open vSwitch attaches to the same bridge through a
+veth pair.
+
 .. _Amphora image:
 
 Updating amphora images
@@ -176,7 +200,7 @@ This has a lifetime of 1 year.
 
    .. code-block:: console
 
-      kayobe overcloud service reconfigure -kt octavia
+      kayobe overcloud service reconfigure -t octavia
 
 #. Run Tempest with the `octavia` test list to check it is working. See
    :ref:`running_tempest_with_kayobe_automation`.

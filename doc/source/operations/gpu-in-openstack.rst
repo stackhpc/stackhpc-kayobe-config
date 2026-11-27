@@ -74,7 +74,7 @@ Once host configuration is complete, deploy Nova:
 
 .. code-block:: console
 
-    kayobe overcloud service deploy -kt nova
+    kayobe overcloud service deploy -t nova
 
 Create a flavor
 ---------------
@@ -351,7 +351,7 @@ You will need to reconfigure nova for this change to be applied:
 
 .. code-block:: shell
 
-  kayobe overcloud service deploy -kt nova --kolla-limit compute_vgpu
+  kayobe overcloud service deploy -t nova --limit compute_vgpu
 
 Openstack flavors
 -----------------

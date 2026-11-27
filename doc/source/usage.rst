@@ -69,51 +69,48 @@ are up-to-date:
 
 To create a Beokay environment using the base configuration, for the latest release:
 
-.. code-block:: console
+.. parsed-literal::
 
-   beokay.py create \
-   --base-path skc-environment \
-   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
-   --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-in-requirements
+   beokay.py create \\
+   --base-path skc-environment \\
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \\
+   --kayobe-config-branch |current_release_git_branch_name|
 
 Kayobe environments can also be specified, for example, to create an AIO environment:
 
-.. code-block:: console
+.. parsed-literal::
 
-   beokay.py create \
-   --base-path skc-aio-environment \
-   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
-   --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-config-env-name aio \
-   --vault-password-file ~/vault-pw \
-   --kayobe-in-requirements
+   beokay.py create \\
+   --base-path skc-aio-environment \\
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \\
+   --kayobe-config-branch |current_release_git_branch_name| \\
+   --kayobe-config-env-name aio \\
+   --vault-password-file ~/vault-pw
 
 Python executable can also be specified, for example, to use Python 3.12:
 
-.. code-block:: console
+.. parsed-literal::
 
-   beokay.py create \
-   --base-path skc-environment \
-   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \
-   --kayobe-config-branch |current_release_git_branch_name| \
-   --kayobe-in-requirements
+   beokay.py create \\
+   --base-path skc-environment \\
+   --kayobe-config-repo https://github.com/stackhpc/stackhpc-kayobe-config.git \\
+   --kayobe-config-branch |current_release_git_branch_name| \\
    --python python3.12
 
 When Beokay environments are no longer required, they can be deleted by running:
 
-.. code-block:: console
+.. parsed-literal::
 
-   beokay.py destroy \
+   beokay.py destroy \\
    --base-path skc-environment
 
 Specific Kayobe commands can also be run via Beokay, for example, to run a Kolla
 service deployment on overcloud hosts:
 
-.. code-block:: console
+.. parsed-literal::
 
-   beokay.py run \
-   'kayobe overcloud service deploy' \
-   --base-path skc-aio-environment \
-   --kayobe-config-env-name aio \
+   beokay.py run \\
+   'kayobe overcloud service deploy' \\
+   --base-path skc-aio-environment \\
+   --kayobe-config-env-name aio \\
    --vault-password-file ~/vault-pw

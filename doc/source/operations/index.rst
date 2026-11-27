@@ -12,6 +12,7 @@ This guide is for operators of the StackHPC Kayobe configuration project.
    shutdown-and-startup
    customising-horizon
    database-backups
+   deprovision-compute
    gpu-in-openstack
    bifrost-hardware-inventory-management
    hotfix-playbook

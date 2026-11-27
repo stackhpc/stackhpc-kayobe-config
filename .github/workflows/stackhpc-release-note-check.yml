@@ -1,0 +1,39 @@
+---
+# Enforces the rules in .github/release-note-rules.yml. This check is not a
+# required status check, so a failure flags the PR without blocking it.
+name: Release note check
+'on':
+  pull_request:
+
+permissions: {}
+
+jobs:
+  release-note-check:
+    name: Release note check
+    runs-on: ubuntu-26.04
+    if: github.repository == 'stackhpc/stackhpc-kayobe-config'
+    steps:
+      - name: GitHub Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # The PR merge commit and its parents. HEAD^ is the base branch.
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Check release note rules
+        run: |
+          rules=.github/release-note-rules.yml
+          needs_note=$(yq -r '.needs_note[]' "$rules")
+          no_note=$(yq -r '.no_note[]' "$rules")
+
+          changed=$(git diff --name-only HEAD^ HEAD -- . ':!releasenotes/')
+          new_notes=$(git diff --name-only --diff-filter=A HEAD^ HEAD -- releasenotes/notes/)
+
+          if [ -z "$new_notes" ] && grep -qE "$needs_note" <<< "$changed"; then
+            echo "::error::This PR changes images, repo versions or Kolla config, so it needs a release note."
+            exit 1
+          fi
+          if [ -n "$new_notes" ] && [ -n "$changed" ] && ! grep -qvE "$no_note" <<< "$changed"; then
+            echo "::error::This PR only changes docs or CI, so it should not have a release note."
+            exit 1
+          fi

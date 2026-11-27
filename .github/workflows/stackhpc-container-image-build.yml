@@ -155,9 +155,17 @@ jobs:
         run: |
           docker ps
 
-      - name: Install Trivy
+      - name: Install Grype and Syft
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v0.69.2
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/v0.120.0/install.sh | sudo sh -s -- -b /usr/local/bin v0.120.0
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/v1.54.0/install.sh | sudo sh -s -- -b /usr/local/bin v1.54.0
+
+      # NOTE: Download the vulnerability database in the background while
+      # images are built. The scan step waits for it to finish.
+      - name: Start Grype vulnerability database download
+        run: |
+          nohup grype db update > grype-db-update.log 2>&1 &
+          echo $! > grype-db-update.pid
 
       - name: Install yq
         run: |
@@ -261,8 +269,15 @@ jobs:
       - name: Fail if no images have been built
         run: if [ $(wc -l < ${{ matrix.distro.name }}-${{ matrix.distro.release }}-container-images) -le 1 ]; then exit 1; fi
 
+      - name: Wait for Grype vulnerability database download
+        run: |
+          while kill -0 "$(cat grype-db-update.pid)" 2> /dev/null; do sleep 5; done
+          cat grype-db-update.log
+
       - name: Scan built container images
         run: src/kayobe-config/tools/scan-images.sh ${{ matrix.distro.name }}-${{ matrix.distro.release }} ${{ steps.write-kolla-tag.outputs.kolla-tag }} ${{ inputs.sbom && '--sbom' }}
+        env:
+          SCAN_PARALLELISM: 4
 
       - name: Move image scan logs to output artifact
         run: mv image-scan-output image-build-logs/image-scan-output

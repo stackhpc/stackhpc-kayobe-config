@@ -258,7 +258,7 @@ Deploy the new service:
 
 .. code-block:: console
 
-  $ kayobe overcloud service deploy -kl controller2 -l controller2 -kt nova
+  $ kayobe overcloud service deploy -l controller2 -t nova
 
 Verify that the new service appears as 'up' and 'enabled':
 
@@ -285,7 +285,7 @@ Deploy the new service:
 
 .. code-block:: console
 
-  $ kayobe overcloud service reconfigure -kl controller2 -l controller2 -kt nova
+  $ kayobe overcloud service reconfigure -l controller2 -t nova
 
 Verify that the new service appears as 'up' and 'enabled':
 
