@@ -261,7 +261,6 @@ jobs:
           kolla_enable_ovn: ${{ env.ENABLE_OVN }}
           kolla_enable_octavia: ${{ env.ENABLE_OCTAVIA }}
           kolla_enable_cinder: ${{ env.ENABLE_CINDER }}
-          kolla_enable_cinder_backend_nfs: ${{ env.ENABLE_CINDER }}
           EOF
         env:
           ARCHITECTURE: ${{ inputs.architecture }}
@@ -323,6 +322,30 @@ jobs:
         env:
           KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
         if: ${{ env.ENABLE_OCTAVIA == 'true' }}
+
+      - name: Deploy Ceph
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/ceph/cephadm.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_CINDER == 'true' }}
+
+      - name: Gather Ceph keys
+        run: |
+          docker run -t --rm \
+            -v $(pwd):/stack/kayobe-automation-env/src/kayobe-config \
+            -e KAYOBE_ENVIRONMENT -e KAYOBE_VAULT_PASSWORD -e KAYOBE_AUTOMATION_SSH_PRIVATE_KEY \
+            ${{ steps.kayobe_image.outputs.kayobe_image }} \
+            /stack/kayobe-automation-env/src/kayobe-config/.automation/pipeline/playbook-run.sh \
+            '$KAYOBE_CONFIG_PATH/ansible/ceph/cephadm-gather-keys.yml'
+        env:
+          KAYOBE_AUTOMATION_SSH_PRIVATE_KEY: ${{ steps.ssh_key.outputs.ssh_key }}
+        if: ${{ env.ENABLE_CINDER == 'true' }}
 
       - name: Pull container images
         run: |
