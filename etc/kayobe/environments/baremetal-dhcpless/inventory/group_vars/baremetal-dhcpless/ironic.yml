@@ -1,0 +1,102 @@
+---
+###############################################################################
+# DHCP-less Ironic node configuration.
+#
+# The MAC address of the NIC to configure is discovered using out-of-band
+# Redfish inspection (see ironic_dhcpless_redfish_interface), unless
+# ironic_dhcpless_mac_address is set for the host.
+#
+# The static IP defaults to the IP allocated to the host on
+# ironic_dhcpless_network in network-allocation.yml, or can be set per host
+# with ironic_dhcpless_ip_address.
+
+# MAC address of the NIC on ironic_dhcpless_network. Optional: overrides
+# discovery via Redfish inspection.
+# ironic_dhcpless_mac_address:
+
+# Redfish EthernetInterface Id of the NIC on ironic_dhcpless_network, used to
+# select the MAC address from the Redfish inspection data, e.g.
+# NIC.Integrated.1-1-1 on Dell. If unset, the PXE interface reported by the BMC
+# is used if available, otherwise the node must have exactly one enabled NIC.
+ironic_dhcpless_redfish_interface:
+
+# Out-of-band inspect interface used to discover NICs. Must be one of
+# kolla_ironic_enabled_inspect_interfaces.
+ironic_dhcpless_inspect_interface: >-
+  {{ 'idrac-redfish' if ironic_driver == 'idrac' else 'redfish' }}
+
+# Whether to rerun Redfish inspection even if the node has inspection data.
+ironic_dhcpless_reinspect: false
+
+# Timeout in seconds for Redfish inspection.
+ironic_dhcpless_inspect_timeout: 900
+
+# Kayobe network that the ramdisk is statically configured on. The node's
+# network_data is used for every ramdisk phase (inspection, cleaning,
+# provisioning, rescue), so the inspection, cleaning and provisioning networks
+# must all be this network.
+ironic_dhcpless_network: "{{ provision_wl_net_name }}"
+
+# Static IP address of the node on ironic_dhcpless_network. This must not
+# overlap with the Neutron allocation pool of that network.
+ironic_dhcpless_ip_address: "{{ ironic_dhcpless_network | net_ip }}"
+
+ironic_dhcpless_netmask: "{{ ironic_dhcpless_network | net_mask }}"
+
+# Default gateway for the ramdisk. Required if the Ironic API is not on
+# ironic_dhcpless_network.
+ironic_dhcpless_gateway: >-
+  {{ ironic_dhcpless_network | net_inspection_gateway or
+     ironic_dhcpless_network | net_neutron_gateway or
+     ironic_dhcpless_network | net_gateway or '' }}
+
+ironic_dhcpless_mtu: "{{ ironic_dhcpless_network | net_mtu or 1500 }}"
+
+ironic_dhcpless_dns_servers: "{{ resolv_nameservers | default([]) }}"
+
+# Virtual media boot interface. Must be one of
+# kolla_ironic_enabled_boot_interfaces.
+ironic_dhcpless_boot_interface: >-
+  {{ 'idrac-redfish-virtual-media' if ironic_driver == 'idrac'
+     else 'redfish-virtual-media' }}
+
+# Whether to ensure that a PXE-enabled Ironic port exists for each physical
+# (phy) link in ironic_dhcpless_network_data. Redfish inspection creates ports
+# for enabled NICs.
+ironic_dhcpless_create_port: true
+
+# Whether to disable PXE on Ironic ports that are not physical links in
+# ironic_dhcpless_network_data. Ironic binds every PXE-enabled port to the
+# provisioning, cleaning, inspection and rescue networks, but the ramdisk only
+# configures the NICs in the network data.
+ironic_dhcpless_disable_pxe_on_other_ports: true
+
+# Network data in OpenStack config drive (network_data.json) format. This is
+# set on the node's network_data field and is used by glean in the IPA ramdisk
+# for inspection, cleaning and deployment. Override per host for more complex
+# layouts (bonds, VLANs, multiple NICs).
+ironic_dhcpless_network_data:
+  links:
+    - id: "{{ ironic_dhcpless_link_id }}"
+      type: phy
+      ethernet_mac_address: "{{ ironic_dhcpless_mac_address | lower }}"
+      mtu: "{{ ironic_dhcpless_mtu | int }}"
+  networks:
+    - id: "{{ ironic_dhcpless_network }}"
+      network_id: "{{ ironic_dhcpless_network }}"
+      type: ipv4
+      link: "{{ ironic_dhcpless_link_id }}"
+      ip_address: "{{ ironic_dhcpless_ip_address }}"
+      netmask: "{{ ironic_dhcpless_netmask }}"
+      routes: "{{ ironic_dhcpless_routes }}"
+  services: >-
+    {{ ironic_dhcpless_dns_servers
+       | map('regex_replace', '^(.*)$', '{"type": "dns", "address": "\1"}')
+       | map('from_json') | list }}
+
+ironic_dhcpless_link_id: "port-{{ ironic_dhcpless_mac_address | lower | replace(':', '') }}"
+
+ironic_dhcpless_routes: >-
+  {{ [{'network': '0.0.0.0', 'netmask': '0.0.0.0',
+       'gateway': ironic_dhcpless_gateway | trim}]
+     if ironic_dhcpless_gateway | trim else [] }}

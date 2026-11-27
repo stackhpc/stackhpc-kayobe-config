@@ -1,0 +1,43 @@
+---
+###############################################################################
+# Ironic configuration for DHCP-less (virtual media) deployment.
+
+# Add out-of-band Redfish inspection, which does not require the node to boot
+# a ramdisk, and is used to discover the MAC addresses of DHCP-less nodes.
+# In-band (agent) inspection also works, using the node's network_data.
+kolla_ironic_enabled_inspect_interfaces:
+  - agent
+  - idrac-redfish
+  - redfish
+  - no-inspect
+
+# Keep in-band agent inspection as the default; the DHCP-less registration
+# hook selects the Redfish inspect interface only for the inspection it runs.
+kolla_ironic_default_inspect_interface: agent
+
+# Kernel parameters for ramdisks booted from virtual media
+# ([redfish] kernel_append_params). Use the same parameters as PXE boot (serial
+# console, NTP server, etc.) from the baremetal environment.
+kolla_ironic_kernel_append_params: "{{ kolla_ironic_pxe_append_params }}"
+
+# URL of an EFI System Partition image used to build UEFI-bootable virtual
+# media ISOs ([conductor] bootloader). The default is the ESP image that the
+# Kolla ironic-tftp container builds from the distribution's signed shim and
+# grub, in the ironic volume shared with ironic-conductor.
+ironic_dhcpless_bootloader: "file:///var/lib/ironic/httpboot/esp.img"
+
+# Path of the grub configuration file in UEFI ISOs ([DEFAULT]
+# grub_config_path). This must match the prefix that the grub binary in the ESP
+# image was built with, which for distribution-signed grub is
+# EFI/<distribution>/grub.cfg.
+ironic_dhcpless_grub_config_path: "EFI/{{ kolla_base_distro }}/grub.cfg"
+
+# HTTP URL, reachable from the BMCs, from which virtual media ISOs are served
+# ([deploy] external_http_url). Set this when the BMCs cannot reach
+# [deploy] http_url, e.g. when they are on a separate out-of-band network.
+ironic_dhcpless_external_http_url:
+
+# Bare Metal API URL, reachable from the nodes, used by IPA for callbacks
+# ([deploy] external_callback_url). Set this when nodes are not on the
+# provisioning network, i.e. are deployed over a routed network.
+ironic_dhcpless_external_callback_url:

@@ -1,0 +1,352 @@
+---
+# Configure baremetal compute nodes in the baremetal-dhcpless group for
+# DHCP-less deployment:
+#
+# * Discover the MAC address of the NIC on ironic_dhcpless_network using
+#   out-of-band Redfish inspection, unless ironic_dhcpless_mac_address is set.
+# * Set the node's network_data field and a virtual media boot interface.
+# * Ensure that the Ironic ports for the physical links in the network data
+#   exist and are PXE-enabled, and disable PXE on other ports. Ironic binds
+#   PXE-enabled ports to the provisioning, cleaning and inspection networks.
+#
+# Runs as a post hook of 'kayobe baremetal compute register', or standalone:
+#   kayobe playbook run \
+#     $KAYOBE_CONFIG_PATH/environments/baremetal-dhcpless/ansible/baremetal-dhcpless-network-data.yml
+
+- name: Ensure OpenStack CLI virtualenv exists
+  hosts: controllers[0]
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+  tasks:
+    - name: Set up openstack cli virtualenv
+      ansible.builtin.pip:
+        virtualenv: "{{ venv }}"
+        name:
+          - python-openstackclient
+          - python-ironicclient
+        virtualenv_command: "python3.{{ ansible_facts.python.version.minor }} -m venv"
+        extra_args: "{% if pip_upper_constraints_file %}-c {{ pip_upper_constraints_file }}{% endif %}"
+
+- name: Ensure DHCP-less baremetal nodes are configured
+  hosts: baremetal-dhcpless
+  gather_facts: false
+  max_fail_percentage: >-
+    {{ baremetal_compute_register_max_fail_percentage |
+       default(baremetal_compute_max_fail_percentage) |
+       default(kayobe_max_fail_percentage) |
+       default(100) }}
+  tags:
+    - baremetal
+    - dhcpless
+  vars:
+    venv: "{{ virtualenv_path }}/openstack-cli"
+    controller_host: "{{ groups['controllers'][0] }}"
+    mac_regex: '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$'
+  tasks:
+    - name: Check DHCP-less variables are defined
+      ansible.builtin.assert:
+        that:
+          - ironic_driver is defined
+          - ironic_dhcpless_ip_address | default('', true) | length > 0
+          - ironic_dhcpless_boot_interface in kolla_ironic_enabled_boot_interfaces
+          - ironic_dhcpless_mac_address is not defined or ironic_dhcpless_mac_address is match(mac_regex)
+          - >-
+            ironic_dhcpless_mac_address is defined or
+            ironic_dhcpless_inspect_interface in kolla_ironic_enabled_inspect_interfaces
+        fail_msg: >-
+          Host {{ inventory_hostname }} must be in a baremetal driver group,
+          have an IP address on {{ ironic_dhcpless_network }} (or define
+          ironic_dhcpless_ip_address), and either define a valid
+          ironic_dhcpless_mac_address or use an enabled Redfish inspect
+          interface.
+
+    - name: Configure node in Ironic
+      block:
+        - name: Show baremetal node
+          ansible.builtin.command:
+            cmd: >-
+              {{ venv }}/bin/openstack baremetal node show {{ inventory_hostname }}
+              -f json -c uuid -c boot_interface -c network_data
+              -c inspect_interface -c provision_state -c maintenance
+          register: node_show
+          changed_when: false
+
+        - name: Set node facts
+          ansible.builtin.set_fact:
+            dhcpless_node: "{{ node_show.stdout | from_json }}"
+
+        - name: Discover MAC address using Redfish inspection
+          when: ironic_dhcpless_mac_address is not defined
+          block:
+            - name: Get node inventory
+              ansible.builtin.command:
+                cmd: "{{ venv }}/bin/openstack baremetal node inventory save {{ dhcpless_node.uuid }}"
+              register: inventory_result
+              failed_when:
+                - inventory_result.rc != 0
+                - "'404' not in inventory_result.stderr"
+                - "'not found' not in inventory_result.stderr | lower"
+              changed_when: false
+
+            - name: Set inventory interfaces fact
+              ansible.builtin.set_fact:
+                dhcpless_inventory: "{{ (inventory_result.stdout | from_json).inventory if inventory_result.rc == 0 else {} }}"
+
+            - name: Run Redfish inspection
+              when: >-
+                ironic_dhcpless_reinspect | bool or
+                dhcpless_inventory.interfaces | default([]) | length == 0 or
+                (ironic_dhcpless_redfish_interface | default('', true) | length > 0 and
+                 ironic_dhcpless_redfish_interface not in
+                 dhcpless_inventory.interfaces | map(attribute='name') | list)
+              block:
+                - name: Check node is manageable
+                  ansible.builtin.assert:
+                    that:
+                      - dhcpless_node.provision_state == 'manageable'
+                    fail_msg: >-
+                      Node {{ inventory_hostname }} must be in the manageable
+                      state to run Redfish inspection, but is
+                      {{ dhcpless_node.provision_state }}. Either move it to
+                      manageable, or set ironic_dhcpless_mac_address.
+
+                - name: Inspect node using Redfish
+                  block:
+                    - name: Set Redfish inspect interface
+                      ansible.builtin.command:
+                        cmd: >-
+                          {{ venv }}/bin/openstack baremetal node set {{ dhcpless_node.uuid }}
+                          --inspect-interface {{ ironic_dhcpless_inspect_interface }}
+                      when: dhcpless_node.inspect_interface != ironic_dhcpless_inspect_interface
+
+                    - name: Inspect node
+                      ansible.builtin.command:
+                        cmd: >-
+                          {{ venv }}/bin/openstack baremetal node inspect {{ dhcpless_node.uuid }}
+                          --wait {{ ironic_dhcpless_inspect_timeout }}
+                  always:
+                    - name: Restore inspect interface
+                      ansible.builtin.command:
+                        cmd: >-
+                          {{ venv }}/bin/openstack baremetal node set {{ dhcpless_node.uuid }}
+                          --inspect-interface {{ dhcpless_node.inspect_interface }}
+                      when: dhcpless_node.inspect_interface != ironic_dhcpless_inspect_interface
+
+                - name: Get node inventory after inspection
+                  ansible.builtin.command:
+                    cmd: "{{ venv }}/bin/openstack baremetal node inventory save {{ dhcpless_node.uuid }}"
+                  register: inventory_result
+                  changed_when: false
+
+                - name: Set inventory fact after inspection
+                  ansible.builtin.set_fact:
+                    dhcpless_inventory: "{{ (inventory_result.stdout | from_json).inventory }}"
+
+            - name: List baremetal ports created by inspection
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal port list
+                  --node {{ dhcpless_node.uuid }} -f json --fields address
+              register: inspected_ports
+              changed_when: false
+
+            - name: Select MAC address
+              ansible.builtin.set_fact:
+                ironic_dhcpless_mac_address: >-
+                  {%- if ironic_dhcpless_redfish_interface -%}
+                  {{ interfaces | selectattr('name', 'equalto', ironic_dhcpless_redfish_interface) | map(attribute='mac_address') | first | default('') }}
+                  {%- elif pxe_interface -%}
+                  {{ pxe_interface }}
+                  {%- elif port_macs | length == 1 -%}
+                  {{ port_macs | first }}
+                  {%- endif -%}
+              vars:
+                interfaces: "{{ dhcpless_inventory.interfaces | default([]) }}"
+                pxe_interface: "{{ dhcpless_inventory.boot.pxe_interface | default('', true) }}"
+                # Only the address column is requested. Take its value without
+                # relying on the key name, which varies between client
+                # versions (Address vs address).
+                port_macs: "{{ inspected_ports.stdout | from_json | map('dict2items') | map('first') | map(attribute='value') | list }}"
+
+        # NOTE: This must not be in the discovery block above, whose condition
+        # (ironic_dhcpless_mac_address is not defined) becomes false once the
+        # MAC address has been selected, which would skip this check.
+        - name: Check MAC address was discovered
+          ansible.builtin.assert:
+            that:
+              - ironic_dhcpless_mac_address | default('', true) is match(mac_regex)
+            fail_msg: >-
+              Could not determine which NIC of {{ inventory_hostname }} is on
+              {{ ironic_dhcpless_network }}.
+              {% if ironic_dhcpless_redfish_interface %}No Redfish interface
+              named {{ ironic_dhcpless_redfish_interface }} with a MAC address
+              was found.
+              {% else %}The node has more or less than one enabled NIC; set
+              ironic_dhcpless_redfish_interface.
+              {% endif %}Interfaces found by Redfish inspection (name: MAC):
+              {{ dhcpless_inventory.interfaces | default([]) | items2dict(key_name='name', value_name='mac_address') }}.
+              Some BMCs (e.g. HPE iLO) only report NICs after the server has
+              completed POST. Alternatively, set ironic_dhcpless_mac_address
+              to a valid MAC address.
+
+        - name: Set network data
+          ansible.builtin.command:
+            argv:
+              - "{{ venv }}/bin/openstack"
+              - baremetal
+              - node
+              - set
+              - "{{ dhcpless_node.uuid }}"
+              - --network-data
+              - "{{ ironic_dhcpless_network_data | to_json }}"
+          when: (dhcpless_node.network_data | default({}, true)) != ironic_dhcpless_network_data
+
+        # Ironic only allows changing interfaces in these states.
+        - name: Check node state allows changing the boot interface
+          ansible.builtin.assert:
+            that:
+              - >-
+                dhcpless_node.provision_state in
+                ['enroll', 'manageable', 'available', 'inspecting', 'inspect wait']
+            fail_msg: >-
+              Cannot change the boot interface of {{ inventory_hostname }} to
+              {{ ironic_dhcpless_boot_interface }} in provision state
+              {{ dhcpless_node.provision_state }}. Move it to manageable or
+              available, or set maintenance mode, and rerun.
+          when:
+            - dhcpless_node.boot_interface != ironic_dhcpless_boot_interface
+            - not dhcpless_node.maintenance | bool
+
+        - name: Set boot interface
+          ansible.builtin.command:
+            cmd: >-
+              {{ venv }}/bin/openstack baremetal node set {{ dhcpless_node.uuid }}
+              --boot-interface {{ ironic_dhcpless_boot_interface }}
+          when: dhcpless_node.boot_interface != ironic_dhcpless_boot_interface
+
+        # Ironic binds every PXE-enabled port to the provisioning, cleaning,
+        # inspection and rescue networks, but the ramdisk only configures the
+        # NICs in network_data. Make PXE-enabled ports match the physical
+        # links in network_data.
+        - name: Ensure PXE is enabled only on network_data links
+          when: >-
+            ironic_dhcpless_create_port | bool or
+            ironic_dhcpless_disable_pxe_on_other_ports | bool
+          vars:
+            # MAC addresses of the physical links in network_data.
+            link_macs: >-
+              {{ ironic_dhcpless_network_data.links
+                 | selectattr('type', 'equalto', 'phy')
+                 | map(attribute='ethernet_mac_address')
+                 | map('lower') | list }}
+          block:
+            - name: Check network data has physical links
+              ansible.builtin.assert:
+                that:
+                  - link_macs | length > 0
+                  - link_macs | reject('match', mac_regex) | list | length == 0
+                fail_msg: >-
+                  ironic_dhcpless_network_data for {{ inventory_hostname }}
+                  must contain at least one link of type phy, each with a valid
+                  ethernet_mac_address. Found: {{ link_macs }}.
+
+            - name: List baremetal ports of node
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal port list
+                  --node {{ dhcpless_node.uuid }} -f json
+                  --fields uuid address pxe_enabled
+              register: node_port_list
+              changed_when: false
+
+            # NOTE: The keys in the JSON output of 'port list' vary between
+            # client versions (field names or column labels), so normalise
+            # them.
+            - name: Set node ports fact
+              ansible.builtin.set_fact:
+                dhcpless_ports: >-
+                  {%- set ns = namespace(ports=[]) -%}
+                  {%- for port in node_port_list.stdout | from_json -%}
+                  {%- set ns.ports = ns.ports + [{
+                        'uuid': port.uuid | default(port.UUID),
+                        'address': port.address | default(port.Address) | lower,
+                        'pxe_enabled': port.pxe_enabled | default(port['PXE boot enabled']) | bool}] -%}
+                  {%- endfor -%}
+                  {{ ns.ports }}
+
+            - name: Check missing ports do not belong to other nodes
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal port show --address {{ item }}
+                  -f json -c node_uuid
+              loop: "{{ missing_macs }}"
+              register: other_port_show
+              changed_when: false
+              failed_when:
+                - other_port_show.rc != 0
+                - "'404' not in other_port_show.stderr"
+                - "'not found' not in other_port_show.stderr | lower"
+              when: ironic_dhcpless_create_port | bool
+              vars:
+                missing_macs: "{{ link_macs | difference(dhcpless_ports | map(attribute='address')) }}"
+
+            - name: Assert missing ports do not belong to other nodes
+              ansible.builtin.assert:
+                that:
+                  - item.rc != 0
+                fail_msg: >-
+                  Port {{ item.item }} belongs to node
+                  {{ (item.stdout | from_json).node_uuid if item.rc == 0 else '' }}, not
+                  {{ inventory_hostname }} ({{ dhcpless_node.uuid }}).
+              loop: "{{ other_port_show.results | default([]) | rejectattr('skipped', 'defined') | list }}"
+              loop_control:
+                label: "{{ item.item }}"
+              when: ironic_dhcpless_create_port | bool
+
+            - name: Create baremetal ports
+              ansible.builtin.command:
+                argv:
+                  - "{{ venv }}/bin/openstack"
+                  - baremetal
+                  - port
+                  - create
+                  - "{{ item }}"
+                  - --node
+                  - "{{ dhcpless_node.uuid }}"
+                  - --pxe-enabled
+                  - "true"
+              loop: "{{ link_macs | difference(dhcpless_ports | map(attribute='address')) }}"
+              when: ironic_dhcpless_create_port | bool
+
+            - name: Enable PXE on network_data link ports
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal port set {{ item.uuid }}
+                  --pxe-enabled true
+              loop: >-
+                {{ dhcpless_ports
+                   | selectattr('address', 'in', link_macs)
+                   | rejectattr('pxe_enabled') | list }}
+              loop_control:
+                label: "{{ item.address }}"
+              when: ironic_dhcpless_create_port | bool
+
+            # Done last, so that the node always has a PXE-enabled port.
+            - name: Disable PXE on other ports
+              ansible.builtin.command:
+                cmd: >-
+                  {{ venv }}/bin/openstack baremetal port set {{ item.uuid }}
+                  --pxe-enabled false
+              loop: >-
+                {{ dhcpless_ports
+                   | rejectattr('address', 'in', link_macs)
+                   | selectattr('pxe_enabled') | list }}
+              loop_control:
+                label: "{{ item.address }}"
+              when: ironic_dhcpless_disable_pxe_on_other_ports | bool
+      delegate_to: "{{ controller_host }}"
+      vars:
+        # NOTE: Without this, the controller's ansible_host variable will not
+        # be respected when using delegate_to.
+        ansible_host: "{{ hostvars[controller_host].ansible_host | default(controller_host) }}"
+      environment: "{{ openstack_auth_env }}"
